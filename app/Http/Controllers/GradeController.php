@@ -44,7 +44,23 @@ class GradeController extends Controller
     {
         $this->authorize('create', Grade::class);
 
-        return Inertia::render('Grades/Create');
+        // Get all active teachers for assignment
+        $teachers = Teacher::with('user')
+            ->where('status', 'active')
+            ->get()
+            ->map(function ($teacher) {
+                return [
+                    'id' => $teacher->id,
+                    'name' => $teacher->user->name,
+                    'email' => $teacher->user->email,
+                    'employee_number' => $teacher->employee_number,
+                    'subject_specialization' => $teacher->subject_specialization,
+                ];
+            });
+
+        return Inertia::render('Grades/Create', [
+            'teachers' => $teachers,
+        ]);
     }
 
     public function store(Request $request)
@@ -57,9 +73,26 @@ class GradeController extends Controller
             'capacity' => 'required|integer|min:1',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
+            'teacher_ids' => 'nullable|array',
+            'teacher_ids.*' => 'exists:teachers,id',
+            'class_teacher_id' => 'nullable|exists:teachers,id',
         ]);
 
-        Grade::create($validated);
+        $grade = Grade::create([
+            'name' => $validated['name'],
+            'level' => $validated['level'],
+            'capacity' => $validated['capacity'],
+            'description' => $validated['description'],
+            'status' => $validated['status'],
+        ]);
+
+        // Assign teachers to the grade
+        if (!empty($validated['teacher_ids'])) {
+            foreach ($validated['teacher_ids'] as $teacherId) {
+                $isClassTeacher = $teacherId == $validated['class_teacher_id'];
+                $grade->teachers()->attach($teacherId, ['is_class_teacher' => $isClassTeacher]);
+            }
+        }
 
         return redirect()->route('grades.index')
             ->with('success', 'Grade created successfully.');
@@ -97,8 +130,30 @@ class GradeController extends Controller
     {
         $this->authorize('update', $grade);
 
+        $grade->load(['teachers']);
+
+        // Get all active teachers for assignment
+        $teachers = Teacher::with('user')
+            ->where('status', 'active')
+            ->get()
+            ->map(function ($teacher) {
+                return [
+                    'id' => $teacher->id,
+                    'name' => $teacher->user->name,
+                    'email' => $teacher->user->email,
+                    'employee_number' => $teacher->employee_number,
+                    'subject_specialization' => $teacher->subject_specialization,
+                ];
+            });
+
+        $assignedTeacherIds = $grade->teachers->pluck('id')->toArray();
+        $classTeacherId = $grade->teachers->where('pivot.is_class_teacher', true)->first()?->id;
+
         return Inertia::render('Grades/Edit', [
             'grade' => $grade,
+            'teachers' => $teachers,
+            'assignedTeacherIds' => $assignedTeacherIds,
+            'classTeacherId' => $classTeacherId,
         ]);
     }
 
@@ -112,9 +167,27 @@ class GradeController extends Controller
             'capacity' => 'required|integer|min:1',
             'description' => 'nullable|string',
             'status' => 'required|in:active,inactive',
+            'teacher_ids' => 'nullable|array',
+            'teacher_ids.*' => 'exists:teachers,id',
+            'class_teacher_id' => 'nullable|exists:teachers,id',
         ]);
 
-        $grade->update($validated);
+        $grade->update([
+            'name' => $validated['name'],
+            'level' => $validated['level'],
+            'capacity' => $validated['capacity'],
+            'description' => $validated['description'],
+            'status' => $validated['status'],
+        ]);
+
+        // Sync teachers - detach all and re-attach with proper pivot values
+        $grade->teachers()->detach();
+        if (!empty($validated['teacher_ids'])) {
+            foreach ($validated['teacher_ids'] as $teacherId) {
+                $isClassTeacher = $teacherId == $validated['class_teacher_id'];
+                $grade->teachers()->attach($teacherId, ['is_class_teacher' => $isClassTeacher]);
+            }
+        }
 
         return redirect()->route('grades.index')
             ->with('success', 'Grade updated successfully.');

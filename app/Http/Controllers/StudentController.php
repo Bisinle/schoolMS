@@ -17,9 +17,16 @@ class StudentController extends Controller
     {
         $this->authorize('viewAny', Student::class);
 
-        $students = Student::with(['guardian.user', 'grade'])
-            ->when($request->search, function ($query, $search) {
-                $query->where('first_name', 'like', "%{$search}%")
+        $query = Student::with(['guardian.user', 'grade']);
+
+        // If teacher, show only students from assigned grades
+        if ($request->user()->isTeacher()) {
+            $teacherGradeIds = $request->user()->teacher->grades->pluck('id')->toArray();
+            $query->whereIn('grade_id', $teacherGradeIds);
+        }
+
+        $students = $query->when($request->search, function ($q, $search) {
+                $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%")
                     ->orWhere('admission_number', 'like', "%{$search}%");
             })
