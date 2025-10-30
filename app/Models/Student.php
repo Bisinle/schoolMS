@@ -49,4 +49,36 @@ class Student extends Model
     {
         return $this->grade ? $this->grade->name : ($this->class_name ?? 'N/A');
     }
+
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    public function getAttendanceStats($startDate = null, $endDate = null)
+    {
+        $query = $this->attendances();
+
+        if ($startDate && $endDate) {
+            $query->whereBetween('attendance_date', [$startDate, $endDate]);
+        }
+
+        // Get all records ONCE and then count them in memory
+        $allRecords = $query->get();
+
+        $total = $allRecords->count();
+        $present = $allRecords->where('status', 'present')->count();
+        $absent = $allRecords->where('status', 'absent')->count();
+        $late = $allRecords->where('status', 'late')->count();
+        $excused = $allRecords->where('status', 'excused')->count();
+
+        return [
+            'total' => $total,
+            'present' => $present,
+            'absent' => $absent,
+            'late' => $late,
+            'excused' => $excused,
+            'attendance_rate' => $total > 0 ? round(($present / $total) * 100, 1) : 0,
+        ];
+    }
 }

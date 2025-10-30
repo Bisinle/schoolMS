@@ -1,7 +1,7 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, router } from "@inertiajs/react";
 import { useState } from "react";
-import { Plus, Search, Eye, Edit, Trash2 } from "lucide-react";
+import { Plus, Search, Eye, Edit, Trash2, ClipboardCheck } from "lucide-react";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 
 export default function StudentsIndex({ students, filters, auth }) {
@@ -91,56 +91,66 @@ export default function StudentsIndex({ students, filters, auth }) {
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-    {students.data.map((student) => (
-        <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-navy">
-                {student.admission_number}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {student.first_name} {student.last_name}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {student.grade ? student.grade.name : 'Not Assigned'}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                {student.guardian?.user?.name}
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    student.status === 'active' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                }`}>
-                    {student.status}
-                </span>
-            </td>
-            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
-                <Link
-                    href={`/students/${student.id}`}
-                    className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-                >
-                    <Eye className="w-4 h-4" />
-                </Link>
-                {auth.user.role === 'admin' && (
-                    <>
-                        <Link
-                            href={`/students/${student.id}/edit`}
-                            className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
-                        >
-                            <Edit className="w-4 h-4" />
-                        </Link>
-                        <button
-                            onClick={() => confirmDelete(student)}
-                            className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                        </button>
-                    </>
-                )}
-            </td>
-        </tr>
-    ))}
-</tbody>
+                                {students.data.map((student) => (
+                                    <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-navy">
+                                            {student.admission_number}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            {student.first_name} {student.last_name}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {student.grade ? student.grade.name : 'Not Assigned'}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            {student.guardian?.user?.name}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                                student.status === 'active' 
+                                                    ? 'bg-green-100 text-green-800' 
+                                                    : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {student.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                                            <Link
+                                                href={`/students/${student.id}`}
+                                                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                                                title="View Details"
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Link>
+                                            <Link
+                                                href={`/attendance/student/${student.id}`}
+                                                className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors"
+                                                title="View Attendance"
+                                            >
+                                                <ClipboardCheck className="w-4 h-4" />
+                                            </Link>
+                                            {auth.user.role === 'admin' && (
+                                                <>
+                                                    <Link
+                                                        href={`/students/${student.id}/edit`}
+                                                        className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                        title="Edit Student"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => confirmDelete(student)}
+                                                        className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                                                        title="Delete Student"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
                         </table>
                     </div>
 

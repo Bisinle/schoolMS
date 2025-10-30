@@ -188,8 +188,8 @@ class DatabaseSeeder extends Seeder
 
         // Create Guardian 1
         $guardian1User = User::create([
-            'name' => 'Michael Johnson',
-            'email' => 'guardian1@sms.com',
+            'name' => 'Abshir Isse',
+            'email' => 'abshir@sms.com',
             'password' => Hash::make('password'),
             'role' => 'guardian',
             'email_verified_at' => now(),
@@ -205,8 +205,8 @@ class DatabaseSeeder extends Seeder
 
         // Create Guardian 2
         $guardian2User = User::create([
-            'name' => 'Sarah Williams',
-            'email' => 'guardian2@sms.com',
+            'name' => 'Abdullahi Dheere',
+            'email' => 'dheere@sms.com',
             'password' => Hash::make('password'),
             'role' => 'guardian',
             'email_verified_at' => now(),
@@ -217,29 +217,45 @@ class DatabaseSeeder extends Seeder
             'phone_number' => '+0987654321',
             'address' => '456 Oak Avenue, Town',
             'occupation' => 'Doctor',
-            'relationship' => 'Mother',
+            'relationship' => 'Father',
+        ]);
+         // Create Guardian 3
+         $guardian3User = User::create([
+            'name' => 'Hassan Adam',
+            'email' => 'hassan@sms.com',
+            'password' => Hash::make('password'),
+            'role' => 'guardian',
+            'email_verified_at' => now(),
+        ]);
+
+        $guardian2 = Guardian::create([
+            'user_id' => $guardian3User->id,
+            'phone_number' => '+0987654321',
+            'address' => '456 Oak Avenue, Town',
+            'occupation' => 'Financial Auditor',
+            'relationship' => 'Father',
         ]);
 
         // Create Students
         Student::create([
             'admission_number' => 'STD001',
-            'first_name' => 'Emma',
-            'last_name' => 'Johnson',
-            'gender' => 'female',
+            'first_name' => 'Adnaan',
+            'last_name' => 'Bashir',
+            'gender' => 'male',
             'date_of_birth' => '2015-05-15',
             'guardian_id' => $guardian1->id,
-            'grade_id' => $grade3->id,
+            'grade_id' => $grade4->id,
             'enrollment_date' => '2023-09-01',
             'status' => 'active',
         ]);
 
         Student::create([
             'admission_number' => 'STD002',
-            'first_name' => 'James',
-            'last_name' => 'Johnson',
-            'gender' => 'male',
+            'first_name' => 'Ahlaam',
+            'last_name' => 'Dheere',
+            'gender' => 'female',
             'date_of_birth' => '2013-08-20',
-            'guardian_id' => $guardian1->id,
+            'guardian_id' => $guardian2->id,
             'grade_id' => $grade5->id,
             'enrollment_date' => '2021-09-01',
             'status' => 'active',
@@ -267,6 +283,11 @@ class DatabaseSeeder extends Seeder
             'grade_id' => $prePrimary1->id,
             'enrollment_date' => '2024-09-01',
             'status' => 'active',
+        ]);
+
+        // 🎯 CALL ATTENDANCE SEEDER HERE
+        $this->call([
+            AttendanceSeeder::class,
         ]);
     }
 }

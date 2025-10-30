@@ -12,6 +12,7 @@ use Inertia\Inertia;
 class GuardianController extends Controller
 {
     use AuthorizesRequests;
+    
     public function index(Request $request)
     {
         $this->authorize('viewAny', Guardian::class);
@@ -76,10 +77,23 @@ class GuardianController extends Controller
     {
         $this->authorize('view', $guardian);
 
-        $guardian->load(['user', 'students']);
+        $guardian->load(['user', 'students.grade']);
+
+        // Add attendance stats for each child (current month)
+        $startDate = now()->startOfMonth()->toDateString();
+        $endDate = now()->toDateString();
+        
+        $studentsWithAttendance = $guardian->students->map(function ($student) use ($startDate, $endDate) {
+            $stats = $student->getAttendanceStats($startDate, $endDate);
+            $studentArray = $student->toArray();
+            $studentArray['attendance_stats'] = $stats;
+            return $studentArray;
+        });
 
         return Inertia::render('Guardians/Show', [
             'guardian' => $guardian,
+            'studentsWithAttendance' => $studentsWithAttendance,
+            'currentMonth' => now()->format('F Y'),
         ]);
     }
 

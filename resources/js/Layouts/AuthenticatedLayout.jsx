@@ -6,6 +6,7 @@ import {
     UserCircle, 
     GraduationCap,
     BookOpen,
+    ClipboardCheck,
     Menu, 
     X,
     LogOut,
@@ -22,12 +23,14 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: 'Students', href: '/students', icon: Users },
             { name: 'Teachers', href: '/teachers', icon: GraduationCap },
             { name: 'Guardians', href: '/guardians', icon: UserCircle },
+            { name: 'Attendance', href: '/attendance', icon: ClipboardCheck },
         ],
         teacher: [
             { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
             { name: 'My Grades', href: '/grades', icon: BookOpen },
             { name: 'Students', href: '/students', icon: Users },
             { name: 'Guardians', href: '/guardians', icon: UserCircle },
+            { name: 'Attendance', href: '/attendance', icon: ClipboardCheck },
         ],
         guardian: [
             { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },

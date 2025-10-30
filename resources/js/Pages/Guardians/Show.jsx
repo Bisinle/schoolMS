@@ -1,8 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, Mail, Phone, MapPin, Briefcase, User, Users } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Briefcase, User, Users, ClipboardCheck, TrendingUp } from 'lucide-react';
 
-export default function GuardiansShow({ guardian }) {
+export default function GuardiansShow({ guardian, studentsWithAttendance, currentMonth }) {
     const InfoCard = ({ icon: Icon, label, value }) => (
         <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-10 h-10 bg-orange bg-opacity-10 rounded-lg flex items-center justify-center">
@@ -55,36 +55,79 @@ export default function GuardiansShow({ guardian }) {
                             </div>
                         </div>
 
-                        <h3 className="text-lg font-semibold text-navy mb-4 mt-6">Children</h3>
-                        {guardian.students && guardian.students.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {guardian.students.map((student) => (
-                                    <Link
-                                        key={student.id}
-                                        href={`/students/${student.id}`}
-                                        className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow hover:border-orange"
-                                    >
-                                        <div className="flex items-center mb-2">
-                                            <Users className="w-5 h-5 text-orange mr-2" />
-                                            <h4 className="font-semibold text-navy">
-                                                {student.first_name} {student.last_name}
-                                            </h4>
-                                        </div>
-                                        <div className="space-y-1 text-sm text-gray-600">
-                                            <p><span className="font-medium">Admission:</span> {student.admission_number}</p>
-                                            <p><span className="font-medium">Class:</span> {student.class_name}</p>
-                                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {student.status}
-                                            </span>
-                                        </div>
-                                    </Link>
-                                ))}
+                        <div className="border-t border-gray-200 pt-6 mt-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-navy">Children</h3>
+                                <span className="text-sm text-gray-500">Attendance for {currentMonth}</span>
                             </div>
-                        ) : (
-                            <p className="text-gray-500 text-center py-8">No children enrolled yet.</p>
-                        )}
+                            {studentsWithAttendance && studentsWithAttendance.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {studentsWithAttendance.map((student) => (
+                                        <div key={student.id} className="border-2 border-gray-200 rounded-xl hover:shadow-lg transition-all hover:border-orange">
+                                            <Link href={`/students/${student.id}`} className="block p-5">
+                                                <div className="flex items-center mb-4">
+                                                    <Users className="w-5 h-5 text-orange mr-2" />
+                                                    <h4 className="font-semibold text-navy">
+                                                        {student.first_name} {student.last_name}
+                                                    </h4>
+                                                </div>
+                                                <div className="space-y-1 text-sm text-gray-600 mb-3">
+                                                    <p><span className="font-medium">Admission:</span> {student.admission_number}</p>
+                                                    <p><span className="font-medium">Grade:</span> {student.grade?.name || 'Not Assigned'}</p>
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                        student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                    }`}>
+                                                        {student.status}
+                                                    </span>
+                                                </div>
+                                            </Link>
+
+                                            {/* Attendance Summary */}
+                                            {student.attendance_stats && (
+                                                <div className="border-t border-gray-200 p-5 bg-gray-50">
+                                                    <div className="flex items-center justify-between mb-3">
+                                                        <span className="text-xs font-semibold text-gray-600 uppercase flex items-center">
+                                                            <ClipboardCheck className="w-3 h-3 mr-1" />
+                                                            Attendance
+                                                        </span>
+                                                        <span className="text-xl font-bold text-orange">
+                                                            {student.attendance_stats.attendance_rate}%
+                                                        </span>
+                                                    </div>
+                                                    <div className="grid grid-cols-4 gap-2 mb-3">
+                                                        <div className="text-center bg-white rounded p-2">
+                                                            <p className="text-xs text-gray-500">Present</p>
+                                                            <p className="text-sm font-bold text-green-600">{student.attendance_stats.present}</p>
+                                                        </div>
+                                                        <div className="text-center bg-white rounded p-2">
+                                                            <p className="text-xs text-gray-500">Absent</p>
+                                                            <p className="text-sm font-bold text-red-600">{student.attendance_stats.absent}</p>
+                                                        </div>
+                                                        <div className="text-center bg-white rounded p-2">
+                                                            <p className="text-xs text-gray-500">Late</p>
+                                                            <p className="text-sm font-bold text-yellow-600">{student.attendance_stats.late}</p>
+                                                        </div>
+                                                        <div className="text-center bg-white rounded p-2">
+                                                            <p className="text-xs text-gray-500">Excused</p>
+                                                            <p className="text-sm font-bold text-blue-600">{student.attendance_stats.excused}</p>
+                                                        </div>
+                                                    </div>
+                                                    <Link
+                                                        href={`/attendance/student/${student.id}`}
+                                                        className="block w-full text-center px-4 py-2 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all"
+                                                    >
+                                                        <TrendingUp className="w-4 h-4 inline mr-1" />
+                                                        View Details
+                                                    </Link>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-gray-500 text-center py-8">No children enrolled yet.</p>
+                            )}
+                        </div>
                     </div>
 
                     <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">

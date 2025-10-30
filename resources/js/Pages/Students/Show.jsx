@@ -1,8 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, User, Calendar, GraduationCap, Users, MapPin, Phone, BookOpen } from 'lucide-react';
+import { ArrowLeft, User, Calendar, GraduationCap, Users, MapPin, Phone, BookOpen, ClipboardCheck, TrendingUp } from 'lucide-react';
 
-export default function StudentsShow({ student }) {
+export default function StudentsShow({ student, attendanceStats, currentMonth }) {
     const InfoCard = ({ icon: Icon, label, value }) => (
         <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-10 h-10 bg-orange bg-opacity-10 rounded-lg flex items-center justify-center">
@@ -70,9 +70,63 @@ export default function StudentsShow({ student }) {
                             <InfoCard icon={User} label="Relationship" value={student.guardian?.relationship} />
                             <InfoCard icon={MapPin} label="Address" value={student.guardian?.address} />
                         </div>
+
+                        {/* Attendance Summary Section */}
+                        <div className="mt-8 pt-6 border-t border-gray-200">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-navy flex items-center">
+                                    <ClipboardCheck className="w-5 h-5 mr-2 text-orange" />
+                                    Attendance Summary ({currentMonth})
+                                </h3>
+                                <Link
+                                    href={`/attendance/student/${student.id}`}
+                                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-orange border-2 border-orange rounded-lg hover:bg-orange hover:text-white transition-all"
+                                >
+                                    View Full History
+                                    <TrendingUp className="w-4 h-4 ml-2" />
+                                </Link>
+                            </div>
+
+                            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                    <p className="text-xs text-gray-500 mb-1">Total Days</p>
+                                    <p className="text-2xl font-bold text-navy">{attendanceStats.total}</p>
+                                </div>
+                                <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                                    <p className="text-xs text-green-600 mb-1">Present</p>
+                                    <p className="text-2xl font-bold text-green-700">{attendanceStats.present}</p>
+                                </div>
+                                <div className="bg-red-50 rounded-lg p-4 border border-red-200">
+                                    <p className="text-xs text-red-600 mb-1">Absent</p>
+                                    <p className="text-2xl font-bold text-red-700">{attendanceStats.absent}</p>
+                                </div>
+                                <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-200">
+                                    <p className="text-xs text-yellow-600 mb-1">Late</p>
+                                    <p className="text-2xl font-bold text-yellow-700">{attendanceStats.late}</p>
+                                </div>
+                                <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                                    <p className="text-xs text-blue-600 mb-1">Excused</p>
+                                    <p className="text-2xl font-bold text-blue-700">{attendanceStats.excused}</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 bg-gradient-to-r from-orange to-orange-dark rounded-lg p-4">
+                                <div className="flex items-center justify-between text-white">
+                                    <span className="text-sm font-medium">Attendance Rate</span>
+                                    <span className="text-3xl font-bold">{attendanceStats.attendance_rate}%</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
                     <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                        <Link
+                            href={`/attendance/student/${student.id}`}
+                            className="inline-flex items-center px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-all"
+                        >
+                            <ClipboardCheck className="w-4 h-4 mr-2" />
+                            View Attendance
+                        </Link>
                         <Link
                             href={`/students/${student.id}/edit`}
                             className="inline-flex items-center px-4 py-2 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all"

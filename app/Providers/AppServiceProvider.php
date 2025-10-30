@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
+use App\Models\Attendance;
 use App\Models\Grade;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Teacher;
+use App\Policies\AttendancePolicy;
 use App\Policies\GradePolicy;
 use App\Policies\StudentPolicy;
 use App\Policies\GuardianPolicy;
@@ -33,6 +35,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Guardian::class, GuardianPolicy::class);
         Gate::policy(Teacher::class, TeacherPolicy::class);
         Gate::policy(Grade::class, GradePolicy::class);
+        Gate::policy(Attendance::class, AttendancePolicy::class);
         Vite::prefetch(concurrency: 3);
     }
 }

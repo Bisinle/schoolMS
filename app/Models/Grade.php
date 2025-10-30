@@ -46,4 +46,9 @@ class Grade extends Model
     {
         return $this->capacity - $this->student_count;
     }
+
+    public function attendances()
+{
+    return $this->hasMany(Attendance::class);
+}
 }

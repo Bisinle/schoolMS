@@ -41,8 +41,22 @@ class DashboardController extends Controller
         } elseif ($user->isGuardian()) {
             $guardian = $user->guardian;
             if ($guardian) {
-                $data['students'] = $guardian->students;
+                $students = $guardian->students;
+                
+                // Add attendance stats for each child (current month)
+                $startDate = now()->startOfMonth()->toDateString();
+                $endDate = now()->toDateString();
+                
+                $studentsWithAttendance = $students->map(function ($student) use ($startDate, $endDate) {
+                    $stats = $student->getAttendanceStats($startDate, $endDate);
+                    return array_merge($student->toArray(), [
+                        'attendance_stats' => $stats
+                    ]);
+                });
+                
+                $data['students'] = $studentsWithAttendance;
                 $data['guardianInfo'] = $guardian;
+                $data['currentMonth'] = now()->format('F Y');
             }
         }
 

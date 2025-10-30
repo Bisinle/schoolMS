@@ -88,8 +88,15 @@ class StudentController extends Controller
 
         $student->load(['guardian.user', 'grade']);
 
+        // Get attendance stats for current month
+        $startDate = now()->startOfMonth()->toDateString();
+        $endDate = now()->toDateString();
+        $attendanceStats = $student->getAttendanceStats($startDate, $endDate);
+
         return Inertia::render('Students/Show', [
             'student' => $student,
+            'attendanceStats' => $attendanceStats,
+            'currentMonth' => now()->format('F Y'),
         ]);
     }
 
