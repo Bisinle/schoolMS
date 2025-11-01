@@ -40,6 +40,23 @@ class Student extends Model
         return $this->belongsTo(Grade::class);
     }
 
+    public function attendances()
+    {
+        return $this->hasMany(Attendance::class);
+    }
+
+    // 🆕 NEW RELATIONSHIPS FOR ACADEMIC MODULE
+    public function examResults()
+    {
+        return $this->hasMany(ExamResult::class);
+    }
+
+    public function reportComments()
+    {
+        return $this->hasMany(ReportComment::class);
+    }
+
+    // EXISTING HELPERS
     public function getFullNameAttribute(): string
     {
         return "{$this->first_name} {$this->last_name}";
@@ -50,11 +67,6 @@ class Student extends Model
         return $this->grade ? $this->grade->name : ($this->class_name ?? 'N/A');
     }
 
-    public function attendances()
-    {
-        return $this->hasMany(Attendance::class);
-    }
-
     public function getAttendanceStats($startDate = null, $endDate = null)
     {
         $query = $this->attendances();
@@ -63,7 +75,6 @@ class Student extends Model
             $query->whereBetween('attendance_date', [$startDate, $endDate]);
         }
 
-        // Get all records ONCE and then count them in memory
         $allRecords = $query->get();
 
         $total = $allRecords->count();
@@ -80,5 +91,17 @@ class Student extends Model
             'excused' => $excused,
             'attendance_rate' => $total > 0 ? round(($present / $total) * 100, 1) : 0,
         ];
+    }
+
+    // 🆕 NEW HELPER FOR ACADEMIC MODULE
+    public function getTermResults($term, $academicYear)
+    {
+        return $this->examResults()
+            ->whereHas('exam', function ($query) use ($term, $academicYear) {
+                $query->where('term', $term)
+                    ->where('academic_year', $academicYear);
+            })
+            ->with(['exam.subject'])
+            ->get();
     }
 }

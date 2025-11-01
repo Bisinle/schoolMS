@@ -7,6 +7,13 @@ use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\SubjectController;
+use App\Http\Controllers\ExamController;
+use App\Http\Controllers\ExamResultController;
+use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ReportCommentController;
+use App\Http\Controllers\SchoolSettingController;
+use App\Models\Grade;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -105,6 +112,78 @@ Route::middleware('auth')->group(function () {
 
     // Student attendance history - accessible by admin, teacher, and guardian (with restrictions)
     Route::get('/attendance/student/{student}', [AttendanceController::class, 'studentHistory'])->name('attendance.student-history');
+
+    //^ Academic Module Routes - IMPORTANT: specific routes MUST come before parameter routes
+
+    // Subjects Routes
+    Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
+    });
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/subjects/create', [SubjectController::class, 'create'])->name('subjects.create');
+        Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
+        Route::get('/subjects/{subject}/edit', [SubjectController::class, 'edit'])->name('subjects.edit');
+        Route::put('/subjects/{subject}', [SubjectController::class, 'update'])->name('subjects.update');
+        Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy'])->name('subjects.destroy');
+        
+        // Subject-Grade assignment
+        Route::post('/subjects/{subject}/assign-grades', [SubjectController::class, 'assignGrades'])->name('subjects.assign-grades');
+    });
+
+    Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
+    });
+
+    // Exams Routes
+    Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
+        Route::get('/exams/create', [ExamController::class, 'create'])->name('exams.create');
+        Route::post('/exams', [ExamController::class, 'store'])->name('exams.store');
+        Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
+        Route::get('/exams/{exam}/edit', [ExamController::class, 'edit'])->name('exams.edit');
+        Route::put('/exams/{exam}', [ExamController::class, 'update'])->name('exams.update');
+    });
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::delete('/exams/{exam}', [ExamController::class, 'destroy'])->name('exams.destroy');
+    });
+
+    // Exam Results Routes
+    Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::get('/exams/{exam}/results', [ExamResultController::class, 'index'])->name('exam-results.index');
+        Route::post('/exams/{exam}/results', [ExamResultController::class, 'store'])->name('exam-results.store');
+        Route::put('/exam-results/{examResult}', [ExamResultController::class, 'update'])->name('exam-results.update');
+    });
+
+    // Reports Routes
+    Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+        Route::get('/reports/student/{student}', [ReportController::class, 'studentReport'])->name('reports.student');
+        Route::get('/reports/student/{student}/pdf', [ReportController::class, 'generatePdf'])->name('reports.pdf');
+    });
+
+    Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::post('/reports/comments', [ReportCommentController::class, 'store'])->name('report-comments.store');
+        Route::put('/reports/comments/{reportComment}', [ReportCommentController::class, 'update'])->name('report-comments.update');
+    });
+
+    Route::middleware(['role:admin'])->group(function () {
+        Route::post('/reports/comments/{reportComment}/lock', [ReportCommentController::class, 'lock'])->name('report-comments.lock');
+        Route::post('/reports/comments/{reportComment}/unlock', [ReportCommentController::class, 'unlock'])->name('report-comments.unlock');
+    });
+
+    // School Settings Routes (for signature upload, etc.)
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/settings/academic', [SchoolSettingController::class, 'academic'])->name('settings.academic');
+        Route::post('/settings/academic', [SchoolSettingController::class, 'updateAcademic'])->name('settings.academic.update');
+    });
+
+    // API endpoint for fetching subjects by grade (used in Exam creation)
+    Route::get('/api/grades/{grade}/subjects', function (Grade $grade) {
+        return $grade->subjects()->where('status', 'active')->get();
+    });
+    
 });
 
 require __DIR__.'/auth.php';

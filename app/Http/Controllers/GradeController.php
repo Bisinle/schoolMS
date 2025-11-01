@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Grade;
 use App\Models\Teacher;
+use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
@@ -13,53 +14,52 @@ class GradeController extends Controller
     use AuthorizesRequests;
 
     public function index(Request $request)
-    {
-        $this->authorize('viewAny', Grade::class);
+{
+    $this->authorize('viewAny', Grade::class);
 
-        $query = Grade::withCount('students')->with(['teachers.user']);
+    $user = $request->user();
 
-        // If teacher, show only assigned grades
-        if ($request->user()->isTeacher()) {
-            $query->whereHas('teachers', function ($q) use ($request) {
-                $q->where('teacher_id', $request->user()->teacher->id);
-            });
-        }
+    // Build query
+    $query = $user->isTeacher() 
+        ? $user->teacher->grades() 
+        : Grade::query();
 
-        $grades = $query->when($request->search, function ($q, $search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('level', 'like', "%{$search}%");
-            })
-            ->orderBy('level')
-            ->orderBy('name')
-            ->paginate(10)
-            ->withQueryString();
-
-        return Inertia::render('Grades/Index', [
-            'grades' => $grades,
-            'filters' => $request->only(['search']),
-        ]);
+    // Apply search filter
+    if ($request->search) {
+        $query->where(function($q) use ($request) {
+            $q->where('name', 'like', "%{$request->search}%")
+              ->orWhere('code', 'like', "%{$request->search}%");
+        });
     }
+
+    // Apply level filter
+    if ($request->level) {
+        $query->where('level', $request->level);
+    }
+
+    $grades = $query->withCount('students', 'subjects')
+        ->orderBy('level')
+        ->orderBy('name')
+        ->get();
+
+    return Inertia::render('Grades/Index', [
+        'grades' => $grades,
+        'filters' => $request->only(['search', 'level']),
+    ]);
+}
 
     public function create()
     {
         $this->authorize('create', Grade::class);
-
-        // Get all active teachers for assignment
-        $teachers = Teacher::with('user')
-            ->where('status', 'active')
-            ->get()
-            ->map(function ($teacher) {
-                return [
-                    'id' => $teacher->id,
-                    'name' => $teacher->user->name,
-                    'email' => $teacher->user->email,
-                    'employee_number' => $teacher->employee_number,
-                    'subject_specialization' => $teacher->subject_specialization,
-                ];
-            });
+        
+        $subjects = Subject::where('status', 'active')
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
 
         return Inertia::render('Grades/Create', [
-            'teachers' => $teachers,
+            'subjects' => $subjects,
+            'levels' => Grade::LEVELS,
         ]);
     }
 
@@ -69,29 +69,23 @@ class GradeController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:grades,name',
-            'level' => 'required|in:ECD,Lower Primary,Upper Primary,Junior Secondary',
-            'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
+            'code' => 'nullable|string|max:50|unique:grades,code',
+            'level' => 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'status' => 'required|in:active,inactive',
-            'teacher_ids' => 'nullable|array',
-            'teacher_ids.*' => 'exists:teachers,id',
-            'class_teacher_id' => 'nullable|exists:teachers,id',
+            'subject_ids' => 'nullable|array',
+            'subject_ids.*' => 'exists:subjects,id',
         ]);
 
         $grade = Grade::create([
             'name' => $validated['name'],
+            'code' => $validated['code'] ?? null,
             'level' => $validated['level'],
-            'capacity' => $validated['capacity'],
-            'description' => $validated['description'],
             'status' => $validated['status'],
         ]);
 
-        // Assign teachers to the grade
-        if (!empty($validated['teacher_ids'])) {
-            foreach ($validated['teacher_ids'] as $teacherId) {
-                $isClassTeacher = $teacherId == $validated['class_teacher_id'];
-                $grade->teachers()->attach($teacherId, ['is_class_teacher' => $isClassTeacher]);
-            }
+        // Attach subjects if provided
+        if (isset($validated['subject_ids']) && count($validated['subject_ids']) > 0) {
+            $grade->subjects()->attach($validated['subject_ids']);
         }
 
         return redirect()->route('grades.index')
@@ -102,26 +96,25 @@ class GradeController extends Controller
     {
         $this->authorize('view', $grade);
 
-        $grade->load(['students.guardian.user', 'teachers.user']);
+        $grade->load([
+            'students' => function ($query) {
+                $query->where('status', 'active')
+                    ->orderBy('first_name')
+                    ->orderBy('last_name');
+            },
+            'teachers.user',
+            'subjects' => function ($query) {
+                $query->orderBy('category')
+                    ->orderBy('name');
+            }
+        ]);
 
-        // Get all active teachers for assignment
-        $availableTeachers = Teacher::with('user')
-            ->where('status', 'active')
-            ->get()
-            ->map(function ($teacher) {
-                return [
-                    'id' => $teacher->id,
-                    'name' => $teacher->user->name,
-                    'email' => $teacher->user->email,
-                    'employee_number' => $teacher->employee_number,
-                    'subject_specialization' => $teacher->subject_specialization,
-                ];
-            });
+        $availableTeachers = Teacher::whereDoesntHave('grades', function ($query) use ($grade) {
+            $query->where('grades.id', $grade->id);
+        })->with('user')->get();
 
         return Inertia::render('Grades/Show', [
             'grade' => $grade,
-            'studentCount' => $grade->students()->count(),
-            'availableSpots' => $grade->capacity - $grade->students()->count(),
             'availableTeachers' => $availableTeachers,
         ]);
     }
@@ -130,30 +123,17 @@ class GradeController extends Controller
     {
         $this->authorize('update', $grade);
 
-        $grade->load(['teachers']);
-
-        // Get all active teachers for assignment
-        $teachers = Teacher::with('user')
-            ->where('status', 'active')
-            ->get()
-            ->map(function ($teacher) {
-                return [
-                    'id' => $teacher->id,
-                    'name' => $teacher->user->name,
-                    'email' => $teacher->user->email,
-                    'employee_number' => $teacher->employee_number,
-                    'subject_specialization' => $teacher->subject_specialization,
-                ];
-            });
-
-        $assignedTeacherIds = $grade->teachers->pluck('id')->toArray();
-        $classTeacherId = $grade->teachers->where('pivot.is_class_teacher', true)->first()?->id;
+        $subjects = Subject::where('status', 'active')
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+        
+        $grade->load('subjects');
 
         return Inertia::render('Grades/Edit', [
             'grade' => $grade,
-            'teachers' => $teachers,
-            'assignedTeacherIds' => $assignedTeacherIds,
-            'classTeacherId' => $classTeacherId,
+            'subjects' => $subjects,
+            'levels' => Grade::LEVELS,
         ]);
     }
 
@@ -163,30 +143,25 @@ class GradeController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:grades,name,' . $grade->id,
-            'level' => 'required|in:ECD,Lower Primary,Upper Primary,Junior Secondary',
-            'capacity' => 'required|integer|min:1',
-            'description' => 'nullable|string',
+            'code' => 'nullable|string|max:50|unique:grades,code,' . $grade->id,
+            'level' => 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'status' => 'required|in:active,inactive',
-            'teacher_ids' => 'nullable|array',
-            'teacher_ids.*' => 'exists:teachers,id',
-            'class_teacher_id' => 'nullable|exists:teachers,id',
+            'subject_ids' => 'nullable|array',
+            'subject_ids.*' => 'exists:subjects,id',
         ]);
 
         $grade->update([
             'name' => $validated['name'],
+            'code' => $validated['code'] ?? null,
             'level' => $validated['level'],
-            'capacity' => $validated['capacity'],
-            'description' => $validated['description'],
             'status' => $validated['status'],
         ]);
 
-        // Sync teachers - detach all and re-attach with proper pivot values
-        $grade->teachers()->detach();
-        if (!empty($validated['teacher_ids'])) {
-            foreach ($validated['teacher_ids'] as $teacherId) {
-                $isClassTeacher = $teacherId == $validated['class_teacher_id'];
-                $grade->teachers()->attach($teacherId, ['is_class_teacher' => $isClassTeacher]);
-            }
+        // Sync subjects (this will add new ones and remove unchecked ones)
+        if (isset($validated['subject_ids'])) {
+            $grade->subjects()->sync($validated['subject_ids']);
+        } else {
+            $grade->subjects()->detach(); // Remove all if none selected
         }
 
         return redirect()->route('grades.index')
@@ -199,8 +174,14 @@ class GradeController extends Controller
 
         // Check if grade has students
         if ($grade->students()->count() > 0) {
-            return back()->withErrors(['error' => 'Cannot delete grade with enrolled students.']);
+            return back()->withErrors([
+                'error' => 'Cannot delete grade with enrolled students. Please transfer students first.'
+            ]);
         }
+
+        // Detach all relationships
+        $grade->teachers()->detach();
+        $grade->subjects()->detach();
 
         $grade->delete();
 
@@ -208,38 +189,39 @@ class GradeController extends Controller
             ->with('success', 'Grade deleted successfully.');
     }
 
-    // Assign teacher to grade
+    // Teacher Assignment Methods
     public function assignTeacher(Request $request, Grade $grade)
     {
         $this->authorize('update', $grade);
 
         $validated = $request->validate([
             'teacher_id' => 'required|exists:teachers,id',
-            'is_class_teacher' => 'boolean',
+            'is_class_teacher' => 'required|boolean',
         ]);
 
         // Check if teacher is already assigned
         if ($grade->teachers()->where('teacher_id', $validated['teacher_id'])->exists()) {
-            return back()->withErrors(['error' => 'Teacher is already assigned to this grade.']);
+            return back()->withErrors([
+                'teacher_id' => 'This teacher is already assigned to this grade.'
+            ]);
         }
 
-        // If setting as class teacher, remove class teacher status from others
-        if ($validated['is_class_teacher'] ?? false) {
+        // If marking as class teacher, remove class teacher status from others in this grade
+        if ($validated['is_class_teacher']) {
             $grade->teachers()->updateExistingPivot(
-                $grade->teachers->pluck('id')->toArray(),
+                $grade->teachers()->pluck('teachers.id')->toArray(),
                 ['is_class_teacher' => false]
             );
         }
 
         $grade->teachers()->attach($validated['teacher_id'], [
-            'is_class_teacher' => $validated['is_class_teacher'] ?? false
+            'is_class_teacher' => $validated['is_class_teacher'],
         ]);
 
         return back()->with('success', 'Teacher assigned successfully.');
     }
 
-    // Remove teacher from grade
-    public function removeTeacher(Request $request, Grade $grade, Teacher $teacher)
+    public function removeTeacher(Grade $grade, Teacher $teacher)
     {
         $this->authorize('update', $grade);
 
@@ -248,7 +230,6 @@ class GradeController extends Controller
         return back()->with('success', 'Teacher removed successfully.');
     }
 
-    // Update teacher assignment (change class teacher status)
     public function updateTeacherAssignment(Request $request, Grade $grade, Teacher $teacher)
     {
         $this->authorize('update', $grade);
@@ -257,16 +238,16 @@ class GradeController extends Controller
             'is_class_teacher' => 'required|boolean',
         ]);
 
-        // If setting as class teacher, remove class teacher status from others
+        // If marking as class teacher, remove class teacher status from others in this grade
         if ($validated['is_class_teacher']) {
             $grade->teachers()->updateExistingPivot(
-                $grade->teachers->pluck('id')->toArray(),
+                $grade->teachers()->where('teachers.id', '!=', $teacher->id)->pluck('teachers.id')->toArray(),
                 ['is_class_teacher' => false]
             );
         }
 
         $grade->teachers()->updateExistingPivot($teacher->id, [
-            'is_class_teacher' => $validated['is_class_teacher']
+            'is_class_teacher' => $validated['is_class_teacher'],
         ]);
 
         return back()->with('success', 'Teacher assignment updated successfully.');

@@ -1,16 +1,18 @@
-import { useState } from 'react';
-import { Link, usePage } from '@inertiajs/react';
-import { 
-    LayoutDashboard, 
-    Users, 
-    UserCircle, 
+import { useState } from "react";
+import { Link, usePage } from "@inertiajs/react";
+import {
+    LayoutDashboard,
+    Users,
+    UserCircle,
     GraduationCap,
     BookOpen,
     ClipboardCheck,
-    Menu, 
+    FileText,
+    Calendar,
+    Menu,
     X,
     LogOut,
-} from 'lucide-react';
+} from "lucide-react";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth } = usePage().props;
@@ -18,22 +20,30 @@ export default function AuthenticatedLayout({ header, children }) {
 
     const navigationConfig = {
         admin: [
-            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-            { name: 'Grades', href: '/grades', icon: BookOpen },
-            { name: 'Students', href: '/students', icon: Users },
-            { name: 'Teachers', href: '/teachers', icon: GraduationCap },
-            { name: 'Guardians', href: '/guardians', icon: UserCircle },
-            { name: 'Attendance', href: '/attendance', icon: ClipboardCheck },
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Students", href: "/students", icon: Users },
+            { name: "Teachers", href: "/teachers", icon: GraduationCap },
+            { name: "Guardians", href: "/guardians", icon: UserCircle },
+            { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
+            { name: "Grades", href: "/grades", icon: BookOpen },
+            { name: "Subjects", href: "/subjects", icon: FileText },
+            { name: "Exams", href: "/exams", icon: Calendar },
+            { name: "Reports", href: "/reports", icon: FileText },
         ],
         teacher: [
-            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-            { name: 'My Grades', href: '/grades', icon: BookOpen },
-            { name: 'Students', href: '/students', icon: Users },
-            { name: 'Guardians', href: '/guardians', icon: UserCircle },
-            { name: 'Attendance', href: '/attendance', icon: ClipboardCheck },
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "My Grades", href: "/grades", icon: BookOpen },
+            { name: "Students", href: "/students", icon: Users },
+            { name: "Guardians", href: "/guardians", icon: UserCircle },
+            { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
+            { name: "Subjects", href: "/subjects", icon: FileText },
+            { name: "Exams", href: "/exams", icon: Calendar },
+            { name: "Reports", href: "/reports", icon: FileText },
         ],
         guardian: [
-            { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "My Children", href: "/students", icon: Users },
+            { name: "Reports", href: "/reports", icon: FileText },
         ],
     };
 
@@ -43,20 +53,24 @@ export default function AuthenticatedLayout({ header, children }) {
         <div className="min-h-screen bg-gray-50">
             {/* Mobile sidebar backdrop */}
             {sidebarOpen && (
-                <div 
+                <div
                     className="fixed inset-0 bg-gray-900 bg-opacity-75 z-40 md:hidden"
                     onClick={() => setSidebarOpen(false)}
                 />
             )}
 
             {/* Sidebar for mobile */}
-            <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-navy transform transition-transform duration-300 ease-in-out md:hidden ${
-                sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}>
+            <div
+                className={`fixed inset-y-0 left-0 z-50 w-64 bg-navy transform transition-transform duration-300 ease-in-out md:hidden ${
+                    sidebarOpen ? "translate-x-0" : "-translate-x-full"
+                }`}
+            >
                 <div className="flex flex-col h-full">
                     {/* Mobile header */}
                     <div className="flex items-center justify-between h-16 px-4 border-b border-navy-light">
-                        <h1 className="text-2xl font-bold text-white">SMS</h1>
+                        <h1 className="text-2xl font-bold text-white">
+                            SMS
+                        </h1>
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="text-white hover:text-orange transition-colors"
@@ -68,17 +82,19 @@ export default function AuthenticatedLayout({ header, children }) {
                     {/* Mobile navigation */}
                     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
                         {navigation.map((item) => {
-                            const isActive = route().current(item.href.substring(1) + '*');
+                            const isActive = route().current(
+                                item.href.substring(1) + "*"
+                            );
                             const Icon = item.icon;
-                            
+
                             return (
                                 <Link
                                     key={item.name}
                                     href={item.href}
                                     className={`group flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                                         isActive
-                                            ? 'bg-orange text-white shadow-lg'
-                                            : 'text-gray-300 hover:bg-orange hover:text-white'
+                                            ? "bg-orange text-white shadow-lg"
+                                            : "text-gray-300 hover:bg-orange hover:text-white"
                                     }`}
                                     onClick={() => setSidebarOpen(false)}
                                 >
@@ -104,17 +120,19 @@ export default function AuthenticatedLayout({ header, children }) {
                     {/* Navigation */}
                     <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
                         {navigation.map((item) => {
-                            const isActive = route().current(item.href.substring(1) + '*');
+                            const isActive = route().current(
+                                item.href.substring(1) + "*"
+                            );
                             const Icon = item.icon;
-                            
+
                             return (
                                 <Link
                                     key={item.name}
                                     href={item.href}
                                     className={`group flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
                                         isActive
-                                            ? 'bg-orange text-white shadow-lg'
-                                            : 'text-gray-300 hover:bg-orange hover:text-white'
+                                            ? "bg-orange text-white shadow-lg"
+                                            : "text-gray-300 hover:bg-orange hover:text-white"
                                     }`}
                                 >
                                     <Icon className="w-5 h-5 mr-3" />
@@ -178,7 +196,7 @@ export default function AuthenticatedLayout({ header, children }) {
                             </div>
 
                             <Link
-                                href={route('logout')}
+                                href={route("logout")}
                                 method="post"
                                 as="button"
                                 className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"

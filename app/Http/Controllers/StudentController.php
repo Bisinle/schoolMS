@@ -17,25 +17,51 @@ class StudentController extends Controller
     {
         $this->authorize('viewAny', Student::class);
 
-        $query = Student::with(['guardian.user', 'grade']);
+        $user = $request->user();
 
-        // If teacher, show only students from assigned grades
-        if ($request->user()->isTeacher()) {
-            $teacherGradeIds = $request->user()->teacher->grades->pluck('id')->toArray();
-            $query->whereIn('grade_id', $teacherGradeIds);
+        // Build query based on user role
+        if ($user->isGuardian()) {
+            $query = $user->guardian->students();
+        } elseif ($user->isTeacher()) {
+            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
+            $query = Student::whereIn('grade_id', $teacherGradeIds);
+        } else {
+            $query = Student::query();
         }
 
-        $students = $query->when($request->search, function ($q, $search) {
-                $q->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('admission_number', 'like', "%{$search}%");
+        // Apply filters
+        $query->with(['grade', 'guardian.user'])
+            ->when($request->search, function ($q, $search) {
+                $q->where(function($query) use ($search) {
+                    $query->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('admission_number', 'like', "%{$search}%");
+                });
             })
-            ->paginate(10)
+            ->when($request->grade_id, function ($q, $gradeId) {
+                $q->where('grade_id', $gradeId);
+            })
+            ->when($request->gender, function ($q, $gender) {
+                $q->where('gender', $gender);
+            })
+            ->when($request->status, function ($q, $status) {
+                $q->where('status', $status);
+            });
+
+        $students = $query->orderBy('first_name')
+            ->orderBy('last_name')
+            ->paginate(20)
             ->withQueryString();
+
+        // Get grades for filter dropdown
+        $grades = $user->isTeacher() 
+            ? $user->teacher->grades 
+            : Grade::where('status', 'active')->orderBy('level')->orderBy('name')->get();
 
         return Inertia::render('Students/Index', [
             'students' => $students,
-            'filters' => $request->only(['search']),
+            'grades' => $grades,
+            'filters' => $request->only(['search', 'grade_id', 'gender', 'status']),
         ]);
     }
 
@@ -43,16 +69,21 @@ class StudentController extends Controller
     {
         $this->authorize('create', Student::class);
 
-        $guardians = Guardian::with('user')->get()->map(function ($guardian) {
-            return [
-                'id' => $guardian->id,
-                'name' => $guardian->user->name,
-            ];
-        });
+        $guardians = Guardian::with('user')
+            ->get()
+            ->map(function ($guardian) {
+                return [
+                    'id' => $guardian->id,
+                    'name' => $guardian->user->name ?? 'Unknown',
+                    'phone' => $guardian->phone_number ?? 'N/A',
+                    'relationship' => ucfirst($guardian->relationship ?? 'N/A'),
+                ];
+            });
 
         $grades = Grade::where('status', 'active')
+            ->orderBy('level')
             ->orderBy('name')
-            ->get(['id', 'name', 'level']);
+            ->get();
 
         return Inertia::render('Students/Create', [
             'guardians' => $guardians,
@@ -69,34 +100,33 @@ class StudentController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
-            'date_of_birth' => 'required|date',
-            'guardian_id' => 'required|exists:guardians,id',
+            'date_of_birth' => 'required|date|before:today',
             'grade_id' => 'required|exists:grades,id',
+            'guardian_id' => 'required|exists:guardians,id',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
         ]);
 
+        // Get grade name for class_name field
+        $grade = Grade::find($validated['grade_id']);
+        $validated['class_name'] = $grade->name;
+
         Student::create($validated);
 
         return redirect()->route('students.index')
-            ->with('success', 'Student created successfully.');
+            ->with('success', 'Student registered successfully.');
     }
 
     public function show(Student $student)
     {
         $this->authorize('view', $student);
 
-        $student->load(['guardian.user', 'grade']);
-
-        // Get attendance stats for current month
-        $startDate = now()->startOfMonth()->toDateString();
-        $endDate = now()->toDateString();
-        $attendanceStats = $student->getAttendanceStats($startDate, $endDate);
+        $student->load(['grade', 'guardian.user', 'attendances' => function($query) {
+            $query->latest()->limit(10);
+        }]);
 
         return Inertia::render('Students/Show', [
             'student' => $student,
-            'attendanceStats' => $attendanceStats,
-            'currentMonth' => now()->format('F Y'),
         ]);
     }
 
@@ -104,16 +134,23 @@ class StudentController extends Controller
     {
         $this->authorize('update', $student);
 
-        $guardians = Guardian::with('user')->get()->map(function ($guardian) {
-            return [
-                'id' => $guardian->id,
-                'name' => $guardian->user->name,
-            ];
-        });
+        $student->load(['grade', 'guardian.user']);
+
+        $guardians = Guardian::with('user')
+            ->get()
+            ->map(function ($guardian) {
+                return [
+                    'id' => $guardian->id,
+                    'name' => $guardian->user->name ?? 'Unknown',
+                    'phone' => $guardian->phone_number ?? 'N/A',
+                    'relationship' => ucfirst($guardian->relationship ?? 'N/A'),
+                ];
+            });
 
         $grades = Grade::where('status', 'active')
+            ->orderBy('level')
             ->orderBy('name')
-            ->get(['id', 'name', 'level']);
+            ->get();
 
         return Inertia::render('Students/Edit', [
             'student' => $student,
@@ -131,17 +168,21 @@ class StudentController extends Controller
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
-            'date_of_birth' => 'required|date',
-            'guardian_id' => 'required|exists:guardians,id',
+            'date_of_birth' => 'required|date|before:today',
             'grade_id' => 'required|exists:grades,id',
+            'guardian_id' => 'required|exists:guardians,id',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
         ]);
 
+        // Update grade name for class_name field
+        $grade = Grade::find($validated['grade_id']);
+        $validated['class_name'] = $grade->name;
+
         $student->update($validated);
 
         return redirect()->route('students.index')
-            ->with('success', 'Student updated successfully.');
+            ->with('success', 'Student information updated successfully.');
     }
 
     public function destroy(Student $student)
