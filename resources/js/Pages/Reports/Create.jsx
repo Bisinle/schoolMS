@@ -1,25 +1,25 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 
-export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
-    const { data, setData, put, processing, errors } = useForm({
-        name: exam.name || '',
-        exam_type: exam.exam_type || 'opening',
-        term: exam.term?.toString() || '1',
-        academic_year: exam.academic_year || new Date().getFullYear(),
-        exam_date: exam.exam_date || '',
-        grade_id: exam.grade_id || '',
-        subject_id: exam.subject_id || '',
+export default function ExamsCreate({ grades, currentYear }) {
+    const { data, setData, post, processing, errors } = useForm({
+        name: '',
+        exam_type: 'opening',
+        term: '1',
+        academic_year: currentYear,
+        exam_date: '',
+        grade_id: '',
+        subject_id: '',
     });
 
-    const [subjects, setSubjects] = useState(initialSubjects || []);
+    const [subjects, setSubjects] = useState([]);
     const [loadingSubjects, setLoadingSubjects] = useState(false);
 
-    // Fetch subjects when grade changes
+    // Fetch subjects when grade is selected
     useEffect(() => {
-        if (data.grade_id && data.grade_id != exam.grade_id) {
+        if (data.grade_id) {
             setLoadingSubjects(true);
             fetch(`/api/grades/${data.grade_id}/subjects`)
                 .then(res => res.json())
@@ -30,31 +30,51 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
                 .catch(() => {
                     setLoadingSubjects(false);
                 });
+        } else {
+            setSubjects([]);
         }
     }, [data.grade_id]);
 
+    // Auto-generate exam name
+    useEffect(() => {
+        if (data.grade_id && data.subject_id && data.term && data.exam_type) {
+            const grade = grades.find(g => g.id == data.grade_id);
+            const subject = subjects.find(s => s.id == data.subject_id);
+            const examTypes = {
+                opening: 'Opening Exam',
+                midterm: 'Midterm Exam',
+                end_term: 'End-Term Exam',
+            };
+            
+            if (grade && subject) {
+                const name = `${grade.name} - ${subject.name} - Term ${data.term} ${examTypes[data.exam_type]}`;
+                setData('name', name);
+            }
+        }
+    }, [data.grade_id, data.subject_id, data.term, data.exam_type]);
+
     // Restrict exam_type for Term 3
     useEffect(() => {
-        if (data.term === '3' && data.exam_type !== 'end_term') {
+        if (data.term === '3') {
             setData('exam_type', 'end_term');
         }
     }, [data.term]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(`/exams/${exam.id}`);
+        post('/exams');
     };
 
     return (
-        <AuthenticatedLayout header="Edit Exam">
-            <Head title={`Edit ${exam.name}`} />
+        <AuthenticatedLayout header="Schedule New Exam">
+            <Head title="Schedule Exam" />
 
             <div className="max-w-3xl mx-auto">
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     {/* Header */}
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                         <div className="flex items-center justify-between">
-                            <h2 className="text-lg font-semibold text-gray-900">Edit Exam Details</h2>
+                            <h2 className="text-lg font-semibold text-gray-900">Exam Details</h2>
                             <Link
                                 href="/exams"
                                 className="inline-flex items-center px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
@@ -67,26 +87,13 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
 
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                        {/* Warning if exam has results */}
-                        {exam.results_count > 0 && (
+                        {/* Term 3 Warning */}
+                        {data.term === '3' && (
                             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start">
                                 <AlertCircle className="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" />
                                 <div className="text-sm text-yellow-800">
-                                    <p className="font-medium">Warning: This exam has existing results</p>
-                                    <p className="mt-1">
-                                        Changes to this exam will affect {exam.results_count} student result(s) and their reports.
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Term 3 Warning */}
-                        {data.term === '3' && (
-                            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start">
-                                <AlertCircle className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
-                                <div className="text-sm text-blue-800">
                                     <p className="font-medium">Term 3 Restriction</p>
-                                    <p className="mt-1">Term 3 can only have End-Term exams.</p>
+                                    <p className="mt-1">Term 3 can only have End-Term exams (no Opening or Midterm exams).</p>
                                 </div>
                             </div>
                         )}
@@ -229,7 +236,7 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
                             )}
                         </div>
 
-                        {/* Exam Name */}
+                        {/* Exam Name (Auto-generated) */}
                         <div>
                             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
                                 Exam Name <span className="text-red-500">*</span>
@@ -242,7 +249,7 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
                                 className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
                                     errors.name ? 'border-red-500' : 'border-gray-300'
                                 }`}
-                                placeholder="Enter exam name"
+                                placeholder="Auto-generated or enter custom name"
                             />
                             {errors.name && (
                                 <p className="mt-1 text-sm text-red-600">{errors.name}</p>
@@ -263,7 +270,7 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
                                 className="inline-flex items-center px-6 py-2.5 text-sm font-medium text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <Save className="w-4 h-4 mr-2" />
-                                {processing ? 'Updating...' : 'Update Exam'}
+                                {processing ? 'Scheduling...' : 'Schedule Exam'}
                             </button>
                         </div>
                     </form>

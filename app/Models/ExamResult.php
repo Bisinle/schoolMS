@@ -38,7 +38,7 @@ class ExamResult extends Model
     {
         if ($this->marks >= 90) {
             return 'Exceeding Expectation';
-        } elseif ($this->marks >= 75) {
+        } elseif ($this->marks >= 70) {
             return 'Meeting Expectation';
         } elseif ($this->marks >= 50) {
             return 'Approaching Expectation';
@@ -51,7 +51,7 @@ class ExamResult extends Model
     {
         if ($this->marks >= 90) {
             return 'green';
-        } elseif ($this->marks >= 75) {
+        } elseif ($this->marks >= 70) {
             return 'blue';
         } elseif ($this->marks >= 50) {
             return 'yellow';

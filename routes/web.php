@@ -156,21 +156,14 @@ Route::middleware('auth')->group(function () {
         Route::put('/exam-results/{examResult}', [ExamResultController::class, 'update'])->name('exam-results.update');
     });
 
-    // Reports Routes
+    // Reports Routes - NEW AND FIXED
     Route::middleware(['role:admin,teacher,guardian'])->group(function () {
-        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
-        Route::get('/reports/student/{student}', [ReportController::class, 'studentReport'])->name('reports.student');
-        Route::get('/reports/student/{student}/pdf', [ReportController::class, 'generatePdf'])->name('reports.pdf');
+        Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
     });
 
     Route::middleware(['role:admin,teacher'])->group(function () {
-        Route::post('/reports/comments', [ReportCommentController::class, 'store'])->name('report-comments.store');
-        Route::put('/reports/comments/{reportComment}', [ReportCommentController::class, 'update'])->name('report-comments.update');
-    });
-
-    Route::middleware(['role:admin'])->group(function () {
-        Route::post('/reports/comments/{reportComment}/lock', [ReportCommentController::class, 'lock'])->name('report-comments.lock');
-        Route::post('/reports/comments/{reportComment}/unlock', [ReportCommentController::class, 'unlock'])->name('report-comments.unlock');
+        Route::post('/reports/students/{student}/comments', [ReportController::class, 'saveComment'])->name('reports.saveComment');
+        Route::post('/reports/students/{student}/comments/lock', [ReportController::class, 'lockComment'])->name('reports.lockComment');
     });
 
     // School Settings Routes (for signature upload, etc.)

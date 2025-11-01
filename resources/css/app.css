@@ -1,3 +1,73 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@media print {
+    @page {
+        size: A4;
+        margin: 1cm;
+    }
+
+    body {
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+    }
+
+    .print\:hidden {
+        display: none !important;
+    }
+
+    .print\:block {
+        display: block !important;
+    }
+
+    .print\:shadow-none {
+        box-shadow: none !important;
+    }
+
+    .print\:bg-white {
+        background-color: white !important;
+    }
+
+    .print\:text-gray-900 {
+        color: #111827 !important;
+    }
+
+    .print\:text-gray-600 {
+        color: #4b5563 !important;
+    }
+
+    .print\:border-b-2 {
+        border-bottom-width: 2px !important;
+    }
+
+    .print\:border-gray-800 {
+        border-color: #1f2937 !important;
+    }
+
+    /* Hide navigation and other UI elements */
+    nav,
+    header,
+    .no-print,
+    button:not(.print\:block button) {
+        display: none !important;
+    }
+
+    /* Ensure tables break properly */
+    table {
+        page-break-inside: auto;
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    /* Keep comments together */
+    .print\:shadow-none {
+        page-break-inside: avoid;
+    }
+}
