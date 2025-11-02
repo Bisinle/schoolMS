@@ -22,7 +22,7 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -45,7 +45,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/grades/{grade}/edit', [GradeController::class, 'edit'])->name('grades.edit');
         Route::put('/grades/{grade}', [GradeController::class, 'update'])->name('grades.update');
         Route::delete('/grades/{grade}', [GradeController::class, 'destroy'])->name('grades.destroy');
-        
+
         //* Teacher assignment routes
         Route::post('/grades/{grade}/assign-teacher', [GradeController::class, 'assignTeacher'])->name('grades.assign-teacher');
         Route::delete('/grades/{grade}/remove-teacher/{teacher}', [GradeController::class, 'removeTeacher'])->name('grades.remove-teacher');
@@ -126,7 +126,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/subjects/{subject}/edit', [SubjectController::class, 'edit'])->name('subjects.edit');
         Route::put('/subjects/{subject}', [SubjectController::class, 'update'])->name('subjects.update');
         Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy'])->name('subjects.destroy');
-        
+
         // Subject-Grade assignment
         Route::post('/subjects/{subject}/assign-grades', [SubjectController::class, 'assignGrades'])->name('subjects.assign-grades');
     });
@@ -158,6 +158,7 @@ Route::middleware('auth')->group(function () {
 
     // Reports Routes - NEW AND FIXED
     Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+        Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
     });
 
@@ -176,7 +177,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/grades/{grade}/subjects', function (Grade $grade) {
         return $grade->subjects()->where('status', 'active')->get();
     });
-    
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

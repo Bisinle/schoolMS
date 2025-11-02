@@ -1,14 +1,16 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, UserPlus } from 'lucide-react';
 
-export default function GradesCreate({ subjects, levels }) {
+export default function GradesCreate({ subjects, teachers, levels }) {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         code: '',
         level: 'LOWER PRIMARY',
         status: 'active',
         subject_ids: [],
+        teacher_ids: [],
+        class_teacher_id: null,
     });
 
     const handleSubmit = (e) => {
@@ -29,12 +31,50 @@ export default function GradesCreate({ subjects, levels }) {
         setData('subject_ids', currentSubjects);
     };
 
+    const handleTeacherToggle = (teacherId) => {
+        const currentTeachers = [...data.teacher_ids];
+        const index = currentTeachers.indexOf(teacherId);
+        
+        if (index > -1) {
+            currentTeachers.splice(index, 1);
+            // If removing the class teacher, clear class_teacher_id
+            if (data.class_teacher_id === teacherId) {
+                setData('class_teacher_id', null);
+            }
+        } else {
+            currentTeachers.push(teacherId);
+        }
+        
+        setData('teacher_ids', currentTeachers);
+    };
+
+    const handleClassTeacherChange = (teacherId) => {
+        if (data.class_teacher_id === teacherId) {
+            setData('class_teacher_id', null);
+        } else {
+            setData('class_teacher_id', teacherId);
+            // Ensure the teacher is also selected
+            if (!data.teacher_ids.includes(teacherId)) {
+                setData('teacher_ids', [...data.teacher_ids, teacherId]);
+            }
+        }
+    };
+
     const selectAllSubjects = () => {
         setData('subject_ids', subjects.map(s => s.id));
     };
 
     const deselectAllSubjects = () => {
         setData('subject_ids', []);
+    };
+
+    const selectAllTeachers = () => {
+        setData('teacher_ids', teachers.map(t => t.id));
+    };
+
+    const deselectAllTeachers = () => {
+        setData('teacher_ids', []);
+        setData('class_teacher_id', null);
     };
 
     const academicSubjects = subjects.filter(s => s.category === 'academic');
@@ -148,6 +188,88 @@ export default function GradesCreate({ subjects, levels }) {
                             {errors.status && (
                                 <p className="mt-1 text-sm text-red-600">{errors.status}</p>
                             )}
+                        </div>
+
+                        {/* Assign Teachers */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <label className="block text-sm font-medium text-gray-700">
+                                    <UserPlus className="w-4 h-4 inline mr-2" />
+                                    Assign Teachers
+                                </label>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={selectAllTeachers}
+                                        className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                                    >
+                                        Select All
+                                    </button>
+                                    <span className="text-gray-300">|</span>
+                                    <button
+                                        type="button"
+                                        onClick={deselectAllTeachers}
+                                        className="text-xs text-red-600 hover:text-red-800 font-medium"
+                                    >
+                                        Deselect All
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="border border-gray-300 rounded-lg p-4 max-h-96 overflow-y-auto">
+                                {teachers.length > 0 ? (
+                                    <div className="space-y-2">
+                                        {teachers.map((teacher) => (
+                                            <div
+                                                key={teacher.id}
+                                                className="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                            >
+                                                <label className="flex items-center flex-1 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={data.teacher_ids.includes(teacher.id)}
+                                                        onChange={() => handleTeacherToggle(teacher.id)}
+                                                        className="w-4 h-4 text-orange border-gray-300 rounded focus:ring-orange"
+                                                    />
+                                                    <div className="ml-3">
+                                                        <span className="text-sm font-medium text-gray-900">{teacher.name}</span>
+                                                        {teacher.employee_number && (
+                                                            <span className="ml-2 text-xs text-gray-500">({teacher.employee_number})</span>
+                                                        )}
+                                                    </div>
+                                                </label>
+                                                
+                                                {data.teacher_ids.includes(teacher.id) && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleClassTeacherChange(teacher.id)}
+                                                        className={`ml-3 px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                                                            data.class_teacher_id === teacher.id
+                                                                ? 'bg-orange text-white'
+                                                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                                        }`}
+                                                    >
+                                                        {data.class_teacher_id === teacher.id ? 'Class Teacher' : 'Set as Class Teacher'}
+                                                    </button>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-gray-500 text-center py-8">
+                                        No teachers available. Create teachers first to assign them to grades.
+                                    </p>
+                                )}
+                            </div>
+
+                            <p className="mt-2 text-sm text-gray-500">
+                                Selected: {data.teacher_ids.length} teacher(s)
+                                {data.class_teacher_id && (
+                                    <span className="ml-2 text-orange font-medium">
+                                        • Class Teacher: {teachers.find(t => t.id === data.class_teacher_id)?.name}
+                                    </span>
+                                )}
+                            </p>
                         </div>
 
                         {/* Assign Subjects */}

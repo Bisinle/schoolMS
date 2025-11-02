@@ -14,39 +14,39 @@ class GradeController extends Controller
     use AuthorizesRequests;
 
     public function index(Request $request)
-{
-    $this->authorize('viewAny', Grade::class);
+    {
+        $this->authorize('viewAny', Grade::class);
 
-    $user = $request->user();
+        $user = $request->user();
 
-    // Build query
-    $query = $user->isTeacher() 
-        ? $user->teacher->grades() 
-        : Grade::query();
+        // Build query
+        $query = $user->isTeacher() 
+            ? $user->teacher->grades() 
+            : Grade::query();
 
-    // Apply search filter
-    if ($request->search) {
-        $query->where(function($q) use ($request) {
-            $q->where('name', 'like', "%{$request->search}%")
-              ->orWhere('code', 'like', "%{$request->search}%");
-        });
+        // Apply search filter
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('name', 'like', "%{$request->search}%")
+                  ->orWhere('code', 'like', "%{$request->search}%");
+            });
+        }
+
+        // Apply level filter
+        if ($request->level) {
+            $query->where('level', $request->level);
+        }
+
+        $grades = $query->withCount('students', 'subjects')
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        return Inertia::render('Grades/Index', [
+            'grades' => $grades,
+            'filters' => $request->only(['search', 'level']),
+        ]);
     }
-
-    // Apply level filter
-    if ($request->level) {
-        $query->where('level', $request->level);
-    }
-
-    $grades = $query->withCount('students', 'subjects')
-        ->orderBy('level')
-        ->orderBy('name')
-        ->get();
-
-    return Inertia::render('Grades/Index', [
-        'grades' => $grades,
-        'filters' => $request->only(['search', 'level']),
-    ]);
-}
 
     public function create()
     {
@@ -57,8 +57,22 @@ class GradeController extends Controller
             ->orderBy('name')
             ->get();
 
+        $teachers = Teacher::with('user')
+            ->whereHas('user', function ($query) {
+                $query->where('role', 'teacher');
+            })
+            ->get()
+            ->map(function ($teacher) {
+                return [
+                    'id' => $teacher->id,
+                    'name' => $teacher->user->name,
+                    'employee_number' => $teacher->employee_number,
+                ];
+            });
+
         return Inertia::render('Grades/Create', [
             'subjects' => $subjects,
+            'teachers' => $teachers,
             'levels' => Grade::LEVELS,
         ]);
     }
@@ -74,6 +88,9 @@ class GradeController extends Controller
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
+            'teacher_ids' => 'nullable|array',
+            'teacher_ids.*' => 'exists:teachers,id',
+            'class_teacher_id' => 'nullable|exists:teachers,id',
         ]);
 
         $grade = Grade::create([
@@ -86,6 +103,17 @@ class GradeController extends Controller
         // Attach subjects if provided
         if (isset($validated['subject_ids']) && count($validated['subject_ids']) > 0) {
             $grade->subjects()->attach($validated['subject_ids']);
+        }
+
+        // Attach teachers if provided
+        if (isset($validated['teacher_ids']) && count($validated['teacher_ids']) > 0) {
+            $teacherData = [];
+            foreach ($validated['teacher_ids'] as $teacherId) {
+                $teacherData[$teacherId] = [
+                    'is_class_teacher' => isset($validated['class_teacher_id']) && $validated['class_teacher_id'] == $teacherId
+                ];
+            }
+            $grade->teachers()->attach($teacherData);
         }
 
         return redirect()->route('grades.index')
@@ -128,12 +156,30 @@ class GradeController extends Controller
             ->orderBy('name')
             ->get();
         
-        $grade->load('subjects');
+        $teachers = Teacher::with('user')
+            ->whereHas('user', function ($query) {
+                $query->where('role', 'teacher');
+            })
+            ->get()
+            ->map(function ($teacher) {
+                return [
+                    'id' => $teacher->id,
+                    'name' => $teacher->user->name,
+                    'employee_number' => $teacher->employee_number,
+                ];
+            });
+
+        $grade->load(['subjects', 'teachers']);
+
+        // Get class teacher ID
+        $classTeacher = $grade->teachers()->wherePivot('is_class_teacher', true)->first();
 
         return Inertia::render('Grades/Edit', [
             'grade' => $grade,
             'subjects' => $subjects,
+            'teachers' => $teachers,
             'levels' => Grade::LEVELS,
+            'classTeacherId' => $classTeacher ? $classTeacher->id : null,
         ]);
     }
 
@@ -148,6 +194,9 @@ class GradeController extends Controller
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
+            'teacher_ids' => 'nullable|array',
+            'teacher_ids.*' => 'exists:teachers,id',
+            'class_teacher_id' => 'nullable|exists:teachers,id',
         ]);
 
         $grade->update([
@@ -157,11 +206,24 @@ class GradeController extends Controller
             'status' => $validated['status'],
         ]);
 
-        // Sync subjects (this will add new ones and remove unchecked ones)
+        // Sync subjects
         if (isset($validated['subject_ids'])) {
             $grade->subjects()->sync($validated['subject_ids']);
         } else {
-            $grade->subjects()->detach(); // Remove all if none selected
+            $grade->subjects()->detach();
+        }
+
+        // Sync teachers
+        if (isset($validated['teacher_ids']) && count($validated['teacher_ids']) > 0) {
+            $teacherData = [];
+            foreach ($validated['teacher_ids'] as $teacherId) {
+                $teacherData[$teacherId] = [
+                    'is_class_teacher' => isset($validated['class_teacher_id']) && $validated['class_teacher_id'] == $teacherId
+                ];
+            }
+            $grade->teachers()->sync($teacherData);
+        } else {
+            $grade->teachers()->detach();
         }
 
         return redirect()->route('grades.index')
