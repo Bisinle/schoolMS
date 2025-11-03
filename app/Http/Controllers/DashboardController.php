@@ -150,56 +150,220 @@ class DashboardController extends Controller
 
     private function getTeacherDashboardData($user)
     {
-        // Keep existing teacher dashboard code exactly as is
         $teacher = $user->teacher;
         
         if (!$teacher) {
             return ['stats' => [], 'message' => 'Teacher profile not found.'];
         }
-
-        $assignedGrades = $teacher->grades()->with('students')->get();
+    
+        $currentYear = now()->year;
+        $currentTerm = $this->getCurrentTerm();
+        $assignedGrades = $teacher->grades()->with(['students' => function($query) {
+            $query->where('status', 'active');
+        }])->get();
+        
         $isClassTeacher = $teacher->grades()->wherePivot('is_class_teacher', true)->exists();
         $classTeacherGrade = $teacher->grades()->wherePivot('is_class_teacher', true)->first();
-
+    
+        // Total students across all assigned grades
         $studentsInAssignedGrades = $assignedGrades->sum(function ($grade) {
             return $grade->students->count();
         });
-
-        $currentYear = now()->year;
+    
+        // Get all exams created by this teacher
         $myExams = Exam::where('created_by', $user->id)
             ->where('academic_year', $currentYear)
-            ->with(['grade', 'subject'])
+            ->with(['grade.students', 'subject'])
             ->withCount('results')
             ->get();
-
-        $examsThisTerm = $myExams->where('term', $this->getCurrentTerm())->count();
-
+    
+        $examsThisTerm = $myExams->where('term', $currentTerm)->count();
+    
+        // Exams needing attention (incomplete marking)
         $examsNeedingAttention = $myExams->filter(function ($exam) {
-            $studentsInGrade = $exam->grade->students()->count();
+            $studentsInGrade = $exam->grade->students()->where('status', 'active')->count();
             return $studentsInGrade > 0 && $exam->results_count < $studentsInGrade;
-        })->take(5);
-
+        })->map(function ($exam) {
+            $stats = $exam->getCompletionStats();
+            return [
+                'id' => $exam->id,
+                'name' => $exam->name,
+                'subject' => $exam->subject,
+                'grade' => $exam->grade,
+                'term' => $exam->term,
+                'exam_type' => $exam->exam_type,
+                'exam_date' => $exam->exam_date->format('M d, Y'),
+                'results_count' => $exam->results_count,
+                'total_students' => $stats['total_students'],
+                'completion_rate' => $stats['completion_rate'],
+                'days_since_exam' => now()->diffInDays($exam->exam_date),
+            ];
+        })->sortByDesc('days_since_exam')->take(6)->values();
+    
+        // Recent students from assigned grades
         $recentStudents = Student::whereIn('grade_id', $assignedGrades->pluck('id'))
             ->with(['guardian.user', 'grade'])
+            ->where('status', 'active')
             ->latest()
-            ->take(8)
+            ->take(10)
             ->get();
-
-        $topStudents = $this->getTopPerformingStudents(5, $assignedGrades->pluck('id')->toArray());
-
-        $myGrades = $assignedGrades->map(function ($grade) use ($teacher) {
+    
+        // Top performing students in assigned grades
+        $topStudents = $this->getTopPerformingStudents(10, $assignedGrades->pluck('id')->toArray());
+    
+        // Grade breakdown with detailed stats
+        $myGrades = $assignedGrades->map(function ($grade) use ($teacher, $currentTerm, $currentYear) {
             $isClassTeacher = $grade->pivot->is_class_teacher;
+            $activeStudents = $grade->students->where('status', 'active');
+            $studentsCount = $activeStudents->count();
+            
+            // Get attendance rate for this grade (last 30 days)
+            $attendanceRate = 0;
+            if ($studentsCount > 0) {
+                $totalRate = 0;
+                foreach ($activeStudents as $student) {
+                    $stats = $student->getAttendanceStats(
+                        now()->subDays(30)->toDateString(),
+                        now()->toDateString()
+                    );
+                    $totalRate += $stats['attendance_rate'];
+                }
+                $attendanceRate = round($totalRate / $studentsCount, 1);
+            }
+    
+            // Get average performance for this grade
+            $gradeAverage = ExamResult::whereHas('exam', function($query) use ($grade, $currentYear, $currentTerm) {
+                $query->where('grade_id', $grade->id)
+                      ->where('academic_year', $currentYear)
+                      ->where('term', $currentTerm);
+            })->avg('marks');
+    
             return [
                 'id' => $grade->id,
                 'name' => $grade->name,
                 'level' => $grade->level,
-                'students_count' => $grade->students->count(),
+                'students_count' => $studentsCount,
                 'capacity' => $grade->capacity,
                 'is_class_teacher' => $isClassTeacher,
-                'percentage' => $grade->capacity > 0 ? round(($grade->students->count() / $grade->capacity) * 100, 1) : 0
+                'percentage' => $grade->capacity > 0 ? round(($studentsCount / $grade->capacity) * 100, 1) : 0,
+                'attendance_rate' => $attendanceRate,
+                'average_performance' => $gradeAverage ? round($gradeAverage, 1) : null,
+                'performance_grade' => $gradeAverage ? $this->calculateGrade($gradeAverage) : null,
             ];
         });
-
+    
+        // Upcoming exams (next 14 days)
+        $upcomingExams = Exam::where('created_by', $user->id)
+            ->where('exam_date', '>=', now())
+            ->where('exam_date', '<=', now()->addDays(14))
+            ->with(['grade', 'subject'])
+            ->orderBy('exam_date')
+            ->take(5)
+            ->get()
+            ->map(function($exam) {
+                return [
+                    'id' => $exam->id,
+                    'name' => $exam->name,
+                    'subject' => $exam->subject->name,
+                    'grade' => $exam->grade->name,
+                    'exam_type' => $exam->exam_type,
+                    'exam_date' => $exam->exam_date->format('M d, Y'),
+                    'days_until' => now()->diffInDays($exam->exam_date, false),
+                    'term' => $exam->term,
+                ];
+            });
+    
+        // Recent exam activity
+        $recentExamActivity = ExamResult::whereHas('exam', function($query) use ($user) {
+            $query->where('created_by', $user->id);
+        })
+        ->with(['exam.subject', 'student'])
+        ->latest()
+        ->take(5)
+        ->get()
+        ->map(function($result) {
+            return [
+                'student_name' => $result->student->full_name,
+                'subject' => $result->exam->subject->name,
+                'marks' => round($result->marks, 1),
+                'grade' => $this->calculateGrade($result->marks),
+                'exam_name' => $result->exam->name,
+                'marked_at' => $result->created_at->diffForHumans(),
+            ];
+        });
+    
+        // Attendance summary for assigned grades (last 7 days)
+        $recentAttendance = DB::table('attendances')
+            ->join('students', 'attendances.student_id', '=', 'students.id')
+            ->whereIn('students.grade_id', $assignedGrades->pluck('id'))
+            ->where('attendances.attendance_date', '>=', now()->subDays(7))
+            ->select('attendances.status', DB::raw('count(*) as count'))
+            ->groupBy('attendances.status')
+            ->get()
+            ->mapWithKeys(function($item) {
+                return [$item->status => $item->count];
+            });
+    
+        $totalAttendanceRecords = $recentAttendance->sum();
+        $attendanceSummary = [
+            'present' => $recentAttendance['present'] ?? 0,
+            'absent' => $recentAttendance['absent'] ?? 0,
+            'late' => $recentAttendance['late'] ?? 0,
+            'excused' => $recentAttendance['excused'] ?? 0,
+            'total' => $totalAttendanceRecords,
+            'present_rate' => $totalAttendanceRecords > 0 ? round((($recentAttendance['present'] ?? 0) / $totalAttendanceRecords) * 100, 1) : 0,
+        ];
+    
+        // Students needing attention (low performers or poor attendance)
+        $studentsNeedingAttention = Student::whereIn('grade_id', $assignedGrades->pluck('id'))
+            ->where('status', 'active')
+            ->with('grade')
+            ->get()
+            ->map(function($student) use ($currentYear, $currentTerm) {
+                // Get attendance stats (last 30 days)
+                $attendanceStats = $student->getAttendanceStats(
+                    now()->subDays(30)->toDateString(),
+                    now()->toDateString()
+                );
+                
+                // Get term average
+                $termAverage = ExamResult::where('student_id', $student->id)
+                    ->whereHas('exam', function($query) use ($currentYear, $currentTerm) {
+                        $query->where('academic_year', $currentYear)
+                              ->where('term', $currentTerm);
+                    })
+                    ->avg('marks');
+    
+                $needsAttention = false;
+                $reasons = [];
+    
+                if ($attendanceStats['attendance_rate'] < 75) {
+                    $needsAttention = true;
+                    $reasons[] = 'Low attendance (' . $attendanceStats['attendance_rate'] . '%)';
+                }
+    
+                if ($termAverage && $termAverage < 50) {
+                    $needsAttention = true;
+                    $reasons[] = 'Low performance (' . round($termAverage, 1) . '%)';
+                }
+    
+                if ($needsAttention) {
+                    return [
+                        'id' => $student->id,
+                        'name' => $student->full_name,
+                        'admission_number' => $student->admission_number,
+                        'grade' => $student->grade->name,
+                        'attendance_rate' => $attendanceStats['attendance_rate'],
+                        'term_average' => $termAverage ? round($termAverage, 1) : null,
+                        'reasons' => $reasons,
+                    ];
+                }
+                return null;
+            })
+            ->filter()
+            ->take(5)
+            ->values();
+    
         return [
             'stats' => [
                 'assignedGrades' => $assignedGrades->count(),
@@ -207,14 +371,20 @@ class DashboardController extends Controller
                 'myExams' => $myExams->count(),
                 'examsThisTerm' => $examsThisTerm,
                 'pendingResults' => $examsNeedingAttention->count(),
+                'upcomingExams' => $upcomingExams->count(),
+                'studentsNeedingAttention' => $studentsNeedingAttention->count(),
             ],
             'isClassTeacher' => $isClassTeacher,
             'classTeacherGrade' => $classTeacherGrade ? $classTeacherGrade->name : null,
             'myGrades' => $myGrades,
             'recentStudents' => $recentStudents,
             'topStudents' => $topStudents,
-            'examsNeedingAttention' => $examsNeedingAttention->values(),
-            'currentTerm' => $this->getCurrentTerm(),
+            'examsNeedingAttention' => $examsNeedingAttention,
+            'upcomingExams' => $upcomingExams,
+            'recentExamActivity' => $recentExamActivity,
+            'attendanceSummary' => $attendanceSummary,
+            'studentsNeedingAttention' => $studentsNeedingAttention,
+            'currentTerm' => $currentTerm,
             'currentYear' => $currentYear,
         ];
     }

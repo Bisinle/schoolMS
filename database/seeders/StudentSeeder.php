@@ -25,8 +25,8 @@ class StudentSeeder extends Seeder
             return;
         }
 
-        $firstNamesMale = ['Ahmed', 'Ali', 'Yusuf', 'Omar', 'Mohamed', 'Ismail', 'Hassan', 'Abdi', 'Bilal', 'Khalid', 'Nasser', 'Jama', 'Salim'];
-        $firstNamesFemale = ['Amina', 'Fatima', 'Hodan', 'Habiba', 'Asma', 'Nimco', 'Zahra', 'Maryam', 'Rahma', 'Layla', 'Ruqayya', 'Nasteha'];
+        $firstNamesMale = ['Sabir', 'Muad', 'Marwaan', 'Yusuf', 'Mohamed', 'Adnaan', 'Hassan', 'Abdi', 'Bilal', 'Khalid', 'Nasser', 'Jama', 'Salim'];
+        $firstNamesFemale = ['Hassan', 'Hassan', 'Ali', 'Guleed', 'Asma', 'Nimco', 'Zahra', 'Maryam', 'Rahma', 'Layla', 'Ruqayya', 'Nasteha'];
         $lastNames = ['Hassan', 'Ali', 'Abdullahi', 'Isse', 'Mohamed', 'Abubakar', 'Dheere', 'Maalim', 'Bade', 'Hersi', 'Adam', 'Ahmed', 'Warsame'];
 
         $studentCount = 0;

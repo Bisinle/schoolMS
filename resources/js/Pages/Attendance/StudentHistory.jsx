@@ -50,14 +50,25 @@ export default function StudentHistory({
             <Head title={`Attendance - ${student.first_name} ${student.last_name}`} />
 
             <div className="space-y-6">
-                {/* Back Button */}
-                <Link
-                    href="/attendance"
-                    className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-orange transition-colors"
-                >
-                    <ArrowLeft className="w-4 h-4 mr-1" />
-                    Back to Attendance
-                </Link>
+    {/* Back Button */}
+    {(['admin', 'teacher'].includes(student.auth_role)) ? (
+        <Link
+            href="/attendance"
+            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-orange transition-colors"
+        >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Attendance
+        </Link>
+    ) : (
+        <Link
+            href="/dashboard"
+            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-orange transition-colors"
+        >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            Back to Dashboard
+        </Link>
+    )}
+
 
                 {/* Student Info Card */}
                 <div className="bg-gradient-to-r from-navy to-navy-dark rounded-xl shadow-sm p-6 text-white">

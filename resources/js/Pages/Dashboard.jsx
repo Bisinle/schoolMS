@@ -475,22 +475,30 @@ export default function Dashboard({
             {role === 'teacher' && (
                 <div className="space-y-6">
                     {/* Welcome Banner */}
-                    <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl shadow-lg p-8 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-2">Welcome Back, Teacher!</h1>
-                                <p className="text-purple-100 text-lg">
-                                    Academic Year {currentYear} • Term {currentTerm}
-                                    {isClassTeacher && classTeacherGrade && (
-                                        <span className="ml-4 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm">
-                                            Class Teacher - {classTeacherGrade}
-                                        </span>
-                                    )}
-                                </p>
-                            </div>
-                            <GraduationCap className="w-20 h-20 opacity-20" />
-                        </div>
-                    </div>
+                  {/* Welcome Banner */}
+<div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl shadow-lg p-8 text-white relative overflow-hidden">
+    <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+    <div className="relative flex items-center justify-between">
+        <div>
+            <h1 className="text-3xl font-bold mb-2">
+                Welcome Back, Teacher! 👋
+            </h1>
+            <p className="text-purple-100 text-lg">
+                Academic Year {currentYear} • Term {currentTerm}
+                {isClassTeacher && classTeacherGrade && (
+                    <span className="ml-4 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
+                        ⭐ Class Teacher - {classTeacherGrade}
+                    </span>
+                )}
+            </p>
+            <p className="text-purple-200 text-sm mt-2">
+                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </p>
+        </div>
+        <GraduationCap className="w-24 h-24 opacity-20" />
+    </div>
+</div>
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">

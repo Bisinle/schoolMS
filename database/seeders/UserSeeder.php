@@ -20,26 +20,37 @@ class UserSeeder extends Seeder
 
         // Create Teacher Users
         User::create([
-            'name' => 'John Teacher',
-            'email' => 'teacher@school.com',
+            'name' => 'Faith Teacher',
+            'email' => 'faith.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
 
         User::create([
-            'name' => 'Sarah Teacher',
-            'email' => 'teacher2@school.com',
+            'name' => 'Margaret Teacher',
+            'email' => 'margaret.teacher2@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
 
         User::create([
-            'name' => 'Ahmed Teacher',
-            'email' => 'teacher3@school.com',
+            'name' => 'Lydia Teacher',
+            'email' => 'lydia.teacher3@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
-
+        User::create([
+            'name' => 'Damaris Teacher',
+            'email' => 'damaris.teacher3@school.com',
+            'password' => Hash::make('password'),
+            'role' => 'teacher',
+        ]);
+        User::create([
+            'name' => 'Petty Teacher',
+            'email' => 'petty.teacher3@school.com',
+            'password' => Hash::make('password'),
+            'role' => 'teacher',
+        ]);
         // Create Guardian User
         User::create([
             'name' => 'Jane Doe',

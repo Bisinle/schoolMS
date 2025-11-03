@@ -49,7 +49,25 @@ class TeacherSeeder extends Seeder
             'date_of_joining' => '2021-03-10',
             'status' => 'active',
         ]);
-
+        Teacher::create([
+            'user_id' => $teacherUsers[3]->id,
+            'employee_number' => 'T004',
+            'phone_number' => '0734567890',
+            'address' => 'Mombasa, Kenya',
+            'qualification' => 'Bachelor of Islamic Studies',
+            'subject_specialization' => 'Islamic Studies & Arabic',
+            'date_of_joining' => '2021-03-10',
+            'status' => 'active',
+        ]); Teacher::create([
+            'user_id' => $teacherUsers[4]->id,
+            'employee_number' => 'T005',
+            'phone_number' => '0734567890',
+            'address' => 'Mombasa, Kenya',
+            'qualification' => 'Bachelor of Islamic Studies',
+            'subject_specialization' => 'Islamic Studies & Arabic',
+            'date_of_joining' => '2021-03-10',
+            'status' => 'active',
+        ]);
         $this->command->info('✅ Teachers seeded successfully!');
     }
 }
