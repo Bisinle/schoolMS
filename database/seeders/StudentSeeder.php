@@ -7,11 +7,14 @@ use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Grade;
 use Illuminate\Support\Str;
+use Faker\Factory as Faker;
 
 class StudentSeeder extends Seeder
 {
     public function run(): void
     {
+        $faker = Faker::create(); // ✅ Create a faker instance
+
         $guardians = Guardian::all();
         $grades = Grade::all();
 
@@ -26,7 +29,7 @@ class StudentSeeder extends Seeder
         }
 
         $firstNamesMale = ['Sabir', 'Muad', 'Marwaan', 'Yusuf', 'Mohamed', 'Adnaan', 'Hassan', 'Abdi', 'Bilal', 'Khalid', 'Nasser', 'Jama', 'Salim'];
-        $firstNamesFemale = ['Hassan', 'Hassan', 'Ali', 'Guleed', 'Asma', 'Nimco', 'Zahra', 'Maryam', 'Rahma', 'Layla', 'Ruqayya', 'Nasteha'];
+        $firstNamesFemale = ['Ayaan', 'Asma', 'Nimco', 'Zahra', 'Maryam', 'Rahma', 'Layla', 'Ruqayya', 'Nasteha', 'Fadumo', 'Hafsa', 'Sumaya'];
         $lastNames = ['Hassan', 'Ali', 'Abdullahi', 'Isse', 'Mohamed', 'Abubakar', 'Dheere', 'Maalim', 'Bade', 'Hersi', 'Adam', 'Ahmed', 'Warsame'];
 
         $studentCount = 0;
@@ -35,7 +38,6 @@ class StudentSeeder extends Seeder
         foreach ($guardians as $guardian) {
             if ($studentCount >= 30) break;
 
-            // Give each guardian between 1–4 students, but stop at 30 total
             $kidsCount = rand(1, 4);
             for ($i = 0; $i < $kidsCount && $studentCount < 30; $i++) {
 
@@ -53,7 +55,7 @@ class StudentSeeder extends Seeder
                     'admission_number' => $admissionNumber,
                     'first_name' => $firstName,
                     'last_name' => $lastName,
-                    'date_of_birth' => fake()->dateTimeBetween('2012-01-01', '2018-12-31')->format('Y-m-d'),
+                    'date_of_birth' => $faker->dateTimeBetween('2012-01-01', '2018-12-31')->format('Y-m-d'),
                     'gender' => $isMale ? 'male' : 'female',
                     'grade_id' => $grade->id,
                     'guardian_id' => $guardian->id,
