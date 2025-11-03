@@ -118,7 +118,9 @@ class DashboardController extends Controller
             'students_without_guardian' => Student::whereNull('guardian_id')->count(),
             'students_without_grade' => Student::whereNull('grade_id')->count(),
             'grades_without_class_teacher' => Grade::whereDoesntHave('teachers', function ($query) {
-                $query->wherePivot('is_class_teacher', true);
+                // $query->wherePivot('is_class_teacher', true);
+                $query->where('grade_teacher.is_class_teacher', true);
+
             })->count(),
             'pending_exam_results' => $examsWithCompletion->where('completion_rate', '<', 100)->count(),
         ];
