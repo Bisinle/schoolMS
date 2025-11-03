@@ -42,7 +42,6 @@ export default function AuthenticatedLayout({ header, children }) {
         ],
         guardian: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "My Children", href: "/students", icon: Users },
             { name: "Reports", href: "/reports", icon: FileText },
         ],
     };

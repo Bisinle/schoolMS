@@ -718,202 +718,203 @@ export default function Dashboard({
                 </div>
             )}
 
-            {/* Guardian Dashboard */}
-            {role === 'guardian' && (
-                <div className="space-y-6">
-                    {/* Welcome Banner */}
-                    <div className="bg-gradient-to-r from-green-600 via-teal-600 to-cyan-600 rounded-2xl shadow-lg p-8 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-2">Welcome Back, Parent/Guardian!</h1>
-                                <p className="text-green-100 text-lg">
-                                    Academic Year {currentYear} • Attendance for {currentMonth}
-                                </p>
-                            </div>
-                            <UserCircle className="w-20 h-20 opacity-20" />
-                        </div>
+           {/* Guardian Dashboard */}
+{role === 'guardian' && (
+    <div className="space-y-6">
+        {/* Welcome Banner */}
+        <div className="bg-gradient-to-r from-green-600 via-teal-600 to-cyan-600 rounded-2xl shadow-lg p-8 text-white">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">Welcome Back, {guardianInfo?.name || 'Parent/Guardian'}!</h1>
+                    <p className="text-green-100 text-lg">
+                        Academic Year {currentYear} • Term {currentTerm} • {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                    </p>
+                </div>
+                <UserCircle className="w-20 h-20 opacity-20" />
+            </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <p className="text-sm font-medium text-gray-600 mb-1">My Children</p>
+                        <p className="text-4xl font-bold text-orange">{students?.length || 0}</p>
+                        <p className="text-xs text-gray-500 mt-1">Active students</p>
                     </div>
+                    <Users className="w-12 h-12 text-orange opacity-20" />
+                </div>
+            </div>
 
-                    {/* Children Cards */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-semibold text-navy flex items-center">
-                                <Users className="w-6 h-6 mr-2 text-orange" />
-                                My Children
-                            </h3>
-                            <span className="text-sm text-gray-500">Detailed Performance Overview</span>
-                        </div>
-                        {students && students.length > 0 ? (
-                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                                {students.map((student) => (
-                                    <div key={student.id} className="border-2 border-gray-200 rounded-xl hover:shadow-xl transition-all hover:border-orange">
-                                        <div className="p-6">
-                                            {/* Student Header */}
-                                            <div className="flex items-center mb-6 pb-4 border-b border-gray-200">
-                                                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-orange to-orange-dark flex items-center justify-center mr-4">
-                                                    <GraduationCap className="w-8 h-8 text-white" />
-                                                </div>
-                                                <div className="flex-1">
-                                                    <h4 className="font-bold text-xl text-navy mb-1">
-                                                        {student.first_name} {student.last_name}
-                                                    </h4>
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-sm text-gray-600">{student.class_name}</span>
-                                                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                            student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                        }`}>
-                                                            {student.status}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <p className="text-sm font-medium text-gray-600 mb-1">Average Attendance</p>
+                        <p className="text-4xl font-bold text-blue-600">
+                            {students?.length > 0 
+                                ? Math.round(students.reduce((sum, s) => sum + (s.attendance_stats?.attendance_rate || 0), 0) / students.length)
+                                : 0}%
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">For {currentMonth}</p>
+                    </div>
+                    <Calendar className="w-12 h-12 text-blue-600 opacity-20" />
+                </div>
+            </div>
 
-                                            {/* Student Details */}
-                                            <div className="grid grid-cols-2 gap-3 mb-6 text-sm">
-                                                <div>
-                                                    <p className="text-gray-500 text-xs mb-1">Admission No.</p>
-                                                    <p className="font-semibold text-navy">{student.admission_number}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-gray-500 text-xs mb-1">Gender</p>
-                                                    <p className="font-semibold text-navy capitalize">{student.gender}</p>
-                                                </div>
-                                            </div>
+            <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <p className="text-sm font-medium text-gray-600 mb-1">Total Exams</p>
+                        <p className="text-4xl font-bold text-purple-600">
+                            {students?.reduce((sum, s) => sum + (s.total_exams_this_term || 0), 0) || 0}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1">This term</p>
+                    </div>
+                    <FileText className="w-12 h-12 text-purple-600 opacity-20" />
+                </div>
+            </div>
+        </div>
 
-                                            {/* Academic Performance */}
-                                            {student.overall_average && (
-                                                <div className="mb-6 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg">
-                                                    <div className="flex items-center justify-between mb-2">
-                                                        <span className="text-sm font-semibold text-gray-700">Academic Performance</span>
-                                                        <Award className="w-5 h-5 text-blue-600" />
-                                                    </div>
-                                                    <div className="flex items-end justify-between">
-                                                        <div>
-                                                            <p className="text-3xl font-bold text-blue-600">{student.overall_average}%</p>
-                                                            <p className="text-xs text-gray-600 mt-1">Overall Average</p>
-                                                        </div>
-                                                        <span className={`inline-flex items-center px-3 py-1.5 rounded-lg text-sm font-bold ${
-                                                            student.overall_grade === 'EE' ? 'bg-green-100 text-green-800' :
-                                                            student.overall_grade === 'ME' ? 'bg-blue-100 text-blue-800' :
-                                                            student.overall_grade === 'AE' ? 'bg-yellow-100 text-yellow-800' :
-                                                            'bg-red-100 text-red-800'
-                                                        }`}>
-                                                            {student.overall_grade}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            )}
+      
 
-                                            {/* Recent Exams */}
-                                            {student.recent_exams && student.recent_exams.length > 0 && (
-                                                <div className="mb-6">
-                                                    <h5 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                                                        <FileText className="w-4 h-4 mr-2 text-orange" />
-                                                        Recent Exam Results
-                                                    </h5>
-                                                    <div className="space-y-2">
-                                                        {student.recent_exams.slice(0, 3).map((exam, idx) => (
-                                                            <div key={idx} className="flex items-center justify-between p-2 bg-gray-50 rounded">
-                                                                <div className="flex-1">
-                                                                    <p className="text-sm font-medium text-navy">{exam.subject}</p>
-                                                                    <p className="text-xs text-gray-500 capitalize">
-                                                                        {exam.exam_type.replace('_', ' ')} - Term {exam.term}
-                                                                    </p>
-                                                                </div>
-                                                                <div className="text-right">
-                                                                    <p className="text-sm font-bold text-orange">{exam.marks}%</p>
-                                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                                        exam.grade === 'EE' ? 'bg-green-100 text-green-800' :
-                                                                        exam.grade === 'ME' ? 'bg-blue-100 text-blue-800' :
-                                                                        exam.grade === 'AE' ? 'bg-yellow-100 text-yellow-800' :
-                                                                        'bg-red-100 text-red-800'
-                                                                    }`}>
-                                                                        {exam.grade}
-                                                                    </span>
-                                                                </div>
-                                                            </div>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            )}
+        {/* Additional Quick Actions */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Link href="/reports" className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 group">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                        <FileText className="w-6 h-6 text-purple-600" />
+                    </div>
+                    <div className="text-right">
+                        <p className="text-2xl font-bold text-purple-600">{students?.length || 0}</p>
+                        <p className="text-xs text-gray-500">Available</p>
+                    </div>
+                </div>
+                <h4 className="font-semibold text-navy mb-1">Report Cards</h4>
+                <p className="text-sm text-gray-600">Download term reports</p>
+            </Link>
 
-                                            {/* Attendance Summary */}
-                                            {student.attendance_stats && (
-                                                <div className="border-t border-gray-200 pt-6">
-                                                    <div className="flex items-center justify-between mb-4">
-                                                        <h5 className="text-sm font-semibold text-gray-700 flex items-center">
-                                                            <Calendar className="w-4 h-4 mr-2 text-orange" />
-                                                            Attendance ({currentMonth})
-                                                        </h5>
-                                                        <span className="text-2xl font-bold text-orange">
-                                                            {student.attendance_stats.attendance_rate}%
-                                                        </span>
-                                                    </div>
-                                                    <div className="grid grid-cols-4 gap-3 mb-4">
-                                                        <div className="text-center p-3 bg-green-50 rounded-lg">
-                                                            <p className="text-xs text-gray-600 mb-1">Present</p>
-                                                            <p className="text-xl font-bold text-green-600">{student.attendance_stats.present}</p>
-                                                        </div>
-                                                        <div className="text-center p-3 bg-red-50 rounded-lg">
-                                                            <p className="text-xs text-gray-600 mb-1">Absent</p>
-                                                            <p className="text-xl font-bold text-red-600">{student.attendance_stats.absent}</p>
-                                                        </div>
-                                                        <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                                                            <p className="text-xs text-gray-600 mb-1">Late</p>
-                                                            <p className="text-xl font-bold text-yellow-600">{student.attendance_stats.late}</p>
-                                                        </div>
-                                                        <div className="text-center p-3 bg-blue-50 rounded-lg">
-                                                            <p className="text-xs text-gray-600 mb-1">Excused</p>
-                                                            <p className="text-xl font-bold text-blue-600">{student.attendance_stats.excused}</p>
-                                                        </div>
-                                                    </div>
-                                                    <Link
-                                                        href={`/attendance/student/${student.id}`}
-                                                        className="block w-full text-center px-4 py-3 bg-orange text-white text-sm font-semibold rounded-lg hover:bg-orange-dark transition-all shadow-md hover:shadow-lg"
-                                                    >
-                                                        <ClipboardCheck className="w-4 h-4 inline mr-2" />
-                                                        View Full Attendance Record
-                                                    </Link>
-                                                </div>
-                                            )}
-                                        </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-orange-100 rounded-lg">
+                        <Users className="w-6 h-6 text-orange" />
+                    </div>
+                    <div className="text-right">
+                        <p className="text-2xl font-bold text-orange">{students?.reduce((sum, s) => sum + (s.total_exams_this_year || 0), 0) || 0}</p>
+                        <p className="text-xs text-gray-500">Total</p>
+                    </div>
+                </div>
+                <h4 className="font-semibold text-navy mb-1">Exams This Year</h4>
+                <p className="text-sm text-gray-600">Across all children</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-green-100 rounded-lg">
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                    </div>
+                    <div className="text-right">
+                        <p className="text-2xl font-bold text-green-600">
+                            {students?.filter(s => (s.attendance_stats?.attendance_rate || 0) >= 90).length || 0}
+                        </p>
+                        <p className="text-xs text-gray-500">Students</p>
+                    </div>
+                </div>
+                <h4 className="font-semibold text-navy mb-1">Excellent Attendance</h4>
+                <p className="text-sm text-gray-600">90% and above</p>
+            </div>
+        </div>
+
+        {/* Children Summary */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+            <h3 className="text-xl font-semibold text-navy mb-6 flex items-center">
+                <Users className="w-6 h-6 mr-2 text-orange" />
+                My Children - Quick Overview
+            </h3>
+
+            {students && students.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {students.map((student) => (
+                        <div key={student.id} className="border border-gray-200 rounded-lg p-4 hover:border-orange hover:shadow-md transition-all">
+                            <div className="flex items-center space-x-3 mb-3">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange to-orange-dark flex items-center justify-center text-white text-lg font-bold">
+                                    {student.first_name?.charAt(0)}
+                                </div>
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-navy">{student.first_name} {student.last_name}</h4>
+                                    <p className="text-xs text-gray-600">{student.class_name}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                                {student.overall_average && (
+                                    <div className="bg-blue-50 rounded p-2">
+                                        <p className="text-gray-600 mb-1">Average</p>
+                                        <p className="font-bold text-blue-600">{student.overall_average}%</p>
                                     </div>
-                                ))}
+                                )}
+                                {student.attendance_stats && (
+                                    <div className="bg-green-50 rounded p-2">
+                                        <p className="text-gray-600 mb-1">Attendance</p>
+                                        <p className="font-bold text-green-600">{student.attendance_stats.attendance_rate}%</p>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <p className="text-gray-500 text-center py-12 text-lg">No students found.</p>
-                        )}
-                    </div>
 
-                    {/* Guardian Information */}
-                    {guardianInfo && (
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                            <h3 className="text-lg font-semibold text-navy mb-6 flex items-center">
-                                <UserCircle className="w-6 h-6 mr-2 text-orange" />
-                                My Information
-                            </h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-xs text-gray-500 mb-2">Phone Number</p>
-                                    <p className="font-semibold text-navy text-lg">{guardianInfo.phone_number}</p>
-                                </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-xs text-gray-500 mb-2">Relationship</p>
-                                    <p className="font-semibold text-navy text-lg capitalize">{guardianInfo.relationship}</p>
-                                </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-xs text-gray-500 mb-2">Occupation</p>
-                                    <p className="font-semibold text-navy text-lg">{guardianInfo.occupation || 'N/A'}</p>
-                                </div>
-                                <div className="p-4 bg-gray-50 rounded-lg">
-                                    <p className="text-xs text-gray-500 mb-2">Address</p>
-                                    <p className="font-semibold text-navy text-lg">{guardianInfo.address || 'N/A'}</p>
-                                </div>
+                            <div className="flex gap-2">
+                                <Link
+                                    href="/reports" 
+                                    className="flex-1 text-center px-2 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition-all"
+                                >
+                                    Performance
+                                </Link>
+                                <Link
+                                    href="/guardian/attendance"
+                                    className="flex-1 text-center px-2 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700 transition-all"
+                                >
+                                    Attendance
+                                </Link>
                             </div>
                         </div>
-                    )}
+                    ))}
+                </div>
+            ) : (
+                <div className="text-center py-12">
+                    <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500 text-lg">No active students found.</p>
                 </div>
             )}
+        </div>
+
+        {/* Guardian Information */}
+        {guardianInfo && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 className="text-lg font-semibold text-navy mb-6 flex items-center">
+                    <UserCircle className="w-6 h-6 mr-2 text-orange" />
+                    My Contact Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                        <p className="text-xs text-gray-600 mb-2 font-medium">Full Name</p>
+                        <p className="font-semibold text-navy text-lg">{guardianInfo.name}</p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-green-50 to-teal-50 rounded-lg border border-green-200">
+                        <p className="text-xs text-gray-600 mb-2 font-medium">Phone Number</p>
+                        <p className="font-semibold text-navy text-lg">{guardianInfo.phone_number}</p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                        <p className="text-xs text-gray-600 mb-2 font-medium">Relationship</p>
+                        <p className="font-semibold text-navy text-lg capitalize">{guardianInfo.relationship}</p>
+                    </div>
+                    <div className="p-4 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
+                        <p className="text-xs text-gray-600 mb-2 font-medium">Email</p>
+                        <p className="font-semibold text-navy text-sm break-words">{guardianInfo.email}</p>
+                    </div>
+                </div>
+            </div>
+        )}
+    </div>
+)}
         </AuthenticatedLayout>
     );
 }

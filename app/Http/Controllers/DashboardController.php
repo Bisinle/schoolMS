@@ -37,7 +37,7 @@ class DashboardController extends Controller
 
     private function getAdminDashboardData()
     {
-        // Basic Stats
+        // Keep existing admin dashboard code exactly as is
         $totalStudents = Student::count();
         $activeStudents = Student::where('status', 'active')->count();
         $totalGuardians = Guardian::count();
@@ -45,7 +45,6 @@ class DashboardController extends Controller
         $totalGrades = Grade::where('status', 'active')->count();
         $totalSubjects = Subject::where('status', 'active')->count();
 
-        // Students by Grade
         $studentsByGrade = Grade::withCount('students')
             ->where('status', 'active')
             ->orderBy('name')
@@ -59,7 +58,6 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Students by Gender
         $studentsByGender = Student::select('gender', DB::raw('count(*) as count'))
             ->where('status', 'active')
             ->groupBy('gender')
@@ -68,18 +66,14 @@ class DashboardController extends Controller
                 return [$item->gender => $item->count];
             });
 
-        // Recent Enrollments (Last 30 days)
-        $recentEnrollments = Student::where('enrollment_date', '>=', now()->subDays(30))
-            ->count();
+        $recentEnrollments = Student::where('enrollment_date', '>=', now()->subDays(30))->count();
 
-        // Exam Statistics
         $currentYear = now()->year;
         $totalExams = Exam::where('academic_year', $currentYear)->count();
         $examsThisTerm = Exam::where('academic_year', $currentYear)
             ->where('term', $this->getCurrentTerm())
             ->count();
 
-        // Get exams with results completion rate
         $examsWithCompletion = Exam::where('academic_year', $currentYear)
             ->with(['grade', 'subject'])
             ->withCount('results')
@@ -97,23 +91,14 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Top performing students (based on recent exams)
         $topStudents = $this->getTopPerformingStudents(5);
+        $recentStudents = Student::with(['guardian.user', 'grade'])->latest()->take(8)->get();
 
-        // Recent Students
-        $recentStudents = Student::with(['guardian.user', 'grade'])
-            ->latest()
-            ->take(8)
-            ->get();
-
-        // Teachers by Grade Assignment
         $teachersByGrade = Grade::withCount('teachers')
             ->where('status', 'active')
             ->get()
             ->map(function ($grade) {
-                $classTeacher = $grade->teachers()
-                    ->wherePivot('is_class_teacher', true)
-                    ->first();
+                $classTeacher = $grade->teachers()->wherePivot('is_class_teacher', true)->first();
                 return [
                     'grade' => $grade->name,
                     'teachers_count' => $grade->teachers_count,
@@ -121,7 +106,6 @@ class DashboardController extends Controller
                 ];
             });
 
-        // Subjects by Category
         $subjectsByCategory = Subject::select('category', DB::raw('count(*) as count'))
             ->where('status', 'active')
             ->groupBy('category')
@@ -130,7 +114,6 @@ class DashboardController extends Controller
                 return [ucfirst($item->category) => $item->count];
             });
 
-        // Quick Actions Data
         $quickStats = [
             'students_without_guardian' => Student::whereNull('guardian_id')->count(),
             'students_without_grade' => Student::whereNull('grade_id')->count(),
@@ -167,26 +150,21 @@ class DashboardController extends Controller
 
     private function getTeacherDashboardData($user)
     {
+        // Keep existing teacher dashboard code exactly as is
         $teacher = $user->teacher;
         
         if (!$teacher) {
-            return [
-                'stats' => [],
-                'message' => 'Teacher profile not found.'
-            ];
+            return ['stats' => [], 'message' => 'Teacher profile not found.'];
         }
 
-        // Get assigned grades
         $assignedGrades = $teacher->grades()->with('students')->get();
         $isClassTeacher = $teacher->grades()->wherePivot('is_class_teacher', true)->exists();
         $classTeacherGrade = $teacher->grades()->wherePivot('is_class_teacher', true)->first();
 
-        // Calculate stats based on assigned grades
         $studentsInAssignedGrades = $assignedGrades->sum(function ($grade) {
             return $grade->students->count();
         });
 
-        // Get exams created by this teacher
         $currentYear = now()->year;
         $myExams = Exam::where('created_by', $user->id)
             ->where('academic_year', $currentYear)
@@ -196,23 +174,19 @@ class DashboardController extends Controller
 
         $examsThisTerm = $myExams->where('term', $this->getCurrentTerm())->count();
 
-        // Exams needing attention (incomplete results)
         $examsNeedingAttention = $myExams->filter(function ($exam) {
             $studentsInGrade = $exam->grade->students()->count();
             return $studentsInGrade > 0 && $exam->results_count < $studentsInGrade;
         })->take(5);
 
-        // Recent students from assigned grades
         $recentStudents = Student::whereIn('grade_id', $assignedGrades->pluck('id'))
             ->with(['guardian.user', 'grade'])
             ->latest()
             ->take(8)
             ->get();
 
-        // Top performing students in assigned grades
         $topStudents = $this->getTopPerformingStudents(5, $assignedGrades->pluck('id')->toArray());
 
-        // My grades overview
         $myGrades = $assignedGrades->map(function ($grade) use ($teacher) {
             $isClassTeacher = $grade->pivot->is_class_teacher;
             return [
@@ -250,58 +224,129 @@ class DashboardController extends Controller
         $guardian = $user->guardian;
         
         if (!$guardian) {
-            return [
-                'message' => 'Guardian profile not found.'
-            ];
+            return ['message' => 'Guardian profile not found.'];
         }
 
-        $students = $guardian->students;
+        $students = $guardian->students()->where('status', 'active')->get();
         
-        // Add attendance stats for each child (current month)
         $startDate = now()->startOfMonth()->toDateString();
         $endDate = now()->toDateString();
         
-        $studentsWithAttendance = $students->map(function ($student) use ($startDate, $endDate) {
-            $stats = $student->getAttendanceStats($startDate, $endDate);
+        $currentYear = now()->year;
+        $currentTerm = $this->getCurrentTerm();
+        
+        $studentsData = $students->map(function ($student) use ($startDate, $endDate, $currentYear, $currentTerm) {
+            $attendanceStats = $student->getAttendanceStats($startDate, $endDate);
             
-            // Get recent exam results
             $recentExams = ExamResult::where('student_id', $student->id)
                 ->with(['exam.subject'])
-                ->latest()
+                ->whereHas('exam', function ($query) use ($currentYear) {
+                    $query->where('academic_year', $currentYear);
+                })
+                ->orderBy('created_at', 'desc')
                 ->take(5)
                 ->get()
                 ->map(function ($result) {
                     return [
                         'subject' => $result->exam->subject->name,
-                        'marks' => $result->marks,
+                        'marks' => round($result->marks, 2),
                         'grade' => $this->calculateGrade($result->marks),
                         'exam_type' => $result->exam->exam_type,
                         'term' => $result->exam->term,
+                        'exam_name' => $result->exam->name,
+                        'date' => $result->exam->exam_date,
                     ];
                 });
 
-            // Calculate overall average
             $allResults = ExamResult::where('student_id', $student->id)
-                ->whereHas('exam', function ($query) {
-                    $query->where('academic_year', now()->year);
+                ->whereHas('exam', function ($query) use ($currentYear) {
+                    $query->where('academic_year', $currentYear);
                 })
                 ->get();
             
             $overallAverage = $allResults->count() > 0 ? round($allResults->avg('marks'), 2) : null;
 
-            return array_merge($student->toArray(), [
-                'attendance_stats' => $stats,
+            $termResults = ExamResult::where('student_id', $student->id)
+                ->whereHas('exam', function ($query) use ($currentYear, $currentTerm) {
+                    $query->where('academic_year', $currentYear)
+                          ->where('term', $currentTerm);
+                })
+                ->get();
+            
+            $termAverage = $termResults->count() > 0 ? round($termResults->avg('marks'), 2) : null;
+
+            $subjectPerformance = ExamResult::where('student_id', $student->id)
+                ->whereHas('exam', function ($query) use ($currentYear, $currentTerm) {
+                    $query->where('academic_year', $currentYear)
+                          ->where('term', $currentTerm);
+                })
+                ->with('exam.subject')
+                ->get()
+                ->groupBy('exam.subject_id')
+                ->map(function ($results, $subjectId) {
+                    $subject = $results->first()->exam->subject;
+                    $average = round($results->avg('marks'), 2);
+                    return [
+                        'subject_id' => $subject->id,
+                        'subject_name' => $subject->name,
+                        'category' => $subject->category,
+                        'average' => $average,
+                        'grade' => $this->calculateGrade($average),
+                        'exams_count' => $results->count(),
+                    ];
+                })
+                ->values();
+
+            $academicSubjects = $subjectPerformance->where('category', 'academic')->values();
+            $islamicSubjects = $subjectPerformance->where('category', 'islamic')->values();
+
+            $academicAverage = $academicSubjects->count() > 0 ? round($academicSubjects->avg('average'), 2) : null;
+            $islamicAverage = $islamicSubjects->count() > 0 ? round($islamicSubjects->avg('average'), 2) : null;
+
+            return [
+                'id' => $student->id,
+                'first_name' => $student->first_name,
+                'last_name' => $student->last_name,
+                'admission_number' => $student->admission_number,
+                'class_name' => $student->grade->name ?? 'N/A',
+                'gender' => $student->gender,
+                'date_of_birth' => $student->date_of_birth->format('Y-m-d'),
+                'age' => $student->date_of_birth->age,
+                'status' => $student->status,
+                'grade_id' => $student->grade_id,
+                'grade_code' => $student->grade->code ?? null,
+                'attendance_stats' => $attendanceStats,
                 'recent_exams' => $recentExams,
                 'overall_average' => $overallAverage,
                 'overall_grade' => $overallAverage ? $this->calculateGrade($overallAverage) : null,
-            ]);
+                'term_average' => $termAverage,
+                'term_grade' => $termAverage ? $this->calculateGrade($termAverage) : null,
+                'academic_subjects' => $academicSubjects,
+                'islamic_subjects' => $islamicSubjects,
+                'academic_average' => $academicAverage,
+                'academic_grade' => $academicAverage ? $this->calculateGrade($academicAverage) : null,
+                'islamic_average' => $islamicAverage,
+                'islamic_grade' => $islamicAverage ? $this->calculateGrade($islamicAverage) : null,
+                'total_exams_this_term' => $termResults->count(),
+                'total_exams_this_year' => $allResults->count(),
+            ];
         });
         
         return [
-            'students' => $studentsWithAttendance,
-            'guardianInfo' => $guardian,
+            'students' => $studentsData,
+            'guardianInfo' => [
+                'id' => $guardian->id,
+                'phone_number' => $guardian->phone_number,
+                'address' => $guardian->address,
+                'occupation' => $guardian->occupation,
+                'relationship' => $guardian->relationship,
+                'name' => $user->name,
+                'email' => $user->email,
+            ],
             'currentMonth' => now()->format('F Y'),
-            'currentYear' => now()->year,
+            'currentYear' => $currentYear,
+            'currentTerm' => $currentTerm,
+            'totalChildren' => $students->count(),
         ];
     }
 
@@ -339,16 +384,11 @@ class DashboardController extends Controller
     {
         $month = now()->month;
         
-        // Term 1: January - April
         if ($month >= 1 && $month <= 4) {
             return '1';
-        }
-        // Term 2: May - August
-        elseif ($month >= 5 && $month <= 8) {
+        } elseif ($month >= 5 && $month <= 8) {
             return '2';
-        }
-        // Term 3: September - December
-        else {
+        } else {
             return '3';
         }
     }

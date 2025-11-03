@@ -10,6 +10,8 @@ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamResultController;
+use App\Http\Controllers\GuardianAttendanceController;
+use App\Http\Controllers\GuardianChildrenController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportCommentController;
 use App\Http\Controllers\SchoolSettingController;
@@ -84,6 +86,10 @@ Route::middleware('auth')->group(function () {
 
     Route::middleware(['role:admin,teacher'])->group(function () {
         Route::get('/guardians/{guardian}', [GuardianController::class, 'show'])->name('guardians.show');
+    });
+    Route::middleware(['role:guardian'])->group(function () {
+        Route::get('/guardian/children', [GuardianChildrenController::class, 'index'])->name('guardian.children');
+        Route::get('/guardian/attendance', [GuardianAttendanceController::class, 'index'])->name('guardian.attendance');
     });
 
     Route::middleware(['role:admin'])->group(function () {

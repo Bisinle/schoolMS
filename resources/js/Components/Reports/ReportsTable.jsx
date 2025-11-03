@@ -2,9 +2,17 @@ import { Link } from '@inertiajs/react';
 import { FileText, Users } from 'lucide-react';
 
 export default function ReportsTable({ students, isGuardian, onGenerateReport }) {
-    // Handle both paginated and non-paginated data
-    const studentData = students.data || students;
-    const hasPagination = !!students.data;
+    // Handle both paginated and non-paginated data with proper null checks
+    const studentData = students?.data || students || [];
+    const hasPagination = !!students?.data;
+    
+    // Ensure studentData is always an array
+    const studentsList = Array.isArray(studentData) ? studentData : [];
+
+    console.log('students:', students);
+    console.log('studentData:', studentData);
+    console.log('studentsList:', studentsList);
+    console.log('isGuardian:', isGuardian);
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -30,8 +38,8 @@ export default function ReportsTable({ students, isGuardian, onGenerateReport })
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                        {studentData.length > 0 ? (
-                            studentData.map((student) => (
+                        {studentsList.length > 0 ? (
+                            studentsList.map((student) => (
                                 <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                         {student.admission_number}
@@ -39,7 +47,7 @@ export default function ReportsTable({ students, isGuardian, onGenerateReport })
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-orange text-white flex items-center justify-center font-semibold">
-                                                {student.first_name.charAt(0)}{student.last_name.charAt(0)}
+                                                {student.first_name?.charAt(0)}{student.last_name?.charAt(0)}
                                             </div>
                                             <div className="ml-4">
                                                 <div className="text-sm font-medium text-gray-900">
@@ -87,13 +95,13 @@ export default function ReportsTable({ students, isGuardian, onGenerateReport })
             </div>
 
             {/* Pagination - Only show if paginated */}
-            {hasPagination && studentData.length > 0 && (
+            {hasPagination && studentsList.length > 0 && students.links && (
                 <div className="bg-white px-6 py-4 border-t border-gray-200">
                     <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
                         <div className="text-sm text-gray-700">
-                            Showing <span className="font-medium">{students.from}</span> to{' '}
-                            <span className="font-medium">{students.to}</span> of{' '}
-                            <span className="font-medium">{students.total}</span> results
+                            Showing <span className="font-medium">{students.from || 0}</span> to{' '}
+                            <span className="font-medium">{students.to || 0}</span> of{' '}
+                            <span className="font-medium">{students.total || 0}</span> results
                         </div>
                         <div className="flex gap-2">
                             {students.links.map((link, index) => (

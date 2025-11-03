@@ -16,71 +16,73 @@ class ReportController extends Controller
     use AuthorizesRequests;
 
     public function index(Request $request)
-{
-    $user = $request->user();
+    {
+        $user = $request->user();
 
-    // For guardians, show only their children
-    if ($user->isGuardian()) {
-        $students = $user->guardian->students()
-            ->with('grade', 'guardian.user')
+        // For guardians, show only their children
+        if ($user->isGuardian()) {
+            $students = $user->guardian->students()
+                ->with('grade', 'guardian.user')
+                ->where('status', 'active')
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+
+            // Convert to array for consistency
+            return Inertia::render('Reports/Index', [
+                'students' => [
+                    'data' => $students,
+                    'total' => $students->count(),
+                    'per_page' => $students->count(),
+                    'current_page' => 1,
+                ],
+                'grades' => [],
+                'filters' => [],
+                'isGuardian' => true,
+                'currentYear' => now()->year,
+            ]);
+        }
+
+        // For admin and teachers, show all or assigned students
+        $query = Student::with('grade', 'guardian.user');
+
+        if ($user->isTeacher()) {
+            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
+            $query->whereIn('grade_id', $teacherGradeIds);
+        }
+
+        $students = $query
             ->where('status', 'active')
+            ->when($request->search, function ($q, $search) {
+                $q->where(function($query) use ($search) {
+                    $query->where('first_name', 'like', "%{$search}%")
+                        ->orWhere('last_name', 'like', "%{$search}%")
+                        ->orWhere('admission_number', 'like', "%{$search}%");
+                });
+            })
+            ->when($request->grade_id, function ($q, $gradeId) {
+                $q->where('grade_id', $gradeId);
+            })
+            ->when($request->gender, function ($q, $gender) {
+                $q->where('gender', $gender);
+            })
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get();
+            ->paginate(20)
+            ->withQueryString();
 
-        // Convert to paginator-like structure for consistency
+        $grades = $user->isTeacher() 
+            ? $user->teacher->grades 
+            : Grade::where('status', 'active')->orderBy('name')->get();
+
         return Inertia::render('Reports/Index', [
-            'students' => [
-                'data' => $students,
-                'total' => $students->count(),
-            ],
-            'grades' => [],
-            'filters' => [],
-            'isGuardian' => true,
+            'students' => $students,
+            'grades' => $grades,
+            'filters' => $request->only(['search', 'grade_id', 'gender']),
+            'isGuardian' => false,
             'currentYear' => now()->year,
         ]);
     }
-
-    // For admin and teachers, show all or assigned students
-    $query = Student::with('grade', 'guardian.user');
-
-    if ($user->isTeacher()) {
-        $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-        $query->whereIn('grade_id', $teacherGradeIds);
-    }
-
-    $students = $query
-        ->where('status', 'active')
-        ->when($request->search, function ($q, $search) {
-            $q->where(function($query) use ($search) {
-                $query->where('first_name', 'like', "%{$search}%")
-                    ->orWhere('last_name', 'like', "%{$search}%")
-                    ->orWhere('admission_number', 'like', "%{$search}%");
-            });
-        })
-        ->when($request->grade_id, function ($q, $gradeId) {
-            $q->where('grade_id', $gradeId);
-        })
-        ->when($request->gender, function ($q, $gender) {
-            $q->where('gender', $gender);
-        })
-        ->orderBy('first_name')
-        ->orderBy('last_name')
-        ->paginate(20)
-        ->withQueryString();
-
-    $grades = $user->isTeacher() 
-        ? $user->teacher->grades 
-        : Grade::where('status', 'active')->orderBy('name')->get();
-
-    return Inertia::render('Reports/Index', [
-        'students' => $students,
-        'grades' => $grades,
-        'filters' => $request->only(['search', 'grade_id', 'gender']),
-        'isGuardian' => false,
-        'currentYear' => now()->year,
-    ]);
-}
 
     public function generate(Request $request)
     {
@@ -135,8 +137,6 @@ class ReportController extends Controller
             ->orderBy('category')
             ->orderBy('name')
             ->get();
-
-        Log::info('Subjects for grade', ['grade_id' => $student->grade_id, 'subjects' => $subjects->pluck('name')]);
 
         // Organize results by subject
         $academicSubjects = [];
@@ -303,7 +303,7 @@ class ReportController extends Controller
         $allAverages = array_merge($academicAverages, $islamicAverages);
         $overallAverage = count($allAverages) > 0 ? round(array_sum($allAverages) / count($allAverages), 2) : null;
 
-        // Get comments - WITHOUT eager loading the relationships
+        // Get comments
         $comments = ReportComment::where('student_id', $student->id)
             ->where('term', $term)
             ->where('academic_year', $academicYear)
@@ -330,13 +330,13 @@ class ReportController extends Controller
         }
 
         if ($marks >= 90) {
-            return 'EE'; // Exceeding Expectation
+            return 'EE';
         } elseif ($marks >= 75) {
-            return 'ME'; // Meeting Expectation
+            return 'ME';
         } elseif ($marks >= 50) {
-            return 'AE'; // Approaching Expectation
+            return 'AE';
         } else {
-            return 'BE'; // Below Expectation
+            return 'BE';
         }
     }
 
