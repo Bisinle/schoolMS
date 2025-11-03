@@ -50,7 +50,7 @@ export default function StudentHistory({
             <Head title={`Attendance - ${student.first_name} ${student.last_name}`} />
 
             <div className="space-y-6">
-    {/* Back Button */}
+
     {(['admin', 'teacher'].includes(student.auth_role)) ? (
         <Link
             href="/attendance"
