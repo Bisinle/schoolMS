@@ -20,15 +20,15 @@ class GradeController extends Controller
         $user = $request->user();
 
         // Build query
-        $query = $user->isTeacher() 
-            ? $user->teacher->grades() 
+        $query = $user->isTeacher()
+            ? $user->teacher->grades()
             : Grade::query();
 
         // Apply search filter
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('code', 'like', "%{$request->search}%");
+                    ->orWhere('code', 'like', "%{$request->search}%");
             });
         }
 
@@ -51,7 +51,7 @@ class GradeController extends Controller
     public function create()
     {
         $this->authorize('create', Grade::class);
-        
+
         $subjects = Subject::where('status', 'active')
             ->orderBy('category')
             ->orderBy('name')
@@ -137,9 +137,14 @@ class GradeController extends Controller
             }
         ]);
 
-        $availableTeachers = Teacher::whereDoesntHave('grades', function ($query) use ($grade) {
-            $query->where('grades.id', $grade->id);
-        })->with('user')->get();
+        // $availableTeachers = Teacher::whereDoesntHave('grades', function ($query) use ($grade) {
+        //     $query->where('grades.id', $grade->id);
+        // })->with('user')->get();
+
+        $assignedTeacherIds = $grade->teachers->pluck('id');
+        $availableTeachers = Teacher::with('user')
+            ->whereNotIn('id', $assignedTeacherIds)
+            ->get();
 
         return Inertia::render('Grades/Show', [
             'grade' => $grade,
@@ -155,7 +160,7 @@ class GradeController extends Controller
             ->orderBy('category')
             ->orderBy('name')
             ->get();
-        
+
         $teachers = Teacher::with('user')
             ->whereHas('user', function ($query) {
                 $query->where('role', 'teacher');

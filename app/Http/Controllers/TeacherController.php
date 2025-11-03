@@ -121,7 +121,7 @@ class TeacherController extends Controller
 
         $assignedGradeIds = $teacher->grades->pluck('id')->toArray();
         // $classTeacherGradeId = $teacher->grades->where('pivot.is_class_teacher', true)->first()?->id;
-        $classTeacherGradeId = $teacher->grades->filter(fn($grade) => $grade->pivot && $grade->pivot->is_class_teacher)
+        $classTeacherGradeId = $teacher->grades ->filter(fn($grade) => $grade->pivot && $grade->pivot->is_class_teacher)
     ->first()?->id;
 
         return Inertia::render('Teachers/Edit', [
