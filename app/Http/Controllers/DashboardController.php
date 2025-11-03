@@ -213,7 +213,8 @@ class DashboardController extends Controller
     
         // Grade breakdown with detailed stats
         $myGrades = $assignedGrades->map(function ($grade) use ($teacher, $currentTerm, $currentYear) {
-            $isClassTeacher = $grade->pivot->is_class_teacher;
+            // $isClassTeacher = $grade->pivot->is_class_teacher;
+            $isClassTeacher = $grade->pivot->is_class_teacher ?? false;
             $activeStudents = $grade->students->where('status', 'active');
             $studentsCount = $activeStudents->count();
             
