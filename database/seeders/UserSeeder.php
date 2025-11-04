@@ -28,26 +28,26 @@ class UserSeeder extends Seeder
 
         User::create([
             'name' => 'Margaret Teacher',
-            'email' => 'margaret.teacher2@school.com',
+            'email' => 'margaret.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
 
         User::create([
             'name' => 'Lydia Teacher',
-            'email' => 'lydia.teacher3@school.com',
+            'email' => 'lydia.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
         User::create([
             'name' => 'Damaris Teacher',
-            'email' => 'damaris.teacher3@school.com',
+            'email' => 'damaris.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
         User::create([
             'name' => 'Petty Teacher',
-            'email' => 'petty.teacher3@school.com',
+            'email' => 'petty.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
         ]);
