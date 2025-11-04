@@ -18,7 +18,13 @@ class AttendanceSeeder extends Seeder
         $teachers = User::where('role', 'teacher')->get();
 
         $startDate = Carbon::parse('2025-01-07');
-        $endDate = Carbon::parse('2025-10-23');
+        // $endDate = Carbon::parse('2025-11-4');
+        // $endDate = Carbon::now()->format('Y-m-d');
+        $endDate = Carbon::parse(Carbon::now()->format('Y-m-d'));
+
+
+
+        // dd($endDate);
 
         $statusWeights = [
             'present' => 85,

@@ -18,6 +18,7 @@ class GuardianAttendanceController extends Controller
         $guardian = $user->guardian;
         $students = $guardian->students()->where('status', 'active')->get();
         
+        // $startDate = now()->startOfYear()->toDateString();
         $startDate = now()->startOfMonth()->toDateString();
         $endDate = now()->toDateString();
         $currentMonth = now()->format('F Y');
@@ -34,13 +35,15 @@ class GuardianAttendanceController extends Controller
                 ->map(function ($record) {
                     return [
                         'id' => $record->id,
-                        'date' => $record->date,
+                        'date' => $record->attendance_date,
                         'status' => $record->status,
                         'remarks' => $record->remarks,
                         'marked_by' => $record->markedBy->name ?? 'N/A',
                         'marked_at' => $record->created_at->format('Y-m-d H:i:s'),
                     ];
                 });
+                // dd($attendanceRecords);
+                // dd($attendanceStats);
             
             return [
                 'id' => $student->id,

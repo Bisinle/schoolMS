@@ -11,6 +11,7 @@ export default function Attendance({ students, currentMonth }) {
             />
         </div>
     );
+    console.log(students);
 
     return (
         <AuthenticatedLayout header="Attendance">

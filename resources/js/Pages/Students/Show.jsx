@@ -24,7 +24,7 @@ export default function StudentsShow({ student, attendanceStats, currentMonth })
             </div>
         </div>
     );
-
+console.log(student);
     return (
         <AuthenticatedLayout header="Student Details">
             <Head title={`Student - ${student.first_name} ${student.last_name}`} />

@@ -127,6 +127,7 @@ class StudentController extends Controller
 
         return Inertia::render('Students/Show', [
             'student' => $student,
+            'attendanceStats' => $student->getAttendanceStats(),
         ]);
     }
 
