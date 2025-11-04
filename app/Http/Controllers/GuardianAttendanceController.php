@@ -29,7 +29,7 @@ class GuardianAttendanceController extends Controller
             // Get detailed attendance records for current month
             $attendanceRecords = $student->attendances()
                 ->whereBetween('attendance_date', [$startDate, $endDate])
-                ->orderBy('date', 'desc')
+                ->orderBy('attendance_date', 'desc')
                 ->get()
                 ->map(function ($record) {
                     return [
