@@ -49,7 +49,7 @@ export default function Dashboard({
                 </div>
             </div>
         );
-
+console.log(topStudents)
         return link ? <Link href={link}>{CardContent}</Link> : CardContent;
     };
 

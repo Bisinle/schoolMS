@@ -164,12 +164,7 @@ export default function Login({ status, canResetPassword }) {
                 <div className="mt-6 text-center">
                     <p className="text-sm text-gray-600">
                         Don't have an account?{' '}
-                        <Link
-                            href={route('register')}
-                            className="font-semibold text-orange hover:text-orange-dark transition-colors"
-                        >
-                            Create an account
-                        </Link>
+                       contact admin to provide you access.
                     </p>
                 </div>
 

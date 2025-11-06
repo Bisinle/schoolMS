@@ -4,6 +4,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use App\Http\Middleware\RoleMiddleware;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Inertia\Inertia;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -23,5 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        // Custom 404 handler for Inertia
+        $exceptions->render(function (NotFoundHttpException $e, $request) {
+            // Only handle 404s for non-API routes
+            if (!$request->is('api/*')) {
+                return Inertia::render('Errors/404', [
+                    'status' => 404
+                ])
+                ->toResponse($request)
+                ->setStatusCode(404);
+            }
+        });
     })->create();

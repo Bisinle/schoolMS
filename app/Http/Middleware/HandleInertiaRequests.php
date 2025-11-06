@@ -37,11 +37,14 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                     'role' => $request->user()->role,
+                    'is_active' => $request->user()->is_active ?? true, // Add is_active
                 ] : null,
             ],
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
+                'generated_password' => fn () => $request->session()->get('generated_password'),
+                'user_name' => fn () => $request->session()->get('user_name'),
             ],
         ];
     }

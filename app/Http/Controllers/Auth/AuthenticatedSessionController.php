@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\ActivityLog;
+use App\Enums\ActivityType;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +35,30 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Get authenticated user
+        $user = Auth::user();
+
+        // Update last login timestamp (only if field exists)
+        if (method_exists($user, 'updateLastLogin')) {
+            $user->updateLastLogin();
+        }
+
+        // Log successful login (only if ActivityLog model exists)
+        if (class_exists(ActivityLog::class) && class_exists(ActivityType::class)) {
+            try {
+                ActivityLog::createLog(
+                    ActivityType::LOGIN->value,
+                    $user->id,
+                    $user->id,
+                    "User logged in successfully",
+                    null
+                );
+            } catch (\Exception $e) {
+                // Silently fail if activity logging fails
+                // This prevents login from failing if activity log table doesn't exist yet
+            }
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 
@@ -41,6 +67,21 @@ class AuthenticatedSessionController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        // Log logout (only if ActivityLog model exists)
+        if (Auth::check() && class_exists(ActivityLog::class) && class_exists(ActivityType::class)) {
+            try {
+                ActivityLog::createLog(
+                    ActivityType::LOGOUT->value,
+                    Auth::id(),
+                    Auth::id(),
+                    "User logged out",
+                    null
+                );
+            } catch (\Exception $e) {
+                // Silently fail if activity logging fails
+            }
+        }
+
         Auth::guard('web')->logout();
 
         $request->session()->invalidate();

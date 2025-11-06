@@ -16,6 +16,8 @@ class UserSeeder extends Seeder
             'email' => 'admin@school.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'is_active' => true,
+            'phone' => '0712000000',
         ]);
 
         // Create Teacher Users
@@ -24,6 +26,8 @@ class UserSeeder extends Seeder
             'email' => 'faith.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
+            'is_active' => true,
+            'phone' => '0712345671',
         ]);
 
         User::create([
@@ -31,6 +35,8 @@ class UserSeeder extends Seeder
             'email' => 'margaret.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
+            'is_active' => true,
+            'phone' => '0712345672',
         ]);
 
         User::create([
@@ -38,25 +44,36 @@ class UserSeeder extends Seeder
             'email' => 'lydia.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
+            'is_active' => true,
+            'phone' => '0712345673',
         ]);
+
         User::create([
             'name' => 'Damaris Teacher',
             'email' => 'damaris.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
+            'is_active' => true,
+            'phone' => '0712345674',
         ]);
+
         User::create([
             'name' => 'Petty Teacher',
             'email' => 'petty.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
+            'is_active' => true,
+            'phone' => '0712345675',
         ]);
+
         // Create Guardian User
         User::create([
             'name' => 'Jane Doe',
             'email' => 'guardian@school.com',
             'password' => Hash::make('password'),
             'role' => 'guardian',
+            'is_active' => true,
+            'phone' => '0712345680',
         ]);
 
         $this->command->info('✅ Users seeded successfully!');

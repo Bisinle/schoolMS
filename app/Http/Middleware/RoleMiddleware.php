@@ -14,6 +14,15 @@ class RoleMiddleware
             return redirect()->route('login');
         }
 
+        // Check if user is active (only if the field exists)
+        if (isset($request->user()->is_active) && !$request->user()->is_active) {
+            auth()->logout();
+            return redirect()->route('login')->withErrors([
+                'email' => 'Your account has been deactivated. Please contact the administrator.'
+            ]);
+        }
+
+        // Check if user has required role
         if (!in_array($request->user()->role, $roles)) {
             abort(403, 'Unauthorized action.');
         }

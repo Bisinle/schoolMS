@@ -22,7 +22,7 @@ class LoginRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, \Illuminate\Contracts\Validation\Rule|array|string>
      */
     public function rules(): array
     {
@@ -46,6 +46,16 @@ class LoginRequest extends FormRequest
 
             throw ValidationException::withMessages([
                 'email' => trans('auth.failed'),
+            ]);
+        }
+
+        // Check if user is active
+        $user = Auth::user();
+        if (isset($user->is_active) && !$user->is_active) {
+            Auth::logout();
+            
+            throw ValidationException::withMessages([
+                'email' => 'Your account has been deactivated. Please contact the administrator.',
             ]);
         }
 

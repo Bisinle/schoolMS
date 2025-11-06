@@ -15,8 +15,10 @@ use App\Http\Controllers\GuardianChildrenController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportCommentController;
 use App\Http\Controllers\SchoolSettingController;
+use App\Http\Controllers\UserController; // ADD THIS LINE
 use App\Models\Grade;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia; // ADD THIS LINE
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -87,6 +89,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware(['role:admin,teacher'])->group(function () {
         Route::get('/guardians/{guardian}', [GuardianController::class, 'show'])->name('guardians.show');
     });
+    
     Route::middleware(['role:guardian'])->group(function () {
         Route::get('/guardian/children', [GuardianChildrenController::class, 'index'])->name('guardian.children');
         Route::get('/guardian/attendance', [GuardianAttendanceController::class, 'index'])->name('guardian.attendance');
@@ -107,6 +110,19 @@ Route::middleware('auth')->group(function () {
         Route::get('/teachers/{teacher}/edit', [TeacherController::class, 'edit'])->name('teachers.edit');
         Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
         Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
+    });
+
+    //^ USER MANAGEMENT ROUTES - ADD THIS ENTIRE SECTION
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+        Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+        Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+        Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     });
 
     //^ Attendance Routes - IMPORTANT: specific routes MUST come before {student} route
@@ -183,6 +199,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/grades/{grade}/subjects', function (Grade $grade) {
         return $grade->subjects()->where('status', 'active')->get();
     });
+});
+
+// Fallback route for 404 - ADD THIS BEFORE require auth.php
+Route::fallback(function () {
+    return Inertia::render('Errors/404');
 });
 
 require __DIR__ . '/auth.php';

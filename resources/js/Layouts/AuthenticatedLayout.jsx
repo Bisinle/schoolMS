@@ -12,6 +12,7 @@ import {
     Menu,
     X,
     LogOut,
+    UserCog,
 } from "lucide-react";
 
 export default function AuthenticatedLayout({ header, children }) {
@@ -24,6 +25,7 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: "Students", href: "/students", icon: Users },
             { name: "Teachers", href: "/teachers", icon: GraduationCap },
             { name: "Guardians", href: "/guardians", icon: UserCircle },
+            { name: "Users", href: "/users", icon: UserCog },
             { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
             { name: "Grades", href: "/grades", icon: BookOpen },
             { name: "Subjects", href: "/subjects", icon: FileText },
