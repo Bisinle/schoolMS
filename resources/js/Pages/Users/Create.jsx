@@ -21,7 +21,8 @@ export default function Create({ auth, roles }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('users.store'));
+        // post(route('users.store'));
+        console.log(data);
     };
 
     return (
