@@ -13,7 +13,18 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->string('role', 50)->default('guardian')->change();            $table->timestamp('email_verified_at')->nullable();
+            $table->enum('role', [
+                'admin',
+                'teacher',
+                'guardian',
+                'accountant',
+                'receptionist',
+                'nurse',
+                'it_staff',
+                'maid',
+                'cook'
+            ])->default('guardian')->change();
+            $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
