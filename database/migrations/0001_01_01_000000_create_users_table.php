@@ -12,10 +12,11 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('email')->unique();
+            $table->string('phone')->nullable();
             $table->string('password');
             $table->enum('role', [
                 'admin',
-                'teacher',
+                'teacher', 
                 'guardian',
                 'accountant',
                 'receptionist',
@@ -23,10 +24,22 @@ return new class extends Migration
                 'it_staff',
                 'maid',
                 'cook'
-            ])->default('guardian')->change();
+            ])->default('guardian');
+            $table->boolean('is_active')->default(true);
+            $table->boolean('must_change_password')->default(false);
+            $table->timestamp('last_login_at')->nullable();
             $table->timestamp('email_verified_at')->nullable();
+            $table->unsignedBigInteger('created_by')->nullable();
             $table->rememberToken();
+            $table->softDeletes(); // For soft delete functionality
             $table->timestamps();
+
+            // Indexes
+            $table->index('role');
+            $table->index('is_active');
+            
+            // Foreign keys
+            $table->foreign('created_by')->references('id')->on('users')->onDelete('set null');
         });
 
         Schema::create('password_reset_tokens', function (Blueprint $table) {
