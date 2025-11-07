@@ -13,7 +13,7 @@ return new class extends Migration
             $table->string('name');
             $table->string('email')->unique();
             $table->string('password');
-            $table->enum('role', ['admin', 'teacher', 'guardian'])->default('guardian');
+            $table->string('role')->default('guardian'); // Changed from enum to string
             $table->timestamp('email_verified_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
