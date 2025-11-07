@@ -9,7 +9,9 @@ use App\Enums\UserRole;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rules;
+use Illuminate\Support\Arr;
 
 class UserController extends Controller
 {
@@ -102,17 +104,17 @@ class UserController extends Controller
             'request_data' => $request->except(['password', 'password_confirmation']),
             'role_attempting' => $request->role,
         ]);
-    
+
         try {
             // Log available roles for comparison
             \Log::info('Available roles from UserRole enum', [
                 'roles' => UserRole::values(),
                 'roles_string' => implode(',', UserRole::values()),
             ]);
-    
+
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,NULL,id,deleted_at,NULL'],
                 'phone' => ['nullable', 'string', 'max:20'],
                 'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
                 'password_setup_method' => ['required', 'in:generate,send_email,custom'],
@@ -123,51 +125,51 @@ class UserController extends Controller
                 'password_confirmation' => ['required_if:password_setup_method,custom', 'nullable', 'same:password'],
                 'must_change_password' => ['boolean'],
             ]);
-    
+
             \Log::info('Validation passed successfully', [
-                'validated_data' => array_except($validated, ['password', 'password_confirmation']),
+                'validated_data' => Arr::except($validated, ['password', 'password_confirmation']),
             ]);
-    
+
             // Log before calling service
             \Log::info('Calling UserManagementService::createUser', [
                 'service_exists' => class_exists(\App\Services\UserManagementService::class),
                 'auth_user_id' => Auth::id(),
             ]);
-    
+
             $result = $this->userService->createUser($validated, Auth::user());
-    
+
             \Log::info('UserManagementService returned result', [
                 'success' => $result['success'],
                 'message' => $result['message'] ?? null,
                 'user_id' => $result['user']->id ?? null,
             ]);
-    
+
             if ($result['success']) {
                 \Log::info('User created successfully, redirecting', [
                     'user_id' => $result['user']->id,
                     'user_email' => $result['user']->email,
                     'user_role' => $result['user']->role,
                 ]);
-    
+
                 // Store password in session for display on next page
                 return redirect()->route('users.show', $result['user'])
                     ->with('success', $result['message'])
                     ->with('generated_password', $result['password']);
             }
-    
+
             \Log::warning('User creation failed from service', [
                 'error_message' => $result['message'],
             ]);
-    
+
             return back()->withErrors(['error' => $result['message']])->withInput();
-    
+
         } catch (\Illuminate\Validation\ValidationException $e) {
             \Log::error('Validation failed', [
                 'errors' => $e->errors(),
                 'failed_field' => array_keys($e->errors())[0] ?? 'unknown',
             ]);
             throw $e;
-    
+
         } catch (\Exception $e) {
             \Log::error('Unexpected error during user creation', [
                 'error_message' => $e->getMessage(),
@@ -175,7 +177,7 @@ class UserController extends Controller
                 'error_line' => $e->getLine(),
                 'trace' => $e->getTraceAsString(),
             ]);
-    
+
             return back()->withErrors(['error' => 'An unexpected error occurred: ' . $e->getMessage()])->withInput();
         }
     }
@@ -228,7 +230,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id . ',id,deleted_at,NULL'],
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
             'is_active' => ['required', 'boolean'],
