@@ -95,36 +95,89 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
-            'password_setup_method' => ['required', 'in:generate,send_email,custom'],
-            'password' => ['required_if:password_setup_method,custom', 'nullable', 'string', Rules\Password::min(8)
-                ->mixedCase()
-                ->numbers()
-                ->symbols()],
-            'password_confirmation' => ['required_if:password_setup_method,custom', 'nullable', 'same:password'],
-            'must_change_password' => ['boolean'],
+        // Log the incoming request
+        \Log::info('=== USER CREATION ATTEMPT ===', [
+            'timestamp' => now(),
+            'admin_user' => auth()->user()->email,
+            'request_data' => $request->except(['password', 'password_confirmation']),
+            'role_attempting' => $request->role,
         ]);
-
-        // Prevent creating another admin (optional security measure)
-        // Uncomment if you want only one admin
-        // if ($validated['role'] === 'admin' && User::where('role', 'admin')->exists()) {
-        //     return back()->withErrors(['role' => 'An admin user already exists.']);
-        // }
-
-        $result = $this->userService->createUser($validated, Auth::user());
-
-        if ($result['success']) {
-            // Store password in session for display on next page
-            return redirect()->route('users.show', $result['user'])
-                ->with('success', $result['message'])
-                ->with('generated_password', $result['password']);
+    
+        try {
+            // Log available roles for comparison
+            \Log::info('Available roles from UserRole enum', [
+                'roles' => UserRole::values(),
+                'roles_string' => implode(',', UserRole::values()),
+            ]);
+    
+            $validated = $request->validate([
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+                'phone' => ['nullable', 'string', 'max:20'],
+                'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
+                'password_setup_method' => ['required', 'in:generate,send_email,custom'],
+                'password' => ['required_if:password_setup_method,custom', 'nullable', 'string', Rules\Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()],
+                'password_confirmation' => ['required_if:password_setup_method,custom', 'nullable', 'same:password'],
+                'must_change_password' => ['boolean'],
+            ]);
+    
+            \Log::info('Validation passed successfully', [
+                'validated_data' => array_except($validated, ['password', 'password_confirmation']),
+            ]);
+    
+            // Log before calling service
+            \Log::info('Calling UserManagementService::createUser', [
+                'service_exists' => class_exists(\App\Services\UserManagementService::class),
+                'auth_user_id' => Auth::id(),
+            ]);
+    
+            $result = $this->userService->createUser($validated, Auth::user());
+    
+            \Log::info('UserManagementService returned result', [
+                'success' => $result['success'],
+                'message' => $result['message'] ?? null,
+                'user_id' => $result['user']->id ?? null,
+            ]);
+    
+            if ($result['success']) {
+                \Log::info('User created successfully, redirecting', [
+                    'user_id' => $result['user']->id,
+                    'user_email' => $result['user']->email,
+                    'user_role' => $result['user']->role,
+                ]);
+    
+                // Store password in session for display on next page
+                return redirect()->route('users.show', $result['user'])
+                    ->with('success', $result['message'])
+                    ->with('generated_password', $result['password']);
+            }
+    
+            \Log::warning('User creation failed from service', [
+                'error_message' => $result['message'],
+            ]);
+    
+            return back()->withErrors(['error' => $result['message']])->withInput();
+    
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            \Log::error('Validation failed', [
+                'errors' => $e->errors(),
+                'failed_field' => array_keys($e->errors())[0] ?? 'unknown',
+            ]);
+            throw $e;
+    
+        } catch (\Exception $e) {
+            \Log::error('Unexpected error during user creation', [
+                'error_message' => $e->getMessage(),
+                'error_file' => $e->getFile(),
+                'error_line' => $e->getLine(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+    
+            return back()->withErrors(['error' => 'An unexpected error occurred: ' . $e->getMessage()])->withInput();
         }
-
-        return back()->withErrors(['error' => $result['message']])->withInput();
     }
 
     /**
