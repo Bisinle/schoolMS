@@ -15,18 +15,16 @@ use App\Http\Controllers\GuardianChildrenController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportCommentController;
 use App\Http\Controllers\SchoolSettingController;
-use App\Http\Controllers\UserController; // ADD THIS LINE
+use App\Http\Controllers\UserController; 
 use App\Models\Grade;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia; // ADD THIS LINE
+use Inertia\Inertia; 
+
+
 
 Route::get('/', function () {
-    if (auth()->check()) {
-        return redirect()->route('dashboard');
-    }
     return redirect()->route('login');
 });
-
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
