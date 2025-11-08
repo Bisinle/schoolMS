@@ -14,6 +14,7 @@ import {
     LogOut,
     UserCog,
 } from "lucide-react";
+import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth } = usePage().props;
@@ -218,6 +219,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     </div>
                 </main>
             </div>
+            <PWAInstallPrompt />
         </div>
     );
 }
