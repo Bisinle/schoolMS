@@ -21,8 +21,12 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia; // ADD THIS LINE
 
 Route::get('/', function () {
+    if (auth()->check()) {
+        return redirect()->route('dashboard');
+    }
     return redirect()->route('login');
 });
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
