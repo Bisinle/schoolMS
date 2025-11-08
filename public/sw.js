@@ -1,6 +1,6 @@
 const CACHE_NAME = 'schoolms-v1';
 const urlsToCache = [
-  '/',
+  '/dashboard',
   '/build/manifest.json',
   '/manifest.json',
   '/images/icon-192x192.png',
