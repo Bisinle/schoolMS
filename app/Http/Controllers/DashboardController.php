@@ -10,6 +10,7 @@ use App\Models\Grade;
 use App\Models\Subject;
 use App\Models\Exam;
 use App\Models\ExamResult;
+use App\Models\Document;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -44,6 +45,24 @@ class DashboardController extends Controller
         $totalTeachers = Teacher::count();
         $totalGrades = Grade::where('status', 'active')->count();
         $totalSubjects = Subject::where('status', 'active')->count();
+
+        // Document stats
+        $now = now();
+        $in30Days = now()->addDays(30);
+        $documentStats = [
+            'total' => Document::count(),
+            'pending' => Document::where('status', 'pending')->count(),
+            'verified' => Document::where('status', 'verified')->count(),
+            'rejected' => Document::where('status', 'rejected')->count(),
+            'expiringSoon' => Document::whereNotNull('expiry_date')
+                ->whereBetween('expiry_date', [$now, $in30Days])
+                ->count(),
+            // 'expiring_soon' => Document::whereNotNull('expiry_date')
+            //     ->whereRaw('DATEDIFF(expiry_date, CURDATE()) <= 30')
+            //     ->whereRaw('DATEDIFF(expiry_date, CURDATE()) > 0')
+            //     ->count(),
+            
+        ];
 
         $studentsByGrade = Grade::withCount('students')
             ->where('status', 'active')
@@ -118,9 +137,7 @@ class DashboardController extends Controller
             'students_without_guardian' => Student::whereNull('guardian_id')->count(),
             'students_without_grade' => Student::whereNull('grade_id')->count(),
             'grades_without_class_teacher' => Grade::whereDoesntHave('teachers', function ($query) {
-                // $query->wherePivot('is_class_teacher', true);
                 $query->where('grade_teacher.is_class_teacher', true);
-
             })->count(),
             'pending_exam_results' => $examsWithCompletion->where('completion_rate', '<', 100)->count(),
         ];
@@ -147,6 +164,7 @@ class DashboardController extends Controller
             'quickStats' => $quickStats,
             'currentTerm' => $this->getCurrentTerm(),
             'currentYear' => $currentYear,
+            'documentStats' => $documentStats,
         ];
     }
 
@@ -157,6 +175,18 @@ class DashboardController extends Controller
         if (!$teacher) {
             return ['stats' => [], 'message' => 'Teacher profile not found.'];
         }
+
+        // Get teacher's documents
+        $teacherDocuments = Document::where('documentable_type', 'App\\Models\\Teacher')
+            ->where('documentable_id', $teacher->id)
+            ->get();
+
+        $documentStats = [
+            'total' => $teacherDocuments->count(),
+            'pending' => $teacherDocuments->where('status', 'pending')->count(),
+            'verified' => $teacherDocuments->where('status', 'verified')->count(),
+            'rejected' => $teacherDocuments->where('status', 'rejected')->count(),
+        ];
     
         $currentYear = now()->year;
         $currentTerm = $this->getCurrentTerm();
@@ -215,7 +245,6 @@ class DashboardController extends Controller
     
         // Grade breakdown with detailed stats
         $myGrades = $assignedGrades->map(function ($grade) use ($teacher, $currentTerm, $currentYear) {
-            // $isClassTeacher = $grade->pivot->is_class_teacher;
             $isClassTeacher = $grade->pivot->is_class_teacher ?? false;
             $activeStudents = $grade->students->where('status', 'active');
             $studentsCount = $activeStudents->count();
@@ -389,6 +418,7 @@ class DashboardController extends Controller
             'studentsNeedingAttention' => $studentsNeedingAttention,
             'currentTerm' => $currentTerm,
             'currentYear' => $currentYear,
+            'documentStats' => $documentStats,
         ];
     }
 
@@ -399,6 +429,28 @@ class DashboardController extends Controller
         if (!$guardian) {
             return ['message' => 'Guardian profile not found.'];
         }
+
+        // Get guardian's and children's documents
+        $studentIds = $guardian->students()->pluck('id');
+
+        $guardianDocs = Document::where(function($query) use ($guardian, $studentIds) {
+            $query->where(function($q) use ($guardian) {
+                $q->where('documentable_type', 'App\\Models\\Guardian')
+                  ->where('documentable_id', $guardian->id);
+            })->orWhere(function($q) use ($studentIds) {
+                $q->where('documentable_type', 'App\\Models\\Student')
+                  ->whereIn('documentable_id', $studentIds);
+            });
+        })->get();
+
+        $documentStats = [
+            'total' => $guardianDocs->count(),
+            'pending' => $guardianDocs->where('status', 'pending')->count(),
+            'verified' => $guardianDocs->where('status', 'verified')->count(),
+            'rejected' => $guardianDocs->where('status', 'rejected')->count(),
+            'my_docs' => $guardianDocs->where('documentable_type', 'App\\Models\\Guardian')->count(),
+            'children_docs' => $guardianDocs->where('documentable_type', 'App\\Models\\Student')->count(),
+        ];
 
         $students = $guardian->students()->where('status', 'active')->get();
         
@@ -520,6 +572,7 @@ class DashboardController extends Controller
             'currentYear' => $currentYear,
             'currentTerm' => $currentTerm,
             'totalChildren' => $students->count(),
+            'documentStats' => $documentStats,
         ];
     }
 

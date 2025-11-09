@@ -3,7 +3,7 @@ import { Head, Link } from '@inertiajs/react';
 import { 
     Users, UserCheck, UserCircle, GraduationCap, TrendingUp, Calendar, 
     ClipboardCheck, BarChart3, Award, AlertCircle, CheckCircle, BookOpen,
-    FileText, Target, Clock, Trophy, AlertTriangle, UserPlus, School
+    FileText, Target, Clock, Trophy, AlertTriangle, UserPlus, School, XCircle
 } from 'lucide-react';
 
 export default function Dashboard({ 
@@ -15,6 +15,7 @@ export default function Dashboard({
     currentMonth,
     currentYear,
     currentTerm,
+    documentStats,
     // Admin specific
     studentsByGrade,
     studentsByGender,
@@ -49,7 +50,7 @@ export default function Dashboard({
                 </div>
             </div>
         );
-console.log(topStudents)
+
         return link ? <Link href={link}>{CardContent}</Link> : CardContent;
     };
 
@@ -145,6 +146,51 @@ console.log(topStudents)
                             color="teal-500"
                             link="/exams"
                         />
+                    </div>
+
+                    {/* Document Management Widget */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <h3 className="text-lg font-semibold text-navy flex items-center">
+                                <FileText className="w-5 h-5 mr-2 text-orange" />
+                                Document Management
+                            </h3>
+                            <Link href="/documents" className="text-sm text-orange hover:text-orange-dark font-medium">
+                                View All →
+                            </Link>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
+                                <p className="text-2xl font-bold text-blue-600">{documentStats?.total || 0}</p>
+                                <p className="text-xs text-gray-600 mt-1">Total Docs</p>
+                            </div>
+                            
+                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                                <Clock className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
+                                <p className="text-2xl font-bold text-yellow-600">{documentStats?.pending || 0}</p>
+                                <p className="text-xs text-gray-600 mt-1">Pending</p>
+                            </div>
+                            
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                                <p className="text-2xl font-bold text-green-600">{documentStats?.verified || 0}</p>
+                                <p className="text-xs text-gray-600 mt-1">Verified</p>
+                            </div>
+                            
+                            <div className="text-center p-4 bg-red-50 rounded-lg">
+                                <XCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
+                                <p className="text-2xl font-bold text-red-600">{documentStats?.rejected || 0}</p>
+                                <p className="text-xs text-gray-600 mt-1">Rejected</p>
+                            </div>
+                            
+                            <div className="text-center p-4 bg-orange-50 rounded-lg">
+                                <AlertTriangle className="w-8 h-8 text-orange mx-auto mb-2" />
+                                <p className="text-2xl font-bold text-orange">{documentStats?.expiring_soon || 0}</p>
+                                <p className="text-xs text-gray-600 mt-1">Expiring</p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Action Required Cards */}
@@ -475,30 +521,29 @@ console.log(topStudents)
             {role === 'teacher' && (
                 <div className="space-y-6">
                     {/* Welcome Banner */}
-                  {/* Welcome Banner */}
-<div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl shadow-lg p-8 text-white relative overflow-hidden">
-    <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
-    <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
-    <div className="relative flex items-center justify-between">
-        <div>
-            <h1 className="text-3xl font-bold mb-2">
-                Welcome Back, Teacher! 👋
-            </h1>
-            <p className="text-purple-100 text-lg">
-                Academic Year {currentYear} • Term {currentTerm}
-                {isClassTeacher && classTeacherGrade && (
-                    <span className="ml-4 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
-                        ⭐ Class Teacher - {classTeacherGrade}
-                    </span>
-                )}
-            </p>
-            <p className="text-purple-200 text-sm mt-2">
-                {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-            </p>
-        </div>
-        <GraduationCap className="w-24 h-24 opacity-20" />
-    </div>
-</div>
+                    <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl shadow-lg p-8 text-white relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+                        <div className="relative flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold mb-2">
+                                    Welcome Back, Teacher! 👋
+                                </h1>
+                                <p className="text-purple-100 text-lg">
+                                    Academic Year {currentYear} • Term {currentTerm}
+                                    {isClassTeacher && classTeacherGrade && (
+                                        <span className="ml-4 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
+                                            ⭐ Class Teacher - {classTeacherGrade}
+                                        </span>
+                                    )}
+                                </p>
+                                <p className="text-purple-200 text-sm mt-2">
+                                    {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </p>
+                            </div>
+                            <GraduationCap className="w-24 h-24 opacity-20" />
+                        </div>
+                    </div>
 
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
@@ -532,6 +577,47 @@ console.log(topStudents)
                             value={stats?.pendingResults || 0}
                             color="red-500"
                         />
+                    </div>
+
+                    {/* Document Stats Widget */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-navy flex items-center">
+                                <FileText className="w-5 h-5 mr-2 text-orange" />
+                                My Documents
+                            </h3>
+                            <Link href="/documents" className="text-sm text-orange hover:text-orange-dark font-medium">
+                                Manage →
+                            </Link>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                <p className="text-3xl font-bold text-blue-600">{documentStats?.total || 0}</p>
+                                <p className="text-sm text-gray-600 mt-1">Total</p>
+                            </div>
+                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
+                                <p className="text-3xl font-bold text-yellow-600">{documentStats?.pending || 0}</p>
+                                <p className="text-sm text-gray-600 mt-1">Pending</p>
+                            </div>
+                            <div className="text-center p-4 bg-green-50 rounded-lg">
+                                <p className="text-3xl font-bold text-green-600">{documentStats?.verified || 0}</p>
+                                <p className="text-sm text-gray-600 mt-1">Verified</p>
+                            </div>
+                            <div className="text-center p-4 bg-red-50 rounded-lg">
+                                <p className="text-3xl font-bold text-red-600">{documentStats?.rejected || 0}</p>
+                                <p className="text-sm text-gray-600 mt-1">Rejected</p>
+                            </div>
+                        </div>
+                        
+                        {documentStats?.rejected > 0 && (
+                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                <p className="text-sm text-red-800">
+                                    <AlertTriangle className="w-4 h-4 inline mr-1" />
+                                    You have {documentStats.rejected} rejected document{documentStats.rejected > 1 ? 's' : ''} that need attention.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     {/* My Grades & Exams Needing Attention */}
@@ -726,203 +812,259 @@ console.log(topStudents)
                 </div>
             )}
 
-           {/* Guardian Dashboard */}
-{role === 'guardian' && (
-    <div className="space-y-6">
-        {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-green-600 via-teal-600 to-cyan-600 rounded-2xl shadow-lg p-8 text-white">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h1 className="text-3xl font-bold mb-2">Welcome Back, {guardianInfo?.name || 'Parent/Guardian'}!</h1>
-                    <p className="text-green-100 text-lg">
-                        Academic Year {currentYear} • Term {currentTerm} • {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                    </p>
-                </div>
-                <UserCircle className="w-20 h-20 opacity-20" />
-            </div>
-        </div>
-
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">My Children</p>
-                        <p className="text-4xl font-bold text-orange">{students?.length || 0}</p>
-                        <p className="text-xs text-gray-500 mt-1">Active students</p>
-                    </div>
-                    <Users className="w-12 h-12 text-orange opacity-20" />
-                </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">Average Attendance</p>
-                        <p className="text-4xl font-bold text-blue-600">
-                            {students?.length > 0 
-                                ? Math.round(students.reduce((sum, s) => sum + (s.attendance_stats?.attendance_rate || 0), 0) / students.length)
-                                : 0}%
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">For {currentMonth}</p>
-                    </div>
-                    <Calendar className="w-12 h-12 text-blue-600 opacity-20" />
-                </div>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <p className="text-sm font-medium text-gray-600 mb-1">Total Exams</p>
-                        <p className="text-4xl font-bold text-purple-600">
-                            {students?.reduce((sum, s) => sum + (s.total_exams_this_term || 0), 0) || 0}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-1">This term</p>
-                    </div>
-                    <FileText className="w-12 h-12 text-purple-600 opacity-20" />
-                </div>
-            </div>
-        </div>
-
-      
-
-        {/* Additional Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Link href="/reports" className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 group">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
-                        <FileText className="w-6 h-6 text-purple-600" />
-                    </div>
-                    <div className="text-right">
-                        <p className="text-2xl font-bold text-purple-600">{students?.length || 0}</p>
-                        <p className="text-xs text-gray-500">Available</p>
-                    </div>
-                </div>
-                <h4 className="font-semibold text-navy mb-1">Report Cards</h4>
-                <p className="text-sm text-gray-600">Download term reports</p>
-            </Link>
-
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-orange-100 rounded-lg">
-                        <Users className="w-6 h-6 text-orange" />
-                    </div>
-                    <div className="text-right">
-                        <p className="text-2xl font-bold text-orange">{students?.reduce((sum, s) => sum + (s.total_exams_this_year || 0), 0) || 0}</p>
-                        <p className="text-xs text-gray-500">Total</p>
-                    </div>
-                </div>
-                <h4 className="font-semibold text-navy mb-1">Exams This Year</h4>
-                <p className="text-sm text-gray-600">Across all children</p>
-            </div>
-
-            <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="p-3 bg-green-100 rounded-lg">
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                    </div>
-                    <div className="text-right">
-                        <p className="text-2xl font-bold text-green-600">
-                            {students?.filter(s => (s.attendance_stats?.attendance_rate || 0) >= 90).length || 0}
-                        </p>
-                        <p className="text-xs text-gray-500">Students</p>
-                    </div>
-                </div>
-                <h4 className="font-semibold text-navy mb-1">Excellent Attendance</h4>
-                <p className="text-sm text-gray-600">90% and above</p>
-            </div>
-        </div>
-
-        {/* Children Summary */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <h3 className="text-xl font-semibold text-navy mb-6 flex items-center">
-                <Users className="w-6 h-6 mr-2 text-orange" />
-                My Children - Quick Overview
-            </h3>
-
-            {students && students.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {students.map((student) => (
-                        <div key={student.id} className="border border-gray-200 rounded-lg p-4 hover:border-orange hover:shadow-md transition-all">
-                            <div className="flex items-center space-x-3 mb-3">
-                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange to-orange-dark flex items-center justify-center text-white text-lg font-bold">
-                                    {student.first_name?.charAt(0)}
-                                </div>
-                                <div className="flex-1">
-                                    <h4 className="font-bold text-navy">{student.first_name} {student.last_name}</h4>
-                                    <p className="text-xs text-gray-600">{student.class_name}</p>
-                                </div>
+            {/* Guardian Dashboard */}
+            {role === 'guardian' && (
+                <div className="space-y-6">
+                    {/* Welcome Banner */}
+                    <div className="bg-gradient-to-r from-green-600 via-teal-600 to-cyan-600 rounded-2xl shadow-lg p-8 text-white">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h1 className="text-3xl font-bold mb-2">Welcome Back, {guardianInfo?.name || 'Parent/Guardian'}!</h1>
+                                <p className="text-green-100 text-lg">
+                                    Academic Year {currentYear} • Term {currentTerm} • {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                                </p>
                             </div>
+                            <UserCircle className="w-20 h-20 opacity-20" />
+                        </div>
+                    </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-xs mb-3">
-                                {student.overall_average && (
-                                    <div className="bg-blue-50 rounded p-2">
-                                        <p className="text-gray-600 mb-1">Average</p>
-                                        <p className="font-bold text-blue-600">{student.overall_average}%</p>
-                                    </div>
-                                )}
-                                {student.attendance_stats && (
-                                    <div className="bg-green-50 rounded p-2">
-                                        <p className="text-gray-600 mb-1">Attendance</p>
-                                        <p className="font-bold text-green-600">{student.attendance_stats.attendance_rate}%</p>
-                                    </div>
-                                )}
-                            </div>
-
-                            <div className="flex gap-2">
-                                <Link
-                                    href="/reports" 
-                                    className="flex-1 text-center px-2 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition-all"
-                                >
-                                    Performance
-                                </Link>
-                                <Link
-                                    href="/guardian/attendance"
-                                    className="flex-1 text-center px-2 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700 transition-all"
-                                >
-                                    Attendance
-                                </Link>
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 mb-1">My Children</p>
+                                    <p className="text-4xl font-bold text-orange">{students?.length || 0}</p>
+                                    <p className="text-xs text-gray-500 mt-1">Active students</p>
+                                </div>
+                                <Users className="w-12 h-12 text-orange opacity-20" />
                             </div>
                         </div>
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-12">
-                    <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 text-lg">No active students found.</p>
+
+                        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 mb-1">Average Attendance</p>
+                                    <p className="text-4xl font-bold text-blue-600">
+                                        {students?.length > 0 
+                                            ? Math.round(students.reduce((sum, s) => sum + (s.attendance_stats?.attendance_rate || 0), 0) / students.length)
+                                            : 0}%
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">For {currentMonth}</p>
+                                </div>
+                                <Calendar className="w-12 h-12 text-blue-600 opacity-20" />
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <div>
+                                    <p className="text-sm font-medium text-gray-600 mb-1">Total Exams</p>
+                                    <p className="text-4xl font-bold text-purple-600">
+                                        {students?.reduce((sum, s) => sum + (s.total_exams_this_term || 0), 0) || 0}
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-1">This term</p>
+                                </div>
+                                <FileText className="w-12 h-12 text-purple-600 opacity-20" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Document Stats Widget */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-navy flex items-center">
+                                <FileText className="w-5 h-5 mr-2 text-orange" />
+                                Family Documents
+                            </h3>
+                            <Link href="/documents" className="text-sm text-orange hover:text-orange-dark font-medium">
+                                View All →
+                            </Link>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                            <div className="text-center p-4 bg-blue-50 rounded-lg">
+                                <p className="text-3xl font-bold text-blue-600">{documentStats?.total || 0}</p>
+                                <p className="text-sm text-gray-600 mt-1">Total Docs</p>
+                            </div>
+                            <div className="text-center p-4 bg-purple-50 rounded-lg">
+                                <p className="text-3xl font-bold text-purple-600">{documentStats?.my_docs || 0}</p>
+                                <p className="text-sm text-gray-600 mt-1">My Docs</p>
+                            </div>
+                            <div className="text-center p-4 bg-cyan-50 rounded-lg">
+                                <p className="text-3xl font-bold text-cyan-600">{documentStats?.children_docs || 0}</p>
+                                <p className="text-sm text-gray-600 mt-1">Children Docs</p>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="text-center p-3 bg-yellow-50 rounded-lg">
+                                <Clock className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
+                                <p className="text-xl font-bold text-yellow-600">{documentStats?.pending || 0}</p>
+                                <p className="text-xs text-gray-600">Pending</p>
+                            </div>
+                            <div className="text-center p-3 bg-green-50 rounded-lg">
+                                <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
+                                <p className="text-xl font-bold text-green-600">{documentStats?.verified || 0}</p>
+                                <p className="text-xs text-gray-600">Verified</p>
+                            </div>
+                            <div className="text-center p-3 bg-red-50 rounded-lg">
+                                <XCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
+                                <p className="text-xl font-bold text-red-600">{documentStats?.rejected || 0}</p>
+                                <p className="text-xs text-gray-600">Rejected</p>
+                            </div>
+                        </div>
+                        
+                        {(documentStats?.pending > 0 || documentStats?.rejected > 0) && (
+                            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                <p className="text-sm text-orange-800">
+                                    <AlertTriangle className="w-4 h-4 inline mr-1" />
+                                    {documentStats.pending > 0 && `${documentStats.pending} pending `}
+                                    {documentStats.pending > 0 && documentStats.rejected > 0 && ' & '}
+                                    {documentStats.rejected > 0 && `${documentStats.rejected} rejected `}
+                                    document{((documentStats.pending || 0) + (documentStats.rejected || 0)) > 1 ? 's' : ''}.
+                                </p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Additional Quick Actions */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <Link href="/reports" className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 group">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-purple-100 rounded-lg group-hover:bg-purple-200 transition-colors">
+                                    <FileText className="w-6 h-6 text-purple-600" />
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-bold text-purple-600">{students?.length || 0}</p>
+                                    <p className="text-xs text-gray-500">Available</p>
+                                </div>
+                            </div>
+                            <h4 className="font-semibold text-navy mb-1">Report Cards</h4>
+                            <p className="text-sm text-gray-600">Download term reports</p>
+                        </Link>
+
+                        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-orange-100 rounded-lg">
+                                    <Users className="w-6 h-6 text-orange" />
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-bold text-orange">{students?.reduce((sum, s) => sum + (s.total_exams_this_year || 0), 0) || 0}</p>
+                                    <p className="text-xs text-gray-500">Total</p>
+                                </div>
+                            </div>
+                            <h4 className="font-semibold text-navy mb-1">Exams This Year</h4>
+                            <p className="text-sm text-gray-600">Across all children</p>
+                        </div>
+
+                        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="p-3 bg-green-100 rounded-lg">
+                                    <CheckCircle className="w-6 h-6 text-green-600" />
+                                </div>
+                                <div className="text-right">
+                                    <p className="text-2xl font-bold text-green-600">
+                                        {students?.filter(s => (s.attendance_stats?.attendance_rate || 0) >= 90).length || 0}
+                                    </p>
+                                    <p className="text-xs text-gray-500">Students</p>
+                                </div>
+                            </div>
+                            <h4 className="font-semibold text-navy mb-1">Excellent Attendance</h4>
+                            <p className="text-sm text-gray-600">90% and above</p>
+                        </div>
+                    </div>
+
+                    {/* Children Summary */}
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                        <h3 className="text-xl font-semibold text-navy mb-6 flex items-center">
+                            <Users className="w-6 h-6 mr-2 text-orange" />
+                            My Children - Quick Overview
+                        </h3>
+
+                        {students && students.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {students.map((student) => (
+                                    <div key={student.id} className="border border-gray-200 rounded-lg p-4 hover:border-orange hover:shadow-md transition-all">
+                                        <div className="flex items-center space-x-3 mb-3">
+                                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange to-orange-dark flex items-center justify-center text-white text-lg font-bold">
+                                                {student.first_name?.charAt(0)}
+                                            </div>
+                                            <div className="flex-1">
+                                                <h4 className="font-bold text-navy">{student.first_name} {student.last_name}</h4>
+                                                <p className="text-xs text-gray-600">{student.class_name}</p>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                                            {student.overall_average && (
+                                                <div className="bg-blue-50 rounded p-2">
+                                                    <p className="text-gray-600 mb-1">Average</p>
+                                                    <p className="font-bold text-blue-600">{student.overall_average}%</p>
+                                                </div>
+                                            )}
+                                            {student.attendance_stats && (
+                                                <div className="bg-green-50 rounded p-2">
+                                                    <p className="text-gray-600 mb-1">Attendance</p>
+                                                    <p className="font-bold text-green-600">{student.attendance_stats.attendance_rate}%</p>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex gap-2">
+                                            <Link
+                                                href="/reports" 
+                                                className="flex-1 text-center px-2 py-1.5 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition-all"
+                                            >
+                                                Performance
+                                            </Link>
+                                            <Link
+                                                href="/guardian/attendance"
+                                                className="flex-1 text-center px-2 py-1.5 bg-green-600 text-white text-xs font-semibold rounded hover:bg-green-700 transition-all"
+                                            >
+                                                Attendance
+                                            </Link>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12">
+                                <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                <p className="text-gray-500 text-lg">No active students found.</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Guardian Information */}
+                    {guardianInfo && (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                            <h3 className="text-lg font-semibold text-navy mb-6 flex items-center">
+                                <UserCircle className="w-6 h-6 mr-2 text-orange" />
+                                My Contact Information
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                                    <p className="text-xs text-gray-600 mb-2 font-medium">Full Name</p>
+                                    <p className="font-semibold text-navy text-lg">{guardianInfo.name}</p>
+                                </div>
+                                <div className="p-4 bg-gradient-to-br from-green-50 to-teal-50 rounded-lg border border-green-200">
+                                    <p className="text-xs text-gray-600 mb-2 font-medium">Phone Number</p>
+                                    <p className="font-semibold text-navy text-lg">{guardianInfo.phone_number}</p>
+                                </div>
+                                <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                                    <p className="text-xs text-gray-600 mb-2 font-medium">Relationship</p>
+                                    <p className="font-semibold text-navy text-lg capitalize">{guardianInfo.relationship}</p>
+                                </div>
+                                <div className="p-4 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
+                                    <p className="text-xs text-gray-600 mb-2 font-medium">Email</p>
+                                    <p className="font-semibold text-navy text-sm break-words">{guardianInfo.email}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             )}
-        </div>
-
-        {/* Guardian Information */}
-        {guardianInfo && (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                <h3 className="text-lg font-semibold text-navy mb-6 flex items-center">
-                    <UserCircle className="w-6 h-6 mr-2 text-orange" />
-                    My Contact Information
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                        <p className="text-xs text-gray-600 mb-2 font-medium">Full Name</p>
-                        <p className="font-semibold text-navy text-lg">{guardianInfo.name}</p>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-green-50 to-teal-50 rounded-lg border border-green-200">
-                        <p className="text-xs text-gray-600 mb-2 font-medium">Phone Number</p>
-                        <p className="font-semibold text-navy text-lg">{guardianInfo.phone_number}</p>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg border border-purple-200">
-                        <p className="text-xs text-gray-600 mb-2 font-medium">Relationship</p>
-                        <p className="font-semibold text-navy text-lg capitalize">{guardianInfo.relationship}</p>
-                    </div>
-                    <div className="p-4 bg-gradient-to-br from-orange-50 to-yellow-50 rounded-lg border border-orange-200">
-                        <p className="text-xs text-gray-600 mb-2 font-medium">Email</p>
-                        <p className="font-semibold text-navy text-sm break-words">{guardianInfo.email}</p>
-                    </div>
-                </div>
-            </div>
-        )}
-    </div>
-)}
         </AuthenticatedLayout>
     );
 }
