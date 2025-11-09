@@ -26,4 +26,39 @@ class Guardian extends Model
     {
         return $this->hasMany(Student::class);
     }
+
+    // 🆕 NEW: Documents relationship
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
+    // 🆕 NEW: Helper to get documents by category
+    public function getDocumentsByCategory($categorySlug)
+    {
+        return $this->documents()
+                    ->whereHas('category', function ($query) use ($categorySlug) {
+                        $query->where('slug', $categorySlug);
+                    })
+                    ->get();
+    }
+
+    // 🆕 NEW: Check if guardian has uploaded required documents
+    public function hasRequiredDocuments()
+    {
+        $requiredCategories = DocumentCategory::active()
+            ->forEntity('Guardian')
+            ->required()
+            ->count();
+
+        $uploadedVerifiedDocs = $this->documents()
+            ->verified()
+            ->whereHas('category', function ($query) {
+                $query->where('is_required', true);
+            })
+            ->distinct('document_category_id')
+            ->count('document_category_id');
+
+        return $uploadedVerifiedDocs >= $requiredCategories;
+    }
 }

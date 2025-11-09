@@ -45,6 +45,7 @@ class User extends Authenticatable
     {
         return $this->hasOne(Guardian::class);
     }
+    
     public function teacher()
     {
         return $this->hasOne(Teacher::class);
@@ -68,6 +69,38 @@ class User extends Authenticatable
     public function causedActivities()
     {
         return $this->hasMany(ActivityLog::class, 'causer_id');
+    }
+
+    // 🆕 NEW: Documents relationship (for users without specific roles)
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
+    // 🆕 NEW: Get all documents accessible by this user (including their children's if guardian)
+    public function accessibleDocuments()
+    {
+        if ($this->isAdmin()) {
+            return Document::query();
+        }
+
+        if ($this->isTeacher() && $this->teacher) {
+            return Document::forEntity('App\Models\Teacher', $this->teacher->id);
+        }
+
+        if ($this->isGuardian() && $this->guardian) {
+            $childIds = $this->guardian->students->pluck('id')->toArray();
+            
+            return Document::where(function ($query) use ($childIds) {
+                $query->forEntity('App\Models\Guardian', $this->guardian->id)
+                      ->orWhere(function ($q) use ($childIds) {
+                          $q->where('documentable_type', 'App\Models\Student')
+                            ->whereIn('documentable_id', $childIds);
+                      });
+            });
+        }
+
+        return Document::forEntity('App\Models\User', $this->id);
     }
 
     // Role checks

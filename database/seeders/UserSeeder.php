@@ -12,14 +12,21 @@ class UserSeeder extends Seeder
     {
         // Create Admin User
         User::create([
-            'name' => 'Admin User',
+            'name' => 'Abdi Elmi',
             'email' => 'admin@school.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'is_active' => true,
-            'phone' => '0712000000',
+            'phone' => '0758500708',
         ]);
-
+        User::create([
+            'name' => 'Michelle Mwangi',
+            'email' => 'mich.admin@school.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'is_active' => true,
+            'phone' => '0700562291',
+        ]);
         // Create Teacher Users
         User::create([
             'name' => 'Faith Teacher',

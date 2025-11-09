@@ -19,7 +19,9 @@ class DatabaseSeeder extends Seeder
             GradeSeeder::class,
             SubjectSeeder::class,
             StudentSeeder::class,
-            AttendanceSeeder::class
+            AttendanceSeeder::class,
+            DocumentCategorySeeder::class,  // 🆕 NEW
+            DocumentSeeder::class, 
         ]);
 
         $this->command->newLine();
@@ -41,6 +43,9 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- 3 Teachers (assigned to various grades)');
         $this->command->info('- 5 Students (distributed across grades)');
         $this->command->info('- 1 Guardian (parent of all sample students)');
+        $this->command->info('===========================================');
+        $this->command->info('- 13 Document Categories'); 
+        $this->command->info('- ~100+ Documents (with fake PDF files)'); 
         $this->command->info('===========================================');
     }
 }

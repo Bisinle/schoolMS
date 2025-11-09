@@ -16,6 +16,8 @@ use App\Http\Controllers\ReportController;
 use App\Http\Controllers\ReportCommentController;
 use App\Http\Controllers\SchoolSettingController;
 use App\Http\Controllers\UserController; 
+use App\Http\Controllers\DocumentCategoryController;
+use App\Http\Controllers\DocumentController;
 use App\Models\Grade;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia; 
@@ -201,6 +203,38 @@ Route::middleware('auth')->group(function () {
     Route::get('/api/grades/{grade}/subjects', function (Grade $grade) {
         return $grade->subjects()->where('status', 'active')->get();
     });
+});
+
+
+Route::middleware(['role:admin'])->group(function () {
+    Route::get('/document-categories', [DocumentCategoryController::class, 'index'])->name('document-categories.index');
+    Route::get('/document-categories/create', [DocumentCategoryController::class, 'create'])->name('document-categories.create');
+    Route::post('/document-categories', [DocumentCategoryController::class, 'store'])->name('document-categories.store');
+    Route::get('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'show'])->name('document-categories.show');
+    Route::get('/document-categories/{documentCategory}/edit', [DocumentCategoryController::class, 'edit'])->name('document-categories.edit');
+    Route::put('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'update'])->name('document-categories.update');
+    Route::delete('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'destroy'])->name('document-categories.destroy');
+});
+
+//^ Documents Routes - All authenticated users
+Route::middleware(['auth'])->group(function () {
+    Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::get('/documents/create', [DocumentController::class, 'create'])->name('documents.create');
+    Route::post('/documents', [DocumentController::class, 'store'])->name('documents.store');
+    Route::get('/documents/{document}', [DocumentController::class, 'show'])->name('documents.show');
+    Route::get('/documents/{document}/edit', [DocumentController::class, 'edit'])->name('documents.edit');
+    Route::put('/documents/{document}', [DocumentController::class, 'update'])->name('documents.update');
+    Route::delete('/documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
+    
+    // Document actions
+    Route::get('/documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+    Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])->name('documents.preview');
+});
+
+//^ Document Verification Routes (Admin only)
+Route::middleware(['role:admin'])->group(function () {
+    Route::post('/documents/{document}/verify', [DocumentController::class, 'verify'])->name('documents.verify');
+    Route::post('/documents/{document}/reject', [DocumentController::class, 'reject'])->name('documents.reject');
 });
 
 // Fallback route for 404 - ADD THIS BEFORE require auth.php

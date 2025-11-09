@@ -13,6 +13,8 @@ import {
     X,
     LogOut,
     UserCog,
+    FolderOpen, // 🆕 NEW ICON for Documents
+    FileCog, // 🆕 NEW ICON for Document Categories
 } from "lucide-react";
 import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
 
@@ -32,6 +34,8 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
             { name: "Reports", href: "/reports", icon: FileText },
+            { name: "Documents", href: "/documents", icon: FolderOpen },
+            // { name: "Doc Categories", , icon: FileCog },
         ],
         teacher: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -42,10 +46,12 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
             { name: "Reports", href: "/reports", icon: FileText },
+            { name: "My Documents", href: "/documents", icon: FolderOpen },
         ],
         guardian: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             { name: "Reports", href: "/reports", icon: FileText },
+            { name: "Documents", href: "/documents", icon: FolderOpen },
         ],
     };
 

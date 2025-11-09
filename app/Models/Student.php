@@ -45,7 +45,6 @@ class Student extends Model
         return $this->hasMany(Attendance::class);
     }
 
-    // 🆕 NEW RELATIONSHIPS FOR ACADEMIC MODULE
     public function examResults()
     {
         return $this->hasMany(ExamResult::class);
@@ -54,6 +53,41 @@ class Student extends Model
     public function reportComments()
     {
         return $this->hasMany(ReportComment::class);
+    }
+
+    // 🆕 NEW: Documents relationship
+    public function documents()
+    {
+        return $this->morphMany(Document::class, 'documentable');
+    }
+
+    // 🆕 NEW: Helper to get documents by category
+    public function getDocumentsByCategory($categorySlug)
+    {
+        return $this->documents()
+                    ->whereHas('category', function ($query) use ($categorySlug) {
+                        $query->where('slug', $categorySlug);
+                    })
+                    ->get();
+    }
+
+    // 🆕 NEW: Check if student has uploaded required documents
+    public function hasRequiredDocuments()
+    {
+        $requiredCategories = DocumentCategory::active()
+            ->forEntity('Student')
+            ->required()
+            ->count();
+
+        $uploadedVerifiedDocs = $this->documents()
+            ->verified()
+            ->whereHas('category', function ($query) {
+                $query->where('is_required', true);
+            })
+            ->distinct('document_category_id')
+            ->count('document_category_id');
+
+        return $uploadedVerifiedDocs >= $requiredCategories;
     }
 
     // EXISTING HELPERS
@@ -93,7 +127,6 @@ class Student extends Model
         ];
     }
 
-    // 🆕 NEW HELPER FOR ACADEMIC MODULE
     public function getTermResults($term, $academicYear)
     {
         return $this->examResults()

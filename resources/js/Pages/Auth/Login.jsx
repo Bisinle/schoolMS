@@ -1,13 +1,13 @@
-import { useState } from 'react';
-import InputError from '@/Components/InputError';
-import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import { Mail, Lock, Eye, EyeOff, LogIn, School } from 'lucide-react';
+import { useState } from "react";
+import InputError from "@/Components/InputError";
+import GuestLayout from "@/Components/GuestLayout";
+import { Head, Link, useForm } from "@inertiajs/react";
+import { Mail, Lock, Eye, EyeOff, LogIn, School } from "lucide-react";
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
-        email: '',
-        password: '',
+        email: "",
+        password: "",
         remember: false,
     });
 
@@ -16,8 +16,8 @@ export default function Login({ status, canResetPassword }) {
     const submit = (e) => {
         e.preventDefault();
 
-        post(route('login'), {
-            onFinish: () => reset('password'),
+        post(route("login"), {
+            onFinish: () => reset("password"),
         });
     };
 
@@ -36,9 +36,7 @@ export default function Login({ status, canResetPassword }) {
                     <h2 className="text-3xl font-bold text-[#0b1a34] mb-2">
                         Welcome Back
                     </h2>
-                    <p className="text-gray-600">
-                        Sign in to your account
-                    </p>
+                    <p className="text-gray-600">Sign in to your account</p>
                 </div>
 
                 {/* Desktop Header - Only visible on desktop */}
@@ -54,7 +52,9 @@ export default function Login({ status, canResetPassword }) {
                 {/* Status Message */}
                 {status && (
                     <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
-                        <p className="text-sm font-medium text-green-800">{status}</p>
+                        <p className="text-sm font-medium text-green-800">
+                            {status}
+                        </p>
                     </div>
                 )}
 
@@ -63,7 +63,10 @@ export default function Login({ status, canResetPassword }) {
                     <form onSubmit={submit} className="space-y-6">
                         {/* Email Field */}
                         <div>
-                            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label
+                                htmlFor="email"
+                                className="block text-sm font-semibold text-gray-700 mb-2"
+                            >
                                 Email Address
                             </label>
                             <div className="relative">
@@ -75,21 +78,31 @@ export default function Login({ status, canResetPassword }) {
                                     type="email"
                                     name="email"
                                     value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
+                                    onChange={(e) =>
+                                        setData("email", e.target.value)
+                                    }
                                     className={`block w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
-                                        errors.email ? 'border-red-500' : 'border-gray-300'
+                                        errors.email
+                                            ? "border-red-500"
+                                            : "border-gray-300"
                                     }`}
                                     placeholder="you@example.com"
                                     autoComplete="username"
                                     autoFocus
                                 />
                             </div>
-                            <InputError message={errors.email} className="mt-2" />
+                            <InputError
+                                message={errors.email}
+                                className="mt-2"
+                            />
                         </div>
 
                         {/* Password Field */}
                         <div>
-                            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                            <label
+                                htmlFor="password"
+                                className="block text-sm font-semibold text-gray-700 mb-2"
+                            >
                                 Password
                             </label>
                             <div className="relative">
@@ -98,19 +111,25 @@ export default function Login({ status, canResetPassword }) {
                                 </div>
                                 <input
                                     id="password"
-                                    type={showPassword ? 'text' : 'password'}
+                                    type={showPassword ? "text" : "password"}
                                     name="password"
                                     value={data.password}
-                                    onChange={(e) => setData('password', e.target.value)}
+                                    onChange={(e) =>
+                                        setData("password", e.target.value)
+                                    }
                                     className={`block w-full pl-10 pr-12 py-3 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
-                                        errors.password ? 'border-red-500' : 'border-gray-300'
+                                        errors.password
+                                            ? "border-red-500"
+                                            : "border-gray-300"
                                     }`}
                                     placeholder="Enter your password"
                                     autoComplete="current-password"
                                 />
                                 <button
                                     type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
+                                    onClick={() =>
+                                        setShowPassword(!showPassword)
+                                    }
                                     className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                                 >
                                     {showPassword ? (
@@ -120,7 +139,10 @@ export default function Login({ status, canResetPassword }) {
                                     )}
                                 </button>
                             </div>
-                            <InputError message={errors.password} className="mt-2" />
+                            <InputError
+                                message={errors.password}
+                                className="mt-2"
+                            />
                         </div>
 
                         {/* Remember Me & Forgot Password */}
@@ -130,7 +152,9 @@ export default function Login({ status, canResetPassword }) {
                                     type="checkbox"
                                     name="remember"
                                     checked={data.remember}
-                                    onChange={(e) => setData('remember', e.target.checked)}
+                                    onChange={(e) =>
+                                        setData("remember", e.target.checked)
+                                    }
                                     className="w-4 h-4 text-orange border-gray-300 rounded focus:ring-orange"
                                 />
                                 <span className="ml-2 text-sm text-gray-600">
@@ -155,7 +179,7 @@ export default function Login({ status, canResetPassword }) {
                             className="w-full flex items-center justify-center px-4 py-3 bg-orange text-white font-semibold rounded-lg hover:bg-orange-dark focus:outline-none focus:ring-2 focus:ring-orange focus:ring-offset-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
                         >
                             <LogIn className="w-5 h-5 mr-2" />
-                            {processing ? 'Signing in...' : 'Sign In'}
+                            {processing ? "Signing in..." : "Sign In"}
                         </button>
                     </form>
                 </div>
@@ -163,15 +187,16 @@ export default function Login({ status, canResetPassword }) {
                 {/* Register Link */}
                 <div className="mt-6 text-center">
                     <p className="text-sm text-gray-600">
-                        Don't have an account?{' '}
-                       contact admin to provide you access.
+                        Don't have an account? contact admin to provide you
+                        access.
                     </p>
                 </div>
 
                 {/* Footer */}
                 <div className="mt-8 text-center">
                     <p className="text-xs text-gray-500">
-                        © {new Date().getFullYear()} School Management System. All rights reserved.
+                        © {new Date().getFullYear()} School Management System.
+                        All rights reserved.
                     </p>
                 </div>
             </div>
