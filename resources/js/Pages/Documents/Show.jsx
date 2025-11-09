@@ -155,8 +155,8 @@ export default function Show({ document, auth }) {
                 {/* Back Button */}
                 <Link
                     href={route("documents.index")}
-                    className="inline-flex items-center px-4 py-2 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors"
-                    >
+                    className="inline-flex items-center text-gray-600 hover:text-gray-900"
+                >
                     <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Documents
                 </Link>
@@ -326,9 +326,10 @@ export default function Show({ document, auth }) {
                     </div>
 
                     {/* Actions */}
-                    <div className="border-t border-gray-200 p-6 bg-gray-50">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
+                    <div className="border-t border-gray-200 p-4 sm:p-6 bg-gray-50">
+                        <div className="flex flex-col gap-4">
+                            {/* Primary Actions - Preview & Download */}
+                            <div className="flex flex-col sm:flex-row gap-3">
                                 <a
                                     href={route(
                                         "documents.preview",
@@ -336,7 +337,7 @@ export default function Show({ document, auth }) {
                                     )}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
                                 >
                                     <Eye className="w-4 h-4 mr-2" />
                                     Preview
@@ -346,21 +347,22 @@ export default function Show({ document, auth }) {
                                         "documents.download",
                                         document.id
                                     )}
-                                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                    className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                                 >
                                     <Download className="w-4 h-4 mr-2" />
                                     Download
                                 </a>
                             </div>
 
-                            <div className="flex items-center space-x-3">
-                                {/* Admin Actions */}
-                                {auth.user.role === "admin" &&
-                                    document.status === "pending" && (
+                            {/* Admin Actions or Delete */}
+                            {(auth.user.role === "admin" || document.status === "pending" || document.status === "rejected") && (
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    {/* Admin Actions - Verify & Reject */}
+                                    {auth.user.role === "admin" && document.status === "pending" && (
                                         <>
                                             <button
                                                 onClick={handleVerifyClick}
-                                                className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                                className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                                             >
                                                 <CheckCircle className="w-4 h-4 mr-2" />
                                                 Verify
@@ -369,7 +371,7 @@ export default function Show({ document, auth }) {
                                                 onClick={() =>
                                                     setShowRejectModal(true)
                                                 }
-                                                className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                                className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"
                                             >
                                                 <XCircle className="w-4 h-4 mr-2" />
                                                 Reject
@@ -377,19 +379,20 @@ export default function Show({ document, auth }) {
                                         </>
                                     )}
 
-                                {/* Delete Action */}
-                                {(auth.user.role === "admin" ||
-                                    document.status === "pending" ||
-                                    document.status === "rejected") && (
-                                    <button
-                                        onClick={handleDeleteClick}
-                                        className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-                                    >
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Delete
-                                    </button>
-                                )}
-                            </div>
+                                    {/* Delete Action */}
+                                    {(auth.user.role === "admin" ||
+                                        document.status === "pending" ||
+                                        document.status === "rejected") && (
+                                        <button
+                                            onClick={handleDeleteClick}
+                                            className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4 mr-2" />
+                                            Delete
+                                        </button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
