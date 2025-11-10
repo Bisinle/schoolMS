@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -55,11 +56,20 @@ class NewPasswordController extends Controller
             }
         );
 
-        // If the password was successfully reset, we will redirect the user back to
-        // the application's home authenticated view. If there is an error we can
-        // redirect them back to where they came from with their error message.
+        // If the password was successfully reset, we will log the user in and
+        // redirect them to their dashboard instead of the login page.
         if ($status == Password::PASSWORD_RESET) {
-            return redirect()->route('login')->with('status', __($status));
+            // Get the user by email
+            $user = \App\Models\User::where('email', $request->email)->first();
+            
+            // Log the user in
+            Auth::login($user);
+            
+            // Regenerate session for security
+            $request->session()->regenerate();
+            
+            // Redirect to dashboard with success message
+            return redirect()->route('dashboard')->with('status', 'Your password has been reset successfully! Welcome back.');
         }
 
         throw ValidationException::withMessages([

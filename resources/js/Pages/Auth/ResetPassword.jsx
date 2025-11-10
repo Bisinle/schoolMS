@@ -1,5 +1,4 @@
 import InputError from "@/Components/InputError";
-import InputLabel from "@/Components/InputLabel";
 import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
 import GuestLayout from "@/Components/GuestLayout";
@@ -260,14 +259,13 @@ export default function ResetPassword({ token, email }) {
                     </ul>
                 </div>
 
-                <div className="flex flex-col gap-4 pt-2 ">
+                <div className="flex flex-col gap-4 pt-2">
                     <PrimaryButton
-                        className=" bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors w-full justify-center py-3 text-base font-semibold"
+                        className="bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors w-full justify-center py-3 text-base font-semibold"
                         disabled={processing}
-                        href={route("login")}
                     >
                         {processing ? (
-                            <span className=" flex items-center gap-2">
+                            <span className="flex items-center gap-2">
                                 <svg
                                     className="animate-spin h-5 w-5 text-white"
                                     xmlns="http://www.w3.org/2000/svg"
