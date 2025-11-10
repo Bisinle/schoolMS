@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminPasswordController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StudentController;
@@ -7,6 +8,7 @@ use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\Auth\PasswordChangeController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamResultController;
@@ -235,6 +237,19 @@ Route::middleware(['auth'])->group(function () {
 Route::middleware(['role:admin'])->group(function () {
     Route::post('/documents/{document}/verify', [DocumentController::class, 'verify'])->name('documents.verify');
     Route::post('/documents/{document}/reject', [DocumentController::class, 'reject'])->name('documents.reject');
+});
+
+// Route::middleware('auth')->group(function () {
+//     Route::get('/password/change', [PasswordChangeController::class, 'show'])
+//         ->name('password.change');
+//     Route::put('/password/change', [PasswordChangeController::class, 'update'])
+//         ->name('password.update');
+// });
+
+// Admin Password Management Routes
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::post('/users/{user}/reset-password', [AdminPasswordController::class, 'generateTemporaryPassword'])
+        ->name('admin.users.reset-password');
 });
 
 // Fallback route for 404 - ADD THIS BEFORE require auth.php

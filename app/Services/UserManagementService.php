@@ -8,6 +8,7 @@ use App\Helpers\PasswordGenerator;
 use App\Enums\ActivityType;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Password;
 
 class UserManagementService
 {
@@ -20,25 +21,25 @@ class UserManagementService
 
         try {
             $password = null;
-            $mustChangePassword = false;
+            $sendPasswordSetupEmail = false;
 
             // Handle password based on setup method
             switch ($data['password_setup_method']) {
                 case 'generate':
+                    // Generate temporary password and show it to admin
                     $password = PasswordGenerator::generate(12);
-                    $mustChangePassword = true;
                     break;
                 
                 case 'send_email':
-                    // Generate temporary password for email
-                    $password = PasswordGenerator::generate(12);
-                    $mustChangePassword = true;
-                    // TODO: Send email in future
+                    // Generate a random password (user won't know it)
+                    // Laravel will handle sending the reset link
+                    $password = PasswordGenerator::generate(16);
+                    $sendPasswordSetupEmail = true;
                     break;
                 
                 case 'custom':
+                    // Admin sets the password
                     $password = $data['password'];
-                    $mustChangePassword = $data['must_change_password'] ?? false;
                     break;
             }
 
@@ -51,8 +52,41 @@ class UserManagementService
                 'password' => Hash::make($password),
                 'created_by' => $creator->id,
                 'is_active' => true,
-                'must_change_password' => $mustChangePassword,
             ]);
+
+            // Send password setup email if requested
+            if ($sendPasswordSetupEmail) {
+                try {
+                    // Use Laravel's built-in password reset functionality
+                    $status = Password::sendResetLink([
+                        'email' => $user->email,
+                    ]);
+
+                    if ($status === Password::RESET_LINK_SENT) {
+                        \Log::info('Password setup email sent successfully', [
+                            'user_id' => $user->id,
+                            'email' => $user->email,
+                            'status' => $status,
+                        ]);
+                    } else {
+                        \Log::warning('Password reset link not sent', [
+                            'user_id' => $user->id,
+                            'email' => $user->email,
+                            'status' => $status,
+                        ]);
+                    }
+                    
+                } catch (\Exception $e) {
+                    \Log::error('Failed to send password setup email', [
+                        'user_id' => $user->id,
+                        'email' => $user->email,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+                
+                // Don't return password for email method
+                $password = null;
+            }
 
             // Log activity
             ActivityLog::createLog(
@@ -63,20 +97,34 @@ class UserManagementService
                 [
                     'role' => $data['role'],
                     'email' => $data['email'],
+                    'password_setup_method' => $data['password_setup_method'],
                 ]
             );
 
             DB::commit();
 
+            // Determine success message based on method
+            $message = match($data['password_setup_method']) {
+                'generate' => 'User created successfully. Please share the generated password securely.',
+                'send_email' => "User created successfully. A password setup email has been sent to {$user->email}.",
+                'custom' => 'User created successfully with custom password.',
+                default => 'User created successfully.',
+            };
+
             return [
                 'success' => true,
                 'user' => $user,
-                'password' => $password, // Return password for display
-                'message' => 'User created successfully',
+                'password' => $password, // Only set for 'generate' method
+                'message' => $message,
             ];
 
         } catch (\Exception $e) {
             DB::rollBack();
+            
+            \Log::error('Failed to create user', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
             
             return [
                 'success' => false,
@@ -182,7 +230,7 @@ class UserManagementService
     }
 
     /**
-     * Reset user password
+     * Reset user password (Admin reset - generates temp password)
      */
     public function resetPassword(User $user, User $admin): array
     {
@@ -193,7 +241,6 @@ class UserManagementService
 
             $user->update([
                 'password' => Hash::make($newPassword),
-                'must_change_password' => true,
             ]);
 
             // Log password reset
@@ -210,7 +257,7 @@ class UserManagementService
             return [
                 'success' => true,
                 'password' => $newPassword,
-                'message' => 'Password reset successfully',
+                'message' => 'Password reset successfully. Please share the new password with the user securely.',
             ];
 
         } catch (\Exception $e) {
