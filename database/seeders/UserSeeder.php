@@ -27,6 +27,15 @@ class UserSeeder extends Seeder
             'is_active' => true,
             'phone' => '0700562291',
         ]);
+        User::create([
+            'name' => 'Bisinle Maki',
+            'email' => 'bisinle77@gmail.com',
+            'password' => Hash::make('password'),
+            'role' => 'admin',
+            'is_active' => true,
+            'phone' => '0700562291',
+        ]);
+   
         // Create Teacher Users
         User::create([
             'name' => 'Faith Teacher',
