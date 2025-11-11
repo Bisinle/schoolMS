@@ -102,7 +102,7 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                                     d="M6 18L18 6M6 6l12 12" 
                                 />
                             </svg>
-                            <span>Exit & Return to Admin</span>
+                              <span>Exit & Return to Admin Panel</span>
                         </button>
 
                         {/* Mobile - Compact exit button */}
@@ -110,7 +110,7 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                             onClick={() => setShowExitModal(true)}
                             className="sm:hidden px-2 py-1 bg-white text-orange-600 rounded font-semibold text-xs hover:bg-orange-50"
                         >
-                            Exit
+                            Exit Impersonation
                         </button>
                     </div>
 
