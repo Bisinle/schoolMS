@@ -212,7 +212,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/documents/{document}/preview', [DocumentController::class, 'preview'])->name('documents.preview');
 });
 
-
+Route::middleware(['auth'])->group(function () {
+    Route::impersonate(); // This single line creates both routes!
+});
 
 //^ Document Categories Routes (Admin only)
 Route::middleware(['auth', 'role:admin'])->group(function () {

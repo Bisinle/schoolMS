@@ -3,7 +3,9 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import UserStatsCards from "@/Components/Users/UserStatsCards";
 import UserFilters from "@/Components/Users/UserFilters";
 import UserPasswordModal from "@/Components/Users/UserPasswordModal";
-import ConfirmationModal from "@/Components/ConfirmationModal";import { useState, useEffect } from "react";
+import ConfirmationModal from "@/Components/ConfirmationModal";
+import ImpersonateButton from "@/Components/ImpersonateButton";
+import { useState, useEffect } from "react";
 import {
     UserPlus,
     MoreVertical,
@@ -347,7 +349,6 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                                             View
                                                                             Details
                                                                         </Link>
-                                                                        
                                                                         <Link
                                                                             href={route(
                                                                                 "users.edit",
@@ -364,7 +365,6 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                                             Edit
                                                                             User
                                                                         </Link>
-                                                                        
                                                                         <button
                                                                             onClick={() => {
                                                                                 setOpenMenuId(
@@ -381,10 +381,14 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                                             Password
                                                                         </button>
 
-                                                                      
+                                                                        {/* 🆕 Login As button - Only for non-admin users */}
+                                                                        {!user.roles?.some(role => role.name === 'admin') && (
+                                                                            <ImpersonateButton
+                                                                                user={user}
+                                                                            />
+                                                                        )}
 
                                                                         <hr className="my-1" />
-                                                                        
                                                                         <button
                                                                             onClick={() => {
                                                                                 setOpenMenuId(
@@ -401,9 +405,7 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                                                 ? "Deactivate"
                                                                                 : "Activate"}
                                                                         </button>
-                                                                        
                                                                         <hr className="my-1" />
-                                                                        
                                                                         <button
                                                                             onClick={() => {
                                                                                 setOpenMenuId(

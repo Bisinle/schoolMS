@@ -46,7 +46,12 @@ class HandleInertiaRequests extends Middleware
                 'generated_password' => fn () => $request->session()->get('generated_password'),
                 'user_name' => fn () => $request->session()->get('user_name'),
             ],
-            
+            'impersonation' => [
+                'isImpersonating' => session()->has('impersonated_by'),
+                'impersonatedUser' => session()->has('impersonated_by') ? $request->user() : null,
+                'impersonatorId' => session()->get('impersonated_by'),
+            ],
+
         ];
     }
 }

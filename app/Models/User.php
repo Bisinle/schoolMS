@@ -8,10 +8,12 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Enums\UserRole;
 use App\Notifications\CustomResetPassword;
+use Lab404\Impersonate\Models\Impersonate;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
+    use Impersonate;
 
     protected $fillable = [
         'name',
@@ -108,6 +110,22 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+    /**
+     * 🆕 Define who can impersonate others
+     */
+    public function canImpersonate(): bool
+    {
+        return $this->isAdmin();
+    }
+
+    /**
+     * 🆕 Define who can be impersonated
+     */
+    public function canBeImpersonated(): bool
+    {
+        // Cannot impersonate other admins
+        return !$this->isAdmin();
     }
 
     public function isTeacher(): bool
