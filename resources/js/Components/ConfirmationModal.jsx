@@ -71,9 +71,9 @@ export default function ConfirmationModal({
                                             {title}
                                         </Dialog.Title>
                                         <div className="mt-2">
-                                            <p className="text-sm text-gray-600">
+                                            <div className="text-sm text-gray-600">
                                                 {message}
-                                            </p>
+                                            </div>
                                         </div>
                                     </div>
                                     <button

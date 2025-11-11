@@ -21,8 +21,9 @@ import {
 import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
 
 export default function AuthenticatedLayout({ header, children }) {
-    const { auth, impersonation } = usePage().props; // 🆕 Get both auth and impersonation
+    const { auth, impersonation } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [bannerVisible, setBannerVisible] = useState(true); // 🆕 Banner state
 
     const navigationConfig = {
         admin: [
@@ -60,11 +61,13 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* 🆕 Impersonation Banner - Shows at very top */}
+            {/* 🆕 Impersonation Banner with toggle */}
             {impersonation?.isImpersonating && (
                 <ImpersonationBanner 
                     user={impersonation.impersonatedUser}
                     originalAdmin={{ id: impersonation.impersonatorId }}
+                    isVisible={bannerVisible}
+                    onToggle={() => setBannerVisible(!bannerVisible)}
                 />
             )}
 
@@ -76,11 +79,11 @@ export default function AuthenticatedLayout({ header, children }) {
                 />
             )}
 
-            {/* Sidebar for mobile - 🆕 Add margin-top when impersonating */}
+            {/* Sidebar for mobile */}
             <div
                 className={`fixed inset-y-0 left-0 z-50 w-64 bg-navy transform transition-transform duration-300 ease-in-out md:hidden ${
                     sidebarOpen ? "translate-x-0" : "-translate-x-full"
-                } ${impersonation?.isImpersonating ? 'mt-14 sm:mt-[4.5rem]' : ''}`}
+                }`}
             >
                 <div className="flex flex-col h-full">
                     {/* Mobile header */}
@@ -124,10 +127,10 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             </div>
 
-            {/* Sidebar for desktop - 🆕 Add top position when impersonating */}
+            {/* Sidebar for desktop */}
             <div 
                 className={`hidden md:fixed md:inset-y-0 md:flex md:w-64 md:flex-col ${
-                    impersonation?.isImpersonating ? 'top-14 sm:top-[4.5rem]' : ''
+                    impersonation?.isImpersonating ? 'md:top-14 lg:top-[4.5rem]' : ''
                 }`}
             >
                 <div className="flex flex-col flex-grow bg-navy">
@@ -184,10 +187,12 @@ export default function AuthenticatedLayout({ header, children }) {
                 </div>
             </div>
 
-            {/* Main content - 🆕 Add padding-top when impersonating */}
-            <div className={`md:pl-64 flex flex-col flex-1 ${impersonation?.isImpersonating ? 'pt-14 sm:pt-[4.5rem]' : ''}`}>
+            {/* Main content */}
+            <div className={`md:pl-64 flex flex-col flex-1 ${
+                impersonation?.isImpersonating ? 'md:pt-14 lg:pt-[4.5rem]' : ''
+            }`}>
                 {/* Top navbar */}
-                <div className="sticky top-0 z-10 flex-shrink-0 flex h-16 bg-white shadow-sm">
+                <div className="sticky top-0 z-[5] flex-shrink-0 flex h-16 bg-white shadow-sm">
                     <button
                         type="button"
                         className="px-4 text-gray-500 focus:outline-none md:hidden"
