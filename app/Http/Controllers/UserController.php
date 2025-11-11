@@ -61,7 +61,7 @@ class UserController extends Controller
         $query->orderBy($sortField, $sortDirection);
 
         // Paginate
-        $users = $query->paginate(15)->withQueryString();
+        $users = $query->paginate(10)->withQueryString();
 
         // Get statistics
         $stats = [
