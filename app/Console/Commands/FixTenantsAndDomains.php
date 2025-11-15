@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Tenant;
 use Stancl\Tenancy\Database\Models\Domain;
+use Illuminate\Support\Facades\DB;
 
 class FixTenantsAndDomains extends Command
 {
@@ -21,17 +22,24 @@ class FixTenantsAndDomains extends Command
         }
 
         try {
-            // Create SAF International tenant in CENTRAL database
-            $tenant1 = Tenant::firstOrCreate(
-                ['id' => 'saf-international'],
-                [
-                    'data' => [
+            // Create tenants WITHOUT triggering events (which try to create databases)
+            
+            // SAF International
+            $existing1 = Tenant::find('saf-international');
+            if (!$existing1) {
+                DB::table('tenants')->insert([
+                    'id' => 'saf-international',
+                    'data' => json_encode([
                         'name' => 'SAF International',
                         'email' => 'admin@saf-international.com'
-                    ]
-                ]
-            );
-            $this->info('✓ SAF International tenant exists in central DB');
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $this->info('✓ Created SAF International tenant in central DB');
+            } else {
+                $this->info('→ SAF International tenant already exists');
+            }
 
             // Create domain for SAF International
             Domain::firstOrCreate(
@@ -40,17 +48,22 @@ class FixTenantsAndDomains extends Command
             );
             $this->info('✓ SAF International domain exists');
 
-            // Create Beyruha Academy tenant in CENTRAL database
-            $tenant2 = Tenant::firstOrCreate(
-                ['id' => 'beyruha-academy'],
-                [
-                    'data' => [
+            // Beyruha Academy
+            $existing2 = Tenant::find('beyruha-academy');
+            if (!$existing2) {
+                DB::table('tenants')->insert([
+                    'id' => 'beyruha-academy',
+                    'data' => json_encode([
                         'name' => 'Beyruha Academy',
                         'email' => 'admin@beyruha.com'
-                    ]
-                ]
-            );
-            $this->info('✓ Beyruha Academy tenant exists in central DB');
+                    ]),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $this->info('✓ Created Beyruha Academy tenant in central DB');
+            } else {
+                $this->info('→ Beyruha Academy tenant already exists');
+            }
 
             // Create domain for Beyruha Academy
             Domain::firstOrCreate(
@@ -60,11 +73,10 @@ class FixTenantsAndDomains extends Command
             $this->info('✓ Beyruha Academy domain exists');
 
             $this->info('');
-            $this->info('All done! Tenants and domains are now in the central database.');
+            $this->info('All done! Now visit the tenant subdomains to test.');
             
         } catch (\Exception $e) {
             $this->error('Failed: ' . $e->getMessage());
-            $this->error('Trace: ' . $e->getTraceAsString());
         }
 
         return Command::SUCCESS;
