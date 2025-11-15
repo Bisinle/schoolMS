@@ -18,13 +18,9 @@
                    class="inline-block bg-[#f97316] hover:bg-orange-600 text-white font-semibold px-8 py-3 rounded-lg transition-colors">
                     Admin Portal
                 </a>
-                <a href="#contact" 
-                   class="inline-block bg-white hover:bg-gray-100 text-[#0b1a34] font-semibold px-8 py-3 rounded-lg transition-colors">
-                    Contact Us
-                </a>
             </div>
             <p class="mt-12 text-sm text-gray-400">
-                Schools should access their subdomain: yourschool.school-ms.com
+                Schools access their subdomain: yourschool.school-ms.com
             </p>
         </div>
     </div>
