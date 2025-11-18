@@ -88,6 +88,7 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerateToken();
 
-        return redirect('/');
+        // Redirect to login page instead of root to avoid hitting central API routes
+        return redirect()->route('login');
     }
 }

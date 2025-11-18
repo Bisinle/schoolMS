@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TenantController;
+use App\Http\Controllers\Api\TenantStatsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -63,6 +64,12 @@ Route::prefix('tenants')->group(function () {
     // ----------------------------
     Route::get('/', [TenantController::class, 'index'])
         ->name('api.tenants.index');
+
+    // ----------------------------
+    // Get Tenant Statistics
+    // ----------------------------
+    Route::get('/{tenant}/stats', [TenantStatsController::class, 'index'])
+        ->name('api.tenants.stats');
 });
 
 // ----------------------------

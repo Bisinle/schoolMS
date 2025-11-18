@@ -39,6 +39,9 @@ class LoginRequest extends FormRequest
      */
     public function authenticate(): void
     {
+        // NOTE: School-level activation check is handled by CheckSchoolActive middleware
+        // This runs on ALL routes including login, so no need to check here
+
         $this->ensureIsNotRateLimited();
 
         if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
@@ -49,11 +52,11 @@ class LoginRequest extends FormRequest
             ]);
         }
 
-        // Check if user is active
+        // Check if the user is active (after authentication)
         $user = Auth::user();
         if (isset($user->is_active) && !$user->is_active) {
             Auth::logout();
-            
+
             throw ValidationException::withMessages([
                 'email' => 'Your account has been deactivated. Please contact the administrator.',
             ]);

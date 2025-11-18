@@ -202,18 +202,18 @@ class TenantController extends Controller
                 'email' => $validated['email'],
                 'password' => Hash::make($validated['password']),
                 'phone' => $validated['phone'] ?? null,
+                'role' => 'admin',
                 'email_verified_at' => now(),
+                'is_active' => true,
             ]);
 
             Log::info('Admin user created', [
                 'admin_id' => $admin->id,
-                'email' => $admin->email
+                'email' => $admin->email,
+                'role' => $admin->role
             ]);
 
-            // TODO: Assign admin role when Spatie Laravel Permission is installed
-            // $admin->assignRole('admin');
-
-            Log::info('Admin user creation completed (role assignment skipped)');
+            Log::info('Admin user creation completed');
 
             // End tenancy to return to central database
             tenancy()->end();

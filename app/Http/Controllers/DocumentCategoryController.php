@@ -22,7 +22,7 @@ class DocumentCategoryController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('description', 'like', "%{$search}%");
+                    ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
@@ -83,7 +83,7 @@ class DocumentCategoryController extends Controller
 
         DocumentCategory::create($validated);
 
-        return redirect()->route('Documents/Categories/index')
+        return redirect()->route('document-categories.index')
             ->with('success', 'Document category created successfully.');
     }
 

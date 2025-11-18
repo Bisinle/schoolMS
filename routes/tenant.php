@@ -42,14 +42,32 @@ use Inertia\Inertia;
 |
 */
 
+// School Inactive Page - MUST be outside the school.active middleware to prevent redirect loop
 Route::middleware([
     'web',
     InitializeTenancyByDomain::class,
     PreventAccessFromCentralDomains::class,
 ])->group(function () {
-    
-    // Redirect root to login
+    Route::get('/school-inactive', function () {
+        return Inertia::render('Errors/SchoolInactive', [
+            'message' => 'Your school subscription has expired or been deactivated. Please contact your administrator.'
+        ]);
+    })->name('school.inactive');
+});
+
+// All other tenant routes - protected by school.active middleware
+Route::middleware([
+    'web',
+    InitializeTenancyByDomain::class,
+    PreventAccessFromCentralDomains::class,
+    'school.active',
+])->group(function () {
+
+    // Redirect root to login or dashboard based on auth status
     Route::get('/', function () {
+        if (auth()->check()) {
+            return redirect()->route('dashboard');
+        }
         return redirect()->route('login');
     });
 
