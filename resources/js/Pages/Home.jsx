@@ -98,13 +98,13 @@ export default function Home() {
                             </div>
                             <div className="flex items-center">
                                 <Link
-                                    href="/demo-booking"
+                                    href="/login"
                                     className="group relative inline-flex items-center px-3 py-2 sm:px-6 sm:py-2.5 lg:px-8 lg:py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-lg sm:rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/50 hover:scale-105 text-xs sm:text-sm lg:text-base"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                     <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 relative z-10 group-hover:rotate-12 transition-transform" />
-                                    <span className="relative z-10 hidden sm:inline">Book a Demo</span>
-                                    <span className="relative z-10 sm:hidden">Demo</span>
+                                    <span className="relative z-10 hidden sm:inline">Login</span>
+                                    <span className="relative z-10 sm:hidden">Login</span>
                                 </Link>
                             </div>
                         </div>
@@ -175,12 +175,12 @@ export default function Home() {
                             {/* CTA Buttons */}
                             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-fade-in-up animation-delay-600">
                                 <Link
-                                    href="/demo-booking"
+                                    href="/login"
                                     className="group relative inline-flex items-center px-6 py-4 sm:px-10 sm:py-5 bg-gradient-to-r from-orange-500 via-orange-600 to-pink-600 text-white font-black rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-500 text-base sm:text-lg shadow-2xl shadow-orange-500/50 hover:shadow-orange-500/70 hover:scale-105 w-full sm:w-auto justify-center max-w-sm sm:max-w-none"
                                 >
                                     <div className="absolute inset-0 bg-gradient-to-r from-pink-600 via-orange-600 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                     <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-                                    <span className="relative z-10">Book a Free Demo</span>
+                                    <span className="relative z-10">Login</span>
                                     <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2 relative z-10 group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                                     </svg>
@@ -424,12 +424,12 @@ export default function Home() {
                         
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
                             <Link
-                                href="/demo-booking"
+                                href="/login"
                                 className="group relative inline-flex items-center px-8 py-4 sm:px-12 sm:py-6 bg-white text-orange-600 font-black rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-500 text-base sm:text-lg shadow-2xl hover:shadow-white/50 hover:scale-110 w-full sm:w-auto justify-center max-w-sm sm:max-w-none"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
                                 <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-                                <span className="relative z-10">Book Your Free Demo</span>
+                                <span className="relative z-10">Login</span>
                                 <svg className="w-5 h-5 sm:w-6 sm:h-6 ml-2 relative z-10 group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
                                 </svg>
