@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\TenantController;
 use App\Http\Controllers\Api\TenantStatsController;
+use App\Http\Controllers\MpesaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -77,3 +78,8 @@ Route::prefix('tenants')->group(function () {
 // ----------------------------
 Route::get('/health', [TenantController::class, 'health'])
     ->name('api.health');
+
+    Route::get('/mpesa/password',[MpesaController::class,'lipaNaMpesaPassword']);
+    Route::post('/mpesa/new-access-token',[MpesaController::class,'newAccessToken']);
+    Route::post('/mpesa/stk/push','MpesaController@stkPush')->name('lipa');
+    Route::post('/stk/push/callback/url', 'MpesaController@MpesaRes');
