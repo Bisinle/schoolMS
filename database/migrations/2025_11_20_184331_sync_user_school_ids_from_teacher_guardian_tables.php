@@ -11,21 +11,60 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Update users.school_id from teachers table
-        DB::statement('
-            UPDATE users u
-            INNER JOIN teachers t ON u.id = t.user_id
-            SET u.school_id = t.school_id
-            WHERE u.school_id IS NULL AND t.school_id IS NOT NULL
-        ');
+        // Check if we're using SQLite or MySQL and use appropriate syntax
+        $driver = DB::connection()->getDriverName();
 
-        // Update users.school_id from guardians table
-        DB::statement('
-            UPDATE users u
-            INNER JOIN guardians g ON u.id = g.user_id
-            SET u.school_id = g.school_id
-            WHERE u.school_id IS NULL AND g.school_id IS NOT NULL
-        ');
+        if ($driver === 'sqlite') {
+            // SQLite syntax - update using subquery
+            DB::statement('
+                UPDATE users
+                SET school_id = (
+                    SELECT school_id
+                    FROM teachers
+                    WHERE teachers.user_id = users.id
+                    AND teachers.school_id IS NOT NULL
+                )
+                WHERE users.school_id IS NULL
+                AND EXISTS (
+                    SELECT 1
+                    FROM teachers
+                    WHERE teachers.user_id = users.id
+                    AND teachers.school_id IS NOT NULL
+                )
+            ');
+
+            DB::statement('
+                UPDATE users
+                SET school_id = (
+                    SELECT school_id
+                    FROM guardians
+                    WHERE guardians.user_id = users.id
+                    AND guardians.school_id IS NOT NULL
+                )
+                WHERE users.school_id IS NULL
+                AND EXISTS (
+                    SELECT 1
+                    FROM guardians
+                    WHERE guardians.user_id = users.id
+                    AND guardians.school_id IS NOT NULL
+                )
+            ');
+        } else {
+            // MySQL syntax - update with INNER JOIN
+            DB::statement('
+                UPDATE users u
+                INNER JOIN teachers t ON u.id = t.user_id
+                SET u.school_id = t.school_id
+                WHERE u.school_id IS NULL AND t.school_id IS NOT NULL
+            ');
+
+            DB::statement('
+                UPDATE users u
+                INNER JOIN guardians g ON u.id = g.user_id
+                SET u.school_id = g.school_id
+                WHERE u.school_id IS NULL AND g.school_id IS NOT NULL
+            ');
+        }
     }
 
     /**
