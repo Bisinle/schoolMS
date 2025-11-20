@@ -4,10 +4,10 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
+use App\Models\School;
 
 class CheckSchoolActive
 {
@@ -23,40 +23,36 @@ class CheckSchoolActive
             return $next($request);
         }
 
-        // Only check if we're in a tenant context
-        if (!tenancy()->initialized) {
+        // Only check if user is authenticated
+        if (!Auth::check()) {
             return $next($request);
         }
 
-        // Get the current tenant
-        $tenant = tenancy()->tenant;
+        $user = Auth::user();
 
-        if (!$tenant) {
+        // Skip check if user has no school_id (super admin)
+        if (!$user->school_id) {
             return $next($request);
         }
 
-        // Check if school is active in the central database
+        // Check if school is active
         try {
-            $isActive = DB::connection('central')->table('schools')
-                ->where('subdomain', $tenant->id)
-                ->value('is_active');
+            $school = School::find($user->school_id);
 
-            if ($isActive === false || $isActive === 0 || $isActive === null) {
-                // Log out the user if they're authenticated
-                if (Auth::check()) {
-                    Auth::logout();
-                    $request->session()->invalidate();
-                    $request->session()->regenerateToken();
-                }
+            if (!$school || !$school->isActive()) {
+                // Log out the user
+                Auth::logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
 
                 // Redirect to the school inactive page
                 return redirect()->route('school.inactive');
             }
         } catch (\Exception $e) {
             // If we can't check, allow the request to proceed
-            // This prevents breaking the app if central DB is unavailable
+            // This prevents breaking the app if there's an issue
             Log::warning('Could not check school active status', [
-                'tenant_id' => $tenant->id,
+                'school_id' => $user->school_id,
                 'error' => $e->getMessage()
             ]);
         }

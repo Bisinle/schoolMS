@@ -29,17 +29,41 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
+        // Get school data without loading relationships to avoid circular reference
+        $schoolData = null;
+        $isSuperAdmin = $user && $user->isSuperAdmin();
+
+        if ($user && $user->school_id && !$isSuperAdmin) {
+            $school = \App\Models\School::select('id', 'name', 'logo_path', 'is_active', 'status')
+                ->find($user->school_id);
+
+            if ($school) {
+                $schoolData = [
+                    'id' => $school->id,
+                    'name' => $school->name,
+                    'logo_path' => $school->logo_path,
+                    'is_active' => $school->is_active,
+                    'status' => $school->status,
+                ];
+            }
+        }
+
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'role' => $request->user()->role,
-                    'is_active' => $request->user()->is_active ?? true, // Add is_active
+                'user' => $user ? [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'is_active' => $user->is_active ?? true,
+                    'school_id' => $user->school_id,
+                    'is_super_admin' => $isSuperAdmin,
                 ] : null,
             ],
+            'school' => $schoolData,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
                 'error' => fn () => $request->session()->get('error'),
@@ -48,7 +72,7 @@ class HandleInertiaRequests extends Middleware
             ],
             'impersonation' => [
                 'isImpersonating' => session()->has('impersonated_by'),
-                'impersonatedUser' => session()->has('impersonated_by') ? $request->user() : null,
+                'impersonatedUser' => session()->has('impersonated_by') ? $user : null,
                 'impersonatorId' => session()->get('impersonated_by'),
             ],
 

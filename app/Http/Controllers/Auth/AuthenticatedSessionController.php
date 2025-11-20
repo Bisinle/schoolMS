@@ -59,6 +59,11 @@ class AuthenticatedSessionController extends Controller
             }
         }
 
+        // Redirect based on user role
+        if ($user->isSuperAdmin()) {
+            return redirect()->intended(route('super-admin.dashboard', absolute: false));
+        }
+
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

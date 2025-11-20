@@ -15,7 +15,11 @@ class User extends Authenticatable
     use HasFactory, Notifiable, SoftDeletes;
     use Impersonate;
 
+    // NOTE: User model does NOT use BelongsToSchool trait to avoid circular reference
+    // The global scope would cause infinite recursion when checking auth()->user()->school_id
+
     protected $fillable = [
+        'school_id',
         'name',
         'email',
         'password',
@@ -45,11 +49,16 @@ class User extends Authenticatable
     }
 
     // Relationships
+    public function school()
+    {
+        return $this->belongsTo(School::class);
+    }
+
     public function guardian()
     {
         return $this->hasOne(Guardian::class);
     }
-    
+
     public function teacher()
     {
         return $this->hasOne(Teacher::class);
@@ -108,16 +117,28 @@ class User extends Authenticatable
     }
 
     // Role checks
+    public function isSuperAdmin(): bool
+    {
+        return $this->role === 'super_admin';
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
+
+    public function isSchoolAdmin(): bool
+    {
+        return $this->isAdmin() && !$this->isSuperAdmin();
+    }
+
     /**
      * 🆕 Define who can impersonate others
      */
     public function canImpersonate(): bool
     {
-        return $this->isAdmin();
+        // Super admins and school admins can impersonate
+        return $this->isSuperAdmin() || $this->isAdmin();
     }
 
     /**
@@ -125,8 +146,8 @@ class User extends Authenticatable
      */
     public function canBeImpersonated(): bool
     {
-        // Cannot impersonate other admins
-        return !$this->isAdmin();
+        // Super admins cannot be impersonated
+        return !$this->isSuperAdmin();
     }
 
     public function isTeacher(): bool

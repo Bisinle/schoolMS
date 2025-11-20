@@ -39,6 +39,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Increase memory limit as a safety measure
+        ini_set('memory_limit', '256M');
+
         Gate::policy(Student::class, StudentPolicy::class);
         Gate::policy(Guardian::class, GuardianPolicy::class);
         Gate::policy(Teacher::class, TeacherPolicy::class);

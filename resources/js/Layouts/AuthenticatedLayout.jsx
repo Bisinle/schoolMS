@@ -17,15 +17,28 @@ import {
     UserCog,
     FolderOpen,
     FileCog,
+    School,
+    Settings,
 } from "lucide-react";
 import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
 
 export default function AuthenticatedLayout({ header, children }) {
-    const { auth, impersonation } = usePage().props;
+    const { auth, school, impersonation } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [bannerVisible, setBannerVisible] = useState(true); // 🆕 Banner state
 
+    // Determine branding based on user role
+    const isSuperAdmin = auth.user.role === 'super_admin';
+    const brandName = isSuperAdmin ? 'SchoolMS' : (school?.name || 'SchoolMS');
+    const brandLogo = !isSuperAdmin && school?.logo_path ? school.logo_path : null;
+
     const navigationConfig = {
+        super_admin: [
+            { name: "Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
+            { name: "Schools", href: "/super-admin/schools", icon: School },
+            { name: "Users", href: "/super-admin/users", icon: Users },
+            { name: "Settings", href: "/super-admin/settings", icon: Settings },
+        ],
         admin: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             { name: "Students", href: "/students", icon: Users },
@@ -88,9 +101,17 @@ export default function AuthenticatedLayout({ header, children }) {
                 <div className="flex flex-col h-full">
                     {/* Mobile header */}
                     <div className="flex items-center justify-between h-16 px-4 border-b border-navy-light">
-                        <h1 className="text-2xl font-bold text-white">
-                            SMS
-                        </h1>
+                        {brandLogo ? (
+                            <img src={brandLogo} alt={brandName} className="h-10" />
+                        ) : (
+                            <h1 className="text-2xl font-bold text-white">
+                                {isSuperAdmin ? (
+                                    <>School<span className="text-orange">MS</span></>
+                                ) : (
+                                    brandName
+                                )}
+                            </h1>
+                        )}
                         <button
                             onClick={() => setSidebarOpen(false)}
                             className="text-white hover:text-orange transition-colors"
@@ -136,9 +157,17 @@ export default function AuthenticatedLayout({ header, children }) {
                 <div className="flex flex-col flex-grow bg-navy">
                     {/* Logo */}
                     <div className="flex items-center h-16 px-6 border-b border-navy-light">
-                        <h1 className="text-2xl font-bold text-white tracking-tight">
-                            School<span className="text-orange">MS</span>
-                        </h1>
+                        {brandLogo ? (
+                            <img src={brandLogo} alt={brandName} className="h-10" />
+                        ) : (
+                            <h1 className="text-2xl font-bold text-white tracking-tight">
+                                {isSuperAdmin ? (
+                                    <>School<span className="text-orange">MS</span></>
+                                ) : (
+                                    brandName
+                                )}
+                            </h1>
+                        )}
                     </div>
 
                     {/* Navigation */}

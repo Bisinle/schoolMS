@@ -69,10 +69,12 @@ class TeacherController extends Controller
         ]);
 
         $user = User::create([
+            'school_id' => auth()->user()->school_id,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'teacher',
+            'created_by' => auth()->id(),
         ]);
 
         $teacher = Teacher::create([

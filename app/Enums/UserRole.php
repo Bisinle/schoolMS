@@ -4,6 +4,7 @@ namespace App\Enums;
 
 enum UserRole: string
 {
+    case SUPER_ADMIN = 'super_admin';
     case ADMIN = 'admin';
     case TEACHER = 'teacher';
     case GUARDIAN = 'guardian';
@@ -17,7 +18,8 @@ enum UserRole: string
     public function label(): string
     {
         return match($this) {
-            self::ADMIN => 'Administrator',
+            self::SUPER_ADMIN => 'Super Administrator',
+            self::ADMIN => 'School Administrator',
             self::TEACHER => 'Teacher',
             self::GUARDIAN => 'Parent/Guardian',
             self::ACCOUNTANT => 'Accountant',

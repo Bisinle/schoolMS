@@ -55,10 +55,12 @@ class GuardianController extends Controller
         ]);
 
         $user = User::create([
+            'school_id' => auth()->user()->school_id,
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'guardian',
+            'created_by' => auth()->id(),
         ]);
 
         Guardian::create([

@@ -28,8 +28,10 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        // School admins should only see users from their school
         $query = User::with(['creator'])
-            ->withCount(['activityLogs', 'createdUsers']);
+            ->withCount(['activityLogs', 'createdUsers'])
+            ->where('school_id', auth()->user()->school_id);
 
         // Search
         if ($request->filled('search')) {
@@ -63,12 +65,14 @@ class UserController extends Controller
         // Paginate
         $users = $query->paginate(10)->withQueryString();
 
-        // Get statistics
+        // Get statistics (only for current school)
+        $schoolId = auth()->user()->school_id;
         $stats = [
-            'total' => User::count(),
-            'active' => User::where('is_active', true)->count(),
-            'inactive' => User::where('is_active', false)->count(),
-            'by_role' => User::select('role', \DB::raw('count(*) as count'))
+            'total' => User::where('school_id', $schoolId)->count(),
+            'active' => User::where('school_id', $schoolId)->where('is_active', true)->count(),
+            'inactive' => User::where('school_id', $schoolId)->where('is_active', false)->count(),
+            'by_role' => User::where('school_id', $schoolId)
+                ->select('role', \DB::raw('count(*) as count'))
                 ->groupBy('role')
                 ->pluck('count', 'role')
                 ->toArray(),
