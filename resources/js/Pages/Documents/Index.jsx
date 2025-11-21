@@ -14,7 +14,182 @@ import {
     XCircle,
     Clock,
     AlertCircle,
+    ChevronDown,
+    ChevronUp,
+    User,
+    Calendar,
+    Tag,
 } from "lucide-react";
+import { useSwipeable } from 'react-swipeable';
+
+// Mobile List Item Component
+function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, getEntityName }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [swipeAction, setSwipeAction] = useState(null);
+
+    const handlers = useSwipeable({
+        onSwipedLeft: () => setSwipeAction('primary'),
+        onSwipedRight: () => setSwipeAction('secondary'),
+        onSwiping: () => {},
+        trackMouse: false,
+        preventScrollOnSwipe: false,
+        delta: 60,
+    });
+
+    return (
+        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
+            {/* Swipe Actions Background */}
+            {swipeAction === 'primary' && (
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
+                    <Link
+                        href={route("documents.show", doc.id)}
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
+                        onClick={() => setSwipeAction(null)}
+                    >
+                        <Eye className="w-5 h-5 text-white" />
+                    </Link>
+                    <button
+                        onClick={() => {
+                            onDownload(doc);
+                            setSwipeAction(null);
+                        }}
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Download className="w-5 h-5 text-white" />
+                    </button>
+                </div>
+            )}
+            {swipeAction === 'secondary' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
+                    <button
+                        onClick={() => {
+                            onDelete(doc);
+                            setSwipeAction(null);
+                        }}
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Trash2 className="w-5 h-5 text-white" />
+                    </button>
+                </div>
+            )}
+
+            {/* Main Content */}
+            <div
+                {...handlers}
+                className={`relative bg-white transition-transform duration-300 z-20 ${
+                    swipeAction === 'primary' ? '-translate-x-32' :
+                    swipeAction === 'secondary' ? 'translate-x-20' : ''
+                }`}
+                onClick={() => {
+                    if (swipeAction) {
+                        setSwipeAction(null);
+                    }
+                }}
+            >
+                {/* Summary Row */}
+                <div
+                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    onClick={() => {
+                        if (!swipeAction) {
+                            setIsExpanded(!isExpanded);
+                        }
+                    }}
+                >
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg">
+                                <FileText className="w-7 h-7" />
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-base font-black text-gray-900 truncate leading-tight">
+                                    {doc.original_filename}
+                                </h3>
+                                <p className="text-sm text-gray-600 mt-1">{doc.category?.name}</p>
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    {getStatusBadge(doc)}
+                                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                                        {doc.file_size_human}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <button className="flex-shrink-0 p-1">
+                            {isExpanded ? (
+                                <ChevronUp className="w-6 h-6 text-gray-400" />
+                            ) : (
+                                <ChevronDown className="w-6 h-6 text-gray-400" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4">
+                        {/* Info Grid */}
+                        <div className="space-y-3 text-sm">
+                            <div className="flex items-start gap-3">
+                                <Tag className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <span className="text-xs text-gray-500 block">Category</span>
+                                    <span className="font-semibold text-gray-900">{doc.category?.name}</span>
+                                </div>
+                            </div>
+                            {auth.user.role === 'admin' && (
+                                <div className="flex items-start gap-3">
+                                    <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <span className="text-xs text-gray-500 block">Owner</span>
+                                        <span className="font-semibold text-gray-900">{getEntityName(doc)}</span>
+                                    </div>
+                                </div>
+                            )}
+                            <div className="flex items-start gap-3">
+                                <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <span className="text-xs text-gray-500 block">Uploaded</span>
+                                    <span className="font-semibold text-gray-900">
+                                        {new Date(doc.created_at).toLocaleDateString('en-US', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric'
+                                        })}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100">
+                            <Link
+                                href={route("documents.show", doc.id)}
+                                className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95"
+                            >
+                                <Eye className="w-4 h-4" />
+                                View
+                            </Link>
+                            <button
+                                onClick={() => onDownload(doc)}
+                                className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 rounded-xl font-bold text-sm hover:bg-green-100 transition-colors active:scale-95"
+                            >
+                                <Download className="w-4 h-4" />
+                                Download
+                            </button>
+                            <button
+                                onClick={() => onDelete(doc)}
+                                className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                Delete Document
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function Index({
     documents,
@@ -323,8 +498,37 @@ export default function Index({
                     </form>
                 </div>
 
-                {/* Documents Table */}
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                {/* Mobile List View */}
+                <div className="block md:hidden bg-white rounded-lg shadow-sm overflow-hidden">
+                    {documents.data.length > 0 ? (
+                        documents.data.map((doc) => (
+                            <MobileDocumentItem
+                                key={doc.id}
+                                doc={doc}
+                                auth={auth}
+                                onDelete={(doc) => handleDeleteClick(doc.id, doc.original_filename)}
+                                onDownload={(doc) => window.open(route("documents.download", doc.id), "_blank")}
+                                getStatusBadge={getStatusBadge}
+                                getEntityName={getEntityName}
+                            />
+                        ))
+                    ) : (
+                        <div className="px-6 py-12 text-center">
+                            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-3" />
+                            <p className="text-gray-500 font-medium">No documents found</p>
+                            <Link
+                                href={route("documents.create")}
+                                className="inline-flex items-center mt-4 text-orange hover:text-orange-dark"
+                            >
+                                <Plus className="w-4 h-4 mr-1" />
+                                Upload your first document
+                            </Link>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block bg-white rounded-lg shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">

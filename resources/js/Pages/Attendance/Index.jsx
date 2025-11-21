@@ -9,8 +9,164 @@ import {
     Clock,
     AlertCircle,
     FileText,
+    ChevronDown,
+    ChevronUp,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+
+// Mobile Student Attendance Item Component
+function MobileAttendanceItem({ student, index, attendance, updateStudentStatus, canMarkAttendance }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'present':
+                return 'bg-green-100 text-green-800 border-green-300';
+            case 'absent':
+                return 'bg-red-100 text-red-800 border-red-300';
+            case 'late':
+                return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+            case 'excused':
+                return 'bg-blue-100 text-blue-800 border-blue-300';
+            default:
+                return 'bg-gray-100 text-gray-800 border-gray-300';
+        }
+    };
+
+    const getStatusIcon = (status) => {
+        switch (status) {
+            case 'present':
+                return '✓';
+            case 'absent':
+                return '✗';
+            case 'late':
+                return '⏰';
+            case 'excused':
+                return '📝';
+            default:
+                return '?';
+        }
+    };
+
+    return (
+        <div className="border-b border-gray-200 bg-white">
+            {/* Summary Row */}
+            <div
+                className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                            {index + 1}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-bold text-gray-900 truncate">
+                                {student.student_name}
+                            </h3>
+                            <p className="text-sm text-gray-600">{student.admission_number}</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1.5 rounded-lg text-sm font-bold border-2 ${getStatusColor(attendance?.status || 'present')}`}>
+                            {getStatusIcon(attendance?.status || 'present')}
+                        </span>
+                        <button className="flex-shrink-0 p-1">
+                            {isExpanded ? (
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
+                            ) : (
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Expanded Details */}
+            {isExpanded && (
+                <div className="px-4 pb-4 space-y-4 border-t border-gray-100 pt-4">
+                    {/* Status Selection */}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                            Attendance Status
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                type="button"
+                                onClick={() => updateStudentStatus(student.student_id, 'status', 'present')}
+                                disabled={!canMarkAttendance}
+                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                    attendance?.status === 'present'
+                                        ? 'bg-green-500 text-white shadow-lg'
+                                        : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                }`}
+                            >
+                                <CheckCircle className="w-4 h-4 inline mr-1" />
+                                Present
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => updateStudentStatus(student.student_id, 'status', 'absent')}
+                                disabled={!canMarkAttendance}
+                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                    attendance?.status === 'absent'
+                                        ? 'bg-red-500 text-white shadow-lg'
+                                        : 'bg-red-50 text-red-700 hover:bg-red-100'
+                                }`}
+                            >
+                                <XCircle className="w-4 h-4 inline mr-1" />
+                                Absent
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => updateStudentStatus(student.student_id, 'status', 'late')}
+                                disabled={!canMarkAttendance}
+                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                    attendance?.status === 'late'
+                                        ? 'bg-yellow-500 text-white shadow-lg'
+                                        : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                                }`}
+                            >
+                                <Clock className="w-4 h-4 inline mr-1" />
+                                Late
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => updateStudentStatus(student.student_id, 'status', 'excused')}
+                                disabled={!canMarkAttendance}
+                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                    attendance?.status === 'excused'
+                                        ? 'bg-blue-500 text-white shadow-lg'
+                                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                                }`}
+                            >
+                                <AlertCircle className="w-4 h-4 inline mr-1" />
+                                Excused
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Remarks */}
+                    <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-2">
+                            Remarks (Optional)
+                        </label>
+                        <textarea
+                            value={attendance?.remarks || ''}
+                            onChange={(e) => updateStudentStatus(student.student_id, 'remarks', e.target.value)}
+                            disabled={!canMarkAttendance}
+                            placeholder="Add any notes..."
+                            rows="2"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent text-sm"
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
 
 export default function AttendanceIndex({
     grades,
@@ -404,7 +560,27 @@ export default function AttendanceIndex({
                                 </p>
                             </div>
 
-                            <div className="overflow-x-auto">
+                            {/* Mobile List View */}
+                            <div className="block md:hidden">
+                                {attendanceData.students.map((student, index) => {
+                                    const attendance = data.attendances.find(
+                                        (a) => a.student_id === student.student_id
+                                    );
+                                    return (
+                                        <MobileAttendanceItem
+                                            key={student.student_id}
+                                            student={student}
+                                            index={index}
+                                            attendance={attendance}
+                                            updateStudentStatus={updateStudentStatus}
+                                            canMarkAttendance={canMarkAttendance}
+                                        />
+                                    );
+                                })}
+                            </div>
+
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
