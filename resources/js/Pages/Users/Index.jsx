@@ -16,7 +16,234 @@ import {
     Power,
     CheckCircle,
     XCircle,
+    ChevronDown,
+    ChevronUp,
+    Mail,
+    Phone,
+    User,
 } from "lucide-react";
+import { useSwipeable } from 'react-swipeable';
+
+// Mobile List Item Component
+function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onResetPassword, onToggleStatus }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [swipeAction, setSwipeAction] = useState(null);
+
+    const handlers = useSwipeable({
+        onSwipedLeft: () => setSwipeAction('primary'),
+        onSwipedRight: () => setSwipeAction('secondary'),
+        onSwiping: () => {},
+        trackMouse: false,
+        preventScrollOnSwipe: false,
+        delta: 60,
+    });
+
+    if (user.id === auth.user.id) {
+        return null; // Don't show current user in mobile list
+    }
+
+    return (
+        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
+            {/* Swipe Actions Background */}
+            {swipeAction === 'primary' && (
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
+                    <Link
+                        href={route("users.show", user.id)}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        onClick={() => setSwipeAction(null)}
+                    >
+                        <Eye className="w-6 h-6 text-white" />
+                    </Link>
+                    <Link
+                        href={route("users.edit", user.id)}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        onClick={() => setSwipeAction(null)}
+                    >
+                        <Edit className="w-6 h-6 text-white" />
+                    </Link>
+                    <button
+                        onClick={() => {
+                            onDelete(user);
+                            setSwipeAction(null);
+                        }}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Trash2 className="w-6 h-6 text-white" />
+                    </button>
+                </div>
+            )}
+            {swipeAction === 'secondary' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-start px-6 gap-3 z-10">
+                    <button
+                        onClick={() => {
+                            onResetPassword(user);
+                            setSwipeAction(null);
+                        }}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Key className="w-6 h-6 text-white" />
+                    </button>
+                    <button
+                        onClick={() => {
+                            onToggleStatus(user);
+                            setSwipeAction(null);
+                        }}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Power className="w-6 h-6 text-white" />
+                    </button>
+                </div>
+            )}
+
+            {/* Main Content */}
+            <div
+                {...handlers}
+                className={`relative bg-white transition-transform duration-300 z-20 ${
+                    swipeAction === 'primary' ? '-translate-x-44' :
+                    swipeAction === 'secondary' ? 'translate-x-44' : ''
+                }`}
+                onClick={() => {
+                    if (swipeAction) {
+                        setSwipeAction(null);
+                    }
+                }}
+            >
+                {/* Summary Row */}
+                <div
+                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    onClick={() => {
+                        if (!swipeAction) {
+                            setIsExpanded(!isExpanded);
+                        }
+                    }}
+                >
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
+                                {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
+                                    {user.name}
+                                </h3>
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${getRoleBadgeColor(user.role)}`}>
+                                        {roles.find((r) => r.value === user.role)?.label || user.role}
+                                    </span>
+                                    {user.is_active ? (
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
+                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                            Active
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                                            <XCircle className="w-3 h-3 mr-1" />
+                                            Inactive
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
+                            {isExpanded ? (
+                                <ChevronUp className="w-6 h-6 text-gray-500" />
+                            ) : (
+                                <ChevronDown className="w-6 h-6 text-gray-500" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
+                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
+                            <div className="flex items-start gap-3">
+                                <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Email / Username</p>
+                                    <p className="text-sm font-bold text-gray-900 break-words">{user.email}</p>
+                                </div>
+                            </div>
+                            
+                            {user.phone && (
+                                <>
+                                    <div className="border-t border-gray-100"></div>
+                                    <div className="flex items-start gap-3">
+                                        <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Phone</p>
+                                            <p className="text-sm font-bold text-gray-900">{user.phone}</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                            
+                            <div className="border-t border-gray-100"></div>
+                            
+                            <div className="flex items-start gap-3">
+                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Created By</p>
+                                    <p className="text-sm font-bold text-gray-900">{user.creator?.name || "System"}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3 pt-2">
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link
+                                    href={route("users.show", user.id)}
+                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <Eye className="w-5 h-5" />
+                                    View
+                                </Link>
+                                <Link
+                                    href={route("users.edit", user.id)}
+                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <Edit className="w-5 h-5" />
+                                    Edit
+                                </Link>
+                            </div>
+                            
+                            <button
+                                onClick={() => onResetPassword(user)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                            >
+                                <Key className="w-5 h-5" />
+                                Reset Password
+                            </button>
+                            
+                            <button
+                                onClick={() => onToggleStatus(user)}
+                                className={`w-full flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform ${
+                                    user.is_active
+                                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                        : 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                }`}
+                            >
+                                <Power className="w-5 h-5" />
+                                {user.is_active ? 'Deactivate User' : 'Activate User'}
+                            </button>
+                            
+                            <button
+                                onClick={() => onDelete(user)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                                Delete User
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function Index({ auth, users, stats, filters, roles, flash }) {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -167,8 +394,32 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
             {/* Filters */}
             <UserFilters filters={filters} roles={roles} />
 
-            {/* Users Table */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            {/* Mobile List View */}
+            <div className="block md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                {users.data.filter(u => u.id !== auth.user.id).length > 0 ? (
+                    users.data.map((user) => (
+                        <MobileUserItem
+                            key={user.id}
+                            user={user}
+                            auth={auth}
+                            roles={roles}
+                            getRoleBadgeColor={getRoleBadgeColor}
+                            onDelete={handleDeleteClick}
+                            onResetPassword={handleResetPasswordClick}
+                            onToggleStatus={handleToggleStatusClick}
+                        />
+                    ))
+                ) : (
+                    <div className="px-6 py-16 text-center">
+                        <UserPlus className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+                        <p className="text-gray-500 font-bold text-lg">No users found</p>
+                        <p className="text-sm text-gray-400 mt-2">Try adjusting your filters</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Desktop Table View - UNCHANGED */}
+            <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-200">
                     <div>
@@ -188,7 +439,7 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                     </Link>
                 </div>
 
-                {/* Table Container with proper overflow handling */}
+                {/* Table Container - Rest of your existing desktop table code stays exactly the same */}
                 <div className="overflow-x-auto">
                     <div className="inline-block min-w-full align-middle">
                         <table className="min-w-full divide-y divide-gray-200">
@@ -310,7 +561,6 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                         user.id !==
                                                             auth.user.id && (
                                                             <>
-                                                                {/* Backdrop to close menu */}
                                                                 <div
                                                                     className="fixed inset-0 z-10"
                                                                     onClick={() =>
@@ -320,7 +570,6 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                                     }
                                                                 ></div>
 
-                                                                {/* Dropdown Menu - Smart positioning */}
                                                                 <div
                                                                     className={`absolute right-0 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-20 ${
                                                                         index >
@@ -381,7 +630,6 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                                             Password
                                                                         </button>
 
-                                                                        {/* 🆕 Login As button - Only for non-admin users */}
                                                                         {!user.roles?.some(role => role.name === 'admin') && (
                                                                             <ImpersonateButton
                                                                                 user={user}

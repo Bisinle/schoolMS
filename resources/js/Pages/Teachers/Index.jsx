@@ -1,8 +1,248 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, BookOpen } from 'lucide-react';
+import { Plus, Search, Eye, Edit, Trash2, BookOpen, ChevronDown, ChevronUp, Mail, Phone, User, GraduationCap } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import { useSwipeable } from 'react-swipeable';
+
+// Mobile List Item Component
+function MobileTeacherItem({ teacher, auth, onDelete }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [swipeAction, setSwipeAction] = useState(null);
+
+    const handlers = useSwipeable({
+        onSwipedLeft: () => setSwipeAction('primary'),
+        onSwipedRight: () => setSwipeAction('secondary'),
+        onSwiping: () => {},
+        trackMouse: false,
+        preventScrollOnSwipe: false,
+        delta: 60,
+    });
+
+    return (
+        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
+            {/* Swipe Actions Background */}
+            {swipeAction === 'primary' && (
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
+                    <Link
+                        href={`/teachers/${teacher.id}`}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        onClick={() => setSwipeAction(null)}
+                    >
+                        <Eye className="w-6 h-6 text-white" />
+                    </Link>
+                    <Link
+                        href={`/teachers/${teacher.id}/edit`}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        onClick={() => setSwipeAction(null)}
+                    >
+                        <Edit className="w-6 h-6 text-white" />
+                    </Link>
+                    <button
+                        onClick={() => {
+                            onDelete(teacher);
+                            setSwipeAction(null);
+                        }}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Trash2 className="w-6 h-6 text-white" />
+                    </button>
+                </div>
+            )}
+            {swipeAction === 'secondary' && teacher.user?.email && (
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-6 gap-3 z-10">
+                    <a
+                        href={`mailto:${teacher.user.email}`}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        onClick={() => setSwipeAction(null)}
+                    >
+                        <Mail className="w-6 h-6 text-white" />
+                    </a>
+                    {teacher.user?.phone && (
+                        <a
+                            href={`tel:${teacher.user.phone}`}
+                            className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                            onClick={() => setSwipeAction(null)}
+                        >
+                            <Phone className="w-6 h-6 text-white" />
+                        </a>
+                    )}
+                </div>
+            )}
+
+            {/* Main Content */}
+            <div
+                {...handlers}
+                className={`relative bg-white transition-transform duration-300 z-20 ${
+                    swipeAction === 'primary' ? '-translate-x-44' :
+                    swipeAction === 'secondary' ? 'translate-x-44' : ''
+                }`}
+                onClick={() => {
+                    if (swipeAction) {
+                        setSwipeAction(null);
+                    }
+                }}
+            >
+                {/* Summary Row */}
+                <div
+                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    onClick={() => {
+                        if (!swipeAction) {
+                            setIsExpanded(!isExpanded);
+                        }
+                    }}
+                >
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
+                                {teacher.user?.name.charAt(0).toUpperCase()}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
+                                    {teacher.user?.name}
+                                </h3>
+                                <p className="text-sm text-gray-600 truncate mt-1">
+                                    {teacher.subject_specialization || 'No Subject'}
+                                </p>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                        teacher.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                        {teacher.status === 'active' ? '● Active' : '● Inactive'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
+                            {isExpanded ? (
+                                <ChevronUp className="w-6 h-6 text-gray-500" />
+                            ) : (
+                                <ChevronDown className="w-6 h-6 text-gray-500" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
+                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
+                            <div className="flex items-start gap-3">
+                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Employee Number</p>
+                                    <p className="text-sm font-bold text-gray-900">{teacher.employee_number}</p>
+                                </div>
+                            </div>
+                            
+                            <div className="border-t border-gray-100"></div>
+                            
+                            <div className="flex items-start gap-3">
+                                <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Email</p>
+                                    <p className="text-sm font-bold text-gray-900 break-words">{teacher.user?.email}</p>
+                                </div>
+                            </div>
+                            
+                            {teacher.user?.phone && (
+                                <>
+                                    <div className="border-t border-gray-100"></div>
+                                    <div className="flex items-start gap-3">
+                                        <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Phone</p>
+                                            <p className="text-sm font-bold text-gray-900">{teacher.user.phone}</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                            
+                            {teacher.gender && (
+                                <>
+                                    <div className="border-t border-gray-100"></div>
+                                    <div className="flex items-start gap-3">
+                                        <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Gender</p>
+                                            <p className="text-sm font-bold text-gray-900 capitalize">{teacher.gender}</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                            
+                            {teacher.grades && teacher.grades.length > 0 && (
+                                <>
+                                    <div className="border-t border-gray-100"></div>
+                                    <div className="flex items-start gap-3">
+                                        <GraduationCap className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Assigned Classes</p>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                                {teacher.grades.map((grade) => (
+                                                    <span
+                                                        key={grade.id}
+                                                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${
+                                                            grade.pivot.is_class_teacher
+                                                                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
+                                                                : 'bg-orange-100 text-orange-700'
+                                                        }`}
+                                                    >
+                                                        <BookOpen className="w-3 h-3 mr-1" />
+                                                        {grade.name}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
+                        <div className="space-y-3 pt-2">
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link
+                                    href={`/teachers/${teacher.id}`}
+                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <Eye className="w-5 h-5" />
+                                    View
+                                </Link>
+                                <Link
+                                    href={`/teachers/${teacher.id}/edit`}
+                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <Edit className="w-5 h-5" />
+                                    Edit
+                                </Link>
+                            </div>
+                            
+                            {teacher.user?.email && (
+                                <a
+                                    href={`mailto:${teacher.user.email}`}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <Mail className="w-5 h-5" />
+                                    Send Email
+                                </a>
+                            )}
+                            
+                            <button
+                                onClick={() => onDelete(teacher)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                                Delete Teacher
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function TeachersIndex({ teachers, filters, auth }) {
     const [search, setSearch] = useState(filters.search || '');
@@ -59,8 +299,28 @@ export default function TeachersIndex({ teachers, filters, auth }) {
                     </Link>
                 </div>
 
-                {/* Teachers Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Mobile List View */}
+                <div className="block md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    {teachers.data && teachers.data.length > 0 ? (
+                        teachers.data.map((teacher) => (
+                            <MobileTeacherItem
+                                key={teacher.id}
+                                teacher={teacher}
+                                auth={auth}
+                                onDelete={confirmDelete}
+                            />
+                        ))
+                    ) : (
+                        <div className="px-6 py-16 text-center">
+                            <GraduationCap className="w-20 h-20 text-gray-300 mx-auto mb-4" />
+                            <p className="text-gray-500 font-bold text-lg">No teachers found</p>
+                            <p className="text-sm text-gray-400 mt-2">Try adjusting your search</p>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop Table View - UNCHANGED */}
+                <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
@@ -189,7 +449,6 @@ export default function TeachersIndex({ teachers, filters, auth }) {
                 </div>
             </div>
 
-            {/* Delete Confirmation Modal */}
             <ConfirmationModal
                 show={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}

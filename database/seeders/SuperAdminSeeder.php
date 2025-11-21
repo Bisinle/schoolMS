@@ -13,21 +13,28 @@ class SuperAdminSeeder extends Seeder
      */
     public function run(): void
     {
-        // Create super admin user
-        User::create([
-            'school_id' => null, // Super admins don't belong to any school
-            'name' => 'Super Administrator',
-            'email' => 'superadmin@schoolms.com',
-            'password' => Hash::make('password'), // Change this in production!
-            'role' => 'super_admin',
-            'is_active' => true,
-            'email_verified_at' => now(),
-            'must_change_password' => false,
-        ]);
+        // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('SuperAdminSeeder skipped in non-local environment.');
+            return;
+        }
 
-        $this->command->info('Super Admin created successfully!');
+        // ✅ Use updateOrCreate to avoid duplicate entries
+        User::updateOrCreate(
+            ['email' => 'superadmin@schoolms.com'], // Search criteria
+            [
+                'school_id' => null, // Super admins don't belong to any school
+                'name' => 'Super Administrator',
+                'password' => Hash::make('password'), // Change this in production!
+                'role' => 'super_admin',
+                'is_active' => true,
+                'email_verified_at' => now(),
+                'must_change_password' => false,
+            ]
+        );
+
+        $this->command->info('Super Admin seeded successfully!');
         $this->command->info('Email: superadmin@schoolms.com');
         $this->command->info('Password: password');
     }
 }
-
