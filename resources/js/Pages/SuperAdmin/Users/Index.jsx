@@ -1,8 +1,218 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Search, Eye, Power, Trash2, RefreshCw, Filter } from 'lucide-react';
+import { Search, Eye, Power, Trash2, RefreshCw, Filter, ChevronDown, ChevronUp, Mail, Phone, School as SchoolIcon, User, X } from 'lucide-react';
 import { useState } from 'react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import { useSwipeable } from 'react-swipeable';
+
+// Mobile List Item Component - Redesigned
+function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete, getRoleBadgeColor }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [swipeAction, setSwipeAction] = useState(null);
+
+    const handlers = useSwipeable({
+        onSwipedLeft: () => setSwipeAction('primary'),
+        onSwipedRight: () => setSwipeAction('secondary'),
+        onSwiping: () => {},
+        trackMouse: false,
+        preventScrollOnSwipe: false,
+        delta: 60,
+    });
+
+    return (
+        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
+            {/* Swipe Actions Background */}
+            {swipeAction === 'primary' && (
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
+                    <Link
+                        href={route('super-admin.users.show', user.id)}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        onClick={() => setSwipeAction(null)}
+                    >
+                        <Eye className="w-6 h-6 text-white" />
+                    </Link>
+                    <button
+                        onClick={() => {
+                            onResetPassword(user);
+                            setSwipeAction(null);
+                        }}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <RefreshCw className="w-6 h-6 text-white" />
+                    </button>
+                </div>
+            )}
+            {swipeAction === 'secondary' && (
+                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-6 gap-3 z-10">
+                    <button
+                        onClick={() => {
+                            onToggleActive(user);
+                            setSwipeAction(null);
+                        }}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Power className="w-6 h-6 text-white" />
+                    </button>
+                    <button
+                        onClick={() => {
+                            onDelete(user);
+                            setSwipeAction(null);
+                        }}
+                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                    >
+                        <Trash2 className="w-6 h-6 text-white" />
+                    </button>
+                </div>
+            )}
+
+            {/* Main Content */}
+            <div
+                {...handlers}
+                className={`relative bg-white transition-transform duration-300 z-20 ${
+                    swipeAction === 'primary' ? '-translate-x-44' :
+                    swipeAction === 'secondary' ? 'translate-x-44' : ''
+                }`}
+                onClick={() => {
+                    if (swipeAction) {
+                        setSwipeAction(null);
+                    }
+                }}
+            >
+                {/* Summary Row - Touch Optimized */}
+                <div
+                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    onClick={() => {
+                        if (!swipeAction) {
+                            setIsExpanded(!isExpanded);
+                        }
+                    }}
+                >
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1 min-w-0">
+                            {/* Avatar - Larger */}
+                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
+                                {user.name.charAt(0).toUpperCase()}
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">{user.name}</h3>
+                                <p className="text-sm text-gray-600 truncate mt-1">{user.email}</p>
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    <span className={`inline-flex px-3 py-1 text-xs font-black rounded-full bg-gradient-to-r ${getRoleBadgeColor(user.role)} text-white shadow-md`}>
+                                        {user.role.replace('_', ' ').toUpperCase()}
+                                    </span>
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
+                                        user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                    }`}>
+                                        {user.is_active ? '● Active' : '● Suspended'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Expand Button - Larger Touch Target */}
+                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
+                            {isExpanded ? (
+                                <ChevronUp className="w-6 h-6 text-gray-500" />
+                            ) : (
+                                <ChevronDown className="w-6 h-6 text-gray-500" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
+                {/* Expanded Details - Redesigned */}
+                {isExpanded && (
+                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
+                        {/* Info Card */}
+                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
+                            <div className="flex items-start gap-3">
+                                <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Email</p>
+                                    <p className="text-sm font-bold text-gray-900 break-words">{user.email}</p>
+                                </div>
+                            </div>
+                            
+                            {user.phone && (
+                                <>
+                                    <div className="border-t border-gray-100"></div>
+                                    <div className="flex items-start gap-3">
+                                        <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Phone</p>
+                                            <p className="text-sm font-bold text-gray-900">{user.phone}</p>
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                            
+                            <div className="border-t border-gray-100"></div>
+                            <div className="flex items-start gap-3">
+                                <SchoolIcon className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">School</p>
+                                    <p className="text-sm font-bold text-gray-900 truncate">{user.school?.name || 'N/A'}</p>
+                                </div>
+                            </div>
+                            
+                            <div className="border-t border-gray-100"></div>
+                            <div className="flex items-start gap-3">
+                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">User ID</p>
+                                    <p className="text-sm font-bold text-gray-900">#{user.id}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Action Buttons - Larger & More Spacing */}
+                        <div className="space-y-3 pt-2">
+                            {/* Primary Actions */}
+                            <div className="grid grid-cols-2 gap-3">
+                                <Link
+                                    href={route('super-admin.users.show', user.id)}
+                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <Eye className="w-5 h-5" />
+                                    View
+                                </Link>
+                                <button
+                                    onClick={() => onResetPassword(user)}
+                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                >
+                                    <RefreshCw className="w-5 h-5" />
+                                    Reset
+                                </button>
+                            </div>
+                            
+                            {/* Secondary Actions */}
+                            <button
+                                onClick={() => onToggleActive(user)}
+                                className={`w-full flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform ${
+                                    user.is_active
+                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
+                                        : 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                }`}
+                            >
+                                <Power className="w-5 h-5" />
+                                {user.is_active ? 'Suspend User' : 'Activate User'}
+                            </button>
+                            
+                            <button
+                                onClick={() => onDelete(user)}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                                Delete User
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
 
 export default function Index({ users, schools, filters }) {
     const [search, setSearch] = useState(filters.search || '');
@@ -99,6 +309,8 @@ export default function Index({ users, schools, filters }) {
         return colors[role] || 'from-gray-500 to-gray-600';
     };
 
+    const activeFiltersCount = [search, schoolFilter, roleFilter, activeFilter].filter(Boolean).length;
+
     return (
         <AuthenticatedLayout
             header={
@@ -111,105 +323,137 @@ export default function Index({ users, schools, filters }) {
 
             <div className="py-6 sm:py-12">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    {/* Filters Card */}
+                    {/* Filters Card - Mobile Optimized */}
                     <div className="mb-6 bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
-                            <button
-                                onClick={() => setShowFilters(!showFilters)}
-                                className="flex items-center gap-2 text-lg font-bold text-gray-900 w-full justify-between sm:w-auto"
-                            >
-                                <div className="flex items-center gap-2">
-                                    <Filter className="w-5 h-5 text-indigo-600" />
-                                    <span>Search & Filters</span>
+                        {/* Filter Header */}
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className="w-full p-5 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white border-b border-gray-100 active:bg-gray-100 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                                    <Filter className="w-5 h-5 text-white" />
                                 </div>
-                                <span className="text-sm text-gray-500 sm:hidden">{showFilters ? 'Hide' : 'Show'}</span>
-                            </button>
-                        </div>
+                                <div className="text-left">
+                                    <p className="text-lg font-black text-gray-900">Search & Filters</p>
+                                    {activeFiltersCount > 0 && (
+                                        <p className="text-xs text-indigo-600 font-semibold">{activeFiltersCount} active filter{activeFiltersCount > 1 ? 's' : ''}</p>
+                                    )}
+                                </div>
+                            </div>
+                            <ChevronDown className={`w-6 h-6 text-gray-400 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                        </button>
                         
-                        <form onSubmit={handleSearch} className={`p-4 sm:p-6 ${showFilters ? 'block' : 'hidden'} sm:block`}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-                                {/* Search */}
-                                <div className="sm:col-span-2 lg:col-span-1">
-                                    <input
-                                        type="text"
-                                        value={search}
-                                        onChange={(e) => setSearch(e.target.value)}
-                                        placeholder="Search by name or email..."
-                                        className="block w-full border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                    />
-                                </div>
+                        {/* Filter Form */}
+                        <form onSubmit={handleSearch} className={`p-5 space-y-4 ${showFilters ? 'block' : 'hidden'}`}>
+                            {/* Search */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Search</label>
+                                <input
+                                    type="text"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    placeholder="Name or email..."
+                                    className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base font-medium"
+                                />
+                            </div>
 
-                                {/* School Filter */}
-                                <div>
-                                    <select
-                                        value={schoolFilter}
-                                        onChange={(e) => setSchoolFilter(e.target.value)}
-                                        className="block w-full border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                    >
-                                        <option value="">All Schools</option>
-                                        {schools.map((school) => (
-                                            <option key={school.id} value={school.id}>
-                                                {school.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
+                            {/* School Filter */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">School</label>
+                                <select
+                                    value={schoolFilter}
+                                    onChange={(e) => setSchoolFilter(e.target.value)}
+                                    className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base font-medium"
+                                >
+                                    <option value="">All Schools</option>
+                                    {schools.map((school) => (
+                                        <option key={school.id} value={school.id}>
+                                            {school.name}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
 
-                                {/* Role Filter */}
-                                <div>
-                                    <select
-                                        value={roleFilter}
-                                        onChange={(e) => setRoleFilter(e.target.value)}
-                                        className="block w-full border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                    >
-                                        <option value="">All Roles</option>
-                                        <option value="admin">Admin</option>
-                                        <option value="teacher">Teacher</option>
-                                        <option value="guardian">Guardian</option>
-                                        <option value="accountant">Accountant</option>
-                                        <option value="receptionist">Receptionist</option>
-                                        <option value="nurse">Nurse</option>
-                                        <option value="it_staff">IT Staff</option>
-                                    </select>
-                                </div>
+                            {/* Role Filter */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Role</label>
+                                <select
+                                    value={roleFilter}
+                                    onChange={(e) => setRoleFilter(e.target.value)}
+                                    className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base font-medium"
+                                >
+                                    <option value="">All Roles</option>
+                                    <option value="admin">Admin</option>
+                                    <option value="teacher">Teacher</option>
+                                    <option value="guardian">Guardian</option>
+                                    <option value="accountant">Accountant</option>
+                                    <option value="receptionist">Receptionist</option>
+                                    <option value="nurse">Nurse</option>
+                                    <option value="it_staff">IT Staff</option>
+                                </select>
+                            </div>
 
-                                {/* Active Filter */}
-                                <div>
-                                    <select
-                                        value={activeFilter}
-                                        onChange={(e) => setActiveFilter(e.target.value)}
-                                        className="block w-full border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm"
-                                    >
-                                        <option value="">All Status</option>
-                                        <option value="1">Active</option>
-                                        <option value="0">Suspended</option>
-                                    </select>
-                                </div>
+                            {/* Status Filter */}
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Status</label>
+                                <select
+                                    value={activeFilter}
+                                    onChange={(e) => setActiveFilter(e.target.value)}
+                                    className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base font-medium"
+                                >
+                                    <option value="">All Status</option>
+                                    <option value="1">Active</option>
+                                    <option value="0">Suspended</option>
+                                </select>
+                            </div>
 
-                                {/* Buttons */}
-                                <div className="flex gap-2">
-                                    <button
-                                        type="submit"
-                                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-sm font-bold rounded-xl hover:shadow-lg transition-all duration-300"
-                                    >
-                                        <Search className="w-4 h-4" />
-                                        <span className="hidden sm:inline">Search</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={handleClearFilters}
-                                        className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 text-sm font-bold rounded-xl hover:bg-gray-200 transition-all duration-300"
-                                    >
-                                        <RefreshCw className="w-4 h-4" />
-                                        <span className="hidden sm:inline">Clear</span>
-                                    </button>
-                                </div>
+                            {/* Buttons */}
+                            <div className="flex gap-3 pt-2">
+                                <button
+                                    type="submit"
+                                    className="flex-1 inline-flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white text-base font-black rounded-xl shadow-lg active:scale-95 transition-all"
+                                >
+                                    <Search className="w-5 h-5" />
+                                    Search
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleClearFilters}
+                                    className="inline-flex items-center justify-center px-5 py-4 bg-gray-100 text-gray-700 text-base font-bold rounded-xl active:bg-gray-200 transition-all"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
                             </div>
                         </form>
                     </div>
 
-                    {/* Users Table */}
-                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                    {/* Mobile List View */}
+                    <div className="block md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+                        {users.data.length === 0 ? (
+                            <div className="px-6 py-16 text-center">
+                                <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
+                                    <Search className="w-10 h-10 text-gray-400" />
+                                </div>
+                                <p className="text-gray-500 font-bold text-lg">No users found</p>
+                                <p className="text-sm text-gray-400 mt-2">Try adjusting your filters</p>
+                            </div>
+                        ) : (
+                            users.data.map((user) => (
+                                <MobileUserItem
+                                    key={user.id}
+                                    user={user}
+                                    onToggleActive={handleToggleActive}
+                                    onResetPassword={handleResetPassword}
+                                    onDelete={handleDelete}
+                                    getRoleBadgeColor={getRoleBadgeColor}
+                                />
+                            ))
+                        )}
+                    </div>
+
+                    {/* Desktop Table View */}
+                    <div className="hidden md:block bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
