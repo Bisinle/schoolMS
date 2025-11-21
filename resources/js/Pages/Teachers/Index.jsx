@@ -23,50 +23,41 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
         <div className="relative bg-white border-b border-gray-200 overflow-hidden">
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
                     <Link
                         href={`/teachers/${teacher.id}`}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
                     >
-                        <Eye className="w-6 h-6 text-white" />
+                        <Eye className="w-5 h-5 text-white" />
                     </Link>
                     <Link
                         href={`/teachers/${teacher.id}/edit`}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
                     >
-                        <Edit className="w-6 h-6 text-white" />
+                        <Edit className="w-5 h-5 text-white" />
                     </Link>
                     <button
                         onClick={() => {
                             onDelete(teacher);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                     >
-                        <Trash2 className="w-6 h-6 text-white" />
+                        <Trash2 className="w-5 h-5 text-white" />
                     </button>
                 </div>
             )}
-            {swipeAction === 'secondary' && teacher.user?.email && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-6 gap-3 z-10">
+            {swipeAction === 'secondary' && teacher.user?.phone && (
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-4 gap-2 z-10">
                     <a
-                        href={`mailto:${teacher.user.email}`}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        href={`tel:${teacher.user.phone}`}
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
                     >
-                        <Mail className="w-6 h-6 text-white" />
+                        <Phone className="w-5 h-5 text-white" />
                     </a>
-                    {teacher.user?.phone && (
-                        <a
-                            href={`tel:${teacher.user.phone}`}
-                            className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
-                            onClick={() => setSwipeAction(null)}
-                        >
-                            <Phone className="w-6 h-6 text-white" />
-                        </a>
-                    )}
                 </div>
             )}
 
@@ -74,8 +65,8 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-44' :
-                    swipeAction === 'secondary' ? 'translate-x-44' : ''
+                    swipeAction === 'primary' ? '-translate-x-36' :
+                    swipeAction === 'secondary' ? 'translate-x-20' : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {
@@ -103,9 +94,30 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                                     {teacher.user?.name}
                                 </h3>
                                 <p className="text-sm text-gray-600 truncate mt-1">
-                                    {teacher.subject_specialization || 'No Subject'}
+                                    {teacher.subject_specialization || 'No Subject'} • {teacher.employee_number}
                                 </p>
-                                <div className="flex items-center gap-2 mt-2">
+                                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                    {teacher.grades && teacher.grades.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {teacher.grades.slice(0, 2).map((grade) => (
+                                                <span
+                                                    key={grade.id}
+                                                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                                                        grade.pivot.is_class_teacher
+                                                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                                            : 'bg-orange-100 text-orange-700'
+                                                    }`}
+                                                >
+                                                    {grade.name}
+                                                </span>
+                                            ))}
+                                            {teacher.grades.length > 2 && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
+                                                    +{teacher.grades.length - 2}
+                                                </span>
+                                            )}
+                                        </div>
+                                    )}
                                     <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                                         teacher.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                     }`}>

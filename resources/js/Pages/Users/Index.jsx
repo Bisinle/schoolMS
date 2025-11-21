@@ -46,51 +46,51 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
         <div className="relative bg-white border-b border-gray-200 overflow-hidden">
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
                     <Link
                         href={route("users.show", user.id)}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
                     >
-                        <Eye className="w-6 h-6 text-white" />
+                        <Eye className="w-5 h-5 text-white" />
                     </Link>
                     <Link
                         href={route("users.edit", user.id)}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
                     >
-                        <Edit className="w-6 h-6 text-white" />
+                        <Edit className="w-5 h-5 text-white" />
                     </Link>
                     <button
                         onClick={() => {
                             onDelete(user);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                     >
-                        <Trash2 className="w-6 h-6 text-white" />
+                        <Trash2 className="w-5 h-5 text-white" />
                     </button>
                 </div>
             )}
             {swipeAction === 'secondary' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-start px-6 gap-3 z-10">
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
                     <button
                         onClick={() => {
                             onResetPassword(user);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                     >
-                        <Key className="w-6 h-6 text-white" />
+                        <Key className="w-5 h-5 text-white" />
                     </button>
                     <button
                         onClick={() => {
                             onToggleStatus(user);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                     >
-                        <Power className="w-6 h-6 text-white" />
+                        <Power className="w-5 h-5 text-white" />
                     </button>
                 </div>
             )}
@@ -99,8 +99,8 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-44' :
-                    swipeAction === 'secondary' ? 'translate-x-44' : ''
+                    swipeAction === 'primary' ? '-translate-x-36' :
+                    swipeAction === 'secondary' ? 'translate-x-28' : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {

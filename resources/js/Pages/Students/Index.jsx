@@ -25,46 +25,46 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
         <div className="relative bg-white border-b border-gray-200 overflow-hidden">
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
                     <Link
                         href={`/students/${student.id}`}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
                     >
-                        <Eye className="w-6 h-6 text-white" />
+                        <Eye className="w-5 h-5 text-white" />
                     </Link>
                     {auth.user.role === 'admin' && (
                         <>
                             <Link
                                 href={`/students/${student.id}/edit`}
-                                className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                                className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                                 onClick={() => setSwipeAction(null)}
                             >
-                                <Edit className="w-6 h-6 text-white" />
+                                <Edit className="w-5 h-5 text-white" />
                             </Link>
                             <button
                                 onClick={() => {
                                     onDelete(student);
                                     setSwipeAction(null);
                                 }}
-                                className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                                className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                             >
-                                <Trash2 className="w-6 h-6 text-white" />
+                                <Trash2 className="w-5 h-5 text-white" />
                             </button>
                         </>
                     )}
                 </div>
             )}
             {swipeAction === 'secondary' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-6 gap-3 z-10">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-4 gap-2 z-10">
                     <button
                         onClick={() => {
                             onGenerateReport(student);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
+                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                     >
-                        <FileText className="w-6 h-6 text-white" />
+                        <FileText className="w-5 h-5 text-white" />
                     </button>
                 </div>
             )}
@@ -73,8 +73,8 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-44' :
-                    swipeAction === 'secondary' ? 'translate-x-44' : ''
+                    swipeAction === 'primary' ? '-translate-x-36' :
+                    swipeAction === 'secondary' ? 'translate-x-20' : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {
