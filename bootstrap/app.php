@@ -7,6 +7,7 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\CheckSchoolActive;
 use App\Http\Middleware\SuperAdminMiddleware;
 use App\Http\Middleware\SchoolAdminMiddleware;
+use App\Http\Middleware\CheckMadrasahSchool;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -33,6 +34,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'school.active' => CheckSchoolActive::class,
             'super.admin' => SuperAdminMiddleware::class,
             'school.admin' => SchoolAdminMiddleware::class,
+            'madrasah.only' => CheckMadrasahSchool::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

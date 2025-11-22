@@ -33,6 +33,9 @@ export default function AuthenticatedLayout({ header, children }) {
     const brandName = isSuperAdmin ? 'SchoolMS' : (school?.name || 'SchoolMS');
     const brandLogo = !isSuperAdmin && school?.logo_path ? school.logo_path : null;
 
+    // Check if school is madrasah type
+    const isMadrasah = school?.school_type === 'madrasah';
+
     const navigationConfig = {
         super_admin: [
             { name: "Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
@@ -50,7 +53,7 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: "Grades", href: "/grades", icon: BookOpen },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
-            { name: "Quran Tracking", href: "/quran-tracking", icon: Book },
+            ...(isMadrasah ? [{ name: "Quran Tracking", href: "/quran-tracking", icon: Book }] : []),
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
         ],
@@ -62,7 +65,7 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
-            { name: "Quran Tracking", href: "/quran-tracking", icon: Book },
+            ...(isMadrasah ? [{ name: "Quran Tracking", href: "/quran-tracking", icon: Book }] : []),
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "My Documents", href: "/documents", icon: FolderOpen },
         ],

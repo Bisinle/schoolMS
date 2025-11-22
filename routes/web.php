@@ -242,8 +242,8 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         return $grade->subjects()->where('status', 'active')->get();
     });
 
-    //^ Quran Tracking Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    //^ Quran Tracking Routes (Madrasah schools only)
+    Route::middleware(['role:admin,teacher', 'madrasah.only'])->group(function () {
         Route::get('/quran-tracking', [QuranTrackingController::class, 'index'])->name('quran-tracking.index');
         Route::get('/quran-tracking/create', [QuranTrackingController::class, 'create'])->name('quran-tracking.create');
         Route::post('/quran-tracking', [QuranTrackingController::class, 'store'])->name('quran-tracking.store');
