@@ -21,6 +21,7 @@ import {
     Tag,
 } from "lucide-react";
 import { useSwipeable } from 'react-swipeable';
+import SwipeActionButton from '@/Components/SwipeActionButton';
 
 // Mobile List Item Component
 function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, getEntityName }) {
@@ -41,35 +42,29 @@ function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, g
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
                 <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <Link
+                    <SwipeActionButton
+                        icon={<Eye className="w-5 h-5 text-white" />}
                         href={route("documents.show", doc.id)}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Eye className="w-5 h-5 text-white" />
-                    </Link>
-                    <button
+                    />
+                    <SwipeActionButton
+                        icon={<Download className="w-5 h-5 text-white" />}
                         onClick={() => {
                             onDownload(doc);
                             setSwipeAction(null);
                         }}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Download className="w-5 h-5 text-white" />
-                    </button>
+                    />
                 </div>
             )}
             {swipeAction === 'secondary' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
-                    <button
+                    <SwipeActionButton
+                        icon={<Trash2 className="w-5 h-5 text-white" />}
                         onClick={() => {
                             onDelete(doc);
                             setSwipeAction(null);
                         }}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Trash2 className="w-5 h-5 text-white" />
-                    </button>
+                    />
                 </div>
             )}
 

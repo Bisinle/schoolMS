@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, Search, Eye, Edit, Trash2, Users, ChevronDown, ChevronUp, Mail, Phone, MapPin, UserCircle } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { useSwipeable } from 'react-swipeable';
+import SwipeActionButton from '@/Components/SwipeActionButton';
 
 // Mobile List Item Component
 function MobileGuardianItem({ guardian, auth, onDelete }) {
@@ -23,45 +24,41 @@ function MobileGuardianItem({ guardian, auth, onDelete }) {
         <div className="relative bg-white border-b border-gray-200 overflow-hidden">
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <Link
+                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
+                    <SwipeActionButton
+                        icon={<Eye className="w-6 h-6 text-white" />}
                         href={`/guardians/${guardian.id}`}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Eye className="w-5 h-5 text-white" />
-                    </Link>
+                        size="large"
+                    />
                     {auth.user.role === 'admin' && (
                         <>
-                            <Link
+                            <SwipeActionButton
+                                icon={<Edit className="w-6 h-6 text-white" />}
                                 href={`/guardians/${guardian.id}/edit`}
-                                className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                                 onClick={() => setSwipeAction(null)}
-                            >
-                                <Edit className="w-5 h-5 text-white" />
-                            </Link>
-                            <button
+                                size="large"
+                            />
+                            <SwipeActionButton
+                                icon={<Trash2 className="w-6 h-6 text-white" />}
                                 onClick={() => {
                                     onDelete(guardian);
                                     setSwipeAction(null);
                                 }}
-                                className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                            >
-                                <Trash2 className="w-5 h-5 text-white" />
-                            </button>
+                                size="large"
+                            />
                         </>
                     )}
                 </div>
             )}
             {swipeAction === 'secondary' && guardian.phone_number && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-4 gap-2 z-10">
-                    <a
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-6 gap-3 z-10">
+                    <SwipeActionButton
+                        icon={<Phone className="w-6 h-6 text-white" />}
                         href={`tel:${guardian.phone_number}`}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Phone className="w-5 h-5 text-white" />
-                    </a>
+                        size="large"
+                    />
                 </div>
             )}
 
@@ -69,8 +66,8 @@ function MobileGuardianItem({ guardian, auth, onDelete }) {
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-36' :
-                    swipeAction === 'secondary' ? 'translate-x-20' : ''
+                    swipeAction === 'primary' ? '-translate-x-44' :
+                    swipeAction === 'secondary' ? 'translate-x-24' : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {

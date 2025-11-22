@@ -5,12 +5,21 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Guardian;
+use App\Models\School;
 use Illuminate\Support\Facades\Hash;
 
 class GuardianSeeder extends Seeder
 {
     public function run(): void
     {
+        // Get all schools to randomly assign guardians
+        $schools = School::all();
+
+        if ($schools->isEmpty()) {
+            $this->command->error('No schools found. Run SchoolSeeder first.');
+            return;
+        }
+
         $guardians = [
             ['name' => 'Bashir Isse', 'gender' => 'male'],
             ['name' => 'Hassan Adam', 'gender' => 'male'],
@@ -25,7 +34,10 @@ class GuardianSeeder extends Seeder
         ];
 
         foreach ($guardians as $index => $g) {
+            $schoolId = $schools->random()->id;
+
             $user = User::create([
+                'school_id' => $schoolId,
                 'name' => $g['name'],
                 'email' => strtolower(str_replace(' ', '', $g['name'])) . '@example.com',
                 'password' => Hash::make('password'),
@@ -33,6 +45,7 @@ class GuardianSeeder extends Seeder
             ]);
 
             Guardian::create([
+                'school_id' => $schoolId,
                 'user_id' => $user->id,
                 'phone_number' => '0712' . str_pad($index + 100000, 6, '0', STR_PAD_LEFT),
                 'address' => 'Nairobi, Kenya',
@@ -41,6 +54,6 @@ class GuardianSeeder extends Seeder
             ]);
         }
 
-        $this->command->info('✅ 10 Guardians (and their Users) seeded successfully!');
+        $this->command->info('✅ 10 Guardians (and their Users) seeded successfully with random school assignments!');
     }
 }

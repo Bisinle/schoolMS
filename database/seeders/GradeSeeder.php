@@ -4,13 +4,22 @@ namespace Database\Seeders;
 
 use App\Models\Grade;
 use App\Models\Teacher;
+use App\Models\School;
 use Illuminate\Database\Seeder;
 
 class GradeSeeder extends Seeder
 {
     public function run(): void
     {
-        $grades = [
+        // Get all schools to create grades for each
+        $schools = School::all();
+
+        if ($schools->isEmpty()) {
+            $this->command->error('No schools found. Run SchoolSeeder first.');
+            return;
+        }
+
+        $gradesData = [
             [
                 'name' => 'Pre-Primary 1',
                 'code' => 'PP1',
@@ -101,34 +110,43 @@ class GradeSeeder extends Seeder
             ],
         ];
 
-        foreach ($grades as $gradeData) {
-            Grade::create($gradeData);
+        // Create grades for each school
+        foreach ($schools as $school) {
+            foreach ($gradesData as $gradeData) {
+                Grade::create(array_merge($gradeData, ['school_id' => $school->id]));
+            }
         }
 
-        // Assign teachers to grades
-        $teachers = Teacher::all();
-        $allGrades = Grade::all();
+        // Assign teachers to grades (for each school)
+        foreach ($schools as $school) {
+            $teachers = Teacher::where('school_id', $school->id)->get();
+            $schoolGrades = Grade::where('school_id', $school->id)->get();
 
-        if ($teachers->count() >= 3 && $allGrades->count() >= 6) {
-            // Teacher 1 -> Grade 1 (Class Teacher), Grade 2
-            $teachers[0]->grades()->attach([
-                $allGrades[2]->id => ['is_class_teacher' => true],
-                $allGrades[3]->id => ['is_class_teacher' => false],
-            ]);
+            if ($teachers->count() >= 3 && $schoolGrades->count() >= 6) {
+                // Teacher 1 -> Grade 1 (Class Teacher), Grade 2
+                $teachers[0]->grades()->attach([
+                    $schoolGrades[2]->id => ['is_class_teacher' => true],
+                    $schoolGrades[3]->id => ['is_class_teacher' => false],
+                ]);
 
-            // Teacher 2 -> Grade 3 (Class Teacher), Grade 4
-            $teachers[1]->grades()->attach([
-                $allGrades[4]->id => ['is_class_teacher' => true],
-                $allGrades[5]->id => ['is_class_teacher' => false],
-            ]);
+                // Teacher 2 -> Grade 3 (Class Teacher), Grade 4
+                if ($teachers->count() >= 2) {
+                    $teachers[1]->grades()->attach([
+                        $schoolGrades[4]->id => ['is_class_teacher' => true],
+                        $schoolGrades[5]->id => ['is_class_teacher' => false],
+                    ]);
+                }
 
-            // Teacher 3 -> PP1 (Class Teacher), PP2
-            $teachers[2]->grades()->attach([
-                $allGrades[0]->id => ['is_class_teacher' => true],
-                $allGrades[1]->id => ['is_class_teacher' => false],
-            ]);
+                // Teacher 3 -> PP1 (Class Teacher), PP2
+                if ($teachers->count() >= 3) {
+                    $teachers[2]->grades()->attach([
+                        $schoolGrades[0]->id => ['is_class_teacher' => true],
+                        $schoolGrades[1]->id => ['is_class_teacher' => false],
+                    ]);
+                }
+            }
         }
 
-        $this->command->info('✅ Grades seeded successfully!');
+        $this->command->info('✅ Grades seeded successfully for all schools!');
     }
 }

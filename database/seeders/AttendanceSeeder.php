@@ -65,6 +65,7 @@ class AttendanceSeeder extends Seeder
                 $remarks = $this->generateRemarks($status, $student->first_name);
 
                 $buffer[] = [
+                    'school_id' => $student->school_id,
                     'student_id' => $student->id,
                     'grade_id' => $student->grade_id,
                     'marked_by' => $markedBy,

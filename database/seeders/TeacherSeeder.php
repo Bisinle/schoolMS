@@ -18,6 +18,7 @@ class TeacherSeeder extends Seeder
         }
 
         Teacher::create([
+            'school_id' => $teacherUsers[0]->school_id,
             'user_id' => $teacherUsers[0]->id,
             'employee_number' => 'T001',
             'phone_number' => '0712345678',
@@ -29,6 +30,7 @@ class TeacherSeeder extends Seeder
         ]);
 
         Teacher::create([
+            'school_id' => $teacherUsers[1]->school_id,
             'user_id' => $teacherUsers[1]->id,
             'employee_number' => 'T002',
             'phone_number' => '0723456789',
@@ -40,6 +42,7 @@ class TeacherSeeder extends Seeder
         ]);
 
         Teacher::create([
+            'school_id' => $teacherUsers[2]->school_id,
             'user_id' => $teacherUsers[2]->id,
             'employee_number' => 'T003',
             'phone_number' => '0734567890',
@@ -49,7 +52,9 @@ class TeacherSeeder extends Seeder
             'date_of_joining' => '2021-03-10',
             'status' => 'active',
         ]);
+
         Teacher::create([
+            'school_id' => $teacherUsers[3]->school_id,
             'user_id' => $teacherUsers[3]->id,
             'employee_number' => 'T004',
             'phone_number' => '0734567890',
@@ -58,7 +63,10 @@ class TeacherSeeder extends Seeder
             'subject_specialization' => 'Islamic Studies & Arabic',
             'date_of_joining' => '2021-03-10',
             'status' => 'active',
-        ]); Teacher::create([
+        ]);
+
+        Teacher::create([
+            'school_id' => $teacherUsers[4]->school_id,
             'user_id' => $teacherUsers[4]->id,
             'employee_number' => 'T005',
             'phone_number' => '0734567890',
@@ -68,6 +76,7 @@ class TeacherSeeder extends Seeder
             'date_of_joining' => '2021-03-10',
             'status' => 'active',
         ]);
+
         $this->command->info('✅ Teachers seeded successfully!');
     }
 }

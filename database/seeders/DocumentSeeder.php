@@ -57,7 +57,9 @@ class DocumentSeeder extends Seeder
     private function seedTeacherDocuments(Teacher $teacher, User $admin): int
     {
         $count = 0;
-        $categories = DocumentCategory::where('entity_type', 'Teacher')->get();
+        $categories = DocumentCategory::where('entity_type', 'Teacher')
+            ->where('school_id', $teacher->school_id)
+            ->get();
 
         foreach ($categories as $category) {
             // 80% chance to upload required docs, 50% chance for optional
@@ -67,6 +69,7 @@ class DocumentSeeder extends Seeder
                     $category,
                     'App\Models\Teacher',
                     $teacher->id,
+                    $teacher->school_id,
                     $teacher->user,
                     $admin
                 );
@@ -79,7 +82,9 @@ class DocumentSeeder extends Seeder
     private function seedStudentDocuments(Student $student, User $admin): int
     {
         $count = 0;
-        $categories = DocumentCategory::where('entity_type', 'Student')->get();
+        $categories = DocumentCategory::where('entity_type', 'Student')
+            ->where('school_id', $student->school_id)
+            ->get();
 
         foreach ($categories as $category) {
             // 90% chance for required docs, 40% chance for optional
@@ -89,6 +94,7 @@ class DocumentSeeder extends Seeder
                     $category,
                     'App\Models\Student',
                     $student->id,
+                    $student->school_id,
                     $student->guardian->user,
                     $admin
                 );
@@ -101,7 +107,9 @@ class DocumentSeeder extends Seeder
     private function seedGuardianDocuments(Guardian $guardian, User $admin): int
     {
         $count = 0;
-        $categories = DocumentCategory::where('entity_type', 'Guardian')->get();
+        $categories = DocumentCategory::where('entity_type', 'Guardian')
+            ->where('school_id', $guardian->school_id)
+            ->get();
 
         foreach ($categories as $category) {
             if ($category->is_required || rand(1, 100) <= 60) {
@@ -110,6 +118,7 @@ class DocumentSeeder extends Seeder
                     $category,
                     'App\Models\Guardian',
                     $guardian->id,
+                    $guardian->school_id,
                     $guardian->user,
                     $admin
                 );
@@ -123,6 +132,7 @@ class DocumentSeeder extends Seeder
         DocumentCategory $category,
         string $entityType,
         int $entityId,
+        int $schoolId,
         User $uploader,
         User $admin
     ): void {
@@ -172,6 +182,7 @@ class DocumentSeeder extends Seeder
         }
 
         Document::create([
+            'school_id' => $schoolId,
             'document_category_id' => $category->id,
             'documentable_type' => $entityType,
             'documentable_id' => $entityId,

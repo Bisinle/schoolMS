@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\DocumentCategory;
+use App\Models\School;
 use Illuminate\Database\Seeder;
 
 class DocumentCategorySeeder extends Seeder
@@ -11,7 +12,15 @@ class DocumentCategorySeeder extends Seeder
     {
         $this->command->info('🗂️  Seeding Document Categories...');
 
-        $categories = [
+        // Get all schools to create document categories for each
+        $schools = School::all();
+
+        if ($schools->isEmpty()) {
+            $this->command->error('No schools found. Run SchoolSeeder first.');
+            return;
+        }
+
+        $categoriesData = [
             // Teacher Documents
             [
                 'name' => 'Curriculum Vitae (CV)',
@@ -181,10 +190,15 @@ class DocumentCategorySeeder extends Seeder
             ],
         ];
 
-        foreach ($categories as $category) {
-            DocumentCategory::create($category);
+        // Create document categories for each school
+        $totalCreated = 0;
+        foreach ($schools as $school) {
+            foreach ($categoriesData as $category) {
+                DocumentCategory::create(array_merge($category, ['school_id' => $school->id]));
+                $totalCreated++;
+            }
         }
 
-        $this->command->info('✅ ' . count($categories) . ' document categories seeded successfully!');
+        $this->command->info("✅ {$totalCreated} document categories seeded successfully across all schools!");
     }
 }

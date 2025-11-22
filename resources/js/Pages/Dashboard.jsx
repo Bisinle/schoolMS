@@ -53,33 +53,36 @@ export default function Dashboard({
         icon: Icon,
         label,
         value,
-        color = "orange",
+        gradient = "from-orange-500 to-red-600",
         trend,
         link,
     }) => {
         const CardContent = (
-            <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100 group">
-                <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-600 mb-1">
-                            {label}
-                        </p>
-                        <p className={`text-3xl font-bold text-${color} mb-1`}>
-                            {value}
-                        </p>
+            <div className="group relative bg-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden active:scale-95">
+                {/* Background Gradient */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
+
+                <div className="relative">
+                    {/* Icon - Mobile First */}
+                    <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-xl sm:rounded-2xl bg-gradient-to-br ${gradient} flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-lg mb-3 sm:mb-4`}>
+                        <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                    </div>
+
+                    {/* Text Content */}
+                    <div>
+                        <p className="text-xs sm:text-sm font-bold text-gray-600 uppercase tracking-wide mb-1 sm:mb-2 leading-tight">{label}</p>
+                        <p className="text-2xl sm:text-3xl lg:text-4xl font-black text-gray-900">{value}</p>
                         {trend && (
-                            <p className="text-xs text-gray-500 flex items-center">
+                            <p className="text-xs text-gray-500 flex items-center mt-2">
                                 <TrendingUp className="w-3 h-3 mr-1" />
                                 {trend}
                             </p>
                         )}
                     </div>
-                    <div
-                        className={`p-4 bg-${color} bg-opacity-10 rounded-xl group-hover:scale-110 transition-transform duration-300`}
-                    >
-                        <Icon className={`w-8 h-8 text-${color}`} />
-                    </div>
                 </div>
+
+                {/* Decorative corner */}
+                <div className={`absolute -bottom-6 -right-6 w-20 h-20 bg-gradient-to-br ${gradient} opacity-10 rounded-full blur-2xl group-hover:opacity-20 transition-opacity`}></div>
             </div>
         );
 
@@ -127,35 +130,29 @@ export default function Dashboard({
             {/* Admin Dashboard */}
             {role === "admin" && (
                 <div className="space-y-6">
-                    {/* Welcome Banner */}
-                    <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 rounded-2xl shadow-lg p-8 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-2">
-                                    Welcome Back, Administrator!
-                                </h1>
-                                <p className="text-blue-100 text-lg">
-                                    Academic Year {currentYear} • Term{" "}
-                                    {currentTerm} •{" "}
-                                    {new Date().toLocaleDateString("en-US", {
-                                        weekday: "long",
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    })}
-                                </p>
-                            </div>
-                            <School className="w-20 h-20 opacity-20" />
-                        </div>
+                    {/* Welcome Banner - Mobile Optimized */}
+                    <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-600 rounded-2xl shadow-2xl p-6 sm:p-8 text-white">
+                        <h1 className="text-2xl sm:text-3xl font-black mb-2 leading-tight">
+                            Welcome Back, Administrator!
+                        </h1>
+                        <p className="text-blue-100 text-base sm:text-lg font-medium">
+                            Academic Year {currentYear} • Term {currentTerm} •{" "}
+                            {new Date().toLocaleDateString("en-US", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            })}
+                        </p>
                     </div>
 
-                    {/* Primary Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {/* Stats Grid - Mobile Optimized */}
+                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
                         <StatCard
                             icon={Users}
                             label="Total Students"
                             value={stats?.totalStudents || 0}
-                            color="orange"
+                            gradient="from-orange-500 to-red-600"
                             trend={
                                 stats?.recentEnrollments > 0
                                     ? `+${stats.recentEnrollments} this month`
@@ -167,121 +164,121 @@ export default function Dashboard({
                             icon={UserCheck}
                             label="Active Students"
                             value={stats?.activeStudents || 0}
-                            color="green-500"
+                            gradient="from-green-500 to-emerald-600"
                             link="/students"
                         />
                         <StatCard
                             icon={UserCircle}
                             label="Total Guardians"
                             value={stats?.totalGuardians || 0}
-                            color="blue-500"
+                            gradient="from-blue-500 to-indigo-600"
                             link="/guardians"
                         />
                         <StatCard
                             icon={GraduationCap}
                             label="Total Teachers"
                             value={stats?.totalTeachers || 0}
-                            color="purple-500"
+                            gradient="from-purple-500 to-indigo-600"
                             link="/teachers"
                         />
-                    </div>
-
-                    {/* Secondary Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         <StatCard
                             icon={School}
                             label="Active Grades"
                             value={stats?.totalGrades || 0}
-                            color="indigo-500"
+                            gradient="from-indigo-500 to-purple-600"
                             link="/grades"
                         />
                         <StatCard
                             icon={BookOpen}
                             label="Active Subjects"
                             value={stats?.totalSubjects || 0}
-                            color="pink-500"
+                            gradient="from-pink-500 to-rose-600"
                             link="/subjects"
                         />
                         <StatCard
                             icon={FileText}
-                            label="Total Exams (This Year)"
+                            label="Total Exams"
                             value={stats?.totalExams || 0}
-                            color="cyan-500"
+                            gradient="from-cyan-500 to-blue-600"
                             link="/exams"
                         />
                         <StatCard
                             icon={Target}
                             label="Exams This Term"
                             value={stats?.examsThisTerm || 0}
-                            color="teal-500"
+                            gradient="from-teal-500 to-cyan-600"
                             link="/exams"
                         />
                     </div>
 
-                    {/* Document Management Widget */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-lg font-semibold text-navy flex items-center">
-                                <FileText className="w-5 h-5 mr-2 text-orange" />
-                                Document Management
-                            </h3>
-                            <Link
-                                href="/documents"
-                                className="text-sm text-orange hover:text-orange-dark font-medium"
-                            >
-                                View All →
-                            </Link>
+                    {/* Document Management Widget - Mobile Optimized */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                        <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight flex items-center">
+                                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-orange" />
+                                    Document Management
+                                </h3>
+                                <Link
+                                    href="/documents"
+                                    className="text-sm sm:text-base text-orange hover:text-orange-dark font-bold"
+                                >
+                                    View All →
+                                </Link>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                            <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                <FileText className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-                                <p className="text-2xl font-bold text-blue-600">
-                                    {documentStats?.total || 0}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1">
-                                    Total Docs
-                                </p>
-                            </div>
+                        <div className="p-4 sm:p-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                                <div className="text-center p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
+                                    <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-blue-600">
+                                        {documentStats?.total || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Total Docs
+                                    </p>
+                                </div>
 
-                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                                <Clock className="w-8 h-8 text-yellow-600 mx-auto mb-2" />
-                                <p className="text-2xl font-bold text-yellow-600">
-                                    {documentStats?.pending || 0}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1">
-                                    Pending
-                                </p>
-                            </div>
+                                <div className="text-center p-4 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors">
+                                    <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-600 mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-yellow-600">
+                                        {documentStats?.pending || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Pending
+                                    </p>
+                                </div>
 
-                            <div className="text-center p-4 bg-green-50 rounded-lg">
-                                <CheckCircle className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                                <p className="text-2xl font-bold text-green-600">
-                                    {documentStats?.verified || 0}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1">
-                                    Verified
-                                </p>
-                            </div>
+                                <div className="text-center p-4 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
+                                    <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-green-600">
+                                        {documentStats?.verified || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Verified
+                                    </p>
+                                </div>
 
-                            <div className="text-center p-4 bg-red-50 rounded-lg">
-                                <XCircle className="w-8 h-8 text-red-600 mx-auto mb-2" />
-                                <p className="text-2xl font-bold text-red-600">
-                                    {documentStats?.rejected || 0}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1">
-                                    Rejected
-                                </p>
-                            </div>
+                                <div className="text-center p-4 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+                                    <XCircle className="w-8 h-8 sm:w-10 sm:h-10 text-red-600 mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-red-600">
+                                        {documentStats?.rejected || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Rejected
+                                    </p>
+                                </div>
 
-                            <div className="text-center p-4 bg-orange-50 rounded-lg">
-                                <AlertTriangle className="w-8 h-8 text-orange mx-auto mb-2" />
-                                <p className="text-2xl font-bold text-orange">
-                                    {documentStats?.expiring_soon || 0}
-                                </p>
-                                <p className="text-xs text-gray-600 mt-1">
-                                    Expiring
-                                </p>
+                                <div className="text-center p-4 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors">
+                                    <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-orange mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-orange">
+                                        {documentStats?.expiring_soon || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Expiring
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -789,133 +786,128 @@ export default function Dashboard({
             {/* Teacher Dashboard */}
             {role === "teacher" && (
                 <div className="space-y-6">
-                    {/* Welcome Banner */}
-                    <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl shadow-lg p-8 text-white relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
-                        <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
-                        <div className="relative flex items-center justify-between">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-2">
-                                    Welcome Back, Teacher! 👋
-                                </h1>
-                                <p className="text-purple-100 text-lg">
-                                    Academic Year {currentYear} • Term{" "}
-                                    {currentTerm}
-                                    {isClassTeacher && classTeacherGrade && (
-                                        <span className="ml-4 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
-                                            ⭐ Class Teacher -{" "}
-                                            {classTeacherGrade}
-                                        </span>
-                                    )}
-                                </p>
-                                <p className="text-purple-200 text-sm mt-2">
-                                    {new Date().toLocaleDateString("en-US", {
-                                        weekday: "long",
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    })}
-                                </p>
-                            </div>
-                            <GraduationCap className="w-24 h-24 opacity-20" />
-                        </div>
+                    {/* Welcome Banner - Mobile Optimized */}
+                    <div className="bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 rounded-2xl shadow-2xl p-6 sm:p-8 text-white">
+                        <h1 className="text-2xl sm:text-3xl font-black mb-2 leading-tight">
+                            Welcome Back, Teacher! 👋
+                        </h1>
+                        <p className="text-purple-100 text-base sm:text-lg font-medium">
+                            Academic Year {currentYear} • Term {currentTerm}
+                            {isClassTeacher && classTeacherGrade && (
+                                <span className="block sm:inline sm:ml-4 mt-2 sm:mt-0 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
+                                    ⭐ Class Teacher - {classTeacherGrade}
+                                </span>
+                            )}
+                        </p>
+                        <p className="text-purple-200 text-sm mt-2">
+                            {new Date().toLocaleDateString("en-US", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            })}
+                        </p>
                     </div>
 
-                    {/* Stats Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+                    {/* Stats Grid - Mobile Optimized */}
+                    <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-6">
                         <StatCard
                             icon={School}
                             label="My Grades"
                             value={stats?.assignedGrades || 0}
-                            color="purple-500"
+                            gradient="from-purple-500 to-indigo-600"
                         />
                         <StatCard
                             icon={Users}
                             label="My Students"
                             value={stats?.totalStudents || 0}
-                            color="orange"
+                            gradient="from-orange-500 to-red-600"
                         />
                         <StatCard
                             icon={FileText}
                             label="My Exams"
                             value={stats?.myExams || 0}
-                            color="blue-500"
+                            gradient="from-blue-500 to-indigo-600"
                         />
                         <StatCard
                             icon={Target}
                             label="Exams This Term"
                             value={stats?.examsThisTerm || 0}
-                            color="green-500"
+                            gradient="from-green-500 to-emerald-600"
                         />
                         <StatCard
                             icon={AlertCircle}
                             label="Pending Results"
                             value={stats?.pendingResults || 0}
-                            color="red-500"
+                            gradient="from-red-500 to-orange-600"
                         />
                     </div>
 
-                    {/* Document Stats Widget */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-navy flex items-center">
-                                <FileText className="w-5 h-5 mr-2 text-orange" />
-                                My Documents
-                            </h3>
-                            <Link
-                                href="/documents"
-                                className="text-sm text-orange hover:text-orange-dark font-medium"
-                            >
-                                Manage →
-                            </Link>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                <p className="text-3xl font-bold text-blue-600">
-                                    {documentStats?.total || 0}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Total
-                                </p>
-                            </div>
-                            <div className="text-center p-4 bg-yellow-50 rounded-lg">
-                                <p className="text-3xl font-bold text-yellow-600">
-                                    {documentStats?.pending || 0}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Pending
-                                </p>
-                            </div>
-                            <div className="text-center p-4 bg-green-50 rounded-lg">
-                                <p className="text-3xl font-bold text-green-600">
-                                    {documentStats?.verified || 0}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Verified
-                                </p>
-                            </div>
-                            <div className="text-center p-4 bg-red-50 rounded-lg">
-                                <p className="text-3xl font-bold text-red-600">
-                                    {documentStats?.rejected || 0}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Rejected
-                                </p>
+                    {/* Document Stats Widget - Mobile Optimized */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                        <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight flex items-center">
+                                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-orange" />
+                                    My Documents
+                                </h3>
+                                <Link
+                                    href="/documents"
+                                    className="text-sm sm:text-base text-orange hover:text-orange-dark font-bold"
+                                >
+                                    Manage →
+                                </Link>
                             </div>
                         </div>
 
-                        {documentStats?.rejected > 0 && (
-                            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                                <p className="text-sm text-red-800">
-                                    <AlertTriangle className="w-4 h-4 inline mr-1" />
-                                    You have {documentStats.rejected} rejected
-                                    document
-                                    {documentStats.rejected > 1 ? "s" : ""} that
-                                    need attention.
-                                </p>
+                        <div className="p-4 sm:p-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                                <div className="text-center p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
+                                    <p className="text-2xl sm:text-3xl font-black text-blue-600">
+                                        {documentStats?.total || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Total
+                                    </p>
+                                </div>
+                                <div className="text-center p-4 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors">
+                                    <p className="text-2xl sm:text-3xl font-black text-yellow-600">
+                                        {documentStats?.pending || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Pending
+                                    </p>
+                                </div>
+                                <div className="text-center p-4 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
+                                    <p className="text-2xl sm:text-3xl font-black text-green-600">
+                                        {documentStats?.verified || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Verified
+                                    </p>
+                                </div>
+                                <div className="text-center p-4 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+                                    <p className="text-2xl sm:text-3xl font-black text-red-600">
+                                        {documentStats?.rejected || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Rejected
+                                    </p>
+                                </div>
                             </div>
-                        )}
+
+                            {documentStats?.rejected > 0 && (
+                                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                    <p className="text-sm text-red-800">
+                                        <AlertTriangle className="w-4 h-4 inline mr-1" />
+                                        You have {documentStats.rejected} rejected
+                                        document
+                                        {documentStats.rejected > 1 ? "s" : ""} that
+                                        need attention.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* My Grades & Exams Needing Attention */}
@@ -1191,192 +1183,161 @@ export default function Dashboard({
             {/* Guardian Dashboard */}
             {role === "guardian" && (
                 <div className="space-y-6">
-                    {/* Welcome Banner */}
-                    <div className="bg-gradient-to-r from-green-600 via-teal-600 to-cyan-600 rounded-2xl shadow-lg p-8 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <h1 className="text-3xl font-bold mb-2">
-                                    Welcome Back,{" "}
-                                    {guardianInfo?.name || "Parent/Guardian"}!
-                                </h1>
-                                <p className="text-green-100 text-lg">
-                                    Academic Year {currentYear} • Term{" "}
-                                    {currentTerm} •{" "}
-                                    {new Date().toLocaleDateString("en-US", {
-                                        weekday: "long",
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                    })}
-                                </p>
-                            </div>
-                            <UserCircle className="w-20 h-20 opacity-20" />
-                        </div>
+                    {/* Welcome Banner - Mobile Optimized */}
+                    <div className="bg-gradient-to-r from-green-600 via-teal-600 to-cyan-600 rounded-2xl shadow-2xl p-6 sm:p-8 text-white">
+                        <h1 className="text-2xl sm:text-3xl font-black mb-2 leading-tight">
+                            Welcome Back, {guardianInfo?.name || "Parent/Guardian"}!
+                        </h1>
+                        <p className="text-green-100 text-base sm:text-lg font-medium">
+                            Academic Year {currentYear} • Term {currentTerm} •{" "}
+                            {new Date().toLocaleDateString("en-US", {
+                                weekday: "long",
+                                year: "numeric",
+                                month: "long",
+                                day: "numeric",
+                            })}
+                        </p>
                     </div>
 
-                    {/* Quick Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 mb-1">
-                                        My Children
-                                    </p>
-                                    <p className="text-4xl font-bold text-orange">
-                                        {students?.length || 0}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        Active students
-                                    </p>
-                                </div>
-                                <Users className="w-12 h-12 text-orange opacity-20" />
-                            </div>
-                        </div>
+                    {/* Quick Stats - Mobile Optimized */}
+                    <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                        <StatCard
+                            icon={Users}
+                            label="My Children"
+                            value={students?.length || 0}
+                            gradient="from-orange-500 to-red-600"
+                            trend="Active students"
+                        />
 
-                        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 mb-1">
-                                        Average Attendance
-                                    </p>
-                                    <p className="text-4xl font-bold text-blue-600">
-                                        {students?.length > 0
-                                            ? Math.round(
-                                                  students.reduce(
-                                                      (sum, s) =>
-                                                          sum +
-                                                          (s.attendance_stats
-                                                              ?.attendance_rate ||
-                                                              0),
-                                                      0
-                                                  ) / students.length
-                                              )
-                                            : 0}
-                                        %
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        For {currentMonth}
-                                    </p>
-                                </div>
-                                <Calendar className="w-12 h-12 text-blue-600 opacity-20" />
-                            </div>
-                        </div>
+                        <StatCard
+                            icon={Calendar}
+                            label="Avg Attendance"
+                            value={`${students?.length > 0
+                                ? Math.round(
+                                      students.reduce(
+                                          (sum, s) =>
+                                              sum +
+                                              (s.attendance_stats
+                                                  ?.attendance_rate ||
+                                                  0),
+                                          0
+                                      ) / students.length
+                                  )
+                                : 0}%`}
+                            gradient="from-blue-500 to-indigo-600"
+                            trend={`For ${currentMonth}`}
+                        />
 
-                        <div className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 p-6 border border-gray-100">
-                            <div className="flex items-center justify-between mb-4">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600 mb-1">
-                                        Total Exams
-                                    </p>
-                                    <p className="text-4xl font-bold text-purple-600">
-                                        {students?.reduce(
-                                            (sum, s) =>
-                                                sum +
-                                                (s.total_exams_this_term || 0),
-                                            0
-                                        ) || 0}
-                                    </p>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        This term
-                                    </p>
-                                </div>
-                                <FileText className="w-12 h-12 text-purple-600 opacity-20" />
-                            </div>
-                        </div>
+                        <StatCard
+                            icon={FileText}
+                            label="Total Exams"
+                            value={students?.reduce(
+                                (sum, s) =>
+                                    sum +
+                                    (s.total_exams_this_term || 0),
+                                0
+                            ) || 0}
+                            gradient="from-purple-500 to-indigo-600"
+                            trend="This term"
+                        />
                     </div>
 
-                    {/* Document Stats Widget */}
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-navy flex items-center">
-                                <FileText className="w-5 h-5 mr-2 text-orange" />
-                                Family Documents
-                            </h3>
-                            <Link
-                                href="/documents"
-                                className="text-sm text-orange hover:text-orange-dark font-medium"
-                            >
-                                View All →
-                            </Link>
-                        </div>
-
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
-                            <div className="text-center p-4 bg-blue-50 rounded-lg">
-                                <p className="text-3xl font-bold text-blue-600">
-                                    {documentStats?.total || 0}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Total Docs
-                                </p>
-                            </div>
-                            <div className="text-center p-4 bg-purple-50 rounded-lg">
-                                <p className="text-3xl font-bold text-purple-600">
-                                    {documentStats?.my_docs || 0}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    My Docs
-                                </p>
-                            </div>
-                            <div className="text-center p-4 bg-cyan-50 rounded-lg">
-                                <p className="text-3xl font-bold text-cyan-600">
-                                    {documentStats?.children_docs || 0}
-                                </p>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    Children Docs
-                                </p>
+                    {/* Document Stats Widget - Mobile Optimized */}
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                        <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight flex items-center">
+                                    <FileText className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-orange" />
+                                    Family Documents
+                                </h3>
+                                <Link
+                                    href="/documents"
+                                    className="text-sm sm:text-base text-orange hover:text-orange-dark font-bold"
+                                >
+                                    View All →
+                                </Link>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-3">
-                            <div className="text-center p-3 bg-yellow-50 rounded-lg">
-                                <Clock className="w-6 h-6 text-yellow-600 mx-auto mb-1" />
-                                <p className="text-xl font-bold text-yellow-600">
-                                    {documentStats?.pending || 0}
-                                </p>
-                                <p className="text-xs text-gray-600">Pending</p>
+                        <div className="p-4 sm:p-6">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-4">
+                                <div className="text-center p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
+                                    <p className="text-2xl sm:text-3xl font-black text-blue-600">
+                                        {documentStats?.total || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Total Docs
+                                    </p>
+                                </div>
+                                <div className="text-center p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
+                                    <p className="text-2xl sm:text-3xl font-black text-purple-600">
+                                        {documentStats?.my_docs || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        My Docs
+                                    </p>
+                                </div>
+                                <div className="text-center p-4 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors">
+                                    <p className="text-2xl sm:text-3xl font-black text-cyan-600">
+                                        {documentStats?.children_docs || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Children Docs
+                                    </p>
+                                </div>
                             </div>
-                            <div className="text-center p-3 bg-green-50 rounded-lg">
-                                <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-1" />
-                                <p className="text-xl font-bold text-green-600">
-                                    {documentStats?.verified || 0}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                    Verified
-                                </p>
-                            </div>
-                            <div className="text-center p-3 bg-red-50 rounded-lg">
-                                <XCircle className="w-6 h-6 text-red-600 mx-auto mb-1" />
-                                <p className="text-xl font-bold text-red-600">
-                                    {documentStats?.rejected || 0}
-                                </p>
-                                <p className="text-xs text-gray-600">
-                                    Rejected
-                                </p>
-                            </div>
-                        </div>
 
-                        {(documentStats?.pending > 0 ||
-                            documentStats?.rejected > 0) && (
-                            <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
-                                <p className="text-sm text-orange-800">
-                                    <AlertTriangle className="w-4 h-4 inline mr-1" />
-                                    {documentStats.pending > 0 &&
-                                        `${documentStats.pending} pending `}
-                                    {documentStats.pending > 0 &&
-                                        documentStats.rejected > 0 &&
-                                        " & "}
-                                    {documentStats.rejected > 0 &&
-                                        `${documentStats.rejected} rejected `}
-                                    document
-                                    {(documentStats.pending || 0) +
-                                        (documentStats.rejected || 0) >
-                                    1
-                                        ? "s"
-                                        : ""}
-                                    .
-                                </p>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="text-center p-3 bg-yellow-50 rounded-xl hover:bg-yellow-100 transition-colors">
+                                    <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-600 mx-auto mb-1" />
+                                    <p className="text-xl sm:text-2xl font-black text-yellow-600">
+                                        {documentStats?.pending || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 font-bold">Pending</p>
+                                </div>
+                                <div className="text-center p-3 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
+                                    <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mx-auto mb-1" />
+                                    <p className="text-xl sm:text-2xl font-black text-green-600">
+                                        {documentStats?.verified || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 font-bold">
+                                        Verified
+                                    </p>
+                                </div>
+                                <div className="text-center p-3 bg-red-50 rounded-xl hover:bg-red-100 transition-colors">
+                                    <XCircle className="w-6 h-6 sm:w-8 sm:h-8 text-red-600 mx-auto mb-1" />
+                                    <p className="text-xl sm:text-2xl font-black text-red-600">
+                                        {documentStats?.rejected || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 font-bold">
+                                        Rejected
+                                    </p>
+                                </div>
                             </div>
-                        )}
+
+                            {(documentStats?.pending > 0 ||
+                                documentStats?.rejected > 0) && (
+                                <div className="mt-4 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+                                    <p className="text-sm text-orange-800">
+                                        <AlertTriangle className="w-4 h-4 inline mr-1" />
+                                        {documentStats.pending > 0 &&
+                                            `${documentStats.pending} pending `}
+                                        {documentStats.pending > 0 &&
+                                            documentStats.rejected > 0 &&
+                                            " & "}
+                                        {documentStats.rejected > 0 &&
+                                            `${documentStats.rejected} rejected `}
+                                        document
+                                        {(documentStats.pending || 0) +
+                                            (documentStats.rejected || 0) >
+                                        1
+                                            ? "s"
+                                            : ""}
+                                        .
+                                    </p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Additional Quick Actions */}

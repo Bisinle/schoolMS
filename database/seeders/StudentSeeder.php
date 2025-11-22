@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Grade;
+use App\Models\School;
 use Illuminate\Support\Str;
 use Faker\Factory as Faker;
 
@@ -13,18 +14,12 @@ class StudentSeeder extends Seeder
 {
     public function run(): void
     {
-        $faker = Faker::create(); // ✅ Create a faker instance
+        $faker = Faker::create();
 
-        $guardians = Guardian::all();
-        $grades = Grade::all();
+        $schools = School::all();
 
-        if ($guardians->isEmpty()) {
-            $this->command->error('No guardians found. Run GuardianSeeder first.');
-            return;
-        }
-
-        if ($grades->isEmpty()) {
-            $this->command->error('No grades found. Run GradeSeeder first.');
+        if ($schools->isEmpty()) {
+            $this->command->error('No schools found. Run SchoolSeeder first.');
             return;
         }
 
@@ -32,40 +27,62 @@ class StudentSeeder extends Seeder
         $firstNamesFemale = ['Ayaan', 'Asma', 'Nimco', 'Zahra', 'Maryam', 'Rahma', 'Layla', 'Ruqayya', 'Nasteha', 'Fadumo', 'Hafsa', 'Sumaya'];
         $lastNames = ['Hassan', 'Ali', 'Abdullahi', 'Isse', 'Mohamed', 'Abubakar', 'Dheere', 'Maalim', 'Bade', 'Hersi', 'Adam', 'Ahmed', 'Warsame'];
 
-        $studentCount = 0;
-        $admissionPrefix = 'S2024';
+        $totalStudentCount = 0;
 
-        foreach ($guardians as $guardian) {
-            if ($studentCount >= 30) break;
+        // Create students for each school
+        foreach ($schools as $school) {
+            $guardians = Guardian::where('school_id', $school->id)->get();
+            $grades = Grade::where('school_id', $school->id)->get();
 
-            $kidsCount = rand(1, 4);
-            for ($i = 0; $i < $kidsCount && $studentCount < 30; $i++) {
-
-                $isMale = rand(0, 1) === 1;
-                $firstName = $isMale
-                    ? $firstNamesMale[array_rand($firstNamesMale)]
-                    : $firstNamesFemale[array_rand($firstNamesFemale)];
-                $lastName = $lastNames[array_rand($lastNames)];
-
-                $grade = $grades->random();
-                $studentCount++;
-                $admissionNumber = $admissionPrefix . str_pad($studentCount, 3, '0', STR_PAD_LEFT);
-
-                Student::create([
-                    'admission_number' => $admissionNumber,
-                    'first_name' => $firstName,
-                    'last_name' => $lastName,
-                    'date_of_birth' => $faker->dateTimeBetween('2012-01-01', '2018-12-31')->format('Y-m-d'),
-                    'gender' => $isMale ? 'male' : 'female',
-                    'grade_id' => $grade->id,
-                    'guardian_id' => $guardian->id,
-                    'class_name' => $grade->name,
-                    'enrollment_date' => '2024-01-08',
-                    'status' => 'active',
-                ]);
+            if ($guardians->isEmpty()) {
+                $this->command->warn("No guardians found for school {$school->name}. Skipping...");
+                continue;
             }
+
+            if ($grades->isEmpty()) {
+                $this->command->warn("No grades found for school {$school->name}. Skipping...");
+                continue;
+            }
+
+            $studentCount = 0;
+            $admissionPrefix = 'S2024';
+
+            foreach ($guardians as $guardian) {
+                if ($studentCount >= 30) break;
+
+                $kidsCount = rand(1, 4);
+                for ($i = 0; $i < $kidsCount && $studentCount < 30; $i++) {
+
+                    $isMale = rand(0, 1) === 1;
+                    $firstName = $isMale
+                        ? $firstNamesMale[array_rand($firstNamesMale)]
+                        : $firstNamesFemale[array_rand($firstNamesFemale)];
+                    $lastName = $lastNames[array_rand($lastNames)];
+
+                    $grade = $grades->random();
+                    $studentCount++;
+                    $totalStudentCount++;
+                    $admissionNumber = $admissionPrefix . str_pad($studentCount, 3, '0', STR_PAD_LEFT);
+
+                    Student::create([
+                        'school_id' => $school->id,
+                        'admission_number' => $admissionNumber,
+                        'first_name' => $firstName,
+                        'last_name' => $lastName,
+                        'date_of_birth' => $faker->dateTimeBetween('2012-01-01', '2018-12-31')->format('Y-m-d'),
+                        'gender' => $isMale ? 'male' : 'female',
+                        'grade_id' => $grade->id,
+                        'guardian_id' => $guardian->id,
+                        'class_name' => $grade->name,
+                        'enrollment_date' => '2024-01-08',
+                        'status' => 'active',
+                    ]);
+                }
+            }
+
+            $this->command->info("  ✅ {$school->name}: {$studentCount} students created");
         }
 
-        $this->command->info("✅ Successfully seeded $studentCount students for {$guardians->count()} guardians!");
+        $this->command->info("✅ Successfully seeded {$totalStudentCount} students across all schools!");
     }
 }

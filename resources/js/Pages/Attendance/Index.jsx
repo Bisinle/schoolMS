@@ -216,7 +216,7 @@ export default function AttendanceIndex({
                 date: localDate,
             },
             {
-                preserveState: false, // Changed to false to fully reload
+                preserveState: false,
                 preserveScroll: true,
             }
         );
@@ -244,7 +244,6 @@ export default function AttendanceIndex({
         e.preventDefault();
         post("/attendance/mark", {
             onSuccess: () => {
-                // Refresh the page to show updated data
                 router.get(
                     "/attendance",
                     {
@@ -282,7 +281,7 @@ export default function AttendanceIndex({
 
             <div className="space-y-6">
                 {/* Top Actions Bar */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6">
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         {/* Filters */}
                         <div className="flex flex-col sm:flex-row gap-4 flex-1">
@@ -346,11 +345,10 @@ export default function AttendanceIndex({
                         </div>
 
                         {/* View Reports Button */}
-                        {/* View Reports Button */}
                         <div className="flex items-end">
                             <a
                                 href="/attendance/reports"
-                                className="inline-flex items-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md font-medium"
+                                className="w-full sm:w-auto inline-flex items-center justify-center px-6 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md font-medium"
                             >
                                 <FileText className="w-4 h-4 mr-2" />
                                 View Reports
@@ -373,76 +371,66 @@ export default function AttendanceIndex({
                     </div>
                 )}
 
-                {/* Stats Cards */}
+                {/* Stats Cards - Mobile Optimized */}
                 {attendanceData && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-gray-500">
-                                        Total Students
-                                    </p>
-                                    <p className="text-2xl font-bold text-navy mt-1">
-                                        {stats.total}
-                                    </p>
-                                </div>
-                                <Users className="w-10 h-10 text-gray-400" />
+                            <div className="flex flex-col items-center text-center">
+                                <Users className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2" />
+                                <p className="text-xs text-gray-500">
+                                    Total
+                                </p>
+                                <p className="text-xl sm:text-2xl font-bold text-navy mt-1">
+                                    {stats.total}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-sm p-4 text-white">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-green-100">
-                                        Present
-                                    </p>
-                                    <p className="text-2xl font-bold mt-1">
-                                        {stats.present}
-                                    </p>
-                                </div>
-                                <CheckCircle className="w-10 h-10 text-green-200" />
+                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md p-4 text-white">
+                            <div className="flex flex-col items-center text-center">
+                                <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-100 mb-2" />
+                                <p className="text-xs text-green-100">
+                                    Present
+                                </p>
+                                <p className="text-xl sm:text-2xl font-bold mt-1">
+                                    {stats.present}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-sm p-4 text-white">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-red-100">
-                                        Absent
-                                    </p>
-                                    <p className="text-2xl font-bold mt-1">
-                                        {stats.absent}
-                                    </p>
-                                </div>
-                                <XCircle className="w-10 h-10 text-red-200" />
+                        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-md p-4 text-white">
+                            <div className="flex flex-col items-center text-center">
+                                <XCircle className="w-8 h-8 sm:w-10 sm:h-10 text-red-100 mb-2" />
+                                <p className="text-xs text-red-100">
+                                    Absent
+                                </p>
+                                <p className="text-xl sm:text-2xl font-bold mt-1">
+                                    {stats.absent}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-sm p-4 text-white">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-yellow-100">
-                                        Late
-                                    </p>
-                                    <p className="text-2xl font-bold mt-1">
-                                        {stats.late}
-                                    </p>
-                                </div>
-                                <Clock className="w-10 h-10 text-yellow-200" />
+                        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-md p-4 text-white">
+                            <div className="flex flex-col items-center text-center">
+                                <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-100 mb-2" />
+                                <p className="text-xs text-yellow-100">
+                                    Late
+                                </p>
+                                <p className="text-xl sm:text-2xl font-bold mt-1">
+                                    {stats.late}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm p-4 text-white">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm text-blue-100">
-                                        Excused
-                                    </p>
-                                    <p className="text-2xl font-bold mt-1">
-                                        {stats.excused}
-                                    </p>
-                                </div>
-                                <AlertCircle className="w-10 h-10 text-blue-200" />
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md p-4 text-white col-span-2 sm:col-span-1">
+                            <div className="flex flex-col items-center text-center">
+                                <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-blue-100 mb-2" />
+                                <p className="text-xs text-blue-100">
+                                    Excused
+                                </p>
+                                <p className="text-xl sm:text-2xl font-bold mt-1">
+                                    {stats.excused}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -450,15 +438,14 @@ export default function AttendanceIndex({
 
                 {/* Attendance Rate */}
                 {attendanceData && (
-                    <div className="bg-gradient-to-r from-orange to-orange-dark rounded-xl shadow-sm p-6 text-white">
-                        <div className="flex items-center justify-between">
-                            <div>
+                    <div className="bg-gradient-to-r from-orange to-orange-dark rounded-xl shadow-md p-6 text-white">
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="text-center sm:text-left">
                                 <p className="text-sm text-orange-100">
                                     Attendance Rate for{" "}
                                     {attendanceData.grade.name}
                                 </p>
-                                <p className="text-sm text-orange-100 mt-1">
-                                    Date:{" "}
+                                <p className="text-xs sm:text-sm text-orange-100 mt-1">
                                     {new Date(selectedDate).toLocaleDateString(
                                         "en-US",
                                         {
@@ -469,12 +456,12 @@ export default function AttendanceIndex({
                                         }
                                     )}
                                 </p>
-                                <p className="text-4xl font-bold mt-2">
+                                <p className="text-3xl sm:text-4xl font-bold mt-2">
                                     {attendanceRate}%
                                 </p>
                             </div>
-                            <div className="w-20 h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
-                                <CheckCircle className="w-12 h-12" />
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                                <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12" />
                             </div>
                         </div>
                     </div>
@@ -487,7 +474,7 @@ export default function AttendanceIndex({
                         {attendanceData.marked_count > 0 && (
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                                 <div className="flex items-start">
-                                    <AlertCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5" />
+                                    <AlertCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
                                     <div>
                                         <p className="text-sm font-medium text-blue-900">
                                             Attendance Already Marked
@@ -511,38 +498,38 @@ export default function AttendanceIndex({
                                 <p className="text-sm font-medium text-gray-700 mb-3">
                                     Quick Actions:
                                 </p>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
                                     <button
                                         type="button"
                                         onClick={() => markAllAs("present")}
-                                        className="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-all text-sm font-medium"
+                                        className="px-3 sm:px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-all text-xs sm:text-sm font-medium"
                                     >
                                         <CheckCircle className="w-4 h-4 inline mr-1" />
-                                        Mark All Present
+                                        All Present
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => markAllAs("absent")}
-                                        className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-all text-sm font-medium"
+                                        className="px-3 sm:px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-all text-xs sm:text-sm font-medium"
                                     >
                                         <XCircle className="w-4 h-4 inline mr-1" />
-                                        Mark All Absent
+                                        All Absent
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => markAllAs("late")}
-                                        className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-all text-sm font-medium"
+                                        className="px-3 sm:px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-all text-xs sm:text-sm font-medium"
                                     >
                                         <Clock className="w-4 h-4 inline mr-1" />
-                                        Mark All Late
+                                        All Late
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => markAllAs("excused")}
-                                        className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-all text-sm font-medium"
+                                        className="px-3 sm:px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-all text-xs sm:text-sm font-medium"
                                     >
                                         <AlertCircle className="w-4 h-4 inline mr-1" />
-                                        Mark All Excused
+                                        All Excused
                                     </button>
                                 </div>
                             </div>
@@ -550,7 +537,7 @@ export default function AttendanceIndex({
 
                         {/* Student List */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                            <div className="px-4 sm:px-6 py-4 bg-gray-50 border-b border-gray-200">
                                 <h3 className="text-lg font-semibold text-navy">
                                     Students in {attendanceData.grade.name}
                                 </h3>
@@ -708,11 +695,11 @@ export default function AttendanceIndex({
 
                         {/* Submit Button */}
                         {canMarkAttendance && (
-                            <div className="flex justify-end gap-4">
+                            <div className="flex flex-col sm:flex-row justify-end gap-3 sm:gap-4">
                                 <button
                                     type="button"
                                     onClick={handleLoadStudents}
-                                    className="inline-flex items-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all shadow-sm hover:shadow-md font-medium"
+                                    className="inline-flex items-center justify-center px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all shadow-sm hover:shadow-md font-medium"
                                 >
                                     <Users className="w-5 h-5 mr-2" />
                                     Reload Students
@@ -720,7 +707,7 @@ export default function AttendanceIndex({
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-all shadow-sm hover:shadow-md disabled:opacity-50 font-medium"
+                                    className="inline-flex items-center justify-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-all shadow-sm hover:shadow-md disabled:opacity-50 font-medium"
                                 >
                                     <Save className="w-5 h-5 mr-2" />
                                     {processing

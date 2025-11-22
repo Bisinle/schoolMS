@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Plus, Search, Eye, Edit, Trash2, Calendar, FileText, ChevronDown, ChevronUp, BookOpen, GraduationCap, Clock } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { useSwipeable } from 'react-swipeable';
+import SwipeActionButton from '@/Components/SwipeActionButton';
 
 // Mobile List Item Component
 function MobileExamItem({ exam, auth, onDelete, getExamTypeBadge }) {
@@ -26,33 +27,27 @@ function MobileExamItem({ exam, auth, onDelete, getExamTypeBadge }) {
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
                 <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <Link
+                    <SwipeActionButton
+                        icon={<Eye className="w-5 h-5 text-white" />}
                         href={`/exams/${exam.id}`}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Eye className="w-5 h-5 text-white" />
-                    </Link>
-                    <Link
+                    />
+                    <SwipeActionButton
+                        icon={<Edit className="w-5 h-5 text-white" />}
                         href={`/exams/${exam.id}/edit`}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Edit className="w-5 h-5 text-white" />
-                    </Link>
+                    />
                 </div>
             )}
             {swipeAction === 'secondary' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
-                    <button
+                    <SwipeActionButton
+                        icon={<Trash2 className="w-5 h-5 text-white" />}
                         onClick={() => {
                             onDelete(exam);
                             setSwipeAction(null);
                         }}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Trash2 className="w-5 h-5 text-white" />
-                    </button>
+                    />
                 </div>
             )}
 

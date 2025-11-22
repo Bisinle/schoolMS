@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
 
         // Call seeders in order (respecting dependencies)
         $this->call([
+            SchoolSeeder::class,            // 🆕 FIRST: Create schools
             UserSeeder::class,
             TeacherSeeder::class,
             GuardianSeeder::class,
@@ -20,32 +21,38 @@ class DatabaseSeeder extends Seeder
             SubjectSeeder::class,
             StudentSeeder::class,
             AttendanceSeeder::class,
-            DocumentCategorySeeder::class,  // 🆕 NEW
-            DocumentSeeder::class, 
+            DocumentCategorySeeder::class,
+            DocumentSeeder::class,
         ]);
 
         $this->command->newLine();
         $this->command->info('===========================================');
         $this->command->info('✅ Database seeded successfully!');
         $this->command->info('===========================================');
-        $this->command->info('📧 Login Credentials:');
+        $this->command->info('🏫 Schools Created:');
         $this->command->info('===========================================');
-        $this->command->info('👤 Admin: admin@school.com / password');
-        $this->command->info('👨‍🏫 Teacher 1: teacher@school.com / password');
-        $this->command->info('👨‍🏫 Teacher 2: teacher2@school.com / password');
-        $this->command->info('👨‍🏫 Teacher 3: teacher3@school.com / password');
-        $this->command->info('👪 Guardian: guardian@school.com / password');
+        $this->command->info('1. Elmi Academy');
+        $this->command->info('   📧 admin@elmi.school / password');
+        $this->command->info('');
+        $this->command->info('2. Sunrise International School');
+        $this->command->info('   📧 admin@sunrise.school / password');
+        $this->command->info('');
+        $this->command->info('3. Al-Noor Academy');
+        $this->command->info('   📧 admin@alnoor.school / password');
         $this->command->info('===========================================');
-        $this->command->info('📊 Summary:');
-        $this->command->info('- 5 Users (1 Admin, 3 Teachers, 1 Guardian)');
+        $this->command->info('📊 Summary (per school):');
         $this->command->info('- 11 Grades (PP1-PP2, G1-G9)');
-        $this->command->info('- 12 Subjects (7 Academic, 5 Islamic)');
-        $this->command->info('- 3 Teachers (assigned to various grades)');
-        $this->command->info('- 5 Students (distributed across grades)');
-        $this->command->info('- 1 Guardian (parent of all sample students)');
+        $this->command->info('- 13 Subjects (8 Academic, 5 Islamic)');
+        $this->command->info('- Multiple Teachers & Guardians');
+        $this->command->info('- ~30 Students per school');
+        $this->command->info('- 13 Document Categories');
+        $this->command->info('- Multiple Documents with fake PDFs');
+        $this->command->info('- Attendance records for all students');
         $this->command->info('===========================================');
-        $this->command->info('- 13 Document Categories'); 
-        $this->command->info('- ~100+ Documents (with fake PDF files)'); 
+        $this->command->info('📝 Additional Test Users:');
+        $this->command->info('- admin@school.com / password');
+        $this->command->info('- guardian@school.com / password');
+        $this->command->info('- Various teacher accounts');
         $this->command->info('===========================================');
     }
 }

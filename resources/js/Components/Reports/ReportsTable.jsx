@@ -2,6 +2,7 @@ import { Link } from '@inertiajs/react';
 import { FileText, Users, ChevronDown, ChevronUp, GraduationCap, User } from 'lucide-react';
 import { useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
+import SwipeActionButton from '@/Components/SwipeActionButton';
 
 // Mobile List Item Component
 function MobileStudentReportItem({ student, onGenerateReport }) {
@@ -22,15 +23,13 @@ function MobileStudentReportItem({ student, onGenerateReport }) {
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
                 <div className="absolute inset-0 bg-gradient-to-l from-orange-500 to-red-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <button
+                    <SwipeActionButton
+                        icon={<FileText className="w-5 h-5 text-white" />}
                         onClick={() => {
                             onGenerateReport(student);
                             setSwipeAction(null);
                         }}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <FileText className="w-5 h-5 text-white" />
-                    </button>
+                    />
                 </div>
             )}
 

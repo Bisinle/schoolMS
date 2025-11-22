@@ -23,6 +23,7 @@ import {
     User,
 } from "lucide-react";
 import { useSwipeable } from 'react-swipeable';
+import SwipeActionButton from '@/Components/SwipeActionButton';
 
 // Mobile List Item Component
 function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onResetPassword, onToggleStatus }) {
@@ -47,51 +48,41 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
                 <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <Link
+                    <SwipeActionButton
+                        icon={<Eye className="w-5 h-5 text-white" />}
                         href={route("users.show", user.id)}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Eye className="w-5 h-5 text-white" />
-                    </Link>
-                    <Link
+                    />
+                    <SwipeActionButton
+                        icon={<Edit className="w-5 h-5 text-white" />}
                         href={route("users.edit", user.id)}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Edit className="w-5 h-5 text-white" />
-                    </Link>
-                    <button
+                    />
+                    <SwipeActionButton
+                        icon={<Trash2 className="w-5 h-5 text-white" />}
                         onClick={() => {
                             onDelete(user);
                             setSwipeAction(null);
                         }}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Trash2 className="w-5 h-5 text-white" />
-                    </button>
+                    />
                 </div>
             )}
             {swipeAction === 'secondary' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
-                    <button
+                    <SwipeActionButton
+                        icon={<Key className="w-5 h-5 text-white" />}
                         onClick={() => {
                             onResetPassword(user);
                             setSwipeAction(null);
                         }}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Key className="w-5 h-5 text-white" />
-                    </button>
-                    <button
+                    />
+                    <SwipeActionButton
+                        icon={<Power className="w-5 h-5 text-white" />}
                         onClick={() => {
                             onToggleStatus(user);
                             setSwipeAction(null);
                         }}
-                        className="p-3 bg-white/20 rounded-xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Power className="w-5 h-5 text-white" />
-                    </button>
+                    />
                 </div>
             )}
 

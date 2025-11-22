@@ -4,6 +4,7 @@ import { Search, Eye, Power, Trash2, RefreshCw, Filter, ChevronDown, ChevronUp, 
 import { useState } from 'react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { useSwipeable } from 'react-swipeable';
+import SwipeActionButton from '@/Components/SwipeActionButton';
 
 // Mobile List Item Component - Redesigned
 function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete, getRoleBadgeColor }) {
@@ -24,44 +25,40 @@ function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete, getRo
             {/* Swipe Actions Background */}
             {swipeAction === 'primary' && (
                 <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
-                    <Link
+                    <SwipeActionButton
+                        icon={<Eye className="w-6 h-6 text-white" />}
                         href={route('super-admin.users.show', user.id)}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
                         onClick={() => setSwipeAction(null)}
-                    >
-                        <Eye className="w-6 h-6 text-white" />
-                    </Link>
-                    <button
+                        size="large"
+                    />
+                    <SwipeActionButton
+                        icon={<RefreshCw className="w-6 h-6 text-white" />}
                         onClick={() => {
                             onResetPassword(user);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <RefreshCw className="w-6 h-6 text-white" />
-                    </button>
+                        size="large"
+                    />
                 </div>
             )}
             {swipeAction === 'secondary' && (
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-6 gap-3 z-10">
-                    <button
+                    <SwipeActionButton
+                        icon={<Power className="w-6 h-6 text-white" />}
                         onClick={() => {
                             onToggleActive(user);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Power className="w-6 h-6 text-white" />
-                    </button>
-                    <button
+                        size="large"
+                    />
+                    <SwipeActionButton
+                        icon={<Trash2 className="w-6 h-6 text-white" />}
                         onClick={() => {
                             onDelete(user);
                             setSwipeAction(null);
                         }}
-                        className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm active:scale-95 transition-transform"
-                    >
-                        <Trash2 className="w-6 h-6 text-white" />
-                    </button>
+                        size="large"
+                    />
                 </div>
             )}
 

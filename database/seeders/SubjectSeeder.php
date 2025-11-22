@@ -4,13 +4,22 @@ namespace Database\Seeders;
 
 use App\Models\Subject;
 use App\Models\Grade;
+use App\Models\School;
 use Illuminate\Database\Seeder;
 
 class SubjectSeeder extends Seeder
 {
     public function run(): void
     {
-        $subjects = [
+        // Get all schools to create subjects for each
+        $schools = School::all();
+
+        if ($schools->isEmpty()) {
+            $this->command->error('No schools found. Run SchoolSeeder first.');
+            return;
+        }
+
+        $subjectsData = [
             // Academic Subjects
             ['name' => 'Mathematics', 'code' => 'MATH', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'English', 'code' => 'ENG', 'category' => 'academic', 'status' => 'active'],
@@ -28,17 +37,20 @@ class SubjectSeeder extends Seeder
             ['name' => 'العقيدة', 'code' => 'AQIDA', 'category' => 'islamic', 'status' => 'active'],
         ];
 
-        $createdSubjects = [];
-        foreach ($subjects as $subjectData) {
-            $createdSubjects[] = Subject::create($subjectData);
+        // Create subjects for each school
+        foreach ($schools as $school) {
+            $createdSubjects = [];
+            foreach ($subjectsData as $subjectData) {
+                $createdSubjects[] = Subject::create(array_merge($subjectData, ['school_id' => $school->id]));
+            }
+
+            // Assign all subjects to all grades for this school
+            $schoolGrades = Grade::where('school_id', $school->id)->get();
+            foreach ($schoolGrades as $grade) {
+                $grade->subjects()->attach(collect($createdSubjects)->pluck('id'));
+            }
         }
 
-        // Assign all subjects to all grades
-        $grades = Grade::all();
-        foreach ($grades as $grade) {
-            $grade->subjects()->attach(collect($createdSubjects)->pluck('id'));
-        }
-
-        $this->command->info('✅ Subjects seeded successfully!');
+        $this->command->info('✅ Subjects seeded successfully for all schools!');
     }
 }
