@@ -19,6 +19,7 @@ class School extends Model
         'admin_phone',
         'is_active',
         'status',
+        'school_type',
         'trial_ends_at',
         'current_student_count',
         'address',

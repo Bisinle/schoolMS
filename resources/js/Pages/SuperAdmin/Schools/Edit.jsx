@@ -16,6 +16,7 @@ export default function Edit({ school }) {
         admin_phone: school.admin_phone || '',
         address: school.address || '',
         status: school.status || 'trial',
+        school_type: school.school_type || 'islamic_school',
         is_active: school.is_active || false,
         trial_ends_at: school.trial_ends_at ? school.trial_ends_at.split('T')[0] : '',
     });
@@ -187,6 +188,25 @@ export default function Edit({ school }) {
                                                 <option value="cancelled">Cancelled</option>
                                             </select>
                                             <InputError message={errors.status} className="mt-2" />
+                                        </div>
+
+                                        {/* School Type */}
+                                        <div>
+                                            <InputLabel htmlFor="school_type" value="School Type *" className="font-bold" />
+                                            <select
+                                                id="school_type"
+                                                value={data.school_type}
+                                                onChange={(e) => setData('school_type', e.target.value)}
+                                                className="block w-full mt-2 border-gray-300 rounded-xl shadow-sm focus:border-purple-500 focus:ring-purple-500 font-semibold"
+                                                required
+                                            >
+                                                <option value="islamic_school">Islamic School</option>
+                                                <option value="madrasah">Madrasah</option>
+                                            </select>
+                                            <InputError message={errors.school_type} className="mt-2" />
+                                            <p className="mt-2 text-sm text-gray-600">
+                                                Madrasah mode hides academic subjects in reports and forms
+                                            </p>
                                         </div>
 
                                         {/* Is Active */}

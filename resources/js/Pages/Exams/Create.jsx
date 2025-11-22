@@ -1,9 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { filterSubjectsBySchoolType } from '@/Utils/subjectFilters';
 
 export default function ExamsCreate({ grades, currentYear }) {
+    const { school } = usePage().props;
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         exam_type: 'opening',
@@ -23,8 +25,10 @@ export default function ExamsCreate({ grades, currentYear }) {
             setLoadingSubjects(true);
             fetch(`/api/grades/${data.grade_id}/subjects`)
                 .then(res => res.json())
-                .then(data => {
-                    setSubjects(data);
+                .then(fetchedSubjects => {
+                    // Filter subjects based on school type
+                    const filteredSubjects = filterSubjectsBySchoolType(fetchedSubjects, school?.school_type);
+                    setSubjects(filteredSubjects);
                     setLoadingSubjects(false);
                 })
                 .catch(() => {
@@ -33,7 +37,7 @@ export default function ExamsCreate({ grades, currentYear }) {
         } else {
             setSubjects([]);
         }
-    }, [data.grade_id]);
+    }, [data.grade_id, school?.school_type]);
 
     // Auto-generate exam name
     useEffect(() => {

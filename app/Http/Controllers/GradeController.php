@@ -81,10 +81,14 @@ class GradeController extends Controller
     {
         $this->authorize('create', Grade::class);
 
+        // Get school type from authenticated user's school
+        $school = $request->user()->school;
+        $isMadrasah = $school && $school->school_type === 'madrasah';
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:grades,name',
             'code' => 'nullable|string|max:50|unique:grades,code',
-            'level' => 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
+            'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
@@ -96,7 +100,7 @@ class GradeController extends Controller
         $grade = Grade::create([
             'name' => $validated['name'],
             'code' => $validated['code'] ?? null,
-            'level' => $validated['level'],
+            'level' => $validated['level'] ?? null,
             'status' => $validated['status'],
         ]);
 
@@ -187,10 +191,14 @@ class GradeController extends Controller
     {
         $this->authorize('update', $grade);
 
+        // Get school type from authenticated user's school
+        $school = $request->user()->school;
+        $isMadrasah = $school && $school->school_type === 'madrasah';
+
         $validated = $request->validate([
             'name' => 'required|string|max:255|unique:grades,name,' . $grade->id,
             'code' => 'nullable|string|max:50|unique:grades,code,' . $grade->id,
-            'level' => 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
+            'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
@@ -202,7 +210,7 @@ class GradeController extends Controller
         $grade->update([
             'name' => $validated['name'],
             'code' => $validated['code'] ?? null,
-            'level' => $validated['level'],
+            'level' => $validated['level'] ?? null,
             'status' => $validated['status'],
         ]);
 

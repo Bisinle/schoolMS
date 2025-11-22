@@ -30,12 +30,22 @@ class SubjectSeeder extends Seeder
             ['name' => 'Kiswahili', 'code' => 'KIS', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Social Studies', 'code' => 'SST', 'category' => 'academic', 'status' => 'active'],
             // Islamic Subjects
-            ['name' => 'القرءان الكريم', 'code' => 'QUR', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => ' القراءة والكتابة ', 'code' => 'Kitabah', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'الاذكار', 'code' => 'Azkar', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'الحديث', 'code' => 'HAD', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'القرآن', 'code' => 'QUR', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'أحكام التجويد', 'code' => 'TAJWID', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'تحفة المريد', 'code' => 'TUHFAT_M', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'تحفة الأطفال', 'code' => 'TUHFAT_A', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'الجزريّة', 'code' => 'JAZARIYA', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'التفسير', 'code' => 'TAFSIR', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'عمدة الأحكام', 'code' => 'UMDAH', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'سفينة النجاة – فقه ١', 'code' => 'SAFIINA', 'category' => 'islamic', 'status' => 'active'],
             ['name' => 'العقيدة', 'code' => 'AQIDA', 'category' => 'islamic', 'status' => 'active'],
-        ];
+            ['name' => 'خذ عقيدتك', 'code' => 'KHUD_AQID', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'الأصول الثلاثة مع القواعد الأربع', 'code' => 'USUL_QAWAID', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'الأذكار', 'code' => 'ADHKAR', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'الأربعون النووية', 'code' => 'ARBAEEN', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'السيرة', 'code' => 'SEERAH', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'القراءة والكتابة', 'code' => 'QIRAHA_KITABAH', 'category' => 'islamic', 'status' => 'active'],
+                ];
 
         // Create subjects for each school
         foreach ($schools as $school) {

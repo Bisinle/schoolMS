@@ -19,7 +19,7 @@ class SchoolController extends Controller
 {
     public function index(Request $request)
     {
-        $query = School::query()->withCount(['users', 'students', 'teachers']);
+        $query = School::query()->withCount(['users', 'students', 'teachers', 'guardians']);
 
         // Search
         if ($request->filled('search')) {
@@ -70,6 +70,7 @@ class SchoolController extends Controller
             'admin_phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'status' => 'required|in:trial,active,suspended,cancelled',
+            'school_type' => 'required|in:islamic_school,madrasah',
             'trial_ends_at' => 'nullable|date',
             'password_option' => 'required|in:auto,manual',
             'admin_password' => 'required_if:password_option,manual|nullable|string|min:8',
@@ -98,6 +99,7 @@ class SchoolController extends Controller
                 'admin_phone' => $validated['admin_phone'] ?? null,
                 'address' => $validated['address'] ?? null,
                 'status' => $validated['status'],
+                'school_type' => $validated['school_type'],
                 'is_active' => true,
                 'trial_ends_at' => $validated['trial_ends_at'] ?? now()->addDays(30),
                 'current_student_count' => 0,
@@ -186,6 +188,7 @@ class SchoolController extends Controller
             'admin_phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'status' => 'required|in:trial,active,suspended,cancelled',
+            'school_type' => 'required|in:islamic_school,madrasah',
             'is_active' => 'required|boolean',
             'trial_ends_at' => 'nullable|date',
         ]);

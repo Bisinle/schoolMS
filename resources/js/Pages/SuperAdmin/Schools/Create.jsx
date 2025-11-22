@@ -15,6 +15,7 @@ export default function Create() {
         admin_phone: '',
         address: '',
         status: 'trial',
+        school_type: 'islamic_school',
         trial_ends_at: '',
         password_option: 'auto',
         admin_password: '',
@@ -192,6 +193,25 @@ export default function Create() {
                                                 <option value="cancelled">Cancelled</option>
                                             </select>
                                             <InputError message={errors.status} className="mt-2" />
+                                        </div>
+
+                                        {/* School Type */}
+                                        <div>
+                                            <InputLabel htmlFor="school_type" value="School Type *" className="font-bold" />
+                                            <select
+                                                id="school_type"
+                                                value={data.school_type}
+                                                onChange={(e) => setData('school_type', e.target.value)}
+                                                className="block w-full mt-2 border-gray-300 rounded-xl shadow-sm focus:border-purple-500 focus:ring-purple-500 font-semibold"
+                                                required
+                                            >
+                                                <option value="islamic_school">Islamic School</option>
+                                                <option value="madrasah">Madrasah</option>
+                                            </select>
+                                            <InputError message={errors.school_type} className="mt-2" />
+                                            <p className="mt-2 text-sm text-gray-600">
+                                                Madrasah mode hides academic subjects in reports and forms
+                                            </p>
                                         </div>
 
                                         {/* Trial Ends At */}

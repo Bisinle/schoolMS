@@ -15,7 +15,7 @@ class SchoolSeeder extends Seeder
      */
     public function run(): void
     {
-        // School 1: Elmi Academy
+        // School 1: Elmi Academy (Islamic School - shows all subjects)
         $school1 = School::create([
             'name' => 'Elmi Academy',
             'slug' => 'elmi-academy',
@@ -25,6 +25,7 @@ class SchoolSeeder extends Seeder
             'admin_phone' => '+254700000000',
             'is_active' => true,
             'status' => 'active',
+            'school_type' => 'islamic_school',
             'trial_ends_at' => now()->addDays(30),
             'current_student_count' => 0,
             'address' => 'Nairobi, Kenya',
@@ -40,7 +41,7 @@ class SchoolSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // School 2: Sunrise International School
+        // School 2: Sunrise International School (Islamic School - shows all subjects)
         $school2 = School::create([
             'name' => 'Sunrise International School',
             'slug' => 'sunrise-international',
@@ -50,6 +51,7 @@ class SchoolSeeder extends Seeder
             'admin_phone' => '+254711111111',
             'is_active' => true,
             'status' => 'active',
+            'school_type' => 'islamic_school',
             'trial_ends_at' => now()->addDays(30),
             'current_student_count' => 0,
             'address' => 'Mombasa, Kenya',
@@ -65,7 +67,7 @@ class SchoolSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
 
-        // School 3: Al-Noor Academy
+        // School 3: Al-Noor Academy (Madrasah - hides academic subjects)
         $school3 = School::create([
             'name' => 'Al-Noor Academy',
             'slug' => 'al-noor-academy',
@@ -75,6 +77,7 @@ class SchoolSeeder extends Seeder
             'admin_phone' => '+254722222222',
             'is_active' => true,
             'status' => 'active',
+            'school_type' => 'madrasah',
             'trial_ends_at' => now()->addDays(30),
             'current_student_count' => 0,
             'address' => 'Kisumu, Kenya',
@@ -92,13 +95,13 @@ class SchoolSeeder extends Seeder
 
         $this->command->info('✅ 3 schools created successfully!');
         $this->command->info('');
-        $this->command->info('School 1: Elmi Academy');
+        $this->command->info('School 1: Elmi Academy (Islamic School - shows all subjects)');
         $this->command->info('  Email: admin@elmi.school | Password: password');
         $this->command->info('');
-        $this->command->info('School 2: Sunrise International School');
+        $this->command->info('School 2: Sunrise International School (Islamic School - shows all subjects)');
         $this->command->info('  Email: admin@sunrise.school | Password: password');
         $this->command->info('');
-        $this->command->info('School 3: Al-Noor Academy');
+        $this->command->info('School 3: Al-Noor Academy (Madrasah - hides academic subjects)');
         $this->command->info('  Email: admin@alnoor.school | Password: password');
     }
 }

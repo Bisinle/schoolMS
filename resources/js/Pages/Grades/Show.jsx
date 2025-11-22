@@ -1,8 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Edit, Users, BookOpen, Tag, GraduationCap } from 'lucide-react';
 
 export default function GradesShow({ grade, availableTeachers, auth }) {
+    const { school } = usePage().props;
+    const isMadrasah = school?.school_type === 'madrasah';
+
     const getLevelBadgeColor = (level) => {
         const colors = {
             'ECD': 'bg-purple-100 text-purple-800',
@@ -67,12 +70,14 @@ export default function GradesShow({ grade, availableTeachers, auth }) {
                                 </div>
                             )}
 
+                            {!isMadrasah && grade.level && (
                             <div>
                                 <p className="text-sm font-medium text-gray-500 mb-1">Level</p>
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getLevelBadgeColor(grade.level)}`}>
                                     {grade.level}
                                 </span>
                             </div>
+                            )}
 
                             <div>
                                 <p className="text-sm font-medium text-gray-500 mb-1">Status</p>

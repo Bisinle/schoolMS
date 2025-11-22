@@ -1,12 +1,15 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save, UserPlus } from 'lucide-react';
 
 export default function GradesEdit({ grade, subjects, teachers, levels, classTeacherId }) {
+    const { school } = usePage().props;
+    const isMadrasah = school?.school_type === 'madrasah';
+
     const { data, setData, put, processing, errors } = useForm({
         name: grade.name || '',
         code: grade.code || '',
-        level: grade.level || 'LOWER PRIMARY',
+        level: grade.level || (isMadrasah ? null : 'LOWER PRIMARY'),
         status: grade.status || 'active',
         subject_ids: grade.subjects?.map(s => s.id) || [],
         teacher_ids: grade.teachers?.map(t => t.id) || [],
@@ -145,7 +148,8 @@ export default function GradesEdit({ grade, subjects, teachers, levels, classTea
                             </p>
                         </div>
 
-                        {/* Level */}
+                        {/* Level - Hidden for Madrasah */}
+                        {!isMadrasah && (
                         <div>
                             <label htmlFor="level" className="block text-sm font-medium text-gray-700 mb-2">
                                 Level <span className="text-red-500">*</span>
@@ -167,7 +171,11 @@ export default function GradesEdit({ grade, subjects, teachers, levels, classTea
                             {errors.level && (
                                 <p className="mt-1 text-sm text-red-600">{errors.level}</p>
                             )}
+                            <p className="mt-1 text-xs text-gray-500">
+                                Academic level classification (ECD, Lower Primary, Upper Primary, Junior Secondary)
+                            </p>
                         </div>
+                        )}
 
                         {/* Status */}
                         <div>

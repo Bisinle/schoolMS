@@ -91,17 +91,24 @@ function MobileSchoolItem({ school, onDelete, onImpersonate }) {
                             <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
                                 {school.name.charAt(0).toUpperCase()}
                             </div>
-                            
+
                             <div className="flex-1 min-w-0">
                                 <h3 className="text-lg font-black text-gray-900 truncate leading-tight">{school.name}</h3>
                                 <div className="flex items-center gap-2 mt-2">
                                     <span className="text-sm text-gray-600 truncate">{school.slug || 'N/A'}</span>
                                 </div>
-                                <div className="mt-2">
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
                                     <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
                                         school.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                                     }`}>
                                         {school.is_active ? '● Active' : '● Inactive'}
+                                    </span>
+                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
+                                        school.school_type === 'madrasah'
+                                            ? 'bg-purple-100 text-purple-700'
+                                            : 'bg-cyan-100 text-cyan-700'
+                                    }`}>
+                                        {school.school_type === 'madrasah' ? 'Madrasah' : 'Islamic School'}
                                     </span>
                                 </div>
                             </div>
@@ -136,6 +143,14 @@ function MobileSchoolItem({ school, onDelete, onImpersonate }) {
                                     <span className="text-xs font-semibold text-gray-500 uppercase">Teachers</span>
                                 </div>
                                 <p className="text-2xl font-black text-gray-900">{school.teachers_count || 0}</p>
+                            </div>
+
+                            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <UserCog className="w-5 h-5 text-purple-600" />
+                                    <span className="text-xs font-semibold text-gray-500 uppercase">Guardians</span>
+                                </div>
+                                <p className="text-2xl font-black text-gray-900">{school.guardians_count || 0}</p>
                             </div>
                         </div>
 
@@ -370,7 +385,9 @@ export default function Index({ schools, filters }) {
                                     <tr>
                                         <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">School</th>
                                         <th className="hidden md:table-cell px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Admin Email</th>
+                                        <th className="hidden lg:table-cell px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Type</th>
                                         <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Students</th>
+                                        <th className="hidden xl:table-cell px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Guardians</th>
                                         <th className="hidden sm:table-cell px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Users</th>
                                         <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
                                         <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
@@ -394,10 +411,25 @@ export default function Index({ schools, filters }) {
                                                 <td className="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm text-gray-900 font-medium">{school.admin_email}</div>
                                                 </td>
+                                                <td className="hidden lg:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                    <span className={`inline-flex px-3 py-1 text-xs leading-5 font-bold rounded-full ${
+                                                        school.school_type === 'madrasah'
+                                                            ? 'bg-purple-100 text-purple-800'
+                                                            : 'bg-cyan-100 text-cyan-800'
+                                                    }`}>
+                                                        {school.school_type === 'madrasah' ? 'Madrasah' : 'Islamic School'}
+                                                    </span>
+                                                </td>
                                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center gap-2">
                                                         <Users className="w-4 h-4 text-blue-600" />
                                                         <span className="text-sm font-bold text-gray-900">{school.students_count || 0}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="hidden xl:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                    <div className="flex items-center gap-2">
+                                                        <UserCog className="w-4 h-4 text-purple-600" />
+                                                        <span className="text-sm font-bold text-gray-900">{school.guardians_count || 0}</span>
                                                     </div>
                                                 </td>
                                                 <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">

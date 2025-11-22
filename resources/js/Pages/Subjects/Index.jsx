@@ -1,10 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Plus, Search, Eye, Edit, Trash2, BookOpen, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { useSwipeable } from 'react-swipeable';
 import SwipeActionButton from '@/Components/SwipeActionButton';
+import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 
 // Mobile List Item Component
 function MobileSubjectItem({ subject, auth, onDelete }) {
@@ -170,6 +171,8 @@ function MobileSubjectItem({ subject, auth, onDelete }) {
 }
 
 export default function SubjectsIndex({ subjects, filters, auth }) {
+    const { school } = usePage().props;
+    const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
     const [search, setSearch] = useState(filters.search || '');
     const [category, setCategory] = useState(filters.category || '');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -228,7 +231,7 @@ export default function SubjectsIndex({ subjects, filters, auth }) {
                             className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                         >
                             <option value="">All Categories</option>
-                            <option value="academic">Academic</option>
+                            {showAcademicSubjects && <option value="academic">Academic</option>}
                             <option value="islamic">Islamic</option>
                         </select>
                     </form>

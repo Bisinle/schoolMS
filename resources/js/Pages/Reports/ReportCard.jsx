@@ -1,17 +1,20 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Download, Lock, Save } from 'lucide-react';
+import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 
-export default function ReportCard({ 
-    student, 
-    term, 
-    academicYear, 
-    reportData, 
-    canEditTeacherComment, 
+export default function ReportCard({
+    student,
+    term,
+    academicYear,
+    reportData,
+    canEditTeacherComment,
     canEditHeadteacherComment,
-    isGuardian 
+    isGuardian
 }) {
+    const { school } = usePage().props;
+    const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
     const [showTeacherCommentForm, setShowTeacherCommentForm] = useState(false);
     const [showHeadteacherCommentForm, setShowHeadteacherCommentForm] = useState(false);
 
@@ -89,219 +92,233 @@ export default function ReportCard({
                 
                 <div className="border-[3px] border-gray-900">
                     {/* Beautiful School Header */}
-                    <div className="relative bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 px-6 py-4 print:from-white print:via-white print:to-white print:border-b-[3px] print:border-gray-900">
+                    <div className="relative bg-gradient-to-r from-indigo-600 via-blue-600 to-cyan-600 px-6 py-6 print:from-white print:via-white print:to-white print:border-b-[3px] print:border-gray-900">
                         {/* Decorative Corner Elements */}
-                        <div className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-yellow-400 print:border-gray-900"></div>
-                        <div className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-yellow-400 print:border-gray-900"></div>
-                        
+                        <div className="absolute top-0 left-0 w-24 h-24 border-t-4 border-l-4 border-yellow-400 print:border-gray-900"></div>
+                        <div className="absolute top-0 right-0 w-24 h-24 border-t-4 border-r-4 border-yellow-400 print:border-gray-900"></div>
+
                         <div className="relative z-10">
                             <div className="flex items-center justify-between">
                                 {/* School Logo & Name */}
-                                <div className="flex items-center space-x-3">
-                                    <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-lg print:border-2 print:border-gray-900">
-                                        <span className="text-2xl">🏫</span>
-                                    </div>
+                                <div className="flex items-center space-x-4">
+                                    {school?.logo_path ? (
+                                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg print:border-2 print:border-gray-900 overflow-hidden">
+                                            <img src={school.logo_path} alt={school.name} className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-lg print:border-2 print:border-gray-900">
+                                            <span className="text-3xl">🏫</span>
+                                        </div>
+                                    )}
                                     <div className="text-white print:text-gray-900">
-                                        <h1 className="text-xl font-black tracking-wide">AL-EMI INTEG SCHOOLS</h1>
-                                        <p className="text-xs font-medium tracking-wider opacity-90">EXCELLENCE IN EDUCATION</p>
+                                        <h1 className="text-2xl font-black tracking-wide uppercase">{school?.name || 'School Name'}</h1>
+                                        <p className="text-sm font-medium tracking-wider opacity-90">EXCELLENCE IN EDUCATION</p>
                                     </div>
                                 </div>
-                                
+
                                 {/* Report Card Title */}
                                 <div className="text-right">
-                                    <div className="bg-white print:bg-gray-100 px-4 py-2 rounded-lg shadow-lg print:shadow-none print:border-2 print:border-gray-900">
-                                        <h2 className="text-base font-black text-gray-900 tracking-wide">STUDENT REPORT CARD</h2>
-                                        <p className="text-xs font-semibold text-gray-700">Academic Year {academicYear}</p>
+                                    <div className="bg-white print:bg-gray-100 px-5 py-3 rounded-lg shadow-lg print:shadow-none print:border-2 print:border-gray-900">
+                                        <h2 className="text-lg font-black text-gray-900 tracking-wide">STUDENT REPORT CARD</h2>
+                                        <p className="text-sm font-semibold text-gray-700">Academic Year {academicYear}</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Student Information - Compact */}
-                    <div className="bg-gray-50 print:bg-white border-b-2 border-gray-300 px-6 py-2">
-                        <div className="grid grid-cols-3 gap-x-6 text-[10px]">
-                            <div className="space-y-0.5">
-                                <div className="flex">
-                                    <span className="font-bold w-24">Admission No:</span>
-                                    <span>{student.admission_number}</span>
+                    {/* Student Information - Enhanced */}
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 print:bg-white border-b-2 border-gray-300 px-6 py-4">
+                        <div className="grid grid-cols-3 gap-x-8 text-xs">
+                            <div className="space-y-2">
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-gray-600 text-[10px] uppercase tracking-wide">Admission No</span>
+                                    <span className="font-semibold text-gray-900">{student.admission_number}</span>
                                 </div>
-                                <div className="flex">
-                                    <span className="font-bold w-24">Student Name:</span>
-                                    <span className="capitalize">{student.first_name} {student.last_name}</span>
-                                </div>
-                            </div>
-                            <div className="space-y-0.5">
-                                <div className="flex">
-                                    <span className="font-bold w-20">Class:</span>
-                                    <span>{student.grade?.name}</span>
-                                </div>
-                                <div className="flex">
-                                    <span className="font-bold w-20">Stream:</span>
-                                    <span>{student.grade?.code || 'N/A'}</span>
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-gray-600 text-[10px] uppercase tracking-wide">Student Name</span>
+                                    <span className="font-semibold text-gray-900 capitalize">{student.first_name} {student.last_name}</span>
                                 </div>
                             </div>
-                            <div className="space-y-0.5">
-                                <div className="flex">
-                                    <span className="font-bold w-20">Term:</span>
-                                    <span>Term {term}</span>
+                            <div className="space-y-2">
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-gray-600 text-[10px] uppercase tracking-wide">Class</span>
+                                    <span className="font-semibold text-gray-900">{student.grade?.name}</span>
                                 </div>
-                                <div className="flex">
-                                    <span className="font-bold w-20">Date of Birth:</span>
-                                    <span>{new Date(student.date_of_birth).toLocaleDateString()}</span>
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-gray-600 text-[10px] uppercase tracking-wide">Stream</span>
+                                    <span className="font-semibold text-gray-900">{student.grade?.code || 'N/A'}</span>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-gray-600 text-[10px] uppercase tracking-wide">Term</span>
+                                    <span className="font-semibold text-gray-900">Term {term}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="font-bold text-gray-600 text-[10px] uppercase tracking-wide">Date of Birth</span>
+                                    <span className="font-semibold text-gray-900">{new Date(student.date_of_birth).toLocaleDateString()}</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Academic Performance Table - Ultra Compact */}
-                    <div className="px-6 py-2">
-                        <h3 className="text-xs font-black mb-1 text-blue-900 uppercase tracking-wide">Academic Performance</h3>
-                        
-                        <table className="w-full border-2 border-gray-900 text-[9px]">
+                    {/* Academic Performance Table - Enhanced */}
+                    {showAcademicSubjects && (
+                    <div className="px-6 py-3">
+                        <div className="flex items-center gap-2 mb-2">
+                            <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
+                            <h3 className="text-sm font-black text-blue-900 uppercase tracking-wide">Academic Performance</h3>
+                        </div>
+
+                        <table className="w-full border-2 border-gray-900 text-[10px]">
                             <thead>
                                 <tr className="bg-blue-100 print:bg-gray-200">
-                                    <th className="border border-gray-900 px-2 py-1 text-left font-bold">Subject</th>
+                                    <th className="border border-gray-900 px-3 py-1.5 text-left font-bold uppercase text-[9px]">Subject</th>
                                     {reportData.is_term3 ? (
                                         <>
-                                            <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Term 1 Avg</th>
-                                            <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Term 2 Avg</th>
-                                            <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Term 3</th>
+                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Term 1 Avg</th>
+                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Term 2 Avg</th>
+                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Term 3</th>
                                         </>
                                     ) : (
                                         <>
-                                            <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Opening</th>
-                                            <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Mid Term</th>
-                                            <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">End Term</th>
+                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Opening</th>
+                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Mid Term</th>
+                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">End Term</th>
                                         </>
                                     )}
-                                    <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Average</th>
-                                    <th className="border border-gray-900 px-2 py-1 text-center font-bold w-12">Grade</th>
+                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Average</th>
+                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-12 uppercase text-[9px]">Grade</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {reportData.academic_subjects.map((subject, index) => (
                                     <tr key={subject.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                        <td className="border border-gray-900 px-2 py-0.5 font-medium">{subject.name}</td>
+                                        <td className="border border-gray-900 px-3 py-1 font-semibold">{subject.name}</td>
                                         {reportData.is_term3 ? (
                                             <>
-                                                <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.term1_average)}`}>
+                                                <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
                                                     {formatMarks(subject.term1_average)}
                                                 </td>
-                                                <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.term2_average)}`}>
+                                                <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
                                                     {formatMarks(subject.term2_average)}
                                                 </td>
-                                                <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.term3_result)}`}>
+                                                <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
                                                     {formatMarks(subject.term3_result)}
                                                 </td>
                                             </>
                                         ) : (
                                             <>
-                                                <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.opening)}`}>
+                                                <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
                                                     {formatMarks(subject.opening)}
                                                 </td>
-                                                <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.midterm)}`}>
+                                                <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
                                                     {formatMarks(subject.midterm)}
                                                 </td>
-                                                <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.end_term)}`}>
+                                                <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
                                                     {formatMarks(subject.end_term)}
                                                 </td>
                                             </>
                                         )}
-                                        <td className={`border border-gray-900 px-2 py-0.5 text-center font-bold ${getMarkColor(subject.average)}`}>
+                                        <td className={`border border-gray-900 px-2 py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
                                             {formatMarks(subject.average)}
                                         </td>
-                                        <td className="border border-gray-900 px-2 py-0.5 text-center font-bold">
+                                        <td className="border border-gray-900 px-2 py-1 text-center font-bold">
                                             {subject.rubric || '-'}
                                         </td>
                                     </tr>
                                 ))}
                                 <tr className="bg-blue-200 print:bg-gray-300 font-bold">
-                                    <td className="border-2 border-gray-900 px-2 py-0.5" colSpan={reportData.is_term3 ? "4" : "4"}>
-                                        ACADEMIC AVERAGE
+                                    <td className="border-2 border-gray-900 px-3 py-1.5 uppercase text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
+                                        Academic Average
                                     </td>
-                                    <td className="border-2 border-gray-900 px-2 py-0.5 text-center">
+                                    <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
                                         {reportData.academic_average ? reportData.academic_average.toFixed(2) : '-'}
                                     </td>
-                                    <td className="border-2 border-gray-900 px-2 py-0.5 text-center">
+                                    <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
                                         {reportData.academic_rubric || '-'}
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
+                    )}
 
-                    {/* Islamic Studies Performance Table */}
+                    {/* Islamic Studies Performance Table - Enhanced */}
                     {reportData.islamic_subjects.length > 0 && (
-                        <div className="px-6 py-2">
-                            <h3 className="text-xs font-black mb-1 text-green-900 uppercase tracking-wide">Islamic Studies</h3>
-                            
-                            <table className="w-full border-2 border-gray-900 text-[9px]">
+                        <div className="px-6 py-3">
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-1 h-6 bg-green-600 rounded-full"></div>
+                                <h3 className="text-sm font-black text-green-900 uppercase tracking-wide">Islamic Studies</h3>
+                            </div>
+
+                            <table className="w-full border-2 border-gray-900 text-[10px]">
                                 <thead>
                                     <tr className="bg-green-100 print:bg-gray-200">
-                                        <th className="border border-gray-900 px-2 py-1 text-left font-bold">Subject</th>
+                                        <th className="border border-gray-900 px-3 py-1.5 text-left font-bold uppercase text-[9px]">Subject</th>
                                         {reportData.is_term3 ? (
                                             <>
-                                                <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Term 1 Avg</th>
-                                                <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Term 2 Avg</th>
-                                                <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Term 3</th>
+                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Term 1 Avg</th>
+                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Term 2 Avg</th>
+                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Term 3</th>
                                             </>
                                         ) : (
                                             <>
-                                                <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Opening</th>
-                                                <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Mid Term</th>
-                                                <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">End Term</th>
+                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Opening</th>
+                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Mid Term</th>
+                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">End Term</th>
                                             </>
                                         )}
-                                        <th className="border border-gray-900 px-2 py-1 text-center font-bold w-16">Average</th>
-                                        <th className="border border-gray-900 px-2 py-1 text-center font-bold w-12">Grade</th>
+                                        <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 uppercase text-[9px]">Average</th>
+                                        <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-12 uppercase text-[9px]">Grade</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {reportData.islamic_subjects.map((subject, index) => (
                                         <tr key={subject.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <td className="border border-gray-900 px-2 py-0.5 font-medium">{subject.name}</td>
+                                            <td className="border border-gray-900 px-3 py-1 font-semibold">{subject.name}</td>
                                             {reportData.is_term3 ? (
                                                 <>
-                                                    <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.term1_average)}`}>
+                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
                                                         {formatMarks(subject.term1_average)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.term2_average)}`}>
+                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
                                                         {formatMarks(subject.term2_average)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.term3_result)}`}>
+                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
                                                         {formatMarks(subject.term3_result)}
                                                     </td>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.opening)}`}>
+                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
                                                         {formatMarks(subject.opening)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.midterm)}`}>
+                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
                                                         {formatMarks(subject.midterm)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-0.5 text-center ${getMarkColor(subject.end_term)}`}>
+                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
                                                         {formatMarks(subject.end_term)}
                                                     </td>
                                                 </>
                                             )}
-                                            <td className={`border border-gray-900 px-2 py-0.5 text-center font-bold ${getMarkColor(subject.average)}`}>
+                                            <td className={`border border-gray-900 px-2 py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
                                                 {formatMarks(subject.average)}
                                             </td>
-                                            <td className="border border-gray-900 px-2 py-0.5 text-center font-bold">
+                                            <td className="border border-gray-900 px-2 py-1 text-center font-bold">
                                                 {subject.rubric || '-'}
                                             </td>
                                         </tr>
                                     ))}
                                     <tr className="bg-green-200 print:bg-gray-300 font-bold">
-                                        <td className="border-2 border-gray-900 px-2 py-0.5" colSpan={reportData.is_term3 ? "4" : "4"}>
-                                            ISLAMIC STUDIES AVERAGE
+                                        <td className="border-2 border-gray-900 px-3 py-1.5 uppercase text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
+                                            Islamic Studies Average
                                         </td>
-                                        <td className="border-2 border-gray-900 px-2 py-0.5 text-center">
+                                        <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
                                             {reportData.islamic_average ? reportData.islamic_average.toFixed(2) : '-'}
                                         </td>
-                                        <td className="border-2 border-gray-900 px-2 py-0.5 text-center">
+                                        <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
                                             {reportData.islamic_rubric || '-'}
                                         </td>
                                     </tr>
@@ -310,73 +327,89 @@ export default function ReportCard({
                         </div>
                     )}
 
-                    {/* Overall Performance - Compact */}
-                    <div className="px-6 py-2 bg-gradient-to-r from-purple-100 to-blue-100 print:bg-gray-100 border-y-2 border-gray-300">
-                        <div className="flex justify-between items-center text-[10px]">
-                            <div className="flex items-center space-x-2">
-                                <span className="font-black">OVERALL AVERAGE:</span>
-                                <span className="text-lg font-black text-purple-700">
+                    {/* Overall Performance - Enhanced */}
+                    <div className="px-6 py-4 bg-gradient-to-r from-purple-100 via-indigo-100 to-blue-100 print:bg-gray-100 border-y-2 border-gray-300">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center space-x-3">
+                                <span className="font-black text-xs uppercase tracking-wide text-gray-700">Overall Average:</span>
+                                <span className="text-2xl font-black text-purple-700 print:text-purple-900">
                                     {reportData.overall_average ? `${reportData.overall_average}%` : 'N/A'}
                                 </span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <span className="font-black">OVERALL GRADE:</span>
-                                <span className="px-3 py-1 bg-purple-700 text-white rounded font-black text-xs print:bg-white print:text-purple-700 print:border-2 print:border-purple-700">
+                            <div className="flex items-center space-x-3">
+                                <span className="font-black text-xs uppercase tracking-wide text-gray-700">Overall Grade:</span>
+                                <span className="px-4 py-2 bg-purple-700 text-white rounded-lg font-black text-base print:bg-white print:text-purple-700 print:border-2 print:border-purple-700">
                                     {reportData.overall_rubric || 'N/A'}
                                 </span>
                             </div>
                         </div>
                     </div>
 
-                    {/* Comments - Compact */}
-                    <div className="grid grid-cols-2 gap-2 px-6 py-2 border-b-2 border-gray-300">
+                    {/* Comments - Enhanced */}
+                    <div className="grid grid-cols-2 gap-4 px-6 py-4 border-b-2 border-gray-300">
                         {/* Teacher Comment */}
                         <div>
-                            <h3 className="text-[9px] font-bold mb-1">Class Teacher's Comment:</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-1 h-5 bg-indigo-600 rounded-full"></div>
+                                <h3 className="text-xs font-bold uppercase tracking-wide text-gray-700">Class Teacher's Comment</h3>
+                            </div>
                             {reportData.comments?.teacher_comment ? (
-                                <div className="min-h-[40px] p-1.5 border border-gray-300 rounded bg-gray-50 print:bg-white text-[8px]">
+                                <div className="min-h-[60px] p-3 border-2 border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] leading-relaxed">
                                     {reportData.comments.teacher_comment}
                                 </div>
                             ) : (
-                                <div className="min-h-[40px] p-1.5 border border-gray-300 rounded bg-gray-50 print:bg-white text-[8px] text-gray-400 italic">
-                                    No comment
+                                <div className="min-h-[60px] p-3 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] text-gray-400 italic flex items-center justify-center">
+                                    No comment provided
                                 </div>
                             )}
                         </div>
 
                         {/* Principal Comment */}
                         <div>
-                            <h3 className="text-[9px] font-bold mb-1">Principal's Comment:</h3>
+                            <div className="flex items-center gap-2 mb-2">
+                                <div className="w-1 h-5 bg-purple-600 rounded-full"></div>
+                                <h3 className="text-xs font-bold uppercase tracking-wide text-gray-700">Principal's Comment</h3>
+                            </div>
                             {reportData.comments?.headteacher_comment ? (
-                                <div className="min-h-[40px] p-1.5 border border-gray-300 rounded bg-gray-50 print:bg-white text-[8px]">
+                                <div className="min-h-[60px] p-3 border-2 border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] leading-relaxed">
                                     {reportData.comments.headteacher_comment}
                                 </div>
                             ) : (
-                                <div className="min-h-[40px] p-1.5 border border-gray-300 rounded bg-gray-50 print:bg-white text-[8px] text-gray-400 italic">
-                                    No comment
+                                <div className="min-h-[60px] p-3 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] text-gray-400 italic flex items-center justify-center">
+                                    No comment provided
                                 </div>
                             )}
                         </div>
                     </div>
 
-                    {/* Signatures - Compact */}
-                    <div className="px-6 py-2 border-b-2 border-gray-300">
-                        <div className="grid grid-cols-2 gap-4">
+                    {/* Signatures - Enhanced */}
+                    <div className="px-6 py-4 border-b-2 border-gray-300 bg-gray-50 print:bg-white">
+                        <div className="grid grid-cols-3 gap-6">
                             <div className="text-center">
-                                <div className="border-b-2 border-gray-900 mb-0.5 h-8"></div>
-                                <p className="text-[8px] font-bold">Class Teacher's Signature</p>
+                                <div className="border-b-2 border-gray-900 mb-1 h-12"></div>
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-700">Class Teacher</p>
+                                <p className="text-[8px] text-gray-500 mt-0.5">Signature & Date</p>
                             </div>
                             <div className="text-center">
-                                <div className="border-b-2 border-gray-900 mb-0.5 h-8"></div>
-                                <p className="text-[8px] font-bold">Principal's Signature</p>
+                                <div className="border-b-2 border-gray-900 mb-1 h-12"></div>
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-700">Principal</p>
+                                <p className="text-[8px] text-gray-500 mt-0.5">Signature & Date</p>
+                            </div>
+                            <div className="text-center">
+                                <div className="border-b-2 border-gray-900 mb-1 h-12"></div>
+                                <p className="text-[10px] font-bold uppercase tracking-wide text-gray-700">Parent/Guardian</p>
+                                <p className="text-[8px] text-gray-500 mt-0.5">Signature & Date</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Footer */}
-                    <div className="bg-gray-900 text-white print:bg-gray-200 print:text-gray-900 px-6 py-1.5 text-center">
-                        <p className="text-[8px] font-medium">
-                            Official Document • Generated: {new Date().toLocaleDateString()}
+                    {/* Footer - Enhanced */}
+                    <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white print:bg-gray-200 print:text-gray-900 px-6 py-3 text-center border-t-4 border-yellow-400 print:border-gray-900">
+                        <p className="text-[10px] font-semibold tracking-wide">
+                            Official Document • Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                        </p>
+                        <p className="text-[8px] text-gray-400 print:text-gray-600 mt-1">
+                            {school?.name || 'School Name'} • Academic Excellence
                         </p>
                     </div>
                 </div>

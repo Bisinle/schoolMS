@@ -1,9 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
+import { filterSubjectsBySchoolType } from '@/Utils/subjectFilters';
 
 export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
+    const { school } = usePage().props;
     const { data, setData, put, processing, errors } = useForm({
         name: exam.name || '',
         exam_type: exam.exam_type || 'opening',
@@ -14,7 +16,10 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
         subject_id: exam.subject_id || '',
     });
 
-    const [subjects, setSubjects] = useState(initialSubjects || []);
+    const [subjects, setSubjects] = useState(() => {
+        // Filter initial subjects based on school type
+        return filterSubjectsBySchoolType(initialSubjects || [], school?.school_type);
+    });
     const [loadingSubjects, setLoadingSubjects] = useState(false);
 
     // Fetch subjects when grade changes
@@ -23,15 +28,17 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
             setLoadingSubjects(true);
             fetch(`/api/grades/${data.grade_id}/subjects`)
                 .then(res => res.json())
-                .then(data => {
-                    setSubjects(data);
+                .then(fetchedSubjects => {
+                    // Filter subjects based on school type
+                    const filteredSubjects = filterSubjectsBySchoolType(fetchedSubjects, school?.school_type);
+                    setSubjects(filteredSubjects);
                     setLoadingSubjects(false);
                 })
                 .catch(() => {
                     setLoadingSubjects(false);
                 });
         }
-    }, [data.grade_id]);
+    }, [data.grade_id, school?.school_type]);
 
     // Restrict exam_type for Term 3
     useEffect(() => {

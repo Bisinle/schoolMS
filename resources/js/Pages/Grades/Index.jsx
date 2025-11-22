@@ -1,10 +1,13 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Plus, Eye, Edit, Trash2, Users, BookOpen, Tag, Search } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function GradesIndex({ grades, filters = {}, auth }) {
+    const { school } = usePage().props;
+    const isMadrasah = school?.school_type === 'madrasah';
+
     const [search, setSearch] = useState(filters.search || '');
     const [level, setLevel] = useState(filters.level || '');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -77,6 +80,7 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                                 />
                             </div>
+                            {!isMadrasah && (
                             <select
                                 value={level}
                                 onChange={handleLevelChange}
@@ -88,6 +92,7 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                                 <option value="UPPER PRIMARY">Upper Primary</option>
                                 <option value="JUNIOR SECONDARY">Junior Secondary</option>
                             </select>
+                            )}
                         </form>
 
                         {auth.user.role === 'admin' && (
@@ -124,9 +129,11 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                                                         {grade.code}
                                                     </span>
                                                 )}
+                                                {!isMadrasah && grade.level && (
                                                 <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getLevelBadgeColor(grade.level)}`}>
                                                     {grade.level}
                                                 </span>
+                                                )}
                                             </div>
                                         </div>
                                         <span

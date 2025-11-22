@@ -1,17 +1,20 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, Link, useForm, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeft, Download, Lock, Unlock, Save, User, Calendar, FileText } from 'lucide-react';
+import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 
-export default function StudentReport({ 
-    student, 
-    term, 
-    academicYear, 
-    reportData, 
-    canEditTeacherComment, 
+export default function StudentReport({
+    student,
+    term,
+    academicYear,
+    reportData,
+    canEditTeacherComment,
     canEditHeadteacherComment,
-    isGuardian 
+    isGuardian
 }) {
+    const { school } = usePage().props;
+    const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
     const [selectedYear, setSelectedYear] = useState(academicYear);
     const [selectedTerm, setSelectedTerm] = useState(term);
     const [showTeacherCommentForm, setShowTeacherCommentForm] = useState(false);
@@ -180,7 +183,7 @@ export default function StudentReport({
                 </div>
 
                 {/* Academic Subjects */}
-                {reportData.academic_subjects.length > 0 && (
+                {showAcademicSubjects && reportData.academic_subjects.length > 0 && (
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden print:shadow-none">
                         <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
                             <h2 className="text-lg font-semibold text-blue-900">Academic Subjects</h2>

@@ -1,11 +1,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save } from 'lucide-react';
+import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 
 export default function SubjectsCreate({ grades }) {
+    const { school } = usePage().props;
+    const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        category: 'academic',
+        category: showAcademicSubjects ? 'academic' : 'islamic',
         code: '',
         status: 'active',
         grade_ids: [],
@@ -92,7 +95,7 @@ export default function SubjectsCreate({ grades }) {
                                     errors.category ? 'border-red-500' : 'border-gray-300'
                                 }`}
                             >
-                                <option value="academic">Academic</option>
+                                {showAcademicSubjects && <option value="academic">Academic</option>}
                                 <option value="islamic">Islamic</option>
                             </select>
                             {errors.category && (
