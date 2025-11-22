@@ -57,6 +57,11 @@ class Student extends Model
         return $this->hasMany(ReportComment::class);
     }
 
+    public function quranTracking()
+    {
+        return $this->hasMany(QuranTracking::class);
+    }
+
     // 🆕 NEW: Documents relationship
     public function documents()
     {

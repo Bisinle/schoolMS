@@ -21,6 +21,7 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DocumentCategoryController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Admin\AdminPasswordController;
+use App\Http\Controllers\QuranTrackingController;
 use App\Models\Grade;
 
 /*
@@ -239,6 +240,21 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     //^ API endpoint for subjects by grade
     Route::get('/api/grades/{grade}/subjects', function (Grade $grade) {
         return $grade->subjects()->where('status', 'active')->get();
+    });
+
+    //^ Quran Tracking Routes
+    Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::get('/quran-tracking', [QuranTrackingController::class, 'index'])->name('quran-tracking.index');
+        Route::get('/quran-tracking/create', [QuranTrackingController::class, 'create'])->name('quran-tracking.create');
+        Route::post('/quran-tracking', [QuranTrackingController::class, 'store'])->name('quran-tracking.store');
+        Route::get('/quran-tracking/student/{student}/report', [QuranTrackingController::class, 'studentReport'])->name('quran-tracking.student-report');
+        Route::get('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'show'])->name('quran-tracking.show');
+        Route::get('/quran-tracking/{quranTracking}/edit', [QuranTrackingController::class, 'edit'])->name('quran-tracking.edit');
+        Route::put('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'update'])->name('quran-tracking.update');
+        Route::delete('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'destroy'])->name('quran-tracking.destroy');
+
+        // API endpoint for surah details
+        Route::get('/api/quran/surah/{surahNumber}', [QuranTrackingController::class, 'getSurahDetails'])->name('api.quran.surah');
     });
 
     //^ Documents Routes

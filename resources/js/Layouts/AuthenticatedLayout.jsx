@@ -19,6 +19,7 @@ import {
     FileCog,
     School,
     Settings,
+    Book,
 } from "lucide-react";
 import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
 
@@ -49,6 +50,7 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: "Grades", href: "/grades", icon: BookOpen },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
+            { name: "Quran Tracking", href: "/quran-tracking", icon: Book },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
         ],
@@ -60,6 +62,7 @@ export default function AuthenticatedLayout({ header, children }) {
             { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
+            { name: "Quran Tracking", href: "/quran-tracking", icon: Book },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "My Documents", href: "/documents", icon: FolderOpen },
         ],
