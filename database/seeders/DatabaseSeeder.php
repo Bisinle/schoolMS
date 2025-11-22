@@ -23,6 +23,7 @@ class DatabaseSeeder extends Seeder
             AttendanceSeeder::class,
             DocumentCategorySeeder::class,
             DocumentSeeder::class,
+            SuperAdminSeeder::class,
         ]);
 
         $this->command->newLine();
