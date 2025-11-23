@@ -261,7 +261,7 @@ export default function Show({ school }) {
                 title="Impersonate School Admin"
                 message={`You are about to impersonate the admin of ${school.name}. You will be logged in as the school admin and can perform actions on their behalf.`}
                 confirmText="Impersonate"
-                type="warning"
+                confirmButtonClass="bg-purple-600 hover:bg-purple-700"
             />
         </AuthenticatedLayout>
     );

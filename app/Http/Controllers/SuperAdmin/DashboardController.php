@@ -78,10 +78,19 @@ class DashboardController extends Controller
             ->orderBy('month')
             ->get();
         
-        // Top schools by student count
-        $topSchools = School::orderBy('current_student_count', 'desc')
+        // Top schools by student count (use actual count from students table)
+        $topSchools = School::withCount(['students' => function ($query) {
+                // Bypass global scope to count all students for this school
+                $query->withoutGlobalScopes();
+            }])
+            ->orderBy('students_count', 'desc')
             ->limit(5)
-            ->get(['id', 'name', 'current_student_count', 'status', 'is_active']);
+            ->get(['id', 'name', 'current_student_count', 'status', 'is_active'])
+            ->map(function ($school) {
+                // Use the actual count from the relationship
+                $school->current_student_count = $school->students_count;
+                return $school;
+            });
 
         return Inertia::render('SuperAdmin/Dashboard', [
             'stats' => [

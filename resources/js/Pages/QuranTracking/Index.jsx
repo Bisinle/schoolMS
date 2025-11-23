@@ -55,7 +55,7 @@ function MobileQuranTrackingItem({ student, auth }) {
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-20' : ''
+                    swipeAction === 'primary' ? '-translate-x-24' : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {

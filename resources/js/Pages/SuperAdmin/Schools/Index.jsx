@@ -76,187 +76,154 @@ function MobileSchoolItem({ school, onDelete, onImpersonate }) {
                     }
                 }}
             >
-                {/* Summary Row - Touch Optimized */}
+                {/* Summary Row - Compact Design */}
                 <div
-                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
                     onClick={() => {
                         if (!swipeAction) {
                             setIsExpanded(!isExpanded);
                         }
                     }}
                 >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                            {/* Avatar - Larger */}
-                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
-                                {school.name.charAt(0).toUpperCase()}
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-base font-bold text-gray-900 truncate">
+                                    {school.name}
+                                </h3>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
+                                    school.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {school.is_active ? 'Active' : 'Inactive'}
+                                </span>
                             </div>
 
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">{school.name}</h3>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <span className="text-sm text-gray-600 truncate">{school.slug || 'N/A'}</span>
-                                </div>
-                                <div className="mt-2 flex items-center gap-2 flex-wrap">
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                                        school.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                    }`}>
-                                        {school.is_active ? '● Active' : '● Inactive'}
-                                    </span>
-                                    <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold ${
-                                        school.school_type === 'madrasah'
-                                            ? 'bg-purple-100 text-purple-700'
-                                            : 'bg-cyan-100 text-cyan-700'
-                                    }`}>
-                                        {school.school_type === 'madrasah' ? 'Madrasah' : 'Islamic School'}
-                                    </span>
-                                </div>
+                            <p className="text-xs text-gray-600 truncate mb-2">{school.domain}</p>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${
+                                    school.school_type === 'madrasah'
+                                        ? 'bg-purple-100 text-purple-700'
+                                        : 'bg-cyan-100 text-cyan-700'
+                                }`}>
+                                    {school.school_type === 'madrasah' ? 'Madrasah' : 'Islamic School'}
+                                </span>
+                                <span className="text-gray-400">•</span>
+                                <span className="text-xs text-gray-500">
+                                    <Users className="w-3 h-3 inline mr-1" />
+                                    {school.students_count || 0} students
+                                </span>
                             </div>
                         </div>
-                        
-                        {/* Expand Button - Larger Touch Target */}
-                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
+
+                        <div className="flex-shrink-0">
                             {isExpanded ? (
-                                <ChevronUp className="w-6 h-6 text-gray-500" />
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
                             ) : (
-                                <ChevronDown className="w-6 h-6 text-gray-500" />
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
                             )}
-                        </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Expanded Details - Redesigned */}
+                {/* Expanded Details - Compact Design */}
                 {isExpanded && (
-                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Users className="w-5 h-5 text-blue-600" />
-                                    <span className="text-xs font-semibold text-gray-500 uppercase">Students</span>
+                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
+                        {/* Stats Cards - Compact */}
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="bg-white rounded-lg p-2.5 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
+                                    <Users className="w-3.5 h-3.5 text-blue-600" />
+                                    <span className="text-xs font-medium text-gray-500">Students</span>
                                 </div>
-                                <p className="text-2xl font-black text-gray-900">{school.students_count || 0}</p>
+                                <p className="text-lg font-bold text-gray-900">{school.students_count || 0}</p>
                             </div>
-                            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <GraduationCap className="w-5 h-5 text-indigo-600" />
-                                    <span className="text-xs font-semibold text-gray-500 uppercase">Teachers</span>
+                            <div className="bg-white rounded-lg p-2.5 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
+                                    <GraduationCap className="w-3.5 h-3.5 text-indigo-600" />
+                                    <span className="text-xs font-medium text-gray-500">Teachers</span>
                                 </div>
-                                <p className="text-2xl font-black text-gray-900">{school.teachers_count || 0}</p>
+                                <p className="text-lg font-bold text-gray-900">{school.teachers_count || 0}</p>
                             </div>
-
-                            <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <UserCog className="w-5 h-5 text-purple-600" />
-                                    <span className="text-xs font-semibold text-gray-500 uppercase">Guardians</span>
+                            <div className="bg-white rounded-lg p-2.5 border border-gray-200">
+                                <div className="flex items-center gap-1 mb-1">
+                                    <UserCog className="w-3.5 h-3.5 text-purple-600" />
+                                    <span className="text-xs font-medium text-gray-500">Guardians</span>
                                 </div>
-                                <p className="text-2xl font-black text-gray-900">{school.guardians_count || 0}</p>
+                                <p className="text-lg font-bold text-gray-900">{school.guardians_count || 0}</p>
                             </div>
                         </div>
 
-                        {/* Info List - Improved Spacing */}
-                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
-                            <div className="flex items-start gap-3">
-                                <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Email</p>
-                                    <p className="text-sm font-bold text-gray-900 break-words">{school.admin_email}</p>
-                                </div>
+                        {/* Info Grid - Compact */}
+                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
+                            <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600 truncate">{school.admin_email}</span>
                             </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Phone</p>
-                                    <p className="text-sm font-bold text-gray-900">{school.admin_phone || 'N/A'}</p>
+
+                            {school.admin_phone && (
+                                <div className="flex items-center gap-2">
+                                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-600">{school.admin_phone}</span>
                                 </div>
+                            )}
+
+                            <div className="flex items-center gap-2">
+                                <UserCog className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600 truncate">{school.admin_name}</span>
                             </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <MapPin className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Domain</p>
-                                    <p className="text-sm font-bold text-gray-900 break-all">{school.domain}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <UserCog className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Admin</p>
-                                    <p className="text-sm font-bold text-gray-900">{school.admin_name}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Subscription</p>
-                                    <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold ${
-                                        school.status === 'active' ? 'bg-blue-100 text-blue-700' :
-                                        school.status === 'trial' ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-gray-100 text-gray-700'
-                                    }`}>
-                                        {school.status.toUpperCase()}
-                                    </span>
-                                </div>
+
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className={`px-2 py-0.5 rounded-md text-xs font-medium ${
+                                    school.status === 'active' ? 'bg-blue-100 text-blue-700' :
+                                    school.status === 'trial' ? 'bg-yellow-100 text-yellow-700' :
+                                    'bg-gray-100 text-gray-700'
+                                }`}>
+                                    {school.status}
+                                </span>
                             </div>
                         </div>
 
-                        {/* Action Buttons - Larger & More Spacing */}
-                        <div className="space-y-3 pt-2">
-                            {/* Primary Actions */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <Link
-                                    href={route('super-admin.schools.show', school.id)}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                >
-                                    <Eye className="w-5 h-5" />
-                                    View
-                                </Link>
-                                <Link
-                                    href={route('super-admin.schools.edit', school.id)}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                >
-                                    <Edit className="w-5 h-5" />
-                                    Edit
-                                </Link>
-                            </div>
-                            
-                            {/* Secondary Actions */}
+                        {/* Action Buttons - Compact */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <Link
+                                href={route('super-admin.schools.show', school.id)}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                <Eye className="w-3.5 h-3.5" />
+                                View
+                            </Link>
+                            <Link
+                                href={route('super-admin.schools.edit', school.id)}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                            >
+                                <Edit className="w-3.5 h-3.5" />
+                                Edit
+                            </Link>
                             <button
                                 onClick={() => onImpersonate(school)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors"
                             >
-                                <UserCog className="w-5 h-5" />
-                                Impersonate Admin
+                                <UserCog className="w-3.5 h-3.5" />
+                                Impersonate
                             </button>
-                            
                             <button
                                 onClick={handleToggleActive}
-                                className={`w-full flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform ${
+                                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                                     school.is_active
-                                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                                        : 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                        ? 'bg-orange-600 text-white hover:bg-orange-700'
+                                        : 'bg-green-600 text-white hover:bg-green-700'
                                 }`}
                             >
-                                <Power className="w-5 h-5" />
-                                {school.is_active ? 'Disable School' : 'Enable School'}
+                                <Power className="w-3.5 h-3.5" />
+                                {school.is_active ? 'Disable' : 'Enable'}
                             </button>
-                            
                             <button
                                 onClick={() => onDelete(school)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
                             >
-                                <Trash2 className="w-5 h-5" />
+                                <Trash2 className="w-3.5 h-3.5" />
                                 Delete School
                             </button>
                         </div>

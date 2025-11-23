@@ -45,11 +45,12 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                 </div>
             )}
             {swipeAction === 'secondary' && teacher.user?.phone && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-4 gap-2 z-10">
+                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-6 gap-3 z-10">
                     <SwipeActionButton
-                        icon={<Phone className="w-5 h-5 text-white" />}
+                        icon={<Phone className="w-6 h-6 text-white" />}
                         href={`tel:${teacher.user.phone}`}
                         onClick={() => setSwipeAction(null)}
+                        size="large"
                     />
                 </div>
             )}
@@ -58,8 +59,8 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-36' :
-                    swipeAction === 'secondary' ? 'translate-x-20' : ''
+                    swipeAction === 'primary' ? '-translate-x-44' :
+                    swipeAction === 'secondary' ? 'translate-x-24' : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {
@@ -67,179 +68,167 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                     }
                 }}
             >
-                {/* Summary Row */}
+                {/* Summary Row - Enhanced Design */}
                 <div
-                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
                     onClick={() => {
                         if (!swipeAction) {
                             setIsExpanded(!isExpanded);
                         }
                     }}
                 >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
-                                {teacher.user?.name.charAt(0).toUpperCase()}
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-base font-bold text-gray-900 truncate">
                                     {teacher.user?.name}
                                 </h3>
-                                <p className="text-sm text-gray-600 truncate mt-1">
-                                    {teacher.subject_specialization || 'No Subject'} • {teacher.employee_number}
-                                </p>
-                                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                    {teacher.grades && teacher.grades.length > 0 && (
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
+                                    teacher.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {teacher.status === 'active' ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+
+                            <p className="text-xs text-gray-600 truncate mb-2">{teacher.employee_number}</p>
+
+                            <div className="flex items-center gap-2 flex-wrap mb-2">
+                                <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-blue-100 text-blue-700">
+                                    {teacher.subject_specialization || 'No Subject'}
+                                </span>
+                                {teacher.grades && teacher.grades.length > 0 && (
+                                    <>
+                                        <span className="text-gray-400">•</span>
+                                        <span className="text-xs text-gray-500">
+                                            {teacher.grades.length} class{teacher.grades.length !== 1 ? 'es' : ''}
+                                        </span>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* Additional Info in Summary */}
+                            <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+                                {teacher.user?.email && (
+                                    <div className="flex items-center gap-1">
+                                        <Mail className="w-3 h-3" />
+                                        <span className="truncate max-w-[150px]">{teacher.user.email}</span>
+                                    </div>
+                                )}
+                                {teacher.user?.phone && (
+                                    <>
+                                        {teacher.user?.email && <span className="text-gray-400">•</span>}
+                                        <div className="flex items-center gap-1">
+                                            <Phone className="w-3 h-3" />
+                                            <span>{teacher.user.phone}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="flex-shrink-0">
+                            {isExpanded ? (
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
+                            ) : (
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Expanded Details - Enhanced Design */}
+                {isExpanded && (
+                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
+                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
+                            {teacher.gender && (
+                                <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-600 capitalize">{teacher.gender}</span>
+                                </div>
+                            )}
+
+                            {teacher.date_of_birth && (
+                                <div className="flex items-center gap-2">
+                                    <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-600">
+                                        DOB: {new Date(teacher.date_of_birth).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            )}
+
+                            {teacher.qualification && (
+                                <div className="flex items-center gap-2">
+                                    <BookOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-600">{teacher.qualification}</span>
+                                </div>
+                            )}
+
+                            {teacher.hire_date && (
+                                <div className="flex items-center gap-2">
+                                    <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-600">
+                                        Hired: {new Date(teacher.hire_date).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            )}
+
+                            {teacher.grades && teacher.grades.length > 0 && (
+                                <div className="flex items-start gap-2 border-t border-gray-100 mt-2 pt-2">
+                                    <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                    <div className="flex-1">
+                                        <p className="text-xs font-semibold text-gray-500 mb-1">Assigned Classes:</p>
                                         <div className="flex flex-wrap gap-1">
-                                            {teacher.grades.slice(0, 2).map((grade) => (
+                                            {teacher.grades.map((grade) => (
                                                 <span
                                                     key={grade.id}
-                                                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-bold ${
+                                                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
                                                         grade.pivot.is_class_teacher
-                                                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                                                            ? 'bg-orange-600 text-white'
                                                             : 'bg-orange-100 text-orange-700'
                                                     }`}
                                                 >
                                                     {grade.name}
+                                                    {grade.pivot.is_class_teacher && ' ★'}
                                                 </span>
                                             ))}
-                                            {teacher.grades.length > 2 && (
-                                                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-gray-100 text-gray-700">
-                                                    +{teacher.grades.length - 2}
-                                                </span>
-                                            )}
-                                        </div>
-                                    )}
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                                        teacher.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                    }`}>
-                                        {teacher.status === 'active' ? '● Active' : '● Inactive'}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
-                            {isExpanded ? (
-                                <ChevronUp className="w-6 h-6 text-gray-500" />
-                            ) : (
-                                <ChevronDown className="w-6 h-6 text-gray-500" />
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
-                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
-                            <div className="flex items-start gap-3">
-                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Employee Number</p>
-                                    <p className="text-sm font-bold text-gray-900">{teacher.employee_number}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Email</p>
-                                    <p className="text-sm font-bold text-gray-900 break-words">{teacher.user?.email}</p>
-                                </div>
-                            </div>
-                            
-                            {teacher.user?.phone && (
-                                <>
-                                    <div className="border-t border-gray-100"></div>
-                                    <div className="flex items-start gap-3">
-                                        <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Phone</p>
-                                            <p className="text-sm font-bold text-gray-900">{teacher.user.phone}</p>
                                         </div>
                                     </div>
-                                </>
-                            )}
-                            
-                            {teacher.gender && (
-                                <>
-                                    <div className="border-t border-gray-100"></div>
-                                    <div className="flex items-start gap-3">
-                                        <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Gender</p>
-                                            <p className="text-sm font-bold text-gray-900 capitalize">{teacher.gender}</p>
-                                        </div>
-                                    </div>
-                                </>
-                            )}
-                            
-                            {teacher.grades && teacher.grades.length > 0 && (
-                                <>
-                                    <div className="border-t border-gray-100"></div>
-                                    <div className="flex items-start gap-3">
-                                        <GraduationCap className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Assigned Classes</p>
-                                            <div className="flex flex-wrap gap-1 mt-1">
-                                                {teacher.grades.map((grade) => (
-                                                    <span
-                                                        key={grade.id}
-                                                        className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold ${
-                                                            grade.pivot.is_class_teacher
-                                                                ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
-                                                                : 'bg-orange-100 text-orange-700'
-                                                        }`}
-                                                    >
-                                                        <BookOpen className="w-3 h-3 mr-1" />
-                                                        {grade.name}
-                                                    </span>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </>
+                                </div>
                             )}
                         </div>
 
-                        <div className="space-y-3 pt-2">
-                            <div className="grid grid-cols-2 gap-3">
-                                <Link
-                                    href={`/teachers/${teacher.id}`}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                >
-                                    <Eye className="w-5 h-5" />
-                                    View
-                                </Link>
-                                <Link
-                                    href={`/teachers/${teacher.id}/edit`}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                >
-                                    <Edit className="w-5 h-5" />
-                                    Edit
-                                </Link>
-                            </div>
-                            
+                        <div className="grid grid-cols-2 gap-2">
+                            <Link
+                                href={`/teachers/${teacher.id}`}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                <Eye className="w-3.5 h-3.5" />
+                                View
+                            </Link>
+                            <Link
+                                href={`/teachers/${teacher.id}/edit`}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                            >
+                                <Edit className="w-3.5 h-3.5" />
+                                Edit
+                            </Link>
+
                             {teacher.user?.email && (
                                 <a
                                     href={`mailto:${teacher.user.email}`}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
                                 >
-                                    <Mail className="w-5 h-5" />
-                                    Send Email
+                                    <Mail className="w-3.5 h-3.5" />
+                                    Email
                                 </a>
                             )}
-                            
+
                             <button
                                 onClick={() => onDelete(teacher)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors ${teacher.user?.email ? '' : 'col-span-2'}`}
                             >
-                                <Trash2 className="w-5 h-5" />
-                                Delete Teacher
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
                             </button>
                         </div>
                     </div>

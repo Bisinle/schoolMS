@@ -5,7 +5,7 @@ import UserFilters from "@/Components/Users/UserFilters";
 import UserPasswordModal from "@/Components/Users/UserPasswordModal";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import ImpersonateButton from "@/Components/ImpersonateButton";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
     UserPlus,
     MoreVertical,
@@ -26,7 +26,7 @@ import { useSwipeable } from 'react-swipeable';
 import SwipeActionButton from '@/Components/SwipeActionButton';
 
 // Mobile List Item Component
-function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onResetPassword, onToggleStatus }) {
+function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onResetPassword, onToggleStatus, onImpersonate }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [swipeAction, setSwipeAction] = useState(null);
 
@@ -42,6 +42,9 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
     if (user.id === auth.user.id) {
         return null; // Don't show current user in mobile list
     }
+
+    // Check if user can be impersonated (not an admin)
+    const canImpersonate = !user.roles?.some(role => role.name === 'admin');
 
     return (
         <div className="relative bg-white border-b border-gray-200 overflow-hidden">
@@ -68,7 +71,30 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
                 </div>
             )}
             {swipeAction === 'secondary' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
+                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-start px-4 gap-2 z-10">
+                    {canImpersonate && (
+                        <SwipeActionButton
+                            icon={
+                                <svg
+                                    className="w-5 h-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                                    />
+                                </svg>
+                            }
+                            onClick={() => {
+                                onImpersonate(user);
+                                setSwipeAction(null);
+                            }}
+                        />
+                    )}
                     <SwipeActionButton
                         icon={<Key className="w-5 h-5 text-white" />}
                         onClick={() => {
@@ -90,8 +116,8 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-36' :
-                    swipeAction === 'secondary' ? 'translate-x-28' : ''
+                    swipeAction === 'primary' ? '-translate-x-44' :
+                    swipeAction === 'secondary' ? (canImpersonate ? 'translate-x-44' : 'translate-x-32') : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {
@@ -99,133 +125,128 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
                     }
                 }}
             >
-                {/* Summary Row */}
+                {/* Summary Row - Compact Design */}
                 <div
-                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
                     onClick={() => {
                         if (!swipeAction) {
                             setIsExpanded(!isExpanded);
                         }
                     }}
                 >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
-                                {user.name.charAt(0).toUpperCase()}
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-base font-bold text-gray-900 truncate">
                                     {user.name}
                                 </h3>
-                                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                    <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${getRoleBadgeColor(user.role)}`}>
-                                        {roles.find((r) => r.value === user.role)?.label || user.role}
-                                    </span>
-                                    {user.is_active ? (
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">
-                                            <CheckCircle className="w-3 h-3 mr-1" />
-                                            Active
-                                        </span>
-                                    ) : (
-                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">
-                                            <XCircle className="w-3 h-3 mr-1" />
-                                            Inactive
-                                        </span>
-                                    )}
-                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
+                                    user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {user.is_active ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+
+                            <p className="text-xs text-gray-600 truncate mb-2">{user.email}</p>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${getRoleBadgeColor(user.role)}`}>
+                                    {roles.find((r) => r.value === user.role)?.label || user.role}
+                                </span>
+                                {user.phone && (
+                                    <>
+                                        <span className="text-gray-400">•</span>
+                                        <span className="text-xs text-gray-500">{user.phone}</span>
+                                    </>
+                                )}
                             </div>
                         </div>
-                        
-                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
+
+                        <div className="flex-shrink-0">
                             {isExpanded ? (
-                                <ChevronUp className="w-6 h-6 text-gray-500" />
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
                             ) : (
-                                <ChevronDown className="w-6 h-6 text-gray-500" />
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
                             )}
-                        </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Expanded Details */}
+                {/* Expanded Details - Compact Design */}
                 {isExpanded && (
-                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
-                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
-                            <div className="flex items-start gap-3">
-                                <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Email / Username</p>
-                                    <p className="text-sm font-bold text-gray-900 break-words">{user.email}</p>
+                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
+                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
+                            {user.creator && (
+                                <div className="flex items-center gap-2">
+                                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-600">Created by: {user.creator.name}</span>
                                 </div>
-                            </div>
-                            
-                            {user.phone && (
-                                <>
-                                    <div className="border-t border-gray-100"></div>
-                                    <div className="flex items-start gap-3">
-                                        <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Phone</p>
-                                            <p className="text-sm font-bold text-gray-900">{user.phone}</p>
-                                        </div>
-                                    </div>
-                                </>
                             )}
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Created By</p>
-                                    <p className="text-sm font-bold text-gray-900">{user.creator?.name || "System"}</p>
-                                </div>
-                            </div>
                         </div>
 
-                        <div className="space-y-3 pt-2">
-                            <div className="grid grid-cols-2 gap-3">
-                                <Link
-                                    href={route("users.show", user.id)}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                        <div className="grid grid-cols-2 gap-2">
+                            <Link
+                                href={route("users.show", user.id)}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                <Eye className="w-3.5 h-3.5" />
+                                View
+                            </Link>
+                            <Link
+                                href={route("users.edit", user.id)}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                            >
+                                <Edit className="w-3.5 h-3.5" />
+                                Edit
+                            </Link>
+
+                            {canImpersonate && (
+                                <button
+                                    onClick={() => onImpersonate(user)}
+                                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors"
                                 >
-                                    <Eye className="w-5 h-5" />
-                                    View
-                                </Link>
-                                <Link
-                                    href={route("users.edit", user.id)}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                >
-                                    <Edit className="w-5 h-5" />
-                                    Edit
-                                </Link>
-                            </div>
-                            
+                                    <svg
+                                        className="w-3.5 h-3.5"
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                                        />
+                                    </svg>
+                                    Login As User
+                                </button>
+                            )}
+
                             <button
                                 onClick={() => onResetPassword(user)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-yellow-600 text-white rounded-lg text-xs font-medium hover:bg-yellow-700 transition-colors"
                             >
-                                <Key className="w-5 h-5" />
-                                Reset Password
+                                <Key className="w-3.5 h-3.5" />
+                                Reset
                             </button>
-                            
+
                             <button
                                 onClick={() => onToggleStatus(user)}
-                                className={`w-full flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform ${
+                                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                                     user.is_active
-                                        ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
-                                        : 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                        ? 'bg-orange-600 text-white hover:bg-orange-700'
+                                        : 'bg-green-600 text-white hover:bg-green-700'
                                 }`}
                             >
-                                <Power className="w-5 h-5" />
-                                {user.is_active ? 'Deactivate User' : 'Activate User'}
+                                <Power className="w-3.5 h-3.5" />
+                                {user.is_active ? 'Deactivate' : 'Activate'}
                             </button>
-                            
+
                             <button
                                 onClick={() => onDelete(user)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
                             >
-                                <Trash2 className="w-5 h-5" />
+                                <Trash2 className="w-3.5 h-3.5" />
                                 Delete User
                             </button>
                         </div>
@@ -241,6 +262,8 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
     const [generatedPassword, setGeneratedPassword] = useState("");
     const [passwordUserName, setPasswordUserName] = useState("");
     const [openMenuId, setOpenMenuId] = useState(null);
+    const [dropdownPosition, setDropdownPosition] = useState({});
+    const buttonRefs = useRef({});
 
     // Confirmation modal state
     const [confirmAction, setConfirmAction] = useState({
@@ -343,6 +366,45 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
         });
     };
 
+    const handleImpersonateClick = (user) => {
+        setConfirmAction({
+            show: true,
+            title: "Confirm User Impersonation",
+            message: (
+                <div className="space-y-3">
+                    <p>You are about to login as:</p>
+                    <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <p className="font-semibold text-purple-900">{user.name}</p>
+                        <p className="text-sm text-purple-700 mt-1">
+                            Role: <span className="font-medium">{user.role}</span>
+                        </p>
+                        <p className="text-sm text-purple-600 mt-1">{user.email}</p>
+                    </div>
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                        <p className="text-sm text-yellow-800">
+                            ⚠️ You will see the system exactly as this user sees it.
+                            A purple banner will appear at the top allowing you to exit back to admin mode.
+                        </p>
+                    </div>
+                </div>
+            ),
+            confirmText: "Yes, Login As User",
+            type: "info",
+            confirmButtonClass: "bg-purple-600 hover:bg-purple-700",
+            onConfirm: () => {
+                router.get(
+                    route('impersonate', user.id),
+                    {},
+                    {
+                        preserveState: false,
+                        preserveScroll: false,
+                        onSuccess: () => closeConfirmation(),
+                    }
+                );
+            },
+        });
+    };
+
     const getRoleBadgeColor = (role) => {
         const colors = {
             admin: "bg-purple-100 text-purple-800",
@@ -398,6 +460,7 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                             onDelete={handleDeleteClick}
                             onResetPassword={handleResetPasswordClick}
                             onToggleStatus={handleToggleStatusClick}
+                            onImpersonate={handleImpersonateClick}
                         />
                     ))
                 ) : (
@@ -531,14 +594,25 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <div className="relative inline-block text-left">
                                                     <button
-                                                        onClick={() =>
-                                                            setOpenMenuId(
-                                                                openMenuId ===
-                                                                    user.id
-                                                                    ? null
-                                                                    : user.id
-                                                            )
-                                                        }
+                                                        ref={(el) => buttonRefs.current[user.id] = el}
+                                                        onClick={() => {
+                                                            if (openMenuId === user.id) {
+                                                                setOpenMenuId(null);
+                                                            } else {
+                                                                setOpenMenuId(user.id);
+                                                                // Calculate position
+                                                                const buttonEl = buttonRefs.current[user.id];
+                                                                if (buttonEl) {
+                                                                    const rect = buttonEl.getBoundingClientRect();
+                                                                    const spaceBelow = window.innerHeight - rect.bottom;
+                                                                    const spaceAbove = rect.top;
+                                                                    // If less than 300px below, show above
+                                                                    setDropdownPosition({
+                                                                        [user.id]: spaceBelow < 300 && spaceAbove > 300 ? 'top' : 'bottom'
+                                                                    });
+                                                                }
+                                                            }
+                                                        }}
                                                         className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
                                                         disabled={
                                                             user.id ===
@@ -563,14 +637,14 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
 
                                                                 <div
                                                                     className={`absolute right-0 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-20 ${
-                                                                        index >
-                                                                        users
-                                                                            .data
-                                                                            .length -
-                                                                            4
+                                                                        dropdownPosition[user.id] === 'top'
                                                                             ? "bottom-full mb-2"
                                                                             : "mt-2"
                                                                     }`}
+                                                                    style={{
+                                                                        maxHeight: '400px',
+                                                                        overflowY: 'auto'
+                                                                    }}
                                                                 >
                                                                     <div className="py-1">
                                                                         <Link

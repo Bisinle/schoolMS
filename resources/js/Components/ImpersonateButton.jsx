@@ -68,8 +68,8 @@ export default function ImpersonateButton({ user, className = '' }) {
                         </div>
                         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
                             <p className="text-sm text-yellow-800">
-                                ⚠️ You will see the system exactly as this user sees it. 
-                                An orange banner will appear at the top allowing you to exit back to admin mode.
+                                ⚠️ You will see the system exactly as this user sees it.
+                                A purple banner will appear at the top allowing you to exit back to admin mode.
                             </p>
                         </div>
                     </div>

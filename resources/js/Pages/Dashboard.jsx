@@ -686,23 +686,78 @@ export default function Dashboard({
                         </div>
                     </div>
 
-                    {/* Recent Students Table */}
+                    {/* Recent Students - Mobile Friendly */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                        <div className="px-4 sm:px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
                             <div className="flex items-center justify-between">
-                                <h3 className="text-lg font-semibold text-navy flex items-center">
-                                    <UserPlus className="w-5 h-5 mr-2 text-orange" />
+                                <h3 className="text-base sm:text-lg font-semibold text-navy flex items-center">
+                                    <UserPlus className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-orange" />
                                     Recently Added Students
                                 </h3>
                                 <Link
                                     href="/students"
-                                    className="text-sm text-orange hover:text-orange-dark font-medium"
+                                    className="text-xs sm:text-sm text-orange hover:text-orange-dark font-medium"
                                 >
                                     View All →
                                 </Link>
                             </div>
                         </div>
-                        <div className="overflow-x-auto">
+
+                        {/* Mobile Card View */}
+                        <div className="block md:hidden">
+                            {recentStudents && recentStudents.length > 0 ? (
+                                <div className="divide-y divide-gray-200">
+                                    {recentStudents.map((student) => (
+                                        <Link
+                                            key={student.id}
+                                            href={`/students/${student.id}`}
+                                            className="block p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors"
+                                        >
+                                            <div className="flex items-start justify-between gap-3 mb-2">
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-sm font-bold text-navy truncate">
+                                                        {student.first_name}{" "}
+                                                        {student.last_name}
+                                                    </h4>
+                                                    <p className="text-xs text-gray-600 mt-0.5">
+                                                        {student.admission_number}
+                                                    </p>
+                                                </div>
+                                                <span
+                                                    className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ${
+                                                        student.status === "active"
+                                                            ? "bg-green-100 text-green-700"
+                                                            : "bg-red-100 text-red-700"
+                                                    }`}
+                                                >
+                                                    {student.status}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 flex-wrap text-xs text-gray-500">
+                                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-md font-medium">
+                                                    {student.grade?.name || "No Class"}
+                                                </span>
+                                                {student.guardian?.user?.name && (
+                                                    <>
+                                                        <span className="text-gray-400">•</span>
+                                                        <span className="truncate">
+                                                            {student.guardian.user.name}
+                                                        </span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-8 text-center text-gray-500 text-sm">
+                                    No students found
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -724,8 +779,7 @@ export default function Dashboard({
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {recentStudents &&
-                                    recentStudents.length > 0 ? (
+                                    {recentStudents && recentStudents.length > 0 ? (
                                         recentStudents.map((student) => (
                                             <tr
                                                 key={student.id}
@@ -744,19 +798,15 @@ export default function Dashboard({
                                                     </Link>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                    {student.grade?.name ||
-                                                        "Not Assigned"}
+                                                    {student.grade?.name || "Not Assigned"}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                    {student.guardian?.user
-                                                        ?.name ||
-                                                        "Not Assigned"}
+                                                    {student.guardian?.user?.name || "Not Assigned"}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span
                                                         className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                                                            student.status ===
-                                                            "active"
+                                                            student.status === "active"
                                                                 ? "bg-green-100 text-green-800"
                                                                 : "bg-red-100 text-red-800"
                                                         }`}

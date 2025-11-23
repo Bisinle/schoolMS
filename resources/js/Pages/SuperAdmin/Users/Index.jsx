@@ -75,133 +75,104 @@ function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete, getRo
                     }
                 }}
             >
-                {/* Summary Row - Touch Optimized */}
+                {/* Summary Row - Compact Design */}
                 <div
-                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
                     onClick={() => {
                         if (!swipeAction) {
                             setIsExpanded(!isExpanded);
                         }
                     }}
                 >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                            {/* Avatar - Larger */}
-                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
-                                {user.name.charAt(0).toUpperCase()}
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-base font-bold text-gray-900 truncate">
+                                    {user.name}
+                                </h3>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
+                                    user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {user.is_active ? 'Active' : 'Suspended'}
+                                </span>
                             </div>
-                            
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">{user.name}</h3>
-                                <p className="text-sm text-gray-600 truncate mt-1">{user.email}</p>
-                                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                    <span className={`inline-flex px-3 py-1 text-xs font-black rounded-full bg-gradient-to-r ${getRoleBadgeColor(user.role)} text-white shadow-md`}>
-                                        {user.role.replace('_', ' ').toUpperCase()}
-                                    </span>
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                                        user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                    }`}>
-                                        {user.is_active ? '● Active' : '● Suspended'}
-                                    </span>
-                                </div>
+
+                            <p className="text-xs text-gray-600 truncate mb-2">{user.email}</p>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${getRoleBadgeColor(user.role)}`}>
+                                    {user.role.replace('_', ' ')}
+                                </span>
+                                {user.school && (
+                                    <>
+                                        <span className="text-gray-400">•</span>
+                                        <span className="text-xs text-gray-500 truncate">{user.school.name}</span>
+                                    </>
+                                )}
                             </div>
                         </div>
-                        
-                        {/* Expand Button - Larger Touch Target */}
-                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
+
+                        <div className="flex-shrink-0">
                             {isExpanded ? (
-                                <ChevronUp className="w-6 h-6 text-gray-500" />
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
                             ) : (
-                                <ChevronDown className="w-6 h-6 text-gray-500" />
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
                             )}
-                        </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Expanded Details - Redesigned */}
+                {/* Expanded Details - Compact Design */}
                 {isExpanded && (
-                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
-                        {/* Info Card */}
-                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
-                            <div className="flex items-start gap-3">
-                                <Mail className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Email</p>
-                                    <p className="text-sm font-bold text-gray-900 break-words">{user.email}</p>
-                                </div>
-                            </div>
-                            
+                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
+                        {/* Info Grid - Compact */}
+                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
                             {user.phone && (
-                                <>
-                                    <div className="border-t border-gray-100"></div>
-                                    <div className="flex items-start gap-3">
-                                        <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Phone</p>
-                                            <p className="text-sm font-bold text-gray-900">{user.phone}</p>
-                                        </div>
-                                    </div>
-                                </>
+                                <div className="flex items-center gap-2">
+                                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                    <span className="text-xs text-gray-600">{user.phone}</span>
+                                </div>
                             )}
-                            
-                            <div className="border-t border-gray-100"></div>
-                            <div className="flex items-start gap-3">
-                                <SchoolIcon className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">School</p>
-                                    <p className="text-sm font-bold text-gray-900 truncate">{user.school?.name || 'N/A'}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            <div className="flex items-start gap-3">
-                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">User ID</p>
-                                    <p className="text-sm font-bold text-gray-900">#{user.id}</p>
-                                </div>
+
+                            <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600">ID: #{user.id}</span>
                             </div>
                         </div>
 
-                        {/* Action Buttons - Larger & More Spacing */}
-                        <div className="space-y-3 pt-2">
-                            {/* Primary Actions */}
-                            <div className="grid grid-cols-2 gap-3">
-                                <Link
-                                    href={route('super-admin.users.show', user.id)}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                >
-                                    <Eye className="w-5 h-5" />
-                                    View
-                                </Link>
-                                <button
-                                    onClick={() => onResetPassword(user)}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                >
-                                    <RefreshCw className="w-5 h-5" />
-                                    Reset
-                                </button>
-                            </div>
-                            
-                            {/* Secondary Actions */}
+                        {/* Action Buttons - Compact */}
+                        <div className="grid grid-cols-2 gap-2">
+                            <Link
+                                href={route('super-admin.users.show', user.id)}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                <Eye className="w-3.5 h-3.5" />
+                                View
+                            </Link>
+                            <button
+                                onClick={() => onResetPassword(user)}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-yellow-600 text-white rounded-lg text-xs font-medium hover:bg-yellow-700 transition-colors"
+                            >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                Reset
+                            </button>
                             <button
                                 onClick={() => onToggleActive(user)}
-                                className={`w-full flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform ${
+                                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
                                     user.is_active
-                                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white'
-                                        : 'bg-gradient-to-r from-green-500 to-green-600 text-white'
+                                        ? 'bg-red-600 text-white hover:bg-red-700'
+                                        : 'bg-green-600 text-white hover:bg-green-700'
                                 }`}
                             >
-                                <Power className="w-5 h-5" />
-                                {user.is_active ? 'Suspend User' : 'Activate User'}
+                                <Power className="w-3.5 h-3.5" />
+                                {user.is_active ? 'Suspend' : 'Activate'}
                             </button>
-                            
                             <button
                                 onClick={() => onDelete(user)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-700 text-white rounded-lg text-xs font-medium hover:bg-red-800 transition-colors"
                             >
-                                <Trash2 className="w-5 h-5" />
-                                Delete User
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
                             </button>
                         </div>
                     </div>
@@ -294,6 +265,19 @@ export default function Index({ users, schools, filters }) {
     };
 
     const getRoleBadgeColor = (role) => {
+        const colors = {
+            admin: 'bg-purple-100 text-purple-700',
+            teacher: 'bg-blue-100 text-blue-700',
+            guardian: 'bg-green-100 text-green-700',
+            accountant: 'bg-yellow-100 text-yellow-700',
+            receptionist: 'bg-pink-100 text-pink-700',
+            nurse: 'bg-red-100 text-red-700',
+            it_staff: 'bg-gray-100 text-gray-700',
+        };
+        return colors[role] || 'bg-gray-100 text-gray-700';
+    };
+
+    const getRoleBadgeColorGradient = (role) => {
         const colors = {
             admin: 'from-purple-500 to-purple-600',
             teacher: 'from-blue-500 to-blue-600',
@@ -508,7 +492,7 @@ export default function Index({ users, schools, filters }) {
                                                     </div>
                                                 </td>
                                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r ${getRoleBadgeColor(user.role)} text-white shadow-sm`}>
+                                                    <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r ${getRoleBadgeColorGradient(user.role)} text-white shadow-sm`}>
                                                         {user.role.replace('_', ' ').toUpperCase()}
                                                     </span>
                                                 </td>

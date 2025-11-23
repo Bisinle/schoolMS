@@ -35,7 +35,7 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                 onClick={onToggle}
                 className={`md:hidden fixed z-[60] left-1/2 transform -translate-x-1/2 transition-all duration-300 ${
                     isVisible ? 'top-[3.5rem]' : 'top-0'
-                } bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded-b-lg shadow-lg flex items-center space-x-2 text-xs font-semibold`}
+                } bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-b-lg shadow-lg flex items-center space-x-2 text-xs font-semibold`}
                 aria-label={isVisible ? "Hide impersonation banner" : "Show impersonation banner"}
             >
                 <span className="animate-pulse text-[8px]">●</span>
@@ -48,7 +48,7 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
             </button>
 
             {/* Banner - Slides up/down on mobile, always visible on desktop */}
-            <div className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-orange-500 to-orange-600 shadow-lg transition-transform duration-300 ${
+            <div className={`fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 to-purple-700 shadow-lg transition-transform duration-300 ${
                 isVisible ? 'translate-y-0' : 'md:translate-y-0 -translate-y-full'
             }`}>
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -71,9 +71,9 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                                     IMPERSONATION
                                 </span>
                             </div>
-                            
-                            <div className="hidden sm:block h-6 w-px bg-orange-300"></div>
-                            
+
+                            <div className="hidden sm:block h-6 w-px bg-purple-300"></div>
+
                             <div className="hidden sm:flex items-center space-x-2 text-white text-sm">
                                 <span className="opacity-90">Viewing as:</span>
                                 <span className="font-bold">{user.name}</span>
@@ -87,19 +87,19 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                         {/* Right side - Exit button */}
                         <button
                             onClick={() => setShowExitModal(true)}
-                            className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-white text-orange-600 rounded-md hover:bg-orange-50 transition-all duration-200 font-semibold text-sm shadow-md hover:shadow-lg"
+                            className="hidden sm:flex items-center space-x-2 px-4 py-2 bg-white text-purple-600 rounded-md hover:bg-purple-50 transition-all duration-200 font-semibold text-sm shadow-md hover:shadow-lg"
                         >
-                            <svg 
-                                className="w-4 h-4" 
-                                fill="none" 
-                                stroke="currentColor" 
+                            <svg
+                                className="w-4 h-4"
+                                fill="none"
+                                stroke="currentColor"
                                 viewBox="0 0 24 24"
                             >
-                                <path 
-                                    strokeLinecap="round" 
-                                    strokeLinejoin="round" 
-                                    strokeWidth={2} 
-                                    d="M6 18L18 6M6 6l12 12" 
+                                <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M6 18L18 6M6 6l12 12"
                                 />
                             </svg>
                               <span>Exit & Return to Admin Panel</span>
@@ -108,14 +108,14 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                         {/* Mobile - Compact exit button */}
                         <button
                             onClick={() => setShowExitModal(true)}
-                            className="sm:hidden px-2 py-1 bg-white text-orange-600 rounded font-semibold text-xs hover:bg-orange-50"
+                            className="sm:hidden px-2 py-1 bg-white text-purple-600 rounded font-semibold text-xs hover:bg-purple-50"
                         >
                             Exit Impersonation
                         </button>
                     </div>
 
                     {/* Mobile - Expanded user info row */}
-                    <div className="sm:hidden px-4 pb-2 border-t border-orange-400">
+                    <div className="sm:hidden px-4 pb-2 border-t border-purple-400">
                         <div className="flex items-center justify-between pt-2">
                             <div className="flex items-center space-x-2 text-white text-xs">
                                 <span className="opacity-90">As:</span>
@@ -138,9 +138,9 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                 message={
                     <div className="space-y-3">
                         <div>You are currently viewing the system as:</div>
-                        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                            <p className="font-semibold text-orange-900">{user.name}</p>
-                            <p className="text-sm text-orange-700 mt-1">
+                        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                            <p className="font-semibold text-purple-900">{user.name}</p>
+                            <p className="text-sm text-purple-700 mt-1">
                                 Role: <span className="font-medium">{user.role}</span>
                             </p>
                         </div>
@@ -150,7 +150,7 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
                     </div>
                 }
                 confirmText={isLeaving ? "Exiting..." : "Yes, Exit Impersonation"}
-                confirmButtonClass="bg-orange-600 hover:bg-orange-700"
+                confirmButtonClass="bg-purple-600 hover:bg-purple-700"
                 cancelText="Stay as User"
                 isLoading={isLeaving}
             />

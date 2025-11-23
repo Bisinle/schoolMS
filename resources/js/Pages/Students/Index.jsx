@@ -66,8 +66,8 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-36' :
-                    swipeAction === 'secondary' ? 'translate-x-20' : ''
+                    swipeAction === 'primary' ? '-translate-x-44' :
+                    swipeAction === 'secondary' ? 'translate-x-24' : ''
                 }`}
                 onClick={() => {
                     if (swipeAction) {
@@ -75,142 +75,107 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
                     }
                 }}
             >
-                {/* Summary Row */}
+                {/* Summary Row - Compact Design */}
                 <div
-                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
+                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
                     onClick={() => {
                         if (!swipeAction) {
                             setIsExpanded(!isExpanded);
                         }
                     }}
                 >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-xl">
-                                {student.first_name.charAt(0).toUpperCase()}
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between mb-2">
+                                <h3 className="text-base font-bold text-gray-900 truncate">
                                     {student.first_name} {student.last_name}
                                 </h3>
-                                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                    <span className="text-sm text-gray-600">{student.grade?.name || 'No Grade'}</span>
-                                    <span>•</span>
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                                        student.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                    }`}>
-                                        {student.status === 'active' ? '● Active' : '● Inactive'}
-                                    </span>
-                                </div>
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
+                                    student.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                }`}>
+                                    {student.status === 'active' ? 'Active' : 'Inactive'}
+                                </span>
+                            </div>
+
+                            <p className="text-xs text-gray-600 truncate mb-2">{student.admission_number}</p>
+
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-orange-100 text-orange-700">
+                                    {student.grade?.name || 'No Grade'}
+                                </span>
+                                <span className="text-gray-400">•</span>
+                                <span className="text-xs text-gray-500 capitalize">{student.gender}</span>
                             </div>
                         </div>
-                        
-                        <button className="flex-shrink-0 p-2 -mr-2 active:bg-gray-100 rounded-lg transition-colors">
+
+                        <div className="flex-shrink-0">
                             {isExpanded ? (
-                                <ChevronUp className="w-6 h-6 text-gray-500" />
+                                <ChevronUp className="w-5 h-5 text-gray-400" />
                             ) : (
-                                <ChevronDown className="w-6 h-6 text-gray-500" />
+                                <ChevronDown className="w-5 h-5 text-gray-400" />
                             )}
-                        </button>
+                        </div>
                     </div>
                 </div>
 
-                {/* Expanded Details */}
+                {/* Expanded Details - Compact Design */}
                 {isExpanded && (
-                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4 bg-gray-50">
-                        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm space-y-3">
-                            <div className="flex items-start gap-3">
-                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Admission No</p>
-                                    <p className="text-sm font-bold text-gray-900">{student.admission_number}</p>
-                                </div>
+                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
+                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600">{new Date(student.date_of_birth).toLocaleDateString()}</span>
                             </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <User className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Gender</p>
-                                    <p className="text-sm font-bold text-gray-900 capitalize">{student.gender}</p>
-                                </div>
-                            </div>
-                            
-                            <div className="border-t border-gray-100"></div>
-                            
-                            <div className="flex items-start gap-3">
-                                <Calendar className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Date of Birth</p>
-                                    <p className="text-sm font-bold text-gray-900">{new Date(student.date_of_birth).toLocaleDateString()}</p>
-                                </div>
-                            </div>
-                            
+
                             {student.guardian && (
                                 <>
-                                    <div className="border-t border-gray-100"></div>
-                                    
-                                    <div className="flex items-start gap-3">
-                                        <Users className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Guardian</p>
-                                            <p className="text-sm font-bold text-gray-900">{student.guardian.user?.name}</p>
-                                        </div>
+                                    <div className="flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                        <span className="text-xs text-gray-600 truncate">{student.guardian.user?.name}</span>
                                     </div>
-                                    
+
                                     {student.guardian.phone_number && (
-                                        <>
-                                            <div className="border-t border-gray-100"></div>
-                                            <div className="flex items-start gap-3">
-                                                <Phone className="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" />
-                                                <div className="min-w-0 flex-1">
-                                                    <p className="text-xs font-semibold text-gray-500 uppercase mb-1">Guardian Phone</p>
-                                                    <p className="text-sm font-bold text-gray-900">{student.guardian.phone_number}</p>
-                                                </div>
-                                            </div>
-                                        </>
+                                        <div className="flex items-center gap-2">
+                                            <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                            <span className="text-xs text-gray-600">{student.guardian.phone_number}</span>
+                                        </div>
                                     )}
                                 </>
                             )}
                         </div>
 
-                        <div className="space-y-3 pt-2">
-                            <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2">
+                            <Link
+                                href={`/students/${student.id}`}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                            >
+                                <Eye className="w-3.5 h-3.5" />
+                                View
+                            </Link>
+                            {auth.user.role === 'admin' && (
                                 <Link
-                                    href={`/students/${student.id}`}
-                                    className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                    href={`/students/${student.id}/edit`}
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
                                 >
-                                    <Eye className="w-5 h-5" />
-                                    View
+                                    <Edit className="w-3.5 h-3.5" />
+                                    Edit
                                 </Link>
-                                {auth.user.role === 'admin' && (
-                                    <Link
-                                        href={`/students/${student.id}/edit`}
-                                        className="flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
-                                    >
-                                        <Edit className="w-5 h-5" />
-                                        Edit
-                                    </Link>
-                                )}
-                            </div>
-                            
+                            )}
                             <button
                                 onClick={() => onGenerateReport(student)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors ${auth.user.role === 'admin' ? '' : 'col-span-2'}`}
                             >
-                                <FileText className="w-5 h-5" />
-                                Generate Report
+                                <FileText className="w-3.5 h-3.5" />
+                                Report
                             </button>
-                            
+
                             {auth.user.role === 'admin' && (
                                 <button
                                     onClick={() => onDelete(student)}
-                                    className="w-full flex items-center justify-center gap-2 px-4 py-4 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-bold text-base shadow-lg active:scale-95 transition-transform"
+                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
                                 >
-                                    <Trash2 className="w-5 h-5" />
-                                    Delete Student
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                    Delete
                                 </button>
                             )}
                         </div>

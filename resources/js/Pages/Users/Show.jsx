@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import UserPasswordModal from '@/Components/Users/UserPasswordModal';
+import ImpersonateButton from '@/Components/ImpersonateButton';
 import { useState } from 'react';
 import {
     ArrowLeft,
@@ -197,6 +198,12 @@ export default function Show({ auth, user, recentActivity, roles, flash }) {
                                         <Edit className="w-4 h-4 mr-2" />
                                         Edit User
                                     </Link>
+
+                                    {/* Login As User Button - Only for non-admin users */}
+                                    {!user.roles?.some(role => role.name === 'admin') && (
+                                        <ImpersonateButton user={user} className="w-full justify-center px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg" />
+                                    )}
+
                                     <button
                                         onClick={handleResetPassword}
                                         className="w-full flex items-center justify-center px-4 py-2.5 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-600 transition-colors"

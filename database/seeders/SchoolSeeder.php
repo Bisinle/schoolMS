@@ -69,11 +69,11 @@ class SchoolSeeder extends Seeder
 
         // School 3: Al-Noor Academy (Madrasah - hides academic subjects)
         $school3 = School::create([
-            'name' => 'Al-Noor Academy',
-            'slug' => 'al-noor-academy',
-            'domain' => 'alnoor.localhost',
-            'admin_name' => 'Ahmed Hassan',
-            'admin_email' => 'admin@alnoor.school',
+            'name' => 'مريم بنت عمران',
+            'slug' => 'maryam-bint-omran',
+            'domain' => 'maryam.localhost',
+            'admin_name' => 'فردوسه حرسي ',
+            'admin_email' => 'admin@madrasah.school',
             'admin_phone' => '+254722222222',
             'is_active' => true,
             'status' => 'active',

@@ -11,6 +11,8 @@ export default function ConfirmationModal({
     confirmText = 'Confirm',
     cancelText = 'Cancel',
     type = 'danger', // danger, warning, info
+    confirmButtonClass = '', // Custom button class to override default
+    isLoading = false,
 }) {
     const colors = {
         danger: {
@@ -94,8 +96,11 @@ export default function ConfirmationModal({
                                     </button>
                                     <button
                                         type="button"
-                                        className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-all ${colorScheme.button}`}
+                                        className={`inline-flex items-center px-4 py-2 text-sm font-medium text-white rounded-lg transition-all ${
+                                            confirmButtonClass || colorScheme.button
+                                        }`}
                                         onClick={onConfirm}
+                                        disabled={isLoading}
                                     >
                                         {confirmText}
                                     </button>
