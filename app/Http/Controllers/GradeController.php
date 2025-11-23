@@ -7,6 +7,8 @@ use App\Models\Teacher;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 
 class GradeController extends Controller
@@ -242,21 +244,53 @@ class GradeController extends Controller
     {
         $this->authorize('delete', $grade);
 
-        // Check if grade has students
-        if ($grade->students()->count() > 0) {
+        try {
+            // Check if grade has students
+            $studentCount = $grade->students()->count();
+            if ($studentCount > 0) {
+                return back()->withErrors([
+                    'error' => "Cannot delete grade '{$grade->name}' because it has {$studentCount} enrolled student(s). Please transfer students to another grade first."
+                ]);
+            }
+
+            // Check if grade has exams
+            $examCount = $grade->exams()->count();
+            if ($examCount > 0) {
+                return back()->withErrors([
+                    'error' => "Cannot delete grade '{$grade->name}' because it has {$examCount} exam(s) associated with it. Please delete the exams first or contact support."
+                ]);
+            }
+
+            // Check if grade has attendance records
+            $attendanceCount = DB::table('attendances')->where('grade_id', $grade->id)->count();
+            if ($attendanceCount > 0) {
+                return back()->withErrors([
+                    'error' => "Cannot delete grade '{$grade->name}' because it has {$attendanceCount} attendance record(s). This grade has historical data that cannot be deleted."
+                ]);
+            }
+
+            // Detach all many-to-many relationships (these are safe to detach)
+            $grade->teachers()->detach();
+            $grade->subjects()->detach();
+
+            // Delete the grade
+            $grade->delete();
+
+            return redirect()->route('grades.index')
+                ->with('success', "Grade '{$grade->name}' deleted successfully.");
+
+        } catch (\Exception $e) {
+            Log::error('Grade deletion failed', [
+                'grade_id' => $grade->id,
+                'grade_name' => $grade->name,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return back()->withErrors([
-                'error' => 'Cannot delete grade with enrolled students. Please transfer students first.'
+                'error' => "Failed to delete grade '{$grade->name}'. Error: " . $e->getMessage()
             ]);
         }
-
-        // Detach all relationships
-        $grade->teachers()->detach();
-        $grade->subjects()->detach();
-
-        $grade->delete();
-
-        return redirect()->route('grades.index')
-            ->with('success', 'Grade deleted successfully.');
     }
 
     // Teacher Assignment Methods

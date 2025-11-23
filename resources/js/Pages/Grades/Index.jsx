@@ -31,10 +31,14 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
 
     const handleDelete = () => {
         if (selectedGrade) {
-            router.delete(`/grades/${selectedGrade.id}`, {
+            router.delete(route('grades.destroy', selectedGrade.id), {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setSelectedGrade(null);
+                },
+                onError: (errors) => {
+                    // Keep modal open to show error
+                    console.error('Delete error:', errors);
                 },
             });
         }
