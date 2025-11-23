@@ -1,6 +1,48 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User, Eye } from 'lucide-react';
+
+// Mobile Session Card Component
+function MobileSessionCard({ session, getReadingTypeBadge, getDifficultyBadge }) {
+    return (
+        <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Calendar className="w-4 h-4" />
+                    {new Date(session.date).toLocaleDateString()}
+                </div>
+                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getReadingTypeBadge(session.reading_type)}`}>
+                    {session.reading_type_label}
+                </span>
+            </div>
+
+            <div className="mb-3">
+                <div className="text-sm font-semibold text-gray-900 mb-1">
+                    {session.surah_name}
+                </div>
+                <div className="text-xs text-gray-600">
+                    Verses {session.verse_from} - {session.verse_to} ({session.calculated_total_verses} verses)
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getDifficultyBadge(session.difficulty)}`}>
+                        {session.difficulty_label}
+                    </span>
+                    <span className="text-xs text-gray-500">• {session.teacher.name}</span>
+                </div>
+                <Link
+                    href={`/quran-tracking/${session.id}`}
+                    className="px-3 py-1.5 bg-orange text-white text-xs font-medium rounded-md hover:bg-orange-dark transition-colors flex items-center gap-1"
+                >
+                    <Eye className="w-3 h-3" />
+                    View
+                </Link>
+            </div>
+        </div>
+    );
+}
 
 export default function StudentReport({ student, sessions, analytics, sessionsByMonth, sessionsByType, sessionsByDifficulty }) {
     const getReadingTypeBadge = (type) => {
@@ -64,43 +106,43 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                     </div>
 
                     {/* Summary Cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-6 text-white">
-                            <div className="flex items-center justify-between mb-2">
-                                <Calendar className="w-8 h-8 opacity-80" />
-                                <div className="text-right">
-                                    <div className="text-3xl font-bold">{analytics.total_sessions}</div>
-                                    <div className="text-sm opacity-90">Total Sessions</div>
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 mb-6 sm:mb-8">
+                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
+                            <div className="flex flex-col sm:flex-row items-center justify-between">
+                                <Calendar className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
+                                <div className="text-center sm:text-right">
+                                    <div className="text-2xl sm:text-3xl font-bold">{analytics.total_sessions}</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Sessions</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-lg p-6 text-white">
-                            <div className="flex items-center justify-between mb-2">
-                                <Book className="w-8 h-8 opacity-80" />
-                                <div className="text-right">
-                                    <div className="text-3xl font-bold">{analytics.total_verses}</div>
-                                    <div className="text-sm opacity-90">Total Verses Read</div>
+                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
+                            <div className="flex flex-col sm:flex-row items-center justify-between">
+                                <Book className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
+                                <div className="text-center sm:text-right">
+                                    <div className="text-2xl sm:text-3xl font-bold">{analytics.total_verses}</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Verses</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl shadow-lg p-6 text-white">
-                            <div className="flex items-center justify-between mb-2">
-                                <BookOpen className="w-8 h-8 opacity-80" />
-                                <div className="text-right">
-                                    <div className="text-3xl font-bold">{analytics.total_pages}</div>
-                                    <div className="text-sm opacity-90">Total Pages Read</div>
+                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
+                            <div className="flex flex-col sm:flex-row items-center justify-between">
+                                <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
+                                <div className="text-center sm:text-right">
+                                    <div className="text-2xl sm:text-3xl font-bold">{analytics.total_pages}</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Pages</div>
                                 </div>
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-orange to-orange-dark rounded-2xl shadow-lg p-6 text-white">
-                            <div className="flex items-center justify-between mb-2">
-                                <Award className="w-8 h-8 opacity-80" />
-                                <div className="text-right">
-                                    <div className="text-3xl font-bold">{analytics.pages_memorized}</div>
-                                    <div className="text-sm opacity-90">Pages Memorized</div>
+                        <div className="bg-gradient-to-br from-orange to-orange-dark rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
+                            <div className="flex flex-col sm:flex-row items-center justify-between">
+                                <Award className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
+                                <div className="text-center sm:text-right">
+                                    <div className="text-2xl sm:text-3xl font-bold">{analytics.pages_memorized}</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Memorized</div>
                                 </div>
                             </div>
                         </div>
@@ -238,13 +280,15 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
 
                     {/* All Sessions Table */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
-                            <h3 className="text-lg font-bold text-gray-900 flex items-center">
-                                <BarChart3 className="w-5 h-5 mr-2 text-orange" />
+                        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
+                            <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center">
+                                <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-orange" />
                                 All Sessions ({sessions.length})
                             </h3>
                         </div>
-                        <div className="overflow-x-auto">
+
+                        {/* Desktop Table View */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
@@ -312,6 +356,18 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                                     ))}
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* Mobile List View */}
+                        <div className="md:hidden">
+                            {sessions.map((session) => (
+                                <MobileSessionCard
+                                    key={session.id}
+                                    session={session}
+                                    getReadingTypeBadge={getReadingTypeBadge}
+                                    getDifficultyBadge={getDifficultyBadge}
+                                />
+                            ))}
                         </div>
                     </div>
                 </div>

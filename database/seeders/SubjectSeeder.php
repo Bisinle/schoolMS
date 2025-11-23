@@ -26,7 +26,8 @@ class SubjectSeeder extends Seeder
             ['name' => 'Creative Arts', 'code' => 'ART', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Enviromental Activities', 'code' => 'PE', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Islamic Religion Education', 'code' => 'IRE', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Science & Technology', 'code' => 'SCI', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'SS
+            cience & Technology', 'code' => 'SCI', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Kiswahili', 'code' => 'KIS', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Social Studies', 'code' => 'SST', 'category' => 'academic', 'status' => 'active'],
             // Islamic Subjects
