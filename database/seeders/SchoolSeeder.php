@@ -86,7 +86,7 @@ class SchoolSeeder extends Seeder
         User::create([
             'school_id' => $school3->id,
             'name' => 'Ahmed Hassan',
-            'email' => 'admin@alnoor.school',
+            'email' => 'admin@madrasah.school',
             'password' => Hash::make('password'),
             'role' => 'admin',
             'is_active' => true,
