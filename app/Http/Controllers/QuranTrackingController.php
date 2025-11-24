@@ -93,10 +93,14 @@ class QuranTrackingController extends Controller
             return $student;
         });
 
-        // Get grades for filter dropdown
+        // Get grades for filter dropdown (including Unassigned)
         $grades = $user->isTeacher()
             ? $user->teacher->grades
-            : \App\Models\Grade::where('status', 'active')->orderBy('level')->orderBy('name')->get();
+            : \App\Models\Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
 
         return Inertia::render('QuranTracking/Index', [
             'students' => $students,
@@ -156,11 +160,11 @@ class QuranTrackingController extends Controller
             'date' => 'required|date',
             'reading_type' => 'required|in:new_learning,revision,subac',
             'surah_from' => 'required|integer|min:1|max:114',
-            'surah_to' => 'required|integer|min:1|max:114|gte:surah_from',
+            'surah_to' => 'required|integer|min:1|max:114',
             'verse_from' => 'required|integer|min:1',
             'verse_to' => 'required|integer|min:1',
             'page_from' => 'nullable|integer|min:1|max:604',
-            'page_to' => 'nullable|integer|gte:page_from|max:604',
+            'page_to' => 'nullable|integer|min:1|max:604',
             'difficulty' => 'required|in:very_well,middle,difficult',
             'pages_memorized' => 'nullable|integer|min:0',
             'surahs_memorized' => 'nullable|integer|min:0',
@@ -312,11 +316,11 @@ class QuranTrackingController extends Controller
             'date' => 'required|date',
             'reading_type' => 'required|in:new_learning,revision,subac',
             'surah_from' => 'required|integer|min:1|max:114',
-            'surah_to' => 'required|integer|min:1|max:114|gte:surah_from',
+            'surah_to' => 'required|integer|min:1|max:114',
             'verse_from' => 'required|integer|min:1',
             'verse_to' => 'required|integer|min:1',
             'page_from' => 'nullable|integer|min:1|max:604',
-            'page_to' => 'nullable|integer|gte:page_from|max:604',
+            'page_to' => 'nullable|integer|min:1|max:604',
             'difficulty' => 'required|in:very_well,middle,difficult',
             'pages_memorized' => 'nullable|integer|min:0',
             'surahs_memorized' => 'nullable|integer|min:0',

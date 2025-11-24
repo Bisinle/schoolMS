@@ -164,6 +164,7 @@ class QuranApiService
 
     /**
      * Calculate total verses across multiple surahs.
+     * Supports both top-to-bottom (Surah 1 → 114) and bottom-to-top (Surah 114 → 1) reading.
      *
      * @param int $surahFrom Starting surah number
      * @param int $verseFrom Starting verse number in first surah
@@ -175,31 +176,58 @@ class QuranApiService
     {
         // Single surah case
         if ($surahFrom == $surahTo) {
-            return ($verseTo - $verseFrom) + 1;
+            return abs($verseTo - $verseFrom) + 1;
         }
 
         $surahs = $this->getSurahs();
         $surahsById = collect($surahs)->keyBy('id');
         $totalVerses = 0;
 
-        // First surah: from verseFrom to end of surah
-        $firstSurah = $surahsById->get($surahFrom);
-        if ($firstSurah) {
-            $totalVerses += ($firstSurah['total_verses'] - $verseFrom) + 1;
-        }
+        // Determine reading direction
+        $isTopToBottom = $surahFrom < $surahTo;
 
-        // Middle surahs: all verses
-        for ($i = $surahFrom + 1; $i < $surahTo; $i++) {
-            $middleSurah = $surahsById->get($i);
-            if ($middleSurah) {
-                $totalVerses += $middleSurah['total_verses'];
+        if ($isTopToBottom) {
+            // Top to bottom: Surah 1 → Surah 114
+            // First surah: from verseFrom to end of surah
+            $firstSurah = $surahsById->get($surahFrom);
+            if ($firstSurah) {
+                $totalVerses += ($firstSurah['total_verses'] - $verseFrom) + 1;
             }
-        }
 
-        // Last surah: from 1 to verseTo
-        $lastSurah = $surahsById->get($surahTo);
-        if ($lastSurah) {
-            $totalVerses += $verseTo;
+            // Middle surahs: all verses
+            for ($i = $surahFrom + 1; $i < $surahTo; $i++) {
+                $middleSurah = $surahsById->get($i);
+                if ($middleSurah) {
+                    $totalVerses += $middleSurah['total_verses'];
+                }
+            }
+
+            // Last surah: from 1 to verseTo
+            $lastSurah = $surahsById->get($surahTo);
+            if ($lastSurah) {
+                $totalVerses += $verseTo;
+            }
+        } else {
+            // Bottom to top: Surah 114 → Surah 1
+            // First surah: from verseFrom down to 1
+            $firstSurah = $surahsById->get($surahFrom);
+            if ($firstSurah) {
+                $totalVerses += $verseFrom;
+            }
+
+            // Middle surahs: all verses (going backwards)
+            for ($i = $surahFrom - 1; $i > $surahTo; $i--) {
+                $middleSurah = $surahsById->get($i);
+                if ($middleSurah) {
+                    $totalVerses += $middleSurah['total_verses'];
+                }
+            }
+
+            // Last surah: from end of surah down to verseTo
+            $lastSurah = $surahsById->get($surahTo);
+            if ($lastSurah) {
+                $totalVerses += ($lastSurah['total_verses'] - $verseTo) + 1;
+            }
         }
 
         return $totalVerses;
@@ -242,6 +270,7 @@ class QuranApiService
 
     /**
      * Calculate page range for a verse range.
+     * Supports both top-to-bottom and bottom-to-top reading.
      *
      * @param int $surahFrom Starting surah number
      * @param int $verseFrom Starting verse number
@@ -261,12 +290,14 @@ class QuranApiService
         return [
             'page_from' => $pageFrom,
             'page_to' => $pageTo,
-            'total_pages' => ($pageTo - $pageFrom) + 1,
+            'total_pages' => abs($pageTo - $pageFrom) + 1,
         ];
     }
 
     /**
      * Validate multi-surah verse range.
+     * Allows reading in any direction (top to bottom OR bottom to top).
+     * Only validates verse order when both surahs are the same.
      *
      * @param int $surahFrom Starting surah number
      * @param int $verseFrom Starting verse number
@@ -279,10 +310,6 @@ class QuranApiService
         // Validate surah numbers
         if ($surahFrom < 1 || $surahFrom > 114 || $surahTo < 1 || $surahTo > 114) {
             return ['valid' => false, 'message' => 'Surah numbers must be between 1 and 114.'];
-        }
-
-        if ($surahFrom > $surahTo) {
-            return ['valid' => false, 'message' => 'Starting surah must be less than or equal to ending surah.'];
         }
 
         $surahs = $this->getSurahs();
@@ -308,9 +335,9 @@ class QuranApiService
             return ['valid' => false, 'message' => "Ending verse must be between 1 and {$lastSurah['total_verses']} for Surah {$surahTo}."];
         }
 
-        // For single surah, verify verse_from <= verse_to
+        // ONLY validate verse order when reading within the SAME surah
         if ($surahFrom == $surahTo && $verseFrom > $verseTo) {
-            return ['valid' => false, 'message' => 'Starting verse must be less than or equal to ending verse.'];
+            return ['valid' => false, 'message' => 'Starting verse must be less than or equal to ending verse when reading within the same surah.'];
         }
 
         return ['valid' => true, 'message' => ''];

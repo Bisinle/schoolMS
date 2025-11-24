@@ -57,13 +57,7 @@ export default function QuranTrackingEdit({ tracking, students, surahs }) {
         const surahNumber = e.target.value;
         setData('surah_from', surahNumber);
         setData('verse_from', '');
-
-        if (data.surah_to && parseInt(data.surah_to) < parseInt(surahNumber)) {
-            setData('surah_to', surahNumber);
-            setData('verse_to', '');
-        } else if (!data.surah_to) {
-            setData('surah_to', surahNumber);
-        }
+        setData('verse_to', '');
 
         if (!surahNumber) {
             setSelectedSurahFrom(null);
@@ -113,30 +107,54 @@ export default function QuranTrackingEdit({ tracking, students, surahs }) {
         const verseFrom = parseInt(data.verse_from);
         const verseTo = parseInt(data.verse_to);
 
+        // Same surah - works for both ascending and descending
         if (surahFrom === surahTo) {
-            setTotalVerses((verseTo - verseFrom) + 1);
+            setTotalVerses(Math.abs(verseTo - verseFrom) + 1);
             return;
         }
 
         let total = 0;
         const surahsById = surahs.reduce((acc, s) => ({ ...acc, [s.id]: s }), {});
 
-        // First surah
-        const firstSurah = surahsById[surahFrom];
-        if (firstSurah) {
-            total += (firstSurah.total_verses - verseFrom) + 1;
+        // Ascending order (e.g., Surah 2 → Surah 5)
+        if (surahFrom < surahTo) {
+            // First surah: from verse_from to end
+            const firstSurah = surahsById[surahFrom];
+            if (firstSurah) {
+                total += (firstSurah.total_verses - verseFrom) + 1;
+            }
+
+            // Middle surahs: all verses
+            for (let i = surahFrom + 1; i < surahTo; i++) {
+                const middleSurah = surahsById[i];
+                if (middleSurah) {
+                    total += middleSurah.total_verses;
+                }
+            }
+
+            // Last surah: from beginning to verse_to
+            total += verseTo;
         }
 
-        // Middle surahs
-        for (let i = surahFrom + 1; i < surahTo; i++) {
-            const middleSurah = surahsById[i];
-            if (middleSurah) {
-                total += middleSurah.total_verses;
+        // Descending order (e.g., Surah 114 → Surah 90)
+        if (surahFrom > surahTo) {
+            // First surah: from beginning to verse_from
+            total += verseFrom;
+
+            // Middle surahs: all verses (going backward)
+            for (let i = surahFrom - 1; i > surahTo; i--) {
+                const middleSurah = surahsById[i];
+                if (middleSurah) {
+                    total += middleSurah.total_verses;
+                }
+            }
+
+            // Last surah: from verse_to to end
+            const lastSurah = surahsById[surahTo];
+            if (lastSurah) {
+                total += (lastSurah.total_verses - verseTo) + 1;
             }
         }
-
-        // Last surah
-        total += verseTo;
 
         setTotalVerses(total);
     };
@@ -300,7 +318,7 @@ export default function QuranTrackingEdit({ tracking, students, surahs }) {
                                     } ${!data.surah_from ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                                 >
                                     <option value="">Select Surah</option>
-                                    {surahs.filter(s => !data.surah_from || s.id >= parseInt(data.surah_from)).map((surah) => (
+                                    {surahs.map((surah) => (
                                         <option key={surah.id} value={surah.id}>
                                             {surah.id}. {surah.name} - {surah.total_verses} verses
                                         </option>

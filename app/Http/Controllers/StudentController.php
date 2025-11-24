@@ -7,6 +7,7 @@ use App\Models\Guardian;
 use App\Models\Grade;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class StudentController extends Controller
@@ -53,10 +54,14 @@ class StudentController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        // Get grades for filter dropdown
-        $grades = $user->isTeacher() 
-            ? $user->teacher->grades 
-            : Grade::where('status', 'active')->orderBy('level')->orderBy('name')->get();
+        // Get grades for filter dropdown (including Unassigned)
+        $grades = $user->isTeacher()
+            ? $user->teacher->grades
+            : Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
 
         return Inertia::render('Students/Index', [
             'students' => $students,
@@ -80,7 +85,9 @@ class StudentController extends Controller
                 ];
             });
 
+        // Get all active grades (including Unassigned)
         $grades = Grade::where('status', 'active')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
             ->orderBy('level')
             ->orderBy('name')
             ->get();
@@ -148,7 +155,9 @@ class StudentController extends Controller
                 ];
             });
 
+        // Get all active grades (including Unassigned)
         $grades = Grade::where('status', 'active')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
             ->orderBy('level')
             ->orderBy('name')
             ->get();
@@ -165,7 +174,11 @@ class StudentController extends Controller
         $this->authorize('update', $student);
 
         $validated = $request->validate([
-            'admission_number' => 'required|string|unique:students,admission_number,' . $student->id,
+            // 'admission_number' => [
+            //     'required',
+            //     'string',
+            //     Rule::unique('students', 'admission_number')->ignore($student->id),
+           // ],
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',

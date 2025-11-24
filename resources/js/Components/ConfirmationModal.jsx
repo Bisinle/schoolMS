@@ -10,7 +10,7 @@ export default function ConfirmationModal({
     message = 'Are you sure you want to proceed?',
     confirmText = 'Confirm',
     cancelText = 'Cancel',
-    type = 'danger', // danger, warning, info
+    type = 'danger', // danger, warning, info, success
     confirmButtonClass = '', // Custom button class to override default
     isLoading = false,
 }) {
@@ -29,6 +29,11 @@ export default function ConfirmationModal({
             icon: 'text-blue-600',
             iconBg: 'bg-blue-100',
             button: 'bg-blue-600 hover:bg-blue-700',
+        },
+        success: {
+            icon: 'text-green-600',
+            iconBg: 'bg-green-100',
+            button: 'bg-green-600 hover:bg-green-700',
         },
     };
 

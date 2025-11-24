@@ -45,10 +45,14 @@ class ExamController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        // Get available grades for filter
-        $grades = $user->isTeacher() 
-            ? $user->teacher->grades 
-            : Grade::where('status', 'active')->get();
+        // Get available grades for filter (including Unassigned)
+        $grades = $user->isTeacher()
+            ? $user->teacher->grades
+            : Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
 
         return Inertia::render('Exams/Index', [
             'exams' => $exams,
@@ -63,10 +67,14 @@ class ExamController extends Controller
 
         $user = $request->user();
 
-        // Get available grades
-        $grades = $user->isTeacher() 
-            ? $user->teacher->grades 
-            : Grade::where('status', 'active')->get();
+        // Get available grades (including Unassigned)
+        $grades = $user->isTeacher()
+            ? $user->teacher->grades
+            : Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
 
         return Inertia::render('Exams/Create', [
             'grades' => $grades,
@@ -141,10 +149,14 @@ class ExamController extends Controller
 
         $user = request()->user();
 
-        // Get available grades
-        $grades = $user->isTeacher() 
-            ? $user->teacher->grades 
-            : Grade::where('status', 'active')->get();
+        // Get available grades (including Unassigned)
+        $grades = $user->isTeacher()
+            ? $user->teacher->grades
+            : Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
 
         // Get subjects for selected grade
         $subjects = Subject::where('status', 'active')

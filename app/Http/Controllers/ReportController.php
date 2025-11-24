@@ -71,9 +71,14 @@ class ReportController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        $grades = $user->isTeacher() 
-            ? $user->teacher->grades 
-            : Grade::where('status', 'active')->orderBy('name')->get();
+        // Get grades for filter dropdown (including Unassigned)
+        $grades = $user->isTeacher()
+            ? $user->teacher->grades
+            : Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
 
         return Inertia::render('Reports/Index', [
             'students' => $students,

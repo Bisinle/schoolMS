@@ -22,9 +22,17 @@ class GradeController extends Controller
         $user = $request->user();
 
         // Build query
-        $query = $user->isTeacher() 
-            ? $user->teacher->grades() 
+        $query = $user->isTeacher()
+            ? $user->teacher->grades()
             : Grade::query();
+
+        // Apply archived filter (default: show only active/non-deleted)
+        if ($request->show_archived === 'true') {
+            $query->withTrashed();
+        } elseif ($request->show_archived === 'only') {
+            $query->onlyTrashed();
+        }
+        // else: default behavior (only non-deleted grades)
 
         // Apply search filter
         if ($request->search) {
@@ -39,13 +47,14 @@ class GradeController extends Controller
             $query->where('level', $request->level);
         }
 
-        $grades = $query->withCount('students', 'subjects')
+        $grades = $query->withCount('students', 'subjects', 'exams')
             ->orderBy('level')
             ->orderBy('name')
             ->get();
 
         return Inertia::render('Grades/Index', [
             'grades' => $grades,
+            'filters' => $request->only(['search', 'level', 'show_archived']),
             'filters' => $request->only(['search', 'level']),
         ]);
     }
@@ -245,27 +254,66 @@ class GradeController extends Controller
         $this->authorize('delete', $grade);
 
         try {
-            // Check if grade has students
-            $studentCount = $grade->students()->count();
-            if ($studentCount > 0) {
+            // Prevent deletion of "Unassigned" grade
+            if ($grade->code === 'UNASSIGNED') {
                 return back()->withErrors([
-                    'error' => "Cannot delete grade '{$grade->name}' because it has {$studentCount} enrolled student(s). Please transfer students to another grade first."
+                    'error' => "The 'Unassigned' grade cannot be deleted as it is a system grade."
                 ]);
             }
+
+            DB::beginTransaction();
+
+            // Check if grade has students
+            $studentCount = $grade->students()->count();
 
             // Check if grade has exams
             $examCount = $grade->exams()->count();
-            if ($examCount > 0) {
-                return back()->withErrors([
-                    'error' => "Cannot delete grade '{$grade->name}' because it has {$examCount} exam(s) associated with it. Please delete the exams first or contact support."
-                ]);
-            }
 
             // Check if grade has attendance records
             $attendanceCount = DB::table('attendances')->where('grade_id', $grade->id)->count();
-            if ($attendanceCount > 0) {
-                return back()->withErrors([
-                    'error' => "Cannot delete grade '{$grade->name}' because it has {$attendanceCount} attendance record(s). This grade has historical data that cannot be deleted."
+
+            // If grade has NO students, exams, or attendance - allow hard delete
+            if ($studentCount === 0 && $examCount === 0 && $attendanceCount === 0) {
+                // Detach all many-to-many relationships
+                $grade->teachers()->detach();
+                $grade->subjects()->detach();
+
+                // Force delete (permanent deletion)
+                $grade->forceDelete();
+
+                DB::commit();
+
+                return redirect()->route('grades.index')
+                    ->with('success', "Grade '{$grade->name}' deleted permanently.");
+            }
+
+            // If grade has students, reassign them to "Unassigned" grade
+            if ($studentCount > 0) {
+                // Find or create "Unassigned" grade for this school
+                $unassignedGrade = Grade::firstOrCreate(
+                    [
+                        'school_id' => $grade->school_id,
+                        'code' => 'UNASSIGNED',
+                    ],
+                    [
+                        'name' => 'Unassigned',
+                        'level' => null,
+                        'capacity' => 9999,
+                        'description' => 'System grade for students without assigned grade',
+                        'status' => 'active',
+                    ]
+                );
+
+                // Reassign all students to "Unassigned" grade
+                $grade->students()->update([
+                    'grade_id' => $unassignedGrade->id,
+                    'class_name' => $unassignedGrade->name,
+                ]);
+
+                Log::info("Reassigned {$studentCount} students from grade '{$grade->name}' to 'Unassigned'", [
+                    'grade_id' => $grade->id,
+                    'unassigned_grade_id' => $unassignedGrade->id,
+                    'student_count' => $studentCount,
                 ]);
             }
 
@@ -273,13 +321,29 @@ class GradeController extends Controller
             $grade->teachers()->detach();
             $grade->subjects()->detach();
 
-            // Delete the grade
+            // Set status to inactive before archiving
+            $grade->status = 'inactive';
+            $grade->save();
+
+            // Soft delete the grade (preserves historical data)
             $grade->delete();
 
+            DB::commit();
+
+            $message = "Grade '{$grade->name}' archived successfully.";
+            if ($studentCount > 0) {
+                $message .= " {$studentCount} student(s) were moved to 'Unassigned' grade.";
+            }
+            if ($examCount > 0 || $attendanceCount > 0) {
+                $message .= " Historical exam and attendance records have been preserved.";
+            }
+
             return redirect()->route('grades.index')
-                ->with('success', "Grade '{$grade->name}' deleted successfully.");
+                ->with('success', $message);
 
         } catch (\Exception $e) {
+            DB::rollBack();
+
             Log::error('Grade deletion failed', [
                 'grade_id' => $grade->id,
                 'grade_name' => $grade->name,
@@ -288,7 +352,46 @@ class GradeController extends Controller
             ]);
 
             return back()->withErrors([
-                'error' => "Failed to delete grade '{$grade->name}'. Error: " . $e->getMessage()
+                'error' => "Failed to delete/archive grade '{$grade->name}'. Error: " . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Restore (unarchive) a soft-deleted grade.
+     */
+    public function restore($id)
+    {
+        // Find the grade including soft-deleted ones
+        $grade = Grade::withTrashed()->findOrFail($id);
+
+        $this->authorize('delete', $grade); // Same permission as delete
+
+        try {
+            // Restore the grade (unarchive)
+            $grade->restore();
+
+            // Set status to active
+            $grade->update(['status' => 'active']);
+
+            Log::info("Grade '{$grade->name}' unarchived successfully", [
+                'grade_id' => $grade->id,
+                'grade_name' => $grade->name,
+            ]);
+
+            return redirect()->route('grades.index')
+                ->with('success', "Grade '{$grade->name}' has been unarchived and set to active status.");
+
+        } catch (\Exception $e) {
+            Log::error('Grade restore failed', [
+                'grade_id' => $grade->id,
+                'grade_name' => $grade->name,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return back()->withErrors([
+                'error' => "Failed to unarchive grade '{$grade->name}'. Error: " . $e->getMessage()
             ]);
         }
     }

@@ -25,11 +25,15 @@ class AttendanceController extends Controller
         $selectedDate = $request->input('date', now()->toDateString());
         $selectedGradeId = $request->input('grade_id');
 
-        // Get grades based on user role
+        // Get grades based on user role (including Unassigned)
         if ($user->isTeacher()) {
             $grades = $user->teacher->grades;
         } else {
-            $grades = Grade::where('status', 'active')->orderBy('name')->get();
+            $grades = Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
         }
 
         // If no grade selected, select first available grade
@@ -109,11 +113,15 @@ class AttendanceController extends Controller
         $endDate = $request->input('end_date', now()->toDateString());
         $gradeId = $request->input('grade_id');
 
-        // Get grades based on user role
+        // Get grades based on user role (including Unassigned)
         if ($user->isTeacher()) {
             $grades = $user->teacher->grades;
         } else {
-            $grades = Grade::where('status', 'active')->orderBy('name')->get();
+            $grades = Grade::where('status', 'active')
+                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+                ->orderBy('level')
+                ->orderBy('name')
+                ->get();
         }
 
         $reportData = null;

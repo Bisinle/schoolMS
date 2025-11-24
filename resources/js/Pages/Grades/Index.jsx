@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { Plus, Eye, Edit, Trash2, Users, BookOpen, Tag, Search } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Users, BookOpen, Tag, Search, Archive, RefreshCw } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function GradesIndex({ grades, filters = {}, auth }) {
@@ -10,23 +10,44 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
 
     const [search, setSearch] = useState(filters.search || '');
     const [level, setLevel] = useState(filters.level || '');
+    const [showArchived, setShowArchived] = useState(filters.show_archived || '');
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
     const [selectedGrade, setSelectedGrade] = useState(null);
 
     const handleSearch = (e) => {
         e.preventDefault();
-        router.get('/grades', { search, level }, { preserveState: true });
+        router.get('/grades', { search, level, show_archived: showArchived }, { preserveState: true });
     };
 
     const handleLevelChange = (e) => {
         const newLevel = e.target.value;
         setLevel(newLevel);
-        router.get('/grades', { search, level: newLevel }, { preserveState: true });
+        router.get('/grades', { search, level: newLevel, show_archived: showArchived }, { preserveState: true });
+    };
+
+    const handleArchivedChange = (e) => {
+        const newShowArchived = e.target.value;
+        setShowArchived(newShowArchived);
+        router.get('/grades', { search, level, show_archived: newShowArchived }, { preserveState: true });
     };
 
     const confirmDelete = (grade) => {
         setSelectedGrade(grade);
         setShowDeleteModal(true);
+    };
+
+    const confirmUnarchive = (grade) => {
+        setSelectedGrade(grade);
+        setShowUnarchiveModal(true);
+    };
+
+    const isUnassignedGrade = (grade) => {
+        return grade.code === 'UNASSIGNED' || grade.name === 'Unassigned';
+    };
+
+    const isArchivedGrade = (grade) => {
+        return grade.deleted_at !== null;
     };
 
     const handleDelete = () => {
@@ -39,6 +60,20 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                 onError: (errors) => {
                     // Keep modal open to show error
                     console.error('Delete error:', errors);
+                },
+            });
+        }
+    };
+
+    const handleUnarchive = () => {
+        if (selectedGrade) {
+            router.post(route('grades.restore', selectedGrade.id), {}, {
+                onSuccess: () => {
+                    setShowUnarchiveModal(false);
+                    setSelectedGrade(null);
+                },
+                onError: (errors) => {
+                    console.error('Unarchive error:', errors);
                 },
             });
         }
@@ -62,19 +97,19 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                 {/* Header Actions */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="flex items-center space-x-3">
-                        <BookOpen className="w-8 h-8 text-orange" />
+                        <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-orange" />
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Grades</h2>
-                            <p className="text-sm text-gray-600">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Grades</h2>
+                            <p className="text-xs sm:text-sm text-gray-600">
                                 Manage grades and class levels
                             </p>
                         </div>
                     </div>
 
                     {/* Search and Filter */}
-                    <div className="flex flex-wrap gap-2 w-full lg:w-auto">
-                        <form onSubmit={handleSearch} className="flex gap-2 flex-1 lg:flex-initial">
-                            <div className="relative flex-1 lg:w-64">
+                    <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                            <div className="relative w-full sm:flex-1 lg:w-64">
                                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                                 <input
                                     type="text"
@@ -84,25 +119,36 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                                     className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                                 />
                             </div>
-                            {!isMadrasah && (
-                            <select
-                                value={level}
-                                onChange={handleLevelChange}
-                                className="px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
-                            >
-                                <option value="">All Levels</option>
-                                <option value="ECD">ECD</option>
-                                <option value="LOWER PRIMARY">Lower Primary</option>
-                                <option value="UPPER PRIMARY">Upper Primary</option>
-                                <option value="JUNIOR SECONDARY">Junior Secondary</option>
-                            </select>
-                            )}
+                            <div className="flex gap-2">
+                                {!isMadrasah && (
+                                <select
+                                    value={level}
+                                    onChange={handleLevelChange}
+                                    className="flex-1 sm:flex-initial px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all text-sm"
+                                >
+                                    <option value="">All Levels</option>
+                                    <option value="ECD">ECD</option>
+                                    <option value="LOWER PRIMARY">Lower Primary</option>
+                                    <option value="UPPER PRIMARY">Upper Primary</option>
+                                    <option value="JUNIOR SECONDARY">Junior Secondary</option>
+                                </select>
+                                )}
+                                <select
+                                    value={showArchived}
+                                    onChange={handleArchivedChange}
+                                    className="flex-1 sm:flex-initial px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all text-sm"
+                                >
+                                    <option value="">Active Only</option>
+                                    <option value="true">All (Including Archived)</option>
+                                    <option value="only">Archived Only</option>
+                                </select>
+                            </div>
                         </form>
 
                         {auth.user.role === 'admin' && (
                             <Link
                                 href="/grades/create"
-                                className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                                className="inline-flex items-center justify-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
                             >
                                 <Plus className="w-5 h-5 mr-2" />
                                 Add Grade
@@ -112,23 +158,36 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                 </div>
 
                 {/* Grades Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">
                     {grades.length > 0 ? (
-                        grades.map((grade) => (
-                            <div
+                        grades.map((grade) => {
+                            const isUnassigned = isUnassignedGrade(grade);
+                            const isArchived = isArchivedGrade(grade);
+                            const hasHistoricalData = grade.students_count > 0 || grade.exams_count > 0;
+
+                            return (
+                                <div
                                 key={grade.id}
-                                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-200"
+                                className={`rounded-xl border-2 overflow-hidden transition-all duration-300 ${
+                                    isArchived
+                                        ? 'bg-gradient-to-br from-red-50 to-red-100 border-red-300 shadow-md hover:shadow-xl hover:border-red-400'
+                                        : isUnassigned
+                                        ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-amber-300 shadow-md hover:shadow-xl hover:border-amber-400'
+                                        : 'bg-gradient-to-br from-white to-gray-50 border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-300'
+                                }`}
                             >
                                 {/* Card Header */}
-                                <div className="p-6 border-b border-gray-100">
-                                    <div className="flex items-start justify-between mb-3">
-                                        <div className="flex-1">
-                                            <h3 className="text-xl font-bold text-gray-900 mb-1">
+                                <div className={`p-4 md:p-5 border-b ${
+                                    isArchived ? 'border-red-200/60' : isUnassigned ? 'border-gray-300/60' : 'border-gray-200/60'
+                                }`}>
+                                    <div className="flex items-start justify-between mb-2.5">
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1.5 truncate">
                                                 {grade.name}
                                             </h3>
-                                            <div className="flex items-center gap-2 flex-wrap">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
                                                 {grade.code && (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100/80 text-gray-600 border border-gray-200/50">
                                                         <Tag className="w-3 h-3 mr-1" />
                                                         {grade.code}
                                                     </span>
@@ -138,68 +197,108 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                                                     {grade.level}
                                                 </span>
                                                 )}
+                                                {isUnassigned && (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200/70 text-gray-700 border border-gray-300/50">
+                                                        System
+                                                    </span>
+                                                )}
                                             </div>
                                         </div>
-                                        <span
-                                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                                                grade.status === 'active'
-                                                    ? 'bg-green-100 text-green-800'
-                                                    : 'bg-red-100 text-red-800'
-                                            }`}
-                                        >
-                                            {grade.status}
-                                        </span>
+                                        <div className="flex flex-col gap-1 ml-2">
+                                            <span
+                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                                                    grade.status === 'active'
+                                                        ? 'bg-green-100/80 text-green-700 border border-green-200/50'
+                                                        : 'bg-red-100/80 text-red-700 border border-red-200/50'
+                                                }`}
+                                            >
+                                                {grade.status.charAt(0).toUpperCase() + grade.status.slice(1)}
+                                            </span>
+                                            {grade.deleted_at && (
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100/80 text-gray-700 border border-gray-200/50">
+                                                    <Archive className="w-3 h-3 mr-1" />
+                                                    Archived
+                                                </span>
+                                            )}
+                                        </div>
                                     </div>
 
                                     {/* Stats */}
-                                    <div className="flex items-center gap-4 text-sm">
-                                        <div className="flex items-center text-blue-600">
-                                            <Users className="w-4 h-4 mr-1" />
-                                            <span className="font-medium">
-                                                {grade.students_count} student{grade.students_count !== 1 ? 's' : ''}
+                                    <div className="flex items-center gap-3 text-sm flex-wrap">
+                                        <div className="flex items-center text-blue-600 bg-blue-50/80 px-2.5 py-1 rounded border border-blue-200/50">
+                                            <Users className="w-3.5 h-3.5 mr-1.5" />
+                                            <span className="font-semibold text-xs md:text-sm">
+                                                {grade.students_count}
+                                            </span>
+                                            <span className="ml-1 text-xs font-medium hidden sm:inline">
+                                                student{grade.students_count !== 1 ? 's' : ''}
                                             </span>
                                         </div>
-                                        <div className="flex items-center text-green-600">
-                                            <BookOpen className="w-4 h-4 mr-1" />
-                                            <span className="font-medium">
-                                                {grade.subjects_count} subject{grade.subjects_count !== 1 ? 's' : ''}
+                                        <div className="flex items-center text-green-600 bg-green-50/80 px-2.5 py-1 rounded border border-green-200/50">
+                                            <BookOpen className="w-3.5 h-3.5 mr-1.5" />
+                                            <span className="font-semibold text-xs md:text-sm">
+                                                {grade.subjects_count}
+                                            </span>
+                                            <span className="ml-1 text-xs font-medium hidden sm:inline">
+                                                subject{grade.subjects_count !== 1 ? 's' : ''}
                                             </span>
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Card Body */}
-                                <div className="p-6">
+                                <div className="p-3 md:p-4">
                                     {/* Actions */}
                                     <div className="flex gap-2">
-                                        <Link
-                                            href={`/grades/${grade.id}`}
-                                            className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                                        >
-                                            <Eye className="w-4 h-4 mr-2" />
-                                            View
-                                        </Link>
-                                        {auth.user.role === 'admin' && (
+                                        {/* Archived Grade - Show only Unarchive button */}
+                                        {isArchived && auth.user.role === 'admin' ? (
+                                            <button
+                                                onClick={() => confirmUnarchive(grade)}
+                                                className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-green-600 bg-green-50/80 border border-green-200/50 rounded hover:bg-green-100 transition-colors"
+                                            >
+                                                <RefreshCw className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
+                                                <span>Unarchive Class</span>
+                                            </button>
+                                        ) : (
                                             <>
+                                                {/* Normal Grade - Show View, Edit, Delete */}
                                                 <Link
-                                                    href={`/grades/${grade.id}/edit`}
-                                                    className="flex-1 inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-orange bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                                                    href={`/grades/${grade.id}`}
+                                                    className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-blue-600 bg-blue-50/80 border border-blue-200/50 rounded hover:bg-blue-100 transition-colors"
                                                 >
-                                                    <Edit className="w-4 h-4 mr-2" />
-                                                    Edit
+                                                    <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
+                                                    <span className="hidden sm:inline">View</span>
                                                 </Link>
-                                                <button
-                                                    onClick={() => confirmDelete(grade)}
-                                                    className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+                                                {auth.user.role === 'admin' && !isUnassigned && (
+                                                    <>
+                                                        <Link
+                                                            href={`/grades/${grade.id}/edit`}
+                                                            className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-orange bg-orange-50/80 border border-orange-200/50 rounded hover:bg-orange-100 transition-colors"
+                                                        >
+                                                            <Edit className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
+                                                            <span className="hidden sm:inline">Edit</span>
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => confirmDelete(grade)}
+                                                            className="inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-red-600 bg-red-50/80 border border-red-200/50 rounded hover:bg-red-100 transition-colors"
+                                                            title={hasHistoricalData ? "Archive grade" : "Delete grade"}
+                                                        >
+                                                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                        </button>
+                                                    </>
+                                                )}
+                                                {isUnassigned && (
+                                                    <div className="flex-1 text-center text-xs md:text-sm text-gray-600 bg-gray-100/80 border border-gray-200/50 rounded px-3 py-2 font-medium">
+                                                        System grade - Protected
+                                                    </div>
+                                                )}
                                             </>
                                         )}
                                     </div>
                                 </div>
                             </div>
-                        ))
+                        );
+                        })
                     ) : (
                         <div className="col-span-full">
                             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
@@ -223,15 +322,96 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                 </div>
             </div>
 
-            {/* Delete Confirmation Modal */}
+            {/* Delete/Archive Confirmation Modal */}
             <ConfirmationModal
                 show={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={handleDelete}
-                title="Delete Grade"
-                message={`Are you sure you want to delete ${selectedGrade?.name}? This action cannot be undone. Make sure to transfer all students to another grade first.`}
-                confirmText="Delete"
-                type="danger"
+                title={
+                    selectedGrade?.students_count > 0 || selectedGrade?.exams_count > 0
+                        ? "Archive Grade"
+                        : "Delete Grade"
+                }
+                message={
+                    selectedGrade?.students_count > 0 ? (
+                        <div className="space-y-3">
+                            <p>You are about to archive <strong>{selectedGrade?.name}</strong>.</p>
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 md:p-4">
+                                <p className="text-xs md:text-sm text-yellow-800">
+                                    ⚠️ This grade has <strong>{selectedGrade?.students_count} student(s)</strong> enrolled.
+                                </p>
+                                <p className="text-xs md:text-sm text-yellow-800 mt-2">
+                                    All students will be automatically moved to the <strong>"Unassigned"</strong> grade.
+                                </p>
+                            </div>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4">
+                                <p className="text-xs md:text-sm text-blue-800">
+                                    ℹ️ Historical exam and attendance records will be preserved.
+                                </p>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-600">
+                                The grade will be archived and can be restored later if needed.
+                            </p>
+                        </div>
+                    ) : selectedGrade?.exams_count > 0 ? (
+                        <div className="space-y-3">
+                            <p>You are about to archive <strong>{selectedGrade?.name}</strong>.</p>
+                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4">
+                                <p className="text-xs md:text-sm text-blue-800">
+                                    ℹ️ This grade has historical exam or attendance records that will be preserved.
+                                </p>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-600">
+                                The grade will be archived and can be restored later if needed.
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            <p>Are you sure you want to permanently delete <strong>{selectedGrade?.name}</strong>?</p>
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-3 md:p-4">
+                                <p className="text-xs md:text-sm text-red-800">
+                                    ⚠️ This action cannot be undone. The grade will be permanently deleted.
+                                </p>
+                            </div>
+                            <p className="text-xs md:text-sm text-gray-600">
+                                This grade has no students, exams, or attendance records.
+                            </p>
+                        </div>
+                    )
+                }
+                confirmText={
+                    selectedGrade?.students_count > 0 || selectedGrade?.exams_count > 0
+                        ? "Archive Grade"
+                        : "Delete Permanently"
+                }
+                type={
+                    selectedGrade?.students_count > 0 || selectedGrade?.exams_count > 0
+                        ? "warning"
+                        : "danger"
+                }
+            />
+
+            {/* Unarchive Confirmation Modal */}
+            <ConfirmationModal
+                show={showUnarchiveModal}
+                onClose={() => setShowUnarchiveModal(false)}
+                onConfirm={handleUnarchive}
+                title="Unarchive Grade"
+                message={
+                    <div className="space-y-3">
+                        <p>Are you sure you want to unarchive <strong>{selectedGrade?.name}</strong>?</p>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3 md:p-4">
+                            <p className="text-xs md:text-sm text-green-800">
+                                ✓ This will restore the grade and set its status to <strong>active</strong>.
+                            </p>
+                        </div>
+                        <p className="text-xs md:text-sm text-gray-600">
+                            The grade will be available for use again.
+                        </p>
+                    </div>
+                }
+                confirmText="Unarchive Grade"
+                type="success"
             />
         </AuthenticatedLayout>
     );

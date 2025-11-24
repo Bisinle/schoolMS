@@ -40,8 +40,11 @@ class SubjectController extends Controller
     {
         $this->authorize('create', Subject::class);
 
+        // Get all active grades (including Unassigned)
         $grades = Grade::where('status', 'active')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
             ->orderBy('level')
+            ->orderBy('name')
             ->get();
 
         return Inertia::render('Subjects/Create', [
@@ -107,8 +110,11 @@ class SubjectController extends Controller
     {
         $this->authorize('update', $subject);
 
+        // Get all active grades (including Unassigned)
         $grades = Grade::where('status', 'active')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
             ->orderBy('level')
+            ->orderBy('name')
             ->get();
 
         $subject->load('grades');
