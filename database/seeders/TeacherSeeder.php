@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use App\Models\Teacher;
+use App\Services\UniqueIdentifierService;
 use Illuminate\Database\Seeder;
 
 class TeacherSeeder extends Seeder
@@ -20,7 +21,7 @@ class TeacherSeeder extends Seeder
         Teacher::create([
             'school_id' => $teacherUsers[0]->school_id,
             'user_id' => $teacherUsers[0]->id,
-            'employee_number' => 'T001',
+            'employee_number' => UniqueIdentifierService::generateEmployeeNumber($teacherUsers[0]->school_id),
             'phone_number' => '0712345678',
             'address' => 'Nairobi, Kenya',
             'qualification' => 'Bachelor of Education',
@@ -32,7 +33,7 @@ class TeacherSeeder extends Seeder
         Teacher::create([
             'school_id' => $teacherUsers[1]->school_id,
             'user_id' => $teacherUsers[1]->id,
-            'employee_number' => 'T002',
+            'employee_number' => UniqueIdentifierService::generateEmployeeNumber($teacherUsers[1]->school_id),
             'phone_number' => '0723456789',
             'address' => 'Nairobi, Kenya',
             'qualification' => 'Master of Science',
@@ -44,7 +45,7 @@ class TeacherSeeder extends Seeder
         Teacher::create([
             'school_id' => $teacherUsers[2]->school_id,
             'user_id' => $teacherUsers[2]->id,
-            'employee_number' => 'T003',
+            'employee_number' => UniqueIdentifierService::generateEmployeeNumber($teacherUsers[2]->school_id),
             'phone_number' => '0734567890',
             'address' => 'Mombasa, Kenya',
             'qualification' => 'Bachelor of Islamic Studies',
@@ -56,7 +57,7 @@ class TeacherSeeder extends Seeder
         Teacher::create([
             'school_id' => $teacherUsers[3]->school_id,
             'user_id' => $teacherUsers[3]->id,
-            'employee_number' => 'T004',
+            'employee_number' => UniqueIdentifierService::generateEmployeeNumber($teacherUsers[3]->school_id),
             'phone_number' => '0734567890',
             'address' => 'Mombasa, Kenya',
             'qualification' => 'Bachelor of Islamic Studies',
@@ -68,7 +69,7 @@ class TeacherSeeder extends Seeder
         Teacher::create([
             'school_id' => $teacherUsers[4]->school_id,
             'user_id' => $teacherUsers[4]->id,
-            'employee_number' => 'T005',
+            'employee_number' => UniqueIdentifierService::generateEmployeeNumber($teacherUsers[4]->school_id),
             'phone_number' => '0734567890',
             'address' => 'Mombasa, Kenya',
             'qualification' => 'Bachelor of Islamic Studies',

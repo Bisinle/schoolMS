@@ -29,7 +29,7 @@ class UserController extends Controller
     public function index(Request $request)
     {
         // School admins should only see users from their school
-        $query = User::with(['creator'])
+        $query = User::with(['creator', 'student', 'teacher', 'guardian'])
             ->withCount(['activityLogs', 'createdUsers'])
             ->where('school_id', auth()->user()->school_id);
 

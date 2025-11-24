@@ -6,6 +6,7 @@ use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\Guardian;
 use App\Models\School;
+use App\Services\UniqueIdentifierService;
 use Illuminate\Support\Facades\Hash;
 
 class GuardianSeeder extends Seeder
@@ -47,6 +48,7 @@ class GuardianSeeder extends Seeder
             Guardian::create([
                 'school_id' => $schoolId,
                 'user_id' => $user->id,
+                'guardian_number' => UniqueIdentifierService::generateGuardianNumber($schoolId),
                 'phone_number' => '0712' . str_pad($index + 100000, 6, '0', STR_PAD_LEFT),
                 'address' => 'Nairobi, Kenya',
                 'occupation' => $g['gender'] === 'male' ? 'Business Owner' : 'Teacher',

@@ -136,6 +136,15 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
+                            {/* Unique Identifier Badge at Top */}
+                            {(user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number) && (
+                                <div className="mb-2">
+                                    <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
+                                        {user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                                    </span>
+                                </div>
+                            )}
+
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-base font-bold text-gray-900 truncate">
                                     {user.name}
@@ -500,6 +509,9 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                                        ID
+                                    </th>
+                                    <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                         User
                                     </th>
                                     <th className="px-6 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
@@ -523,7 +535,7 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                 {users.data.length === 0 ? (
                                     <tr>
                                         <td
-                                            colSpan="6"
+                                            colSpan="7"
                                             className="px-6 py-12 text-center"
                                         >
                                             <p className="text-gray-500">
@@ -537,6 +549,15 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                             key={user.id}
                                             className="hover:bg-gray-50 transition-colors"
                                         >
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                {user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number ? (
+                                                    <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
+                                                        {user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-gray-400">N/A</span>
+                                                )}
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="w-10 h-10 rounded-full bg-orange flex items-center justify-center text-white font-semibold flex-shrink-0">

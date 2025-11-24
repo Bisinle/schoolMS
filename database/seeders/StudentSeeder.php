@@ -7,6 +7,7 @@ use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Grade;
 use App\Models\School;
+use App\Services\UniqueIdentifierService;
 use Illuminate\Support\Str;
 use Faker\Factory as Faker;
 
@@ -45,7 +46,6 @@ class StudentSeeder extends Seeder
             }
 
             $studentCount = 0;
-            $admissionPrefix = 'S2024';
 
             foreach ($guardians as $guardian) {
                 if ($studentCount >= 30) break;
@@ -62,7 +62,9 @@ class StudentSeeder extends Seeder
                     $grade = $grades->random();
                     $studentCount++;
                     $totalStudentCount++;
-                    $admissionNumber = $admissionPrefix . str_pad($studentCount, 3, '0', STR_PAD_LEFT);
+
+                    // Generate unique admission number using UniqueIdentifierService
+                    $admissionNumber = UniqueIdentifierService::generateAdmissionNumber($school->id);
 
                     Student::create([
                         'school_id' => $school->id,

@@ -86,6 +86,15 @@ function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete, getRo
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
+                            {/* Unique Identifier Badge at Top */}
+                            {(user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number) && (
+                                <div className="mb-2">
+                                    <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
+                                        {user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                                    </span>
+                                </div>
+                            )}
+
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-base font-bold text-gray-900 truncate">
                                     {user.name}
@@ -440,6 +449,9 @@ export default function Index({ users, schools, filters }) {
                                 <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                                     <tr>
                                         <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                            ID
+                                        </th>
+                                        <th className="px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                             User
                                         </th>
                                         <th className="hidden md:table-cell px-4 sm:px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
@@ -459,7 +471,7 @@ export default function Index({ users, schools, filters }) {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {users.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan="5" className="px-6 py-12 text-center">
+                                            <td colSpan="6" className="px-6 py-12 text-center">
                                                 <div className="flex flex-col items-center">
                                                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                                                         <Search className="w-8 h-8 text-gray-400" />
@@ -471,6 +483,15 @@ export default function Index({ users, schools, filters }) {
                                     ) : (
                                         users.data.map((user) => (
                                             <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                    {user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number ? (
+                                                        <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
+                                                            {user.student?.admission_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-xs text-gray-400">N/A</span>
+                                                    )}
+                                                </td>
                                                 <td className="px-4 sm:px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">

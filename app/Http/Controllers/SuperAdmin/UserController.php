@@ -17,7 +17,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('school:id,name')
+        $query = User::with(['school:id,name', 'student', 'teacher', 'guardian'])
             ->whereNotNull('school_id'); // Exclude super admins
 
         // Search
