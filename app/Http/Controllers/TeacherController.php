@@ -4,7 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Teacher;
 use App\Models\User;
-use App\Models\Grade;  // ADD THIS LINE
+use App\Models\Grade;
+use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -56,7 +57,6 @@ class TeacherController extends Controller
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
-            'employee_number' => 'required|string|unique:teachers,employee_number',
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
             'qualification' => 'nullable|string|max:255',
@@ -77,9 +77,12 @@ class TeacherController extends Controller
             'created_by' => auth()->id(),
         ]);
 
+        // Auto-generate employee number
+        $employeeNumber = UniqueIdentifierService::generateEmployeeNumber(auth()->user()->school_id);
+
         $teacher = Teacher::create([
             'user_id' => $user->id,
-            'employee_number' => $validated['employee_number'],
+            'employee_number' => $employeeNumber,
             'phone_number' => $validated['phone_number'],
             'address' => $validated['address'],
             'qualification' => $validated['qualification'],
@@ -141,7 +144,6 @@ class TeacherController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $teacher->user_id,
-            'employee_number' => 'required|string|unique:teachers,employee_number,' . $teacher->id,
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
             'qualification' => 'nullable|string|max:255',
@@ -159,7 +161,6 @@ class TeacherController extends Controller
         ]);
 
         $teacher->update([
-            'employee_number' => $validated['employee_number'],
             'phone_number' => $validated['phone_number'],
             'address' => $validated['address'],
             'qualification' => $validated['qualification'],

@@ -4,7 +4,6 @@ import { ArrowLeft, Save } from 'lucide-react';
 
 export default function StudentsCreate({ guardians, grades }) {
     const { data, setData, post, processing, errors } = useForm({
-        admission_number: '',
         first_name: '',
         last_name: '',
         gender: 'male',
@@ -48,24 +47,26 @@ export default function StudentsCreate({ guardians, grades }) {
                                 Personal Information
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Admission Number */}
-                                <div>
+                                {/* Admission Number - Auto-generated */}
+                                <div className="md:col-span-2">
                                     <label htmlFor="admission_number" className="block text-sm font-medium text-gray-700 mb-2">
-                                        Admission Number <span className="text-red-500">*</span>
+                                        Admission Number
                                     </label>
-                                    <input
-                                        type="text"
-                                        id="admission_number"
-                                        value={data.admission_number}
-                                        onChange={(e) => setData('admission_number', e.target.value)}
-                                        className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
-                                            errors.admission_number ? 'border-red-500' : 'border-gray-300'
-                                        }`}
-                                        placeholder="e.g., S2024001"
-                                    />
-                                    {errors.admission_number && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.admission_number}</p>
-                                    )}
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            id="admission_number"
+                                            value="Will be auto-generated (e.g., STU-25-001)"
+                                            readOnly
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                                            Auto-generated
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        A unique admission number will be automatically assigned upon registration
+                                    </p>
                                 </div>
 
                                 {/* First Name */}
@@ -245,7 +246,7 @@ export default function StudentsCreate({ guardians, grades }) {
                                         <option value="">Select Guardian</option>
                                         {guardians.map((guardian) => (
                                             <option key={guardian.id} value={guardian.id}>
-                                                {guardian.name} ({guardian.relationship}) - {guardian.phone}
+                                                {guardian.guardian_number} - {guardian.name} ({guardian.relationship})
                                             </option>
                                         ))}
                                     </select>

@@ -37,8 +37,12 @@ export default function TeachersShow({ teacher }) {
                                 {teacher.user?.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
+                                <div className="mb-2">
+                                    <span className="inline-block px-3 py-1.5 text-sm font-bold rounded-md bg-white text-orange">
+                                        {teacher.employee_number}
+                                    </span>
+                                </div>
                                 <h2 className="text-2xl font-bold text-white">{teacher.user?.name}</h2>
-                                <p className="text-orange-100 mt-1">Employee No: {teacher.employee_number}</p>
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mt-2 ${
                                     teacher.status === 'active' 
                                         ? 'bg-green-100 text-green-800' 

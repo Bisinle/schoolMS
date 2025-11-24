@@ -13,6 +13,7 @@ class Guardian extends Model
     protected $fillable = [
         'school_id',
         'user_id',
+        'guardian_number',
         'phone_number',
         'address',
         'occupation',

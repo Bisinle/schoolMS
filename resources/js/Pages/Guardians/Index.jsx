@@ -86,6 +86,13 @@ function MobileGuardianItem({ guardian, auth, onDelete }) {
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
+                            {/* Guardian Number Badge at Top */}
+                            <div className="mb-2">
+                                <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
+                                    {guardian.guardian_number}
+                                </span>
+                            </div>
+
                             <h3 className="text-base font-bold text-gray-900 truncate mb-2">
                                 {guardian.user?.name}
                             </h3>
@@ -275,6 +282,9 @@ export default function GuardiansIndex({ guardians, filters, auth }) {
                             <thead className="bg-gray-50">
                                 <tr>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                                        Guardian No
+                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Name
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -298,6 +308,9 @@ export default function GuardiansIndex({ guardians, filters, auth }) {
                                 {guardians.data.map((guardian) => (
                                     <tr key={guardian.id} className="hover:bg-gray-50 transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-navy">
+                                            {guardian.guardian_number}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                             {guardian.user?.name}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">

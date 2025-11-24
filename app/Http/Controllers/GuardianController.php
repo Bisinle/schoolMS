@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Guardian;
 use App\Models\User;
+use App\Services\UniqueIdentifierService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -65,6 +66,7 @@ class GuardianController extends Controller
 
         Guardian::create([
             'user_id' => $user->id,
+            'guardian_number' => UniqueIdentifierService::generateGuardianNumber(auth()->user()->school_id),
             'phone_number' => $validated['phone_number'],
             'address' => $validated['address'],
             'occupation' => $validated['occupation'],

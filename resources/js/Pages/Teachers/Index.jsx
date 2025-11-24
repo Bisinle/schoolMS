@@ -79,6 +79,13 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
+                            {/* Employee Number Badge at Top */}
+                            <div className="mb-2">
+                                <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
+                                    {teacher.employee_number}
+                                </span>
+                            </div>
+
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-base font-bold text-gray-900 truncate">
                                     {teacher.user?.name}
@@ -89,8 +96,6 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                                     {teacher.status === 'active' ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
-
-                            <p className="text-xs text-gray-600 truncate mb-2">{teacher.employee_number}</p>
 
                             <div className="flex items-center gap-2 flex-wrap mb-2">
                                 <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-blue-100 text-blue-700">

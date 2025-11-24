@@ -11,7 +11,6 @@ export default function TeachersCreate({ grades }) {
         name: '',
         email: '',
         password: '',
-        employee_number: '',
         phone_number: '',
         address: '',
         qualification: '',
@@ -67,6 +66,28 @@ export default function TeachersCreate({ grades }) {
                                 Personal Information
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Employee Number - Auto-generated */}
+                                <div className="md:col-span-2">
+                                    <label htmlFor="employee_number" className="block text-sm font-medium text-gray-700 mb-1">
+                                        Employee Number
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            id="employee_number"
+                                            value="Will be auto-generated (e.g., EMP-25-001)"
+                                            readOnly
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                                        />
+                                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                                            Auto-generated
+                                        </span>
+                                    </div>
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        A unique employee number will be automatically assigned upon registration
+                                    </p>
+                                </div>
+
                                 {/* Full Name */}
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -112,22 +133,6 @@ export default function TeachersCreate({ grades }) {
                                     />
                                     {errors.password && (
                                         <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-                                    )}
-                                </div>
-
-                                {/* Employee Number */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Employee Number <span className="text-red-500">*</span>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={data.employee_number}
-                                        onChange={(e) => setData('employee_number', e.target.value)}
-                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
-                                    />
-                                    {errors.employee_number && (
-                                        <p className="mt-1 text-sm text-red-600">{errors.employee_number}</p>
                                     )}
                                 </div>
 

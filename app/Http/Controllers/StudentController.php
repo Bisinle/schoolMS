@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Grade;
+use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
@@ -79,6 +80,7 @@ class StudentController extends Controller
             ->map(function ($guardian) {
                 return [
                     'id' => $guardian->id,
+                    'guardian_number' => $guardian->guardian_number ?? 'N/A',
                     'name' => $guardian->user->name ?? 'Unknown',
                     'phone' => $guardian->phone_number ?? 'N/A',
                     'relationship' => ucfirst($guardian->relationship ?? 'N/A'),
@@ -103,7 +105,6 @@ class StudentController extends Controller
         $this->authorize('create', Student::class);
 
         $validated = $request->validate([
-            'admission_number' => 'required|string|unique:students,admission_number',
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
@@ -113,6 +114,11 @@ class StudentController extends Controller
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
         ]);
+
+        // Auto-generate admission number
+        $validated['admission_number'] = UniqueIdentifierService::generateAdmissionNumber(
+            auth()->user()->school_id
+        );
 
         // Get grade name for class_name field
         $grade = Grade::find($validated['grade_id']);
@@ -149,6 +155,7 @@ class StudentController extends Controller
             ->map(function ($guardian) {
                 return [
                     'id' => $guardian->id,
+                    'guardian_number' => $guardian->guardian_number ?? 'N/A',
                     'name' => $guardian->user->name ?? 'Unknown',
                     'phone' => $guardian->phone_number ?? 'N/A',
                     'relationship' => ucfirst($guardian->relationship ?? 'N/A'),

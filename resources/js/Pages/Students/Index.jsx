@@ -86,6 +86,13 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
                 >
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
+                            {/* Admission Number Badge at Top */}
+                            <div className="mb-2">
+                                <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
+                                    {student.admission_number}
+                                </span>
+                            </div>
+
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-base font-bold text-gray-900 truncate">
                                     {student.first_name} {student.last_name}
@@ -96,8 +103,6 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
                                     {student.status === 'active' ? 'Active' : 'Inactive'}
                                 </span>
                             </div>
-
-                            <p className="text-xs text-gray-600 truncate mb-2">{student.admission_number}</p>
 
                             <div className="flex items-center gap-2 flex-wrap">
                                 <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-orange-100 text-orange-700">
@@ -323,8 +328,8 @@ export default function StudentsIndex({ students, grades, filters = {}, auth }) 
                                 {/* Keep your existing desktop table exactly as it is */}
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Admission No</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Grade</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Gender</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
@@ -335,10 +340,10 @@ export default function StudentsIndex({ students, grades, filters = {}, auth }) 
                                     {students.data && students.data.map((student) => (
                                         <tr key={student.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-navy">
-                                                {student.first_name} {student.last_name}
+                                                {student.admission_number}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {student.admission_number}
+                                                {student.first_name} {student.last_name}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {student.grade?.name || 'No Grade'}

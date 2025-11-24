@@ -25,6 +25,28 @@ export default function GuardiansEdit({ guardian }) {
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Guardian Number - Read-only */}
+                            <div className="md:col-span-2">
+                                <label htmlFor="guardian_number" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Guardian Number
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        id="guardian_number"
+                                        value={guardian.guardian_number}
+                                        readOnly
+                                        className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                                    />
+                                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded-full font-medium">
+                                        Read-only
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Guardian number cannot be changed
+                                </p>
+                            </div>
+
                             {/* Full Name */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">

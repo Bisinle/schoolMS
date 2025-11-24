@@ -37,6 +37,11 @@ export default function GuardiansShow({ guardian, studentsWithAttendance, curren
                                 {guardian.user?.name.charAt(0).toUpperCase()}
                             </div>
                             <div>
+                                <div className="mb-2">
+                                    <span className="inline-block px-3 py-1.5 text-sm font-bold rounded-md bg-white text-orange">
+                                        {guardian.guardian_number}
+                                    </span>
+                                </div>
                                 <h2 className="text-2xl font-bold text-white">{guardian.user?.name}</h2>
                                 <p className="text-orange-100 mt-1">{guardian.relationship}</p>
                             </div>
