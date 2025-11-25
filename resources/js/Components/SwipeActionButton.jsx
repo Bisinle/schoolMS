@@ -82,26 +82,31 @@ export default function SwipeActionButton({
         ${config.padding}
         ${config.radius}
         ${config.shadow}
-        bg-white/20 
-        backdrop-blur-sm 
-        active:scale-95 
+        bg-white/90
+        backdrop-blur-sm
+        active:scale-95
         transition-transform
         inline-flex
         items-center
         justify-center
-        hover:bg-white/30
+        hover:bg-white
     `.trim().replace(/\s+/g, ' ');
 
     // Combine classes
     const buttonClasses = `${baseClasses} ${className}`.trim();
 
     // Icon with proper sizing and color
-    // Handle both component (function) and element (JSX) formats
+    // Handle both component (function/forwardRef) and element (JSX) formats
+    const isComponent = Icon && (
+        typeof Icon === 'function' ||
+        (typeof Icon === 'object' && Icon.$$typeof === Symbol.for('react.forward_ref'))
+    );
+
     const iconElement = Icon ? (
-        typeof Icon === 'function' ? (
+        isComponent ? (
             <Icon
                 size={config.iconSizePx}
-                className="text-white"
+                className="text-gray-700"
                 strokeWidth={2.5}
                 aria-hidden="true"
             />
@@ -110,7 +115,7 @@ export default function SwipeActionButton({
             React.isValidElement(Icon) ? (
                 React.cloneElement(Icon, {
                     size: config.iconSizePx,
-                    className: `text-white ${Icon.props?.className || ''}`,
+                    className: `text-gray-700 ${Icon.props?.className || ''}`,
                     strokeWidth: 2.5,
                     'aria-hidden': true
                 })

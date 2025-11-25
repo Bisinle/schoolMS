@@ -97,6 +97,7 @@ export default function SwipeableListItem({
             orange: 'bg-gradient-to-r from-orange-500 to-red-500',
             purple: 'bg-gradient-to-l from-purple-500 to-indigo-600',
             indigo: 'bg-gradient-to-l from-indigo-500 to-blue-600',
+            yellow: 'bg-gradient-to-r from-yellow-500 to-amber-500',
         };
         return gradients[color] || gradients.blue;
     };
