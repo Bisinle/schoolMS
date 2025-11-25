@@ -78,48 +78,48 @@ export default function Show({ category }) {
                         </div>
                     </div>
 
-                    {/* Statistics */}
-                    <div className="grid grid-cols-5 gap-4 p-6 bg-gray-50 border-b border-gray-200">
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-navy">
+                    {/* Statistics - Mobile Optimized */}
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4 p-4 sm:p-6 bg-gray-50 border-b border-gray-200">
+                        <div className="text-center p-3 sm:p-0 bg-white sm:bg-transparent rounded-lg sm:rounded-none">
+                            <div className="text-2xl sm:text-3xl font-bold text-navy">
                                 {category.documents_count}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1">
+                            <div className="text-xs sm:text-sm text-gray-600 mt-1">
                                 Total Documents
                             </div>
                         </div>
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-yellow-600">
+                        <div className="text-center p-3 sm:p-0 bg-yellow-50 sm:bg-transparent rounded-lg sm:rounded-none">
+                            <div className="text-2xl sm:text-3xl font-bold text-yellow-600">
                                 {category.pending_count}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1 flex items-center justify-center">
+                            <div className="text-xs sm:text-sm text-gray-600 mt-1 flex items-center justify-center">
                                 <Clock className="w-3 h-3 mr-1" />
                                 Pending
                             </div>
                         </div>
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-green-600">
+                        <div className="text-center p-3 sm:p-0 bg-green-50 sm:bg-transparent rounded-lg sm:rounded-none">
+                            <div className="text-2xl sm:text-3xl font-bold text-green-600">
                                 {category.verified_count}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1 flex items-center justify-center">
+                            <div className="text-xs sm:text-sm text-gray-600 mt-1 flex items-center justify-center">
                                 <CheckCircle className="w-3 h-3 mr-1" />
                                 Verified
                             </div>
                         </div>
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-red-600">
+                        <div className="text-center p-3 sm:p-0 bg-red-50 sm:bg-transparent rounded-lg sm:rounded-none">
+                            <div className="text-2xl sm:text-3xl font-bold text-red-600">
                                 {category.rejected_count}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1 flex items-center justify-center">
+                            <div className="text-xs sm:text-sm text-gray-600 mt-1 flex items-center justify-center">
                                 <XCircle className="w-3 h-3 mr-1" />
                                 Rejected
                             </div>
                         </div>
-                        <div className="text-center">
-                            <div className="text-3xl font-bold text-gray-600">
+                        <div className="text-center p-3 sm:p-0 bg-gray-100 sm:bg-transparent rounded-lg sm:rounded-none col-span-2 sm:col-span-1">
+                            <div className="text-2xl sm:text-3xl font-bold text-gray-600">
                                 {category.expired_count}
                             </div>
-                            <div className="text-sm text-gray-600 mt-1 flex items-center justify-center">
+                            <div className="text-xs sm:text-sm text-gray-600 mt-1 flex items-center justify-center">
                                 <AlertCircle className="w-3 h-3 mr-1" />
                                 Expired
                             </div>

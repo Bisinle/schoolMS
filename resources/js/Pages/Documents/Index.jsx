@@ -20,17 +20,24 @@ import {
     Calendar,
     Tag,
 } from "lucide-react";
-import { useSwipeable } from 'react-swipeable';
-import SwipeActionButton from '@/Components/SwipeActionButton';
+import { useSwipeable } from "react-swipeable";
+import SwipeActionButton from "@/Components/SwipeActionButton";
 
 // Mobile List Item Component
-function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, getEntityName }) {
+function MobileDocumentItem({
+    doc,
+    auth,
+    onDelete,
+    onDownload,
+    getStatusBadge,
+    getEntityName,
+}) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [swipeAction, setSwipeAction] = useState(null);
 
     const handlers = useSwipeable({
-        onSwipedLeft: () => setSwipeAction('primary'),
-        onSwipedRight: () => setSwipeAction('secondary'),
+        onSwipedLeft: () => setSwipeAction("primary"),
+        onSwipedRight: () => setSwipeAction("secondary"),
         onSwiping: () => {},
         trackMouse: false,
         preventScrollOnSwipe: false,
@@ -40,7 +47,7 @@ function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, g
     return (
         <div className="relative bg-white border-b border-gray-200 overflow-hidden">
             {/* Swipe Actions Background */}
-            {swipeAction === 'primary' && (
+            {swipeAction === "primary" && (
                 <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
                     <SwipeActionButton
                         icon={<Eye className="w-5 h-5 text-white" />}
@@ -56,7 +63,7 @@ function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, g
                     />
                 </div>
             )}
-            {swipeAction === 'secondary' && (
+            {swipeAction === "secondary" && (
                 <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
                     <SwipeActionButton
                         icon={<Trash2 className="w-5 h-5 text-white" />}
@@ -72,8 +79,11 @@ function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, g
             <div
                 {...handlers}
                 className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-32' :
-                    swipeAction === 'secondary' ? 'translate-x-20' : ''
+                    swipeAction === "primary"
+                        ? "-translate-x-32"
+                        : swipeAction === "secondary"
+                        ? "translate-x-20"
+                        : ""
                 }`}
                 onClick={() => {
                     if (swipeAction) {
@@ -100,7 +110,9 @@ function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, g
                                 <h3 className="text-base font-black text-gray-900 truncate leading-tight">
                                     {doc.original_filename}
                                 </h3>
-                                <p className="text-sm text-gray-600 mt-1">{doc.category?.name}</p>
+                                <p className="text-sm text-gray-600 mt-1">
+                                    {doc.category?.name}
+                                </p>
                                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                                     {getStatusBadge(doc)}
                                     <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
@@ -127,28 +139,40 @@ function MobileDocumentItem({ doc, auth, onDelete, onDownload, getStatusBadge, g
                             <div className="flex items-start gap-3">
                                 <Tag className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                                 <div className="flex-1">
-                                    <span className="text-xs text-gray-500 block">Category</span>
-                                    <span className="font-semibold text-gray-900">{doc.category?.name}</span>
+                                    <span className="text-xs text-gray-500 block">
+                                        Category
+                                    </span>
+                                    <span className="font-semibold text-gray-900">
+                                        {doc.category?.name}
+                                    </span>
                                 </div>
                             </div>
-                            {auth.user.role === 'admin' && (
+                            {auth.user.role === "admin" && (
                                 <div className="flex items-start gap-3">
                                     <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                                     <div className="flex-1">
-                                        <span className="text-xs text-gray-500 block">Owner</span>
-                                        <span className="font-semibold text-gray-900">{getEntityName(doc)}</span>
+                                        <span className="text-xs text-gray-500 block">
+                                            Owner
+                                        </span>
+                                        <span className="font-semibold text-gray-900">
+                                            {getEntityName(doc)}
+                                        </span>
                                     </div>
                                 </div>
                             )}
                             <div className="flex items-start gap-3">
                                 <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                                 <div className="flex-1">
-                                    <span className="text-xs text-gray-500 block">Uploaded</span>
+                                    <span className="text-xs text-gray-500 block">
+                                        Uploaded
+                                    </span>
                                     <span className="font-semibold text-gray-900">
-                                        {new Date(doc.created_at).toLocaleDateString('en-US', {
-                                            year: 'numeric',
-                                            month: 'short',
-                                            day: 'numeric'
+                                        {new Date(
+                                            doc.created_at
+                                        ).toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "short",
+                                            day: "numeric",
                                         })}
                                     </span>
                                 </div>
@@ -323,45 +347,45 @@ export default function Index({
             )}
 
             <div className="space-y-6">
-                {/* Header with Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    <div className="bg-white rounded-lg shadow-sm p-6">
-                        <div className="text-sm font-medium text-gray-600">
+                {/* Header with Stats - Mobile Optimized */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+                    <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow">
+                        <div className="text-xs sm:text-sm font-medium text-gray-600">
                             Total Documents
                         </div>
-                        <div className="text-3xl font-bold text-navy mt-2">
+                        <div className="text-2xl sm:text-3xl font-bold text-navy mt-1 sm:mt-2">
                             {stats.total}
                         </div>
                     </div>
-                    <div className="bg-yellow-50 rounded-lg shadow-sm p-6">
-                        <div className="text-sm font-medium text-yellow-700">
+                    <div className="bg-yellow-50 rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow">
+                        <div className="text-xs sm:text-sm font-medium text-yellow-700">
                             Pending Review
                         </div>
-                        <div className="text-3xl font-bold text-yellow-600 mt-2">
+                        <div className="text-2xl sm:text-3xl font-bold text-yellow-600 mt-1 sm:mt-2">
                             {stats.pending}
                         </div>
                     </div>
-                    <div className="bg-green-50 rounded-lg shadow-sm p-6">
-                        <div className="text-sm font-medium text-green-700">
+                    <div className="bg-green-50 rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow">
+                        <div className="text-xs sm:text-sm font-medium text-green-700">
                             Verified
                         </div>
-                        <div className="text-3xl font-bold text-green-600 mt-2">
+                        <div className="text-2xl sm:text-3xl font-bold text-green-600 mt-1 sm:mt-2">
                             {stats.verified}
                         </div>
                     </div>
-                    <div className="bg-red-50 rounded-lg shadow-sm p-6">
-                        <div className="text-sm font-medium text-red-700">
+                    <div className="bg-red-50 rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow">
+                        <div className="text-xs sm:text-sm font-medium text-red-700">
                             Rejected
                         </div>
-                        <div className="text-3xl font-bold text-red-600 mt-2">
+                        <div className="text-2xl sm:text-3xl font-bold text-red-600 mt-1 sm:mt-2">
                             {stats.rejected}
                         </div>
                     </div>
-                    <div className="bg-gray-50 rounded-lg shadow-sm p-6">
-                        <div className="text-sm font-medium text-gray-700">
+                    <div className="bg-gray-50 rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow col-span-2 sm:col-span-1">
+                        <div className="text-xs sm:text-sm font-medium text-gray-700">
                             Expired
                         </div>
-                        <div className="text-3xl font-bold text-gray-600 mt-2">
+                        <div className="text-2xl sm:text-3xl font-bold text-gray-600 mt-1 sm:mt-2">
                             {stats.expired}
                         </div>
                     </div>
@@ -375,11 +399,11 @@ export default function Index({
                     </h2>
 
                     {/* Buttons */}
-                    <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3">
+                    <div className="flex flex-col sm:flex-row flex-wrap justify-center sm:justify-end gap-2 w-full sm:w-auto">
                         {auth.user.role === "admin" && (
                             <Link
                                 href={route("document-categories.index")}
-                                className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-medium rounded-xl shadow-sm hover:shadow-md hover:from-orange-600 hover:to-orange-700 transition-all duration-200 text-sm sm:text-base"
+                                className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold sm:font-medium rounded-xl shadow-sm hover:shadow-md hover:from-orange-600 hover:to-orange-700 transition-all duration-200 text-sm sm:text-base"
                             >
                                 <span>📂</span>
                                 <span>Doc Categories</span>
@@ -388,7 +412,7 @@ export default function Index({
 
                         <Link
                             href={route("documents.create")}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-medium rounded-xl shadow-sm hover:shadow-md hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 text-sm sm:text-base"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-semibold sm:font-medium rounded-xl shadow-sm hover:shadow-md hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 text-sm sm:text-base"
                         >
                             <Plus className="w-4 h-4" />
                             <span>Upload Document</span>
@@ -501,8 +525,18 @@ export default function Index({
                                 key={doc.id}
                                 doc={doc}
                                 auth={auth}
-                                onDelete={(doc) => handleDeleteClick(doc.id, doc.original_filename)}
-                                onDownload={(doc) => window.open(route("documents.download", doc.id), "_blank")}
+                                onDelete={(doc) =>
+                                    handleDeleteClick(
+                                        doc.id,
+                                        doc.original_filename
+                                    )
+                                }
+                                onDownload={(doc) =>
+                                    window.open(
+                                        route("documents.download", doc.id),
+                                        "_blank"
+                                    )
+                                }
                                 getStatusBadge={getStatusBadge}
                                 getEntityName={getEntityName}
                             />
@@ -510,7 +544,9 @@ export default function Index({
                     ) : (
                         <div className="px-6 py-12 text-center">
                             <FileText className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500 font-medium">No documents found</p>
+                            <p className="text-gray-500 font-medium">
+                                No documents found
+                            </p>
                             <Link
                                 href={route("documents.create")}
                                 className="inline-flex items-center mt-4 text-orange hover:text-orange-dark"

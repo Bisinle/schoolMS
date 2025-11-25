@@ -202,28 +202,42 @@ export default function Index({ categories, filters, entityTypes }) {
 
     return (
         <AuthenticatedLayout header="Document Categories">
-            <Head title="Document Categories" />
-            <Link
-                                href="/documents"
-                                className="inline-flex items-center px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Back to List
-                            </Link>
-            <div className="space-y-6">
-                {/* Header with Add Button */}
-                <div className="flex justify-between items-center">
-                    <h2 className="text-2xl font-bold text-navy">
-                        Manage Document Categories
-                    </h2>
-                    <Link
-                        href={route("document-categories.create")}
-                        className="inline-flex items-center px-4 py-2 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Category
-                    </Link>
-                </div>
+   <Head title="Document Categories" />
+
+<div className="space-y-4 sm:space-y-6">
+    {/* Back Button */}
+    <Link
+        href="/documents"
+        className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border-2 border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm"
+    >
+        <ArrowLeft className="w-4 h-4" />
+        <span>Back to Documents</span>
+    </Link>
+
+    {/* Header with Add Button */}
+    <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="flex items-center gap-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-md">
+                <span className="text-xl sm:text-2xl">📂</span>
+            </div>
+            <div>
+                <h2 className="text-xl sm:text-2xl font-black text-navy leading-tight">
+                    Document Categories
+                </h2>
+                <p className="text-xs sm:text-sm text-gray-600 font-medium mt-0.5">
+                    Manage your document categories
+                </p>
+            </div>
+        </div>
+        
+        <Link
+            href={route("document-categories.create")}
+            className="inline-flex items-center justify-center gap-2 px-6 py-3 sm:px-5 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-xl hover:shadow-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 shadow-md whitespace-nowrap"
+        >
+            <Plus className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span>Add Category</span>
+        </Link>
+    </div>
 
                 {/* Filters */}
                 <div className="bg-white rounded-lg shadow-sm p-6">
