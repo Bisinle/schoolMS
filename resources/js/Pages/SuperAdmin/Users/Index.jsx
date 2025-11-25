@@ -87,10 +87,10 @@ function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete, getRo
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                             {/* Unique Identifier Badge at Top */}
-                            {(user.teacher?.employee_number || user.guardian?.guardian_number) && (
+                            {(user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number) && (
                                 <div className="mb-2">
                                     <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                        {user.teacher?.employee_number || user.guardian?.guardian_number}
+                                        {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
                                     </span>
                                 </div>
                             )}
@@ -484,9 +484,9 @@ export default function Index({ users, schools, filters }) {
                                         users.data.map((user) => (
                                             <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                    {user.teacher?.employee_number || user.guardian?.guardian_number ? (
+                                                    {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number ? (
                                                         <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                                            {user.teacher?.employee_number || user.guardian?.guardian_number}
+                                                            {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
                                                         </span>
                                                     ) : (
                                                         <span className="text-xs text-gray-400">N/A</span>

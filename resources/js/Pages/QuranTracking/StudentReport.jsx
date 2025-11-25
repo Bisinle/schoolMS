@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User, Eye } from 'lucide-react';
 
 // Mobile Session Card Component
@@ -45,6 +45,9 @@ function MobileSessionCard({ session, getReadingTypeBadge, getDifficultyBadge })
 }
 
 export default function StudentReport({ student, sessions, analytics, sessionsByMonth, sessionsByType, sessionsByDifficulty }) {
+    const { auth } = usePage().props;
+    const isGuardian = auth.user.role === 'guardian';
+
     const getReadingTypeBadge = (type) => {
         const badges = {
             'new_learning': 'bg-green-100 text-green-800',
@@ -86,7 +89,7 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                     {/* Header */}
                     <div className="mb-6 sm:mb-8">
                         <Link
-                            href="/quran-tracking"
+                            href={isGuardian ? "/guardian/quran-tracking" : "/quran-tracking"}
                             className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors mb-4"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />

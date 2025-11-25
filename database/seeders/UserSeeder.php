@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\School;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use App\Services\UniqueIdentifierService;
 
 class UserSeeder extends Seeder
 {
@@ -20,32 +21,38 @@ class UserSeeder extends Seeder
         }
 
         // Create Admin Users
+        $school1 = $schools->random();
         User::create([
-            'school_id' => $schools->random()->id,
+            'school_id' => $school1->id,
             'name' => 'Abdi Elmi',
             'email' => 'admin@school.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'employee_number' => UniqueIdentifierService::generateAdminEmployeeNumber($school1->id),
             'is_active' => true,
             'phone' => '0758500708',
         ]);
 
+        $school2 = $schools->random();
         User::create([
-            'school_id' => $schools->random()->id,
+            'school_id' => $school2->id,
             'name' => 'Michelle Mwangi',
             'email' => 'mich.admin@school.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'employee_number' => UniqueIdentifierService::generateAdminEmployeeNumber($school2->id),
             'is_active' => true,
             'phone' => '0700562291',
         ]);
 
+        $school3 = $schools->random();
         User::create([
-            'school_id' => $schools->random()->id,
+            'school_id' => $school3->id,
             'name' => 'Bisinle Maki',
             'email' => 'bisinle77@gmail.com',
             'password' => Hash::make('password'),
             'role' => 'admin',
+            'employee_number' => UniqueIdentifierService::generateAdminEmployeeNumber($school3->id),
             'is_active' => true,
             'phone' => '0700562291',
         ]);

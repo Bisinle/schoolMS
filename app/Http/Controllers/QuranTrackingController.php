@@ -163,12 +163,9 @@ class QuranTrackingController extends Controller
             'surah_to' => 'required|integer|min:1|max:114',
             'verse_from' => 'required|integer|min:1',
             'verse_to' => 'required|integer|min:1',
-            'page_from' => 'nullable|integer|min:1|max:604',
-            'page_to' => 'nullable|integer|min:1|max:604',
+            'page_from' => 'required|integer|min:1|max:604',
+            'page_to' => 'required|integer|min:1|max:604',
             'difficulty' => 'required|in:very_well,middle,difficult',
-            'pages_memorized' => 'nullable|integer|min:0',
-            'surahs_memorized' => 'nullable|integer|min:0',
-            'juz_memorized' => 'nullable|integer|min:0|max:30',
             'subac_participation' => 'nullable|boolean',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -185,7 +182,7 @@ class QuranTrackingController extends Controller
             return back()->withErrors(['verse_range' => $validation['message']])->withInput();
         }
 
-        // Calculate total verses
+        // Calculate total verses for display message
         $totalVerses = $this->quranApi->calculateTotalVerses(
             $validated['surah_from'],
             $validated['verse_from'],
@@ -193,36 +190,31 @@ class QuranTrackingController extends Controller
             $validated['verse_to']
         );
 
-        // Calculate page range from API if not provided
-        if (empty($validated['page_from']) || empty($validated['page_to'])) {
-            $pageRange = $this->quranApi->calculatePageRange(
-                $validated['surah_from'],
-                $validated['verse_from'],
-                $validated['surah_to'],
-                $validated['verse_to']
-            );
-
-            if ($pageRange) {
-                $validated['page_from'] = $pageRange['page_from'];
-                $validated['page_to'] = $pageRange['page_to'];
-            }
-        }
-
         $validated['teacher_id'] = auth()->id();
         $validated['school_id'] = auth()->user()->school_id;
         $validated['subac_participation'] = $validated['subac_participation'] ?? false;
 
-        QuranTracking::create($validated);
+        // Observer will automatically compute pages_memorized, surahs_memorized, juz_memorized
+        $tracking = QuranTracking::create($validated);
 
         return redirect()->route('quran-tracking.index')
-            ->with('success', "Quran tracking record created successfully. Total verses: {$totalVerses}");
+            ->with('success', "Quran tracking record created successfully. Total verses: {$totalVerses}, Pages: {$tracking->pages_memorized}, Juz: {$tracking->juz_memorized}");
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(QuranTracking $quranTracking)
+    public function show(Request $request, QuranTracking $quranTracking)
     {
+        // Authorization check for guardians
+        $user = $request->user();
+        if ($user->isGuardian()) {
+            $guardian = $user->guardian;
+            if (!$guardian || !$guardian->students()->where('students.id', $quranTracking->student_id)->exists()) {
+                abort(403, 'You can only view your own children\'s Quran tracking records.');
+            }
+        }
+
         $quranTracking->load(['student', 'teacher']);
 
         // Handle multi-surah display
@@ -319,12 +311,9 @@ class QuranTrackingController extends Controller
             'surah_to' => 'required|integer|min:1|max:114',
             'verse_from' => 'required|integer|min:1',
             'verse_to' => 'required|integer|min:1',
-            'page_from' => 'nullable|integer|min:1|max:604',
-            'page_to' => 'nullable|integer|min:1|max:604',
+            'page_from' => 'required|integer|min:1|max:604',
+            'page_to' => 'required|integer|min:1|max:604',
             'difficulty' => 'required|in:very_well,middle,difficult',
-            'pages_memorized' => 'nullable|integer|min:0',
-            'surahs_memorized' => 'nullable|integer|min:0',
-            'juz_memorized' => 'nullable|integer|min:0|max:30',
             'subac_participation' => 'nullable|boolean',
             'notes' => 'nullable|string|max:1000',
         ]);
@@ -341,7 +330,7 @@ class QuranTrackingController extends Controller
             return back()->withErrors(['verse_range' => $validation['message']])->withInput();
         }
 
-        // Calculate total verses
+        // Calculate total verses for display message
         $totalVerses = $this->quranApi->calculateTotalVerses(
             $validated['surah_from'],
             $validated['verse_from'],
@@ -349,34 +338,30 @@ class QuranTrackingController extends Controller
             $validated['verse_to']
         );
 
-        // Calculate page range from API if not provided
-        if (empty($validated['page_from']) || empty($validated['page_to'])) {
-            $pageRange = $this->quranApi->calculatePageRange(
-                $validated['surah_from'],
-                $validated['verse_from'],
-                $validated['surah_to'],
-                $validated['verse_to']
-            );
-
-            if ($pageRange) {
-                $validated['page_from'] = $pageRange['page_from'];
-                $validated['page_to'] = $pageRange['page_to'];
-            }
-        }
-
         $validated['subac_participation'] = $validated['subac_participation'] ?? false;
 
+        // Observer will automatically compute pages_memorized, surahs_memorized, juz_memorized
         $quranTracking->update($validated);
+        $quranTracking->refresh();
 
         return redirect()->route('quran-tracking.index')
-            ->with('success', "Quran tracking record updated successfully. Total verses: {$totalVerses}");
+            ->with('success', "Quran tracking record updated successfully. Total verses: {$totalVerses}, Pages: {$quranTracking->pages_memorized}, Juz: {$quranTracking->juz_memorized}");
     }
 
     /**
      * Show student report with all sessions and analytics.
      */
-    public function studentReport(Student $student)
+    public function studentReport(Request $request, Student $student)
     {
+        // Authorization check for guardians
+        $user = $request->user();
+        if ($user->isGuardian()) {
+            $guardian = $user->guardian;
+            if (!$guardian || !$guardian->students()->where('students.id', $student->id)->exists()) {
+                abort(403, 'You can only view your own children\'s Quran tracking reports.');
+            }
+        }
+
         // Get all tracking sessions for this student
         $sessions = QuranTracking::where('student_id', $student->id)
             ->with(['teacher'])
@@ -429,36 +414,20 @@ class QuranTrackingController extends Controller
             return $record;
         });
 
-        // Calculate analytics
-        $totalPages = $sessions->sum(function ($session) {
-            if ($session->page_from && $session->page_to) {
-                return ($session->page_to - $session->page_from) + 1;
-            }
-            return 0;
-        });
+        // Calculate analytics using stored computed fields
+        $totalPages = $sessions->sum('pages_memorized');
 
         // Get unique surahs covered (only count new_learning sessions for memorization)
         $newLearningSessions = $sessions->where('reading_type', 'new_learning');
-        $uniqueSurahs = $newLearningSessions->flatMap(function ($session) {
-            // Get all surahs between surah_from and surah_to
-            $surahs = [];
-            for ($i = $session->surah_from; $i <= $session->surah_to; $i++) {
-                $surahs[] = $i;
-            }
-            return $surahs;
-        })->unique()->count();
 
-        // Calculate pages memorized (only from new_learning sessions)
-        $pagesMemorized = $newLearningSessions->sum(function ($session) {
-            if ($session->page_from && $session->page_to) {
-                return ($session->page_to - $session->page_from) + 1;
-            }
-            return 0;
-        });
+        // Sum up surahs from stored field
+        $uniqueSurahs = $newLearningSessions->sum('surahs_memorized');
 
-        // Calculate juz memorized (each juz is approximately 20 pages)
-        // We'll be conservative and only count complete juz
-        $juzMemorized = floor($pagesMemorized / 20);
+        // Sum up pages memorized from stored field (only from new_learning sessions)
+        $pagesMemorized = $newLearningSessions->sum('pages_memorized');
+
+        // Sum up juz memorized from stored field (uses accurate API-based juz mapping)
+        $juzMemorized = $newLearningSessions->sum('juz_memorized');
 
         $analytics = [
             'total_sessions' => $sessions->count(),

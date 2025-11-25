@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Teacher;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class UniqueIdentifierService
@@ -51,6 +52,55 @@ class UniqueIdentifierService
             prefix: 'EMP',
             schoolId: $schoolId,
             padding: 3
+        );
+    }
+
+    /**
+     * Generate unique employee number for admin users
+     * Format: EMP-YY-XXX (e.g., EMP-25-001)
+     * Uses the same sequence as teachers to ensure uniqueness across all employees
+     */
+    public static function generateAdminEmployeeNumber(int $schoolId): string
+    {
+        // Get current year (last 2 digits)
+        $year = date('y');
+        $prefix = 'EMP';
+
+        // Get the latest number from both teachers and admin users for this year and school
+        $latestTeacher = Teacher::where('school_id', $schoolId)
+            ->where('employee_number', 'LIKE', "{$prefix}-{$year}-%")
+            ->orderByRaw("CAST(SUBSTRING_INDEX(employee_number, '-', -1) AS UNSIGNED) DESC")
+            ->first();
+
+        $latestAdmin = User::where('school_id', $schoolId)
+            ->where('role', 'admin')
+            ->where('employee_number', 'LIKE', "{$prefix}-{$year}-%")
+            ->orderByRaw("CAST(SUBSTRING_INDEX(employee_number, '-', -1) AS UNSIGNED) DESC")
+            ->first();
+
+        // Get the highest counter from both tables
+        $teacherCounter = 0;
+        $adminCounter = 0;
+
+        if ($latestTeacher) {
+            $parts = explode('-', $latestTeacher->employee_number);
+            $teacherCounter = isset($parts[2]) ? (int)$parts[2] : 0;
+        }
+
+        if ($latestAdmin) {
+            $parts = explode('-', $latestAdmin->employee_number);
+            $adminCounter = isset($parts[2]) ? (int)$parts[2] : 0;
+        }
+
+        // Use the highest counter + 1
+        $nextCounter = max($teacherCounter, $adminCounter) + 1;
+
+        // Format: EMP-YY-COUNTER
+        return sprintf(
+            '%s-%s-%s',
+            $prefix,
+            $year,
+            str_pad($nextCounter, 3, '0', STR_PAD_LEFT)
         );
     }
 

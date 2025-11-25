@@ -6,6 +6,7 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function QuranTrackingShow({ tracking, studentStats, auth }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const isGuardian = auth.user.role === 'guardian';
 
     const handleDelete = () => {
         router.delete(`/quran-tracking/${tracking.id}`, {
@@ -42,7 +43,7 @@ export default function QuranTrackingShow({ tracking, studentStats, auth }) {
                     {/* Header */}
                     <div className="mb-6 sm:mb-8">
                         <Link
-                            href="/quran-tracking"
+                            href={isGuardian ? "/guardian/quran-tracking" : "/quran-tracking"}
                             className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors mb-4"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />

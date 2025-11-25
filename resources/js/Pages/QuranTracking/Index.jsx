@@ -91,9 +91,9 @@ function MobileQuranTrackingItem({ student, auth }) {
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-3 mb-2">
-                                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm">
+                                {/* <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm">
                                     <User className="w-5 h-5 text-white" />
-                                </div>
+                                </div> */}
                                 <div className="flex-1 min-w-0">
                                     <h3 className="text-base font-bold text-gray-900 truncate leading-tight">
                                         {student.first_name} {student.last_name}
@@ -343,9 +343,9 @@ export default function QuranTrackingIndex({ students, grades, filters = {}, aut
                                                 <tr key={student.id} className="hover:bg-gray-50/50 transition-colors">
                                                     <td className="px-4 xl:px-6 py-4">
                                                         <div className="flex items-center min-w-0">
-                                                            <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
+                                                            {/* <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mr-3 shadow-sm">
                                                                 <User className="w-5 h-5 text-white" />
-                                                            </div>
+                                                            </div> */}
                                                             <div className="min-w-0">
                                                                 <div className="text-sm font-bold text-gray-900 truncate">
                                                                     {student.first_name} {student.last_name}
@@ -358,7 +358,7 @@ export default function QuranTrackingIndex({ students, grades, filters = {}, aut
                                                     </td>
                                                     <td className="px-4 xl:px-6 py-4">
                                                         <span className="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-bold bg-gray-100 text-gray-700 border border-gray-200">
-                                                            {student.grade ? student.grade.name : 'N/A'}
+                                                            {student.grade ? student.grade.code : 'N/A'}
                                                         </span>
                                                     </td>
                                                     <td className="px-4 xl:px-6 py-4">

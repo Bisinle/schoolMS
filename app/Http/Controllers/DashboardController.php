@@ -11,6 +11,7 @@ use App\Models\Subject;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Document;
+use App\Models\QuranTracking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -142,6 +143,21 @@ class DashboardController extends Controller
             'pending_exam_results' => $examsWithCompletion->where('completion_rate', '<', 100)->count(),
         ];
 
+        // Quran tracking stats (only for madrasah schools)
+        $quranStats = null;
+        if (auth()->user()->school && auth()->user()->school->school_type === 'madrasah') {
+            $quranStats = [
+                'total_sessions' => QuranTracking::count(),
+                'total_pages_memorized' => QuranTracking::where('reading_type', 'new_learning')->sum('pages_memorized'),
+                'total_surahs_memorized' => QuranTracking::where('reading_type', 'new_learning')->sum('surahs_memorized'),
+                'total_juz_memorized' => QuranTracking::where('reading_type', 'new_learning')->sum('juz_memorized'),
+                'sessions_this_month' => QuranTracking::whereMonth('date', now()->month)
+                    ->whereYear('date', now()->year)
+                    ->count(),
+                'students_tracked' => QuranTracking::distinct('student_id')->count('student_id'),
+            ];
+        }
+
         return [
             'stats' => [
                 'totalStudents' => $totalStudents,
@@ -165,6 +181,7 @@ class DashboardController extends Controller
             'currentTerm' => $this->getCurrentTerm(),
             'currentYear' => $currentYear,
             'documentStats' => $documentStats,
+            'quranStats' => $quranStats,
         ];
     }
 
@@ -425,7 +442,7 @@ class DashboardController extends Controller
     private function getGuardianDashboardData($user)
     {
         $guardian = $user->guardian;
-        
+
         if (!$guardian) {
             return ['message' => 'Guardian profile not found.'];
         }
@@ -451,6 +468,52 @@ class DashboardController extends Controller
             'my_docs' => $guardianDocs->where('documentable_type', 'App\\Models\\Guardian')->count(),
             'children_docs' => $guardianDocs->where('documentable_type', 'App\\Models\\Student')->count(),
         ];
+
+        // Quran tracking data (only for madrasah schools)
+        $quranTrackingData = null;
+        if ($user->school && $user->school->school_type === 'madrasah' && $studentIds->isNotEmpty()) {
+            $quranTrackingData = QuranTracking::whereIn('student_id', $studentIds)
+                ->with(['student', 'teacher'])
+                ->orderBy('date', 'desc')
+                ->take(20) // Last 20 sessions across all children
+                ->get()
+                ->map(function ($tracking) {
+                    return [
+                        'id' => $tracking->id,
+                        'student_name' => $tracking->student->name,
+                        'student_id' => $tracking->student_id,
+                        'teacher_name' => $tracking->teacher->name ?? 'N/A',
+                        'date' => $tracking->date->format('M d, Y'),
+                        'reading_type' => $tracking->reading_type_label,
+                        'surah_range' => $tracking->surah_range,
+                        'pages_memorized' => $tracking->pages_memorized,
+                        'surahs_memorized' => $tracking->surahs_memorized,
+                        'juz_memorized' => $tracking->juz_memorized,
+                        'difficulty' => $tracking->difficulty_label,
+                        'notes' => $tracking->notes,
+                    ];
+                });
+
+            // Summary stats for all children
+            $quranStats = [
+                'total_sessions' => QuranTracking::whereIn('student_id', $studentIds)->count(),
+                'total_pages' => QuranTracking::whereIn('student_id', $studentIds)
+                    ->where('reading_type', 'new_learning')
+                    ->sum('pages_memorized'),
+                'total_surahs' => QuranTracking::whereIn('student_id', $studentIds)
+                    ->where('reading_type', 'new_learning')
+                    ->sum('surahs_memorized'),
+                'total_juz' => QuranTracking::whereIn('student_id', $studentIds)
+                    ->where('reading_type', 'new_learning')
+                    ->sum('juz_memorized'),
+                'this_month' => QuranTracking::whereIn('student_id', $studentIds)
+                    ->whereMonth('date', now()->month)
+                    ->whereYear('date', now()->year)
+                    ->count(),
+            ];
+        } else {
+            $quranStats = null;
+        }
 
         $students = $guardian->students()->where('status', 'active')->get();
         
@@ -573,6 +636,8 @@ class DashboardController extends Controller
             'currentTerm' => $currentTerm,
             'totalChildren' => $students->count(),
             'documentStats' => $documentStats,
+            'quranTrackingData' => $quranTrackingData ?? null,
+            'quranStats' => $quranStats ?? null,
         ];
     }
 

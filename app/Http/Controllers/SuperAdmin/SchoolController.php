@@ -112,13 +112,14 @@ class SchoolController extends Controller
                 $password = Str::random(12);
             }
 
-            // Create school admin user
+            // Create school admin user with employee number
             $user = User::create([
                 'school_id' => $school->id,
                 'name' => $validated['admin_name'],
                 'email' => $validated['admin_email'],
                 'password' => Hash::make($password),
                 'role' => 'admin',
+                'employee_number' => \App\Services\UniqueIdentifierService::generateAdminEmployeeNumber($school->id),
                 'is_active' => true,
                 'email_verified_at' => now(),
                 'must_change_password' => $validated['password_option'] === 'auto', // Only require change for auto-generated passwords

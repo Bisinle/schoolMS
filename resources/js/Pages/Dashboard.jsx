@@ -34,6 +34,8 @@ export default function Dashboard({
     currentYear,
     currentTerm,
     documentStats,
+    quranStats,
+    quranTrackingData,
     // Admin specific
     studentsByGrade,
     studentsByGender,
@@ -282,6 +284,81 @@ export default function Dashboard({
                             </div>
                         </div>
                     </div>
+
+                    {/* Quran Tracking Analytics (Madrasah Only) */}
+                    {quranStats && (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+                                <h3 className="text-lg font-semibold text-navy flex items-center">
+                                    <BookOpen className="w-5 h-5 mr-2 text-green-600" />
+                                    Quran Tracking Analytics
+                                </h3>
+                            </div>
+                            <div className="p-4 sm:p-6">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+                                    <div className="text-center p-4 bg-green-50 rounded-xl hover:bg-green-100 transition-colors">
+                                        <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-green-600 mx-auto mb-2" />
+                                        <p className="text-2xl sm:text-3xl font-black text-green-600">
+                                            {quranStats.total_sessions || 0}
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                            Total Sessions
+                                        </p>
+                                    </div>
+
+                                    <div className="text-center p-4 bg-blue-50 rounded-xl hover:bg-blue-100 transition-colors">
+                                        <FileText className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600 mx-auto mb-2" />
+                                        <p className="text-2xl sm:text-3xl font-black text-blue-600">
+                                            {quranStats.total_pages_memorized || 0}
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                            Pages Memorized
+                                        </p>
+                                    </div>
+
+                                    <div className="text-center p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
+                                        <BookOpen className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 mx-auto mb-2" />
+                                        <p className="text-2xl sm:text-3xl font-black text-purple-600">
+                                            {quranStats.total_surahs_memorized || 0}
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                            Surahs Memorized
+                                        </p>
+                                    </div>
+
+                                    <div className="text-center p-4 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors">
+                                        <Trophy className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 mx-auto mb-2" />
+                                        <p className="text-2xl sm:text-3xl font-black text-indigo-600">
+                                            {quranStats.total_juz_memorized || 0}
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                            Juz Memorized
+                                        </p>
+                                    </div>
+
+                                    <div className="text-center p-4 bg-teal-50 rounded-xl hover:bg-teal-100 transition-colors">
+                                        <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 text-teal-600 mx-auto mb-2" />
+                                        <p className="text-2xl sm:text-3xl font-black text-teal-600">
+                                            {quranStats.sessions_this_month || 0}
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                            This Month
+                                        </p>
+                                    </div>
+
+                                    <div className="text-center p-4 bg-orange-50 rounded-xl hover:bg-orange-100 transition-colors">
+                                        <Users className="w-8 h-8 sm:w-10 sm:h-10 text-orange mx-auto mb-2" />
+                                        <p className="text-2xl sm:text-3xl font-black text-orange">
+                                            {quranStats.students_tracked || 0}
+                                        </p>
+                                        <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                            Students Tracked
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Action Required Cards */}
                     {quickStats &&
@@ -1389,6 +1466,119 @@ export default function Dashboard({
                             )}
                         </div>
                     </div>
+
+                    {/* Quran Tracking (Madrasah Only) */}
+                    {quranStats && quranTrackingData && (
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+                                <h3 className="text-lg font-semibold text-navy flex items-center">
+                                    <BookOpen className="w-5 h-5 mr-2 text-green-600" />
+                                    Children's Quran Progress
+                                </h3>
+                            </div>
+
+                            {/* Summary Stats */}
+                            <div className="p-4 sm:p-6 border-b border-gray-100">
+                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4">
+                                    <div className="text-center p-3 bg-green-50 rounded-xl">
+                                        <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-green-600 mx-auto mb-1" />
+                                        <p className="text-xl sm:text-2xl font-black text-green-600">
+                                            {quranStats.total_sessions || 0}
+                                        </p>
+                                        <p className="text-xs text-gray-600 font-bold">Sessions</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-blue-50 rounded-xl">
+                                        <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600 mx-auto mb-1" />
+                                        <p className="text-xl sm:text-2xl font-black text-blue-600">
+                                            {quranStats.total_pages || 0}
+                                        </p>
+                                        <p className="text-xs text-gray-600 font-bold">Pages</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-purple-50 rounded-xl">
+                                        <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 text-purple-600 mx-auto mb-1" />
+                                        <p className="text-xl sm:text-2xl font-black text-purple-600">
+                                            {quranStats.total_surahs || 0}
+                                        </p>
+                                        <p className="text-xs text-gray-600 font-bold">Surahs</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-indigo-50 rounded-xl">
+                                        <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-indigo-600 mx-auto mb-1" />
+                                        <p className="text-xl sm:text-2xl font-black text-indigo-600">
+                                            {quranStats.total_juz || 0}
+                                        </p>
+                                        <p className="text-xs text-gray-600 font-bold">Juz</p>
+                                    </div>
+                                    <div className="text-center p-3 bg-teal-50 rounded-xl">
+                                        <TrendingUp className="w-6 h-6 sm:w-8 sm:h-8 text-teal-600 mx-auto mb-1" />
+                                        <p className="text-xl sm:text-2xl font-black text-teal-600">
+                                            {quranStats.this_month || 0}
+                                        </p>
+                                        <p className="text-xs text-gray-600 font-bold">This Month</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Recent Sessions */}
+                            <div className="p-4 sm:p-6">
+                                <h4 className="text-sm font-semibold text-gray-700 mb-4">Recent Sessions</h4>
+                                <div className="space-y-3 max-h-96 overflow-y-auto">
+                                    {quranTrackingData.length > 0 ? (
+                                        quranTrackingData.map((session) => (
+                                            <div
+                                                key={session.id}
+                                                className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
+                                            >
+                                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-semibold text-navy">
+                                                            {session.student_name}
+                                                        </span>
+                                                        <span className="text-xs text-gray-500">•</span>
+                                                        <span className="text-sm text-gray-600">
+                                                            {session.date}
+                                                        </span>
+                                                    </div>
+                                                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                                                        session.reading_type === 'New Learning'
+                                                            ? 'bg-green-100 text-green-700'
+                                                            : session.reading_type === 'Revision'
+                                                            ? 'bg-blue-100 text-blue-700'
+                                                            : 'bg-purple-100 text-purple-700'
+                                                    }`}>
+                                                        {session.reading_type}
+                                                    </span>
+                                                </div>
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs text-gray-600 mb-2">
+                                                    <div>
+                                                        <span className="font-medium">Surah:</span> {session.surah_range}
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Pages:</span> {session.pages_memorized}
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Difficulty:</span> {session.difficulty}
+                                                    </div>
+                                                    <div>
+                                                        <span className="font-medium">Teacher:</span> {session.teacher_name}
+                                                    </div>
+                                                </div>
+                                                {session.notes && (
+                                                    <div className="text-xs text-gray-500 italic mt-2 p-2 bg-white rounded border border-gray-200">
+                                                        {session.notes}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <BookOpen className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                                            <p>No Quran tracking sessions yet</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Additional Quick Actions */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

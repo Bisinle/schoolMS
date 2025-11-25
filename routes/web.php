@@ -15,6 +15,7 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamResultController;
 use App\Http\Controllers\GuardianAttendanceController;
 use App\Http\Controllers\GuardianChildrenController;
+use App\Http\Controllers\GuardianQuranTrackingController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SchoolSettingController;
 use App\Http\Controllers\UserController;
@@ -141,6 +142,11 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::middleware(['role:guardian'])->group(function () {
         Route::get('/guardian/children', [GuardianChildrenController::class, 'index'])->name('guardian.children');
         Route::get('/guardian/attendance', [GuardianAttendanceController::class, 'index'])->name('guardian.attendance');
+
+        // Guardian Quran Tracking (read-only, madrasah only)
+        Route::middleware(['madrasah.only'])->group(function () {
+            Route::get('/guardian/quran-tracking', [GuardianQuranTrackingController::class, 'index'])->name('guardian.quran-tracking');
+        });
     });
 
     Route::middleware(['role:admin'])->group(function () {
@@ -244,18 +250,25 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     });
 
     //^ Quran Tracking Routes (Madrasah schools only)
-    Route::middleware(['role:admin,teacher', 'madrasah.only'])->group(function () {
-        Route::get('/quran-tracking', [QuranTrackingController::class, 'index'])->name('quran-tracking.index');
-        Route::get('/quran-tracking/create', [QuranTrackingController::class, 'create'])->name('quran-tracking.create');
-        Route::post('/quran-tracking', [QuranTrackingController::class, 'store'])->name('quran-tracking.store');
-        Route::get('/quran-tracking/student/{student}/report', [QuranTrackingController::class, 'studentReport'])->name('quran-tracking.student-report');
-        Route::get('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'show'])->name('quran-tracking.show');
-        Route::get('/quran-tracking/{quranTracking}/edit', [QuranTrackingController::class, 'edit'])->name('quran-tracking.edit');
-        Route::put('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'update'])->name('quran-tracking.update');
-        Route::delete('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'destroy'])->name('quran-tracking.destroy');
+    Route::middleware(['madrasah.only'])->group(function () {
+        // Admin and Teacher only routes (must come BEFORE wildcard routes)
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/quran-tracking', [QuranTrackingController::class, 'index'])->name('quran-tracking.index');
+            Route::get('/quran-tracking/create', [QuranTrackingController::class, 'create'])->name('quran-tracking.create');
+            Route::post('/quran-tracking', [QuranTrackingController::class, 'store'])->name('quran-tracking.store');
+            Route::get('/quran-tracking/{quranTracking}/edit', [QuranTrackingController::class, 'edit'])->name('quran-tracking.edit');
+            Route::put('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'update'])->name('quran-tracking.update');
+            Route::delete('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'destroy'])->name('quran-tracking.destroy');
 
-        // API endpoint for surah details
-        Route::get('/api/quran/surah/{surahNumber}', [QuranTrackingController::class, 'getSurahDetails'])->name('api.quran.surah');
+            // API endpoint for surah details
+            Route::get('/api/quran/surah/{surahNumber}', [QuranTrackingController::class, 'getSurahDetails'])->name('api.quran.surah');
+        });
+
+        // Read-only routes (admin, teacher, guardian) - wildcard routes come AFTER specific routes
+        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+            Route::get('/quran-tracking/student/{student}/report', [QuranTrackingController::class, 'studentReport'])->name('quran-tracking.student-report');
+            Route::get('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'show'])->name('quran-tracking.show');
+        });
     });
 
     //^ Documents Routes

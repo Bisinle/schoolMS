@@ -359,7 +359,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                             {/* Page From */}
                             <div>
                                 <label htmlFor="page_from" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Page From (Optional)
+                                    Page From <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="number"
@@ -368,9 +368,11 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                     onChange={(e) => setData('page_from', e.target.value)}
                                     min="1"
                                     max="604"
+                                    required
                                     className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
                                         errors.page_from ? 'border-red-500' : 'border-gray-300'
                                     }`}
+                                    placeholder="1-604"
                                 />
                                 {errors.page_from && (
                                     <p className="mt-1 text-sm text-red-600">{errors.page_from}</p>
@@ -380,7 +382,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                             {/* Page To */}
                             <div>
                                 <label htmlFor="page_to" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Page To (Optional)
+                                    Page To <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="number"
@@ -389,9 +391,11 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                     onChange={(e) => setData('page_to', e.target.value)}
                                     min="1"
                                     max="604"
+                                    required
                                     className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
                                         errors.page_to ? 'border-red-500' : 'border-gray-300'
                                     }`}
+                                    placeholder="1-604"
                                 />
                                 {errors.page_to && (
                                     <p className="mt-1 text-sm text-red-600">{errors.page_to}</p>
