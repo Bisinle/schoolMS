@@ -313,43 +313,42 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                                     size="sm"
                                                 />
                                             </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                    Term {exam.term} / {exam.academic_year}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                    <div className="flex items-center">
-                                                        <Calendar className="w-4 h-4 mr-1 text-gray-400" />
-                                                        {new Date(exam.exam_date).toLocaleDateString()}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
-                                                    <Link
-                                                        href={`/exams/${exam.id}`}
-                                                        className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-                                                        title="View Details"
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                Term {exam.term} / {exam.academic_year}
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                                <div className="flex items-center">
+                                                    <Calendar className="w-4 h-4 mr-1 text-gray-400" />
+                                                    {new Date(exam.exam_date).toLocaleDateString()}
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                                                <Link
+                                                    href={`/exams/${exam.id}`}
+                                                    className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                                                    title="View Details"
+                                                >
+                                                    <Eye className="w-4 h-4" />
+                                                </Link>
+                                                <Link
+                                                    href={`/exams/${exam.id}/edit`}
+                                                    className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                    title="Edit Exam"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </Link>
+                                                {auth.user.role === 'admin' && (
+                                                    <button
+                                                        onClick={() => confirmDelete(exam)}
+                                                        className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                                                        title="Delete Exam"
                                                     >
-                                                        <Eye className="w-4 h-4" />
-                                                    </Link>
-                                                    <Link
-                                                        href={`/exams/${exam.id}/edit`}
-                                                        className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
-                                                        title="Edit Exam"
-                                                    >
-                                                        <Edit className="w-4 h-4" />
-                                                    </Link>
-                                                    {auth.user.role === 'admin' && (
-                                                        <button
-                                                            onClick={() => confirmDelete(exam)}
-                                                            className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                                            title="Delete Exam"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    )}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))
                                 ) : (
                                     <tr>
                                         <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
