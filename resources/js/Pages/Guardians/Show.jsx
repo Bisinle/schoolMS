@@ -22,7 +22,7 @@ export default function GuardiansShow({ guardian, studentsWithAttendance, curren
             <div className="space-y-6">
                 {/* Back Button */}
                 <Link
-                    href="/guardians"
+                    href={route('guardians.index')}
                     className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

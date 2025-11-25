@@ -22,7 +22,7 @@ export default function TeachersShow({ teacher }) {
             <div className="space-y-6">
                 {/* Back Button */}
                 <Link
-                    href="/teachers"
+                    href={route('teachers.index')}
                     className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

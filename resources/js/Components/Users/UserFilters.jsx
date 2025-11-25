@@ -1,12 +1,12 @@
-import { Search, Filter } from 'lucide-react';
-import { router } from '@inertiajs/react';
-import { useState, useEffect, useRef } from 'react';
+import { Search, Filter } from "lucide-react";
+import { router } from "@inertiajs/react";
+import { useState, useEffect, useRef } from "react";
 
 export default function UserFilters({ filters, roles }) {
     const [values, setValues] = useState({
-        search: filters.search || '',
-        role: filters.role || 'all',
-        status: filters.status || 'all',
+        search: filters.search || "",
+        role: filters.role || "all",
+        status: filters.status || "all",
     });
 
     const isFirstRender = useRef(true);
@@ -35,7 +35,7 @@ export default function UserFilters({ filters, roles }) {
     }, [values.role, values.status]);
 
     const handleFilter = () => {
-        router.get(route('users.index'), values, {
+        router.get(route(""), values, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -44,12 +44,12 @@ export default function UserFilters({ filters, roles }) {
 
     const handleReset = () => {
         const resetValues = {
-            search: '',
-            role: 'all',
-            status: 'all',
+            search: "",
+            role: "all",
+            status: "all",
         };
         setValues(resetValues);
-        router.get(route('users.index'), resetValues, {
+        router.get(route(""), resetValues, {
             preserveState: true,
             preserveScroll: true,
             replace: true,
@@ -60,7 +60,9 @@ export default function UserFilters({ filters, roles }) {
         <div className="bg-white rounded-lg md:rounded-xl shadow-sm border border-gray-100 p-4 md:p-6 mb-4 md:mb-6">
             <div className="flex items-center gap-2 mb-3 md:mb-4">
                 <Filter className="w-4 h-4 md:w-5 md:h-5 text-gray-600" />
-                <h3 className="text-base md:text-lg font-semibold text-navy">Filters</h3>
+                <h3 className="text-base md:text-lg font-semibold text-navy">
+                    Filters
+                </h3>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
@@ -74,7 +76,9 @@ export default function UserFilters({ filters, roles }) {
                         <input
                             type="text"
                             value={values.search}
-                            onChange={(e) => setValues({ ...values, search: e.target.value })}
+                            onChange={(e) =>
+                                setValues({ ...values, search: e.target.value })
+                            }
                             placeholder="Search by name, email..."
                             className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 md:py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
                         />
@@ -88,7 +92,9 @@ export default function UserFilters({ filters, roles }) {
                     </label>
                     <select
                         value={values.role}
-                        onChange={(e) => setValues({ ...values, role: e.target.value })}
+                        onChange={(e) =>
+                            setValues({ ...values, role: e.target.value })
+                        }
                         className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
                     >
                         <option value="all">All Roles</option>
@@ -107,7 +113,9 @@ export default function UserFilters({ filters, roles }) {
                     </label>
                     <select
                         value={values.status}
-                        onChange={(e) => setValues({ ...values, status: e.target.value })}
+                        onChange={(e) =>
+                            setValues({ ...values, status: e.target.value })
+                        }
                         className="w-full px-3 md:px-4 py-2 md:py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
                     >
                         <option value="all">All Status</option>
@@ -118,7 +126,9 @@ export default function UserFilters({ filters, roles }) {
             </div>
 
             {/* Reset Button */}
-            {(values.search || values.role !== 'all' || values.status !== 'all') && (
+            {(values.search ||
+                values.role !== "all" ||
+                values.status !== "all") && (
                 <div className="mt-3 md:mt-4 flex justify-end">
                     <button
                         onClick={handleReset}

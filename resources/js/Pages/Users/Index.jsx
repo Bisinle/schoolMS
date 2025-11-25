@@ -1,7 +1,6 @@
 import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import UserStatsCards from "@/Components/Users/UserStatsCards";
-import UserFilters from "@/Components/Users/UserFilters";
 import UserPasswordModal from "@/Components/Users/UserPasswordModal";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import ImpersonateButton from "@/Components/ImpersonateButton";
@@ -16,29 +15,27 @@ import {
     Power,
     CheckCircle,
     XCircle,
-    ChevronDown,
-    ChevronUp,
     Mail,
     Phone,
     User,
 } from "lucide-react";
-import { useSwipeable } from 'react-swipeable';
-import SwipeActionButton from '@/Components/SwipeActionButton';
+import useFilters from '@/Hooks/useFilters';
+import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
+import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
+import { Badge } from '@/Components/UI';
 
-// Mobile List Item Component
-function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onResetPassword, onToggleStatus, onImpersonate }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [swipeAction, setSwipeAction] = useState(null);
+// Helper to get role badge variant
+function getRoleBadgeVariant(role) {
+    const variants = {
+        admin: 'primary',
+        teacher: 'info',
+        guardian: 'success',
+    };
+    return variants[role] || 'secondary';
+}
 
-    const handlers = useSwipeable({
-        onSwipedLeft: () => setSwipeAction('primary'),
-        onSwipedRight: () => setSwipeAction('secondary'),
-        onSwiping: () => {},
-        trackMouse: false,
-        preventScrollOnSwipe: false,
-        delta: 60,
-    });
-
+// Mobile List Item Component - Refactored with new components
+function MobileUserItem({ user, auth, roles, onDelete, onResetPassword, onToggleStatus, onImpersonate }) {
     if (user.id === auth.user.id) {
         return null; // Don't show current user in mobile list
     }
@@ -46,227 +43,220 @@ function MobileUserItem({ user, auth, roles, getRoleBadgeColor, onDelete, onRese
     // Check if user can be impersonated (not an admin)
     const canImpersonate = !user.roles?.some(role => role.name === 'admin');
 
-    return (
-        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
-            {/* Swipe Actions Background */}
-            {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <SwipeActionButton
-                        icon={<Eye className="w-5 h-5 text-white" />}
-                        href={route("users.show", user.id)}
-                        onClick={() => setSwipeAction(null)}
-                    />
-                    <SwipeActionButton
-                        icon={<Edit className="w-5 h-5 text-white" />}
-                        href={route("users.edit", user.id)}
-                        onClick={() => setSwipeAction(null)}
-                    />
-                    <SwipeActionButton
-                        icon={<Trash2 className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onDelete(user);
-                            setSwipeAction(null);
-                        }}
-                    />
+    // Define swipe actions
+    const primaryActions = [
+        { icon: Eye, label: 'View', color: 'blue', href: `/users/${user.id}` },
+        { icon: Edit, label: 'Edit', color: 'indigo', href: `/users/${user.id}/edit` },
+        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(user) },
+    ];
+
+    // Custom impersonate icon component
+    const ImpersonateIcon = ({ className }) => (
+        <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+    );
+
+    const secondaryActions = [
+        ...(canImpersonate ? [{
+            icon: ImpersonateIcon,
+            label: 'Impersonate',
+            color: 'purple',
+            onClick: () => onImpersonate(user)
+        }] : []),
+        { icon: Key, label: 'Reset Password', color: 'yellow', onClick: () => onResetPassword(user) },
+        { icon: Power, label: user.is_active ? 'Deactivate' : 'Activate', color: user.is_active ? 'orange' : 'green', onClick: () => onToggleStatus(user) },
+    ];
+
+    // Get role color scheme
+    const getRoleColors = (role) => {
+        const colors = {
+            admin: { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', icon: 'bg-blue-100', iconColor: 'text-blue-600', border: 'border-blue-200' },
+            teacher: { bg: 'bg-gradient-to-br from-purple-500 to-purple-600', icon: 'bg-purple-100', iconColor: 'text-purple-600', border: 'border-purple-200' },
+            guardian: { bg: 'bg-gradient-to-br from-green-500 to-green-600', icon: 'bg-green-100', iconColor: 'text-green-600', border: 'border-green-200' },
+        };
+        return colors[role] || { bg: 'bg-gradient-to-br from-gray-500 to-gray-600', icon: 'bg-gray-100', iconColor: 'text-gray-600', border: 'border-gray-200' };
+    };
+
+    const roleColors = getRoleColors(user.role);
+
+    // Header content with Badge component
+    const header = (
+        <div className="flex gap-3">
+            {/* Left: Avatar with Role Color */}
+            <div className="flex-shrink-0">
+              
+            </div>
+
+            {/* Right: User Info */}
+            <div className="flex-1 min-w-0">
+                {/* Top Row: Name & Status */}
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h3 className="text-base font-bold text-gray-900 truncate leading-tight">
+                        {user.name}
+                    </h3>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        user.is_active
+                            ? 'bg-green-100 text-green-700 border border-green-200'
+                            : 'bg-gray-100 text-gray-600 border border-gray-200'
+                    }`}>
+                        {user.is_active ? (
+                            <CheckCircle className="w-3 h-3" />
+                        ) : (
+                            <XCircle className="w-3 h-3" />
+                        )}
+                        {user.is_active ? 'Active' : 'Inactive'}
+                    </div>
                 </div>
-            )}
-            {swipeAction === 'secondary' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-indigo-500 flex items-center justify-start px-4 gap-2 z-10">
-                    {canImpersonate && (
-                        <SwipeActionButton
-                            icon={
-                                <svg
-                                    className="w-5 h-5 text-white"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    viewBox="0 0 24 24"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                                    />
-                                </svg>
-                            }
-                            onClick={() => {
-                                onImpersonate(user);
-                                setSwipeAction(null);
-                            }}
-                        />
+
+                {/* Role Badge */}
+                <div className="mb-2">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${roleColors.icon} ${roleColors.iconColor} border ${roleColors.border}`}>
+                        <User className="w-3 h-3" />
+                        {roles.find((r) => r.value === user.role)?.label || user.role}
+                    </span>
+                </div>
+
+                {/* Email */}
+                <div className="flex items-center gap-1.5 mb-1.5">
+                    <div className="w-5 h-5 rounded bg-blue-50 flex items-center justify-center flex-shrink-0">
+                        <Mail className="w-3 h-3 text-blue-600" />
+                    </div>
+                    <p className="text-xs text-gray-700 truncate font-medium">{user.email}</p>
+                </div>
+
+                {/* Phone & Employee Number */}
+                <div className="flex items-center gap-3 flex-wrap">
+                    {user.phone && (
+                        <div className="flex items-center gap-1.5">
+                            <div className="w-5 h-5 rounded bg-green-50 flex items-center justify-center flex-shrink-0">
+                                <Phone className="w-3 h-3 text-green-600" />
+                            </div>
+                            <span className="text-xs text-gray-700 font-medium">{user.phone}</span>
+                        </div>
                     )}
-                    <SwipeActionButton
-                        icon={<Key className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onResetPassword(user);
-                            setSwipeAction(null);
-                        }}
-                    />
-                    <SwipeActionButton
-                        icon={<Power className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onToggleStatus(user);
-                            setSwipeAction(null);
-                        }}
-                    />
+                    {(user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number) && (
+                        <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">ID:</span>
+                            <span className="text-xs font-semibold text-gray-700">
+                                {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                            </span>
+                        </div>
+                    )}
                 </div>
-            )}
-
-            {/* Main Content */}
-            <div
-                {...handlers}
-                className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-44' :
-                    swipeAction === 'secondary' ? (canImpersonate ? 'translate-x-44' : 'translate-x-32') : ''
-                }`}
-                onClick={() => {
-                    if (swipeAction) {
-                        setSwipeAction(null);
-                    }
-                }}
-            >
-                {/* Summary Row - Compact Design */}
-                <div
-                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => {
-                        if (!swipeAction) {
-                            setIsExpanded(!isExpanded);
-                        }
-                    }}
-                >
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                            {/* Unique Identifier Badge at Top */}
-                            {(user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number) && (
-                                <div className="mb-2">
-                                    <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                        {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
-                                    </span>
-                                </div>
-                            )}
-
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-base font-bold text-gray-900 truncate">
-                                    {user.name}
-                                </h3>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
-                                    user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                }`}>
-                                    {user.is_active ? 'Active' : 'Inactive'}
-                                </span>
-                            </div>
-
-                            <p className="text-xs text-gray-600 truncate mb-2">{user.email}</p>
-
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${getRoleBadgeColor(user.role)}`}>
-                                    {roles.find((r) => r.value === user.role)?.label || user.role}
-                                </span>
-                                {user.phone && (
-                                    <>
-                                        <span className="text-gray-400">•</span>
-                                        <span className="text-xs text-gray-500">{user.phone}</span>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex-shrink-0">
-                            {isExpanded ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Expanded Details - Compact Design */}
-                {isExpanded && (
-                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
-                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
-                            {user.creator && (
-                                <div className="flex items-center gap-2">
-                                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                    <span className="text-xs text-gray-600">Created by: {user.creator.name}</span>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            <Link
-                                href={route("users.show", user.id)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-                            >
-                                <Eye className="w-3.5 h-3.5" />
-                                View
-                            </Link>
-                            <Link
-                                href={route("users.edit", user.id)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-                            >
-                                <Edit className="w-3.5 h-3.5" />
-                                Edit
-                            </Link>
-
-                            {canImpersonate && (
-                                <button
-                                    onClick={() => onImpersonate(user)}
-                                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-purple-600 text-white rounded-lg text-xs font-medium hover:bg-purple-700 transition-colors"
-                                >
-                                    <svg
-                                        className="w-3.5 h-3.5"
-                                        fill="none"
-                                        stroke="currentColor"
-                                        viewBox="0 0 24 24"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
-                                        />
-                                    </svg>
-                                    Login As User
-                                </button>
-                            )}
-
-                            <button
-                                onClick={() => onResetPassword(user)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-yellow-600 text-white rounded-lg text-xs font-medium hover:bg-yellow-700 transition-colors"
-                            >
-                                <Key className="w-3.5 h-3.5" />
-                                Reset
-                            </button>
-
-                            <button
-                                onClick={() => onToggleStatus(user)}
-                                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                                    user.is_active
-                                        ? 'bg-orange-600 text-white hover:bg-orange-700'
-                                        : 'bg-green-600 text-white hover:bg-green-700'
-                                }`}
-                            >
-                                <Power className="w-3.5 h-3.5" />
-                                {user.is_active ? 'Deactivate' : 'Activate'}
-                            </button>
-
-                            <button
-                                onClick={() => onDelete(user)}
-                                className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Delete User
-                            </button>
-                        </div>
-                    </div>
-                )}
             </div>
         </div>
     );
+
+    // Expanded content
+    const expandedContent = (
+        <div className="px-4 pb-4 pt-3 space-y-3">
+            {/* Info Section */}
+            {user.creator && (
+                <div className="flex items-center gap-2.5 text-sm">
+                    <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-0.5">Created By</p>
+                        <p className="text-sm font-medium text-gray-900 truncate">{user.creator.name}</p>
+                    </div>
+                </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-2">
+                <Link
+                    href={route("users.show", user.id)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow active:scale-95"
+                >
+                    <Eye className="w-3.5 h-3.5" />
+                    View
+                </Link>
+                <Link
+                    href={route("users.edit", user.id)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-xs font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-sm hover:shadow active:scale-95"
+                >
+                    <Edit className="w-3.5 h-3.5" />
+                    Edit
+                </Link>
+
+                {canImpersonate && (
+                    <button
+                        onClick={() => onImpersonate(user)}
+                        className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg text-xs font-semibold hover:from-purple-700 hover:to-purple-800 transition-all shadow-sm hover:shadow active:scale-95"
+                    >
+                        <svg
+                            className="w-3.5 h-3.5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                            <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                            />
+                        </svg>
+                        Login As User
+                    </button>
+                )}
+
+                <button
+                    onClick={() => onResetPassword(user)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg text-xs font-semibold hover:from-yellow-700 hover:to-yellow-800 transition-all shadow-sm hover:shadow active:scale-95"
+                >
+                    <Key className="w-3.5 h-3.5" />
+                    Reset
+                </button>
+
+                <button
+                    onClick={() => onToggleStatus(user)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow active:scale-95 ${
+                        user.is_active
+                            ? 'bg-gradient-to-r from-orange-600 to-orange-700 text-white hover:from-orange-700 hover:to-orange-800'
+                            : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+                    }`}
+                >
+                    <Power className="w-3.5 h-3.5" />
+                    {user.is_active ? 'Deactivate' : 'Activate'}
+                </button>
+
+                <button
+                    onClick={() => onDelete(user)}
+                    className="col-span-2 flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg text-xs font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-sm hover:shadow active:scale-95"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete User
+                </button>
+            </div>
+        </div>
+    );
+
+    return (
+        <SwipeableListItem
+            primaryActions={primaryActions}
+            secondaryActions={secondaryActions}
+        >
+            <ExpandableCard header={header}>
+                {expandedContent}
+            </ExpandableCard>
+        </SwipeableListItem>
+    );
 }
 
-export default function Index({ auth, users, stats, filters, roles, flash }) {
+export default function Index({ auth, users, stats, filters: initialFilters = {}, roles, flash }) {
+    // Use the new useFilters hook
+    const { filters, updateFilter, clearFilters } = useFilters({
+        route: '/users',
+        initialFilters: {
+            search: initialFilters.search || '',
+            role: initialFilters.role || '',
+            status: initialFilters.status || '',
+        },
+    });
+
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [generatedPassword, setGeneratedPassword] = useState("");
     const [passwordUserName, setPasswordUserName] = useState("");
@@ -414,21 +404,6 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
         });
     };
 
-    const getRoleBadgeColor = (role) => {
-        const colors = {
-            admin: "bg-purple-100 text-purple-800",
-            teacher: "bg-blue-100 text-blue-800",
-            guardian: "bg-green-100 text-green-800",
-            accountant: "bg-yellow-100 text-yellow-800",
-            receptionist: "bg-pink-100 text-pink-800",
-            nurse: "bg-red-100 text-red-800",
-            it_staff: "bg-indigo-100 text-indigo-800",
-            maid: "bg-gray-100 text-gray-800",
-            cook: "bg-orange-100 text-orange-800",
-        };
-        return colors[role] || "bg-gray-100 text-gray-800";
-    };
-
     return (
         <AuthenticatedLayout header="User Management">
             <Head title="Users" />
@@ -453,32 +428,62 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
             {/* Stats Cards */}
             <UserStatsCards stats={stats} />
 
-            {/* Filters */}
-            <UserFilters filters={filters} roles={roles} />
+            {/* Filters - Refactored with FilterBar */}
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+                <FilterBar onClear={clearFilters} gridCols="3">
+                    <SearchInput
+                        value={filters.search}
+                        onChange={(e) => updateFilter('search', e.target.value)}
+                        placeholder="Search by name, email..."
+                        label="Search"
+                    />
+                    <FilterSelect
+                        value={filters.role}
+                        onChange={(e) => updateFilter('role', e.target.value)}
+                        options={roles.map(role => ({ value: role.value, label: role.label }))}
+                        allLabel="All Roles"
+                        label="Role"
+                    />
+                    <FilterSelect
+                        value={filters.status}
+                        onChange={(e) => updateFilter('status', e.target.value)}
+                        options={[
+                            { value: 'active', label: 'Active' },
+                            { value: 'inactive', label: 'Inactive' }
+                        ]}
+                        allLabel="All Status"
+                        label="Status"
+                    />
+                </FilterBar>
+            </div>
 
-            {/* Mobile List View */}
-            <div className="block md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-                {users.data.filter(u => u.id !== auth.user.id).length > 0 ? (
-                    users.data.map((user) => (
+            {/* Mobile List View - Refactored with MobileListContainer */}
+            <div className=" block md:hidden mb-6">
+                <MobileListContainer
+                    emptyState={{
+                        icon: UserPlus,
+                        title: 'No users found',
+                        message: filters.search || filters.role || filters.status ? 'Try adjusting your filters' : 'Add your first user',
+                        action: {
+                            label: 'Add User',
+                            href: route("users.create"),
+                            icon: UserPlus,
+                        }
+                    }}
+                >
+                    {users.data.filter(u => u.id !== auth.user.id).length > 0 && users.data.map((user) => (
                         <MobileUserItem
                             key={user.id}
                             user={user}
                             auth={auth}
                             roles={roles}
-                            getRoleBadgeColor={getRoleBadgeColor}
                             onDelete={handleDeleteClick}
                             onResetPassword={handleResetPasswordClick}
                             onToggleStatus={handleToggleStatusClick}
                             onImpersonate={handleImpersonateClick}
                         />
-                    ))
-                ) : (
-                    <div className="px-6 py-16 text-center">
-                        <UserPlus className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-                        <p className="text-gray-500 font-bold text-lg">No users found</p>
-                        <p className="text-sm text-gray-400 mt-2">Try adjusting your filters</p>
-                    </div>
-                )}
+                    ))}
+                </MobileListContainer>
             </div>
 
             {/* Desktop Table View - UNCHANGED */}
@@ -551,9 +556,11 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                         >
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number ? (
-                                                    <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                                        {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
-                                                    </span>
+                                                    <Badge
+                                                        variant="primary"
+                                                        value={user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                                                        size="sm"
+                                                    />
                                                 ) : (
                                                     <span className="text-xs text-gray-400">N/A</span>
                                                 )}
@@ -576,17 +583,11 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span
-                                                    className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${getRoleBadgeColor(
-                                                        user.role
-                                                    )}`}
-                                                >
-                                                    {roles.find(
-                                                        (r) =>
-                                                            r.value ===
-                                                            user.role
-                                                    )?.label || user.role}
-                                                </span>
+                                                <Badge
+                                                    variant={getRoleBadgeVariant(user.role)}
+                                                    value={roles.find((r) => r.value === user.role)?.label || user.role}
+                                                    size="sm"
+                                                />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <p className="text-sm text-gray-700">
@@ -594,17 +595,16 @@ export default function Index({ auth, users, stats, filters, roles, flash }) {
                                                 </p>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {user.is_active ? (
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">
-                                                        <CheckCircle className="w-3 h-3 mr-1" />
-                                                        Active
-                                                    </span>
-                                                ) : (
-                                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-red-100 text-red-800">
-                                                        <XCircle className="w-3 h-3 mr-1" />
-                                                        Inactive
-                                                    </span>
-                                                )}
+                                                <Badge
+                                                    variant="status"
+                                                    value={
+                                                        <span className="inline-flex items-center gap-1">
+                                                            {user.is_active ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
+                                                            {user.is_active ? 'Active' : 'Inactive'}
+                                                        </span>
+                                                    }
+                                                    size="sm"
+                                                />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <p className="text-sm text-gray-700">

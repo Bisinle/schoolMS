@@ -33,7 +33,7 @@ export default function Children({ students, currentYear, currentTerm }) {
                             <p className="text-gray-600">Academic Year {currentYear} • Term {currentTerm}</p>
                         </div>
                         <Link
-                            href="/dashboard"
+                            href={route('dashboard')}
                             className="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                             ← Back to Dashboard

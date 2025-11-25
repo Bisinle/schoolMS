@@ -32,7 +32,7 @@ console.log(student);
             <div className="space-y-6">
                 {/* Back Button */}
                 <Link
-                    href="/students"
+                    href={route('students.index')}
                     className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors"
                 >
                     <ArrowLeft className="w-4 h-4 mr-2" />

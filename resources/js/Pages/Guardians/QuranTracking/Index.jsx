@@ -1,24 +1,27 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 import { BookOpen, User, ChevronRight, Calendar, BookMarked, Layers } from "lucide-react";
+import { Badge } from '@/Components/UI';
 
 export default function Index({ students }) {
+    // Helper to get reading type badge variant
     const getReadingTypeBadge = (type) => {
-        const badges = {
-            'new_learning': 'bg-emerald-100 text-emerald-700',
-            'revision': 'bg-blue-100 text-blue-700',
-            'subac': 'bg-orange-100 text-orange-700',
+        const variants = {
+            'new_learning': 'success',
+            'revision': 'info',
+            'subac': 'secondary',
         };
-        return badges[type] || 'bg-gray-100 text-gray-700';
+        return variants[type] || 'secondary';
     };
 
+    // Helper to get difficulty badge variant
     const getDifficultyBadge = (difficulty) => {
-        const badges = {
-            'very_well': 'bg-emerald-100 text-emerald-700',
-            'middle': 'bg-amber-100 text-amber-700',
-            'difficult': 'bg-rose-100 text-rose-700',
+        const variants = {
+            'very_well': 'success',
+            'middle': 'warning',
+            'difficult': 'danger',
         };
-        return badges[difficulty] || 'bg-gray-100 text-gray-700';
+        return variants[difficulty] || 'secondary';
     };
 
     return (
@@ -88,12 +91,16 @@ export default function Index({ students }) {
 
                                             {/* Badges */}
                                             <div className="flex flex-wrap gap-2 mb-3">
-                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getReadingTypeBadge(student.latest_tracking.reading_type)}`}>
-                                                    {student.latest_tracking.reading_type_label}
-                                                </span>
-                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getDifficultyBadge(student.latest_tracking.difficulty)}`}>
-                                                    {student.latest_tracking.difficulty_label}
-                                                </span>
+                                                <Badge
+                                                    variant={getReadingTypeBadge(student.latest_tracking.reading_type)}
+                                                    value={student.latest_tracking.reading_type_label}
+                                                    size="sm"
+                                                />
+                                                <Badge
+                                                    variant={getDifficultyBadge(student.latest_tracking.difficulty)}
+                                                    value={student.latest_tracking.difficulty_label}
+                                                    size="sm"
+                                                />
                                             </div>
 
                                             {/* Stats Grid */}
@@ -172,12 +179,16 @@ export default function Index({ students }) {
                                                 </div>
                                             </div>
                                             <div className="flex flex-wrap items-center gap-2">
-                                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getReadingTypeBadge(student.latest_tracking.reading_type)}`}>
-                                                    {student.latest_tracking.reading_type_label}
-                                                </span>
-                                                <span className={`px-3 py-1 text-xs font-semibold rounded-full ${getDifficultyBadge(student.latest_tracking.difficulty)}`}>
-                                                    {student.latest_tracking.difficulty_label}
-                                                </span>
+                                                <Badge
+                                                    variant={getReadingTypeBadge(student.latest_tracking.reading_type)}
+                                                    value={student.latest_tracking.reading_type_label}
+                                                    size="sm"
+                                                />
+                                                <Badge
+                                                    variant={getDifficultyBadge(student.latest_tracking.difficulty)}
+                                                    value={student.latest_tracking.difficulty_label}
+                                                    size="sm"
+                                                />
                                             </div>
                                             <div className="grid grid-cols-3 gap-2 mt-3">
                                                 <div className="text-center p-2 bg-blue-50 rounded">

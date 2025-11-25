@@ -1,36 +1,29 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { Plus, Eye, Edit, Trash2, Users, BookOpen, Tag, Search, Archive, RefreshCw } from 'lucide-react';
+import { Plus, Eye, Edit, Trash2, Users, BookOpen, Tag, Archive, RefreshCw } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import useFilters from '@/Hooks/useFilters';
+import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
+import { Badge } from '@/Components/UI';
 
-export default function GradesIndex({ grades, filters = {}, auth }) {
+export default function GradesIndex({ grades, filters: initialFilters = {}, auth }) {
     const { school } = usePage().props;
     const isMadrasah = school?.school_type === 'madrasah';
 
-    const [search, setSearch] = useState(filters.search || '');
-    const [level, setLevel] = useState(filters.level || '');
-    const [showArchived, setShowArchived] = useState(filters.show_archived || '');
+    // Use the new useFilters hook
+    const { filters, updateFilter, clearFilters } = useFilters({
+        route: '/grades',
+        initialFilters: {
+            search: initialFilters.search || '',
+            level: initialFilters.level || '',
+            show_archived: initialFilters.show_archived || '',
+        },
+    });
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
     const [selectedGrade, setSelectedGrade] = useState(null);
-
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get('/grades', { search, level, show_archived: showArchived }, { preserveState: true });
-    };
-
-    const handleLevelChange = (e) => {
-        const newLevel = e.target.value;
-        setLevel(newLevel);
-        router.get('/grades', { search, level: newLevel, show_archived: showArchived }, { preserveState: true });
-    };
-
-    const handleArchivedChange = (e) => {
-        const newShowArchived = e.target.value;
-        setShowArchived(newShowArchived);
-        router.get('/grades', { search, level, show_archived: newShowArchived }, { preserveState: true });
-    };
 
     const confirmDelete = (grade) => {
         setSelectedGrade(grade);
@@ -106,48 +99,45 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                         </div>
                     </div>
 
-                    {/* Search and Filter */}
+                    {/* Search and Filter - Refactored with FilterBar */}
                     <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                        <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                            <div className="relative w-full sm:flex-1 lg:w-64">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                <input
-                                    type="text"
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
+                        <div className="flex-1 w-full lg:max-w-3xl">
+                            <FilterBar onClear={clearFilters} gridCols={isMadrasah ? "2" : "3"}>
+                                <SearchInput
+                                    value={filters.search}
+                                    onChange={(e) => updateFilter('search', e.target.value)}
                                     placeholder="Search grades..."
-                                    className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                                 />
-                            </div>
-                            <div className="flex gap-2">
                                 {!isMadrasah && (
-                                <select
-                                    value={level}
-                                    onChange={handleLevelChange}
-                                    className="flex-1 sm:flex-initial px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all text-sm"
-                                >
-                                    <option value="">All Levels</option>
-                                    <option value="ECD">ECD</option>
-                                    <option value="LOWER PRIMARY">Lower Primary</option>
-                                    <option value="UPPER PRIMARY">Upper Primary</option>
-                                    <option value="JUNIOR SECONDARY">Junior Secondary</option>
-                                </select>
+                                    <FilterSelect
+                                        value={filters.level}
+                                        onChange={(e) => updateFilter('level', e.target.value)}
+                                        options={[
+                                            { value: 'ECD', label: 'ECD' },
+                                            { value: 'LOWER PRIMARY', label: 'Lower Primary' },
+                                            { value: 'UPPER PRIMARY', label: 'Upper Primary' },
+                                            { value: 'JUNIOR SECONDARY', label: 'Junior Secondary' }
+                                        ]}
+                                        allLabel="All Levels"
+                                        hideLabel
+                                    />
                                 )}
-                                <select
-                                    value={showArchived}
-                                    onChange={handleArchivedChange}
-                                    className="flex-1 sm:flex-initial px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all text-sm"
-                                >
-                                    <option value="">Active Only</option>
-                                    <option value="true">All (Including Archived)</option>
-                                    <option value="only">Archived Only</option>
-                                </select>
-                            </div>
-                        </form>
+                                <FilterSelect
+                                    value={filters.show_archived}
+                                    onChange={(e) => updateFilter('show_archived', e.target.value)}
+                                    options={[
+                                        { value: 'true', label: 'All (Including Archived)' },
+                                        { value: 'only', label: 'Archived Only' }
+                                    ]}
+                                    allLabel="Active Only"
+                                    hideLabel
+                                />
+                            </FilterBar>
+                        </div>
 
                         {auth.user.role === 'admin' && (
                             <Link
-                                href="/grades/create"
+                                href={route('grades.create')}
                                 className="inline-flex items-center justify-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
                             >
                                 <Plus className="w-5 h-5 mr-2" />
@@ -193,27 +183,21 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                                                     </span>
                                                 )}
                                                 {!isMadrasah && grade.level && (
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getLevelBadgeColor(grade.level)}`}>
-                                                    {grade.level}
-                                                </span>
+                                                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${getLevelBadgeColor(grade.level)}`}>
+                                                        {grade.level}
+                                                    </span>
                                                 )}
                                                 {isUnassigned && (
-                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-200/70 text-gray-700 border border-gray-300/50">
-                                                        System
-                                                    </span>
+                                                    <Badge variant="secondary" value="System" size="sm" />
                                                 )}
                                             </div>
                                         </div>
                                         <div className="flex flex-col gap-1 ml-2">
-                                            <span
-                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                                                    grade.status === 'active'
-                                                        ? 'bg-green-100/80 text-green-700 border border-green-200/50'
-                                                        : 'bg-red-100/80 text-red-700 border border-red-200/50'
-                                                }`}
-                                            >
-                                                {grade.status.charAt(0).toUpperCase() + grade.status.slice(1)}
-                                            </span>
+                                            <Badge
+                                                variant="status"
+                                                value={grade.status}
+                                                size="sm"
+                                            />
                                             {grade.deleted_at && (
                                                 <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100/80 text-gray-700 border border-gray-200/50">
                                                     <Archive className="w-3 h-3 mr-1" />
@@ -305,11 +289,11 @@ export default function GradesIndex({ grades, filters = {}, auth }) {
                                 <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                                 <h3 className="text-lg font-medium text-gray-900 mb-2">No grades found</h3>
                                 <p className="text-gray-600 mb-6">
-                                    {search || level ? 'Try adjusting your filters' : 'Get started by creating your first grade'}
+                                    {filters.search || filters.level ? 'Try adjusting your filters' : 'Get started by creating your first grade'}
                                 </p>
-                                {auth.user.role === 'admin' && !search && !level && (
+                                {auth.user.role === 'admin' && !filters.search && !filters.level && (
                                     <Link
-                                        href="/grades/create"
+                                        href={route('grades.create')}
                                         className="inline-flex items-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"
                                     >
                                         <Plus className="w-5 h-5 mr-2" />

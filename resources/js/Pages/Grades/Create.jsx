@@ -94,7 +94,7 @@ export default function GradesCreate({ subjects, teachers, levels }) {
                         <div className="flex items-center justify-between">
                             <h2 className="text-lg font-semibold text-gray-900">Grade Information</h2>
                             <Link
-                                href="/grades"
+                                href={route('grades.index')}
                                 className="inline-flex items-center px-3 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 <ArrowLeft className="w-4 h-4 mr-2" />
@@ -373,7 +373,7 @@ export default function GradesCreate({ subjects, teachers, levels }) {
                         {/* Submit Button */}
                         <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
                             <Link
-                                href="/grades"
+                                href={route('grades.index')}
                                 className="px-6 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel

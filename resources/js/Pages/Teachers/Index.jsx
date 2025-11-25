@@ -1,100 +1,50 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { Plus, Search, Eye, Edit, Trash2, BookOpen, ChevronDown, ChevronUp, Mail, Phone, User, GraduationCap } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import { Plus, Eye, Edit, Trash2, BookOpen, Mail, Phone, User, GraduationCap } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
-import { useSwipeable } from 'react-swipeable';
-import SwipeActionButton from '@/Components/SwipeActionButton';
+import useFilters from '@/Hooks/useFilters';
+import { SearchInput } from '@/Components/Filters';
+import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
+import { Badge } from '@/Components/UI';
 
-// Mobile List Item Component
+// Mobile List Item Component - Refactored with new components
 function MobileTeacherItem({ teacher, auth, onDelete }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [swipeAction, setSwipeAction] = useState(null);
+    // Build swipe actions
+    const primaryActions = [
+        { icon: Eye, label: 'View', color: 'blue', href: `/teachers/${teacher.id}` },
+        { icon: Edit, label: 'Edit', color: 'indigo', href: `/teachers/${teacher.id}/edit` },
+        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(teacher) },
+    ];
 
-    const handlers = useSwipeable({
-        onSwipedLeft: () => setSwipeAction('primary'),
-        onSwipedRight: () => setSwipeAction('secondary'),
-        onSwiping: () => {},
-        trackMouse: false,
-        preventScrollOnSwipe: false,
-        delta: 60,
-    });
+    const secondaryActions = teacher.user?.phone ? [
+        { icon: Phone, label: 'Call', color: 'green', href: `tel:${teacher.user.phone}` },
+    ] : [];
 
     return (
-        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
-            {/* Swipe Actions Background */}
-            {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <SwipeActionButton
-                        icon={<Eye className="w-5 h-5 text-white" />}
-                        href={`/teachers/${teacher.id}`}
-                        onClick={() => setSwipeAction(null)}
-                    />
-                    <SwipeActionButton
-                        icon={<Edit className="w-5 h-5 text-white" />}
-                        href={`/teachers/${teacher.id}/edit`}
-                        onClick={() => setSwipeAction(null)}
-                    />
-                    <SwipeActionButton
-                        icon={<Trash2 className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onDelete(teacher);
-                            setSwipeAction(null);
-                        }}
-                    />
-                </div>
-            )}
-            {swipeAction === 'secondary' && teacher.user?.phone && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-6 gap-3 z-10">
-                    <SwipeActionButton
-                        icon={<Phone className="w-6 h-6 text-white" />}
-                        href={`tel:${teacher.user.phone}`}
-                        onClick={() => setSwipeAction(null)}
-                        size="large"
-                    />
-                </div>
-            )}
-
-            {/* Main Content */}
-            <div
-                {...handlers}
-                className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-44' :
-                    swipeAction === 'secondary' ? 'translate-x-24' : ''
-                }`}
-                onClick={() => {
-                    if (swipeAction) {
-                        setSwipeAction(null);
-                    }
-                }}
-            >
-                {/* Summary Row - Enhanced Design */}
-                <div
-                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => {
-                        if (!swipeAction) {
-                            setIsExpanded(!isExpanded);
-                        }
-                    }}
-                >
+        <SwipeableListItem
+            primaryActions={primaryActions}
+            secondaryActions={secondaryActions}
+        >
+            <ExpandableCard
+                header={
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                            {/* Employee Number Badge at Top */}
+                            {/* Employee Number Badge */}
                             <div className="mb-2">
-                                <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                    {teacher.employee_number}
-                                </span>
+                                <Badge variant="primary" value={teacher.employee_number} size="sm" />
                             </div>
 
                             <div className="flex items-center justify-between mb-2">
                                 <h3 className="text-base font-bold text-gray-900 truncate">
                                     {teacher.user?.name}
                                 </h3>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
-                                    teacher.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                }`}>
-                                    {teacher.status === 'active' ? 'Active' : 'Inactive'}
-                                </span>
+                                <Badge
+                                    variant="status"
+                                    value={teacher.status}
+                                    size="sm"
+                                    className="flex-shrink-0 ml-2"
+                                />
                             </div>
 
                             <div className="flex items-center gap-2 flex-wrap mb-2">
@@ -130,135 +80,132 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                                 )}
                             </div>
                         </div>
-
-                        <div className="flex-shrink-0">
-                            {isExpanded ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </div>
                     </div>
-                </div>
+                }
+            >
 
-                {/* Expanded Details - Enhanced Design */}
-                {isExpanded && (
-                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
-                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
-                            {teacher.gender && (
-                                <div className="flex items-center gap-2">
-                                    <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                    <span className="text-xs text-gray-600 capitalize">{teacher.gender}</span>
-                                </div>
-                            )}
+                {/* Expanded Details */}
+                <div className="space-y-3">
+                    <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
+                        {teacher.gender && (
+                            <div className="flex items-center gap-2">
+                                <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600 capitalize">{teacher.gender}</span>
+                            </div>
+                        )}
 
-                            {teacher.date_of_birth && (
-                                <div className="flex items-center gap-2">
-                                    <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                    <span className="text-xs text-gray-600">
-                                        DOB: {new Date(teacher.date_of_birth).toLocaleDateString()}
-                                    </span>
-                                </div>
-                            )}
+                        {teacher.date_of_birth && (
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600">
+                                    DOB: {new Date(teacher.date_of_birth).toLocaleDateString()}
+                                </span>
+                            </div>
+                        )}
 
-                            {teacher.qualification && (
-                                <div className="flex items-center gap-2">
-                                    <BookOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                    <span className="text-xs text-gray-600">{teacher.qualification}</span>
-                                </div>
-                            )}
+                        {teacher.qualification && (
+                            <div className="flex items-center gap-2">
+                                <BookOpen className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600">{teacher.qualification}</span>
+                            </div>
+                        )}
 
-                            {teacher.hire_date && (
-                                <div className="flex items-center gap-2">
-                                    <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                    <span className="text-xs text-gray-600">
-                                        Hired: {new Date(teacher.hire_date).toLocaleDateString()}
-                                    </span>
-                                </div>
-                            )}
+                        {teacher.hire_date && (
+                            <div className="flex items-center gap-2">
+                                <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                                <span className="text-xs text-gray-600">
+                                    Hired: {new Date(teacher.hire_date).toLocaleDateString()}
+                                </span>
+                            </div>
+                        )}
 
-                            {teacher.grades && teacher.grades.length > 0 && (
-                                <div className="flex items-start gap-2 border-t border-gray-100 mt-2 pt-2">
-                                    <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
-                                    <div className="flex-1">
-                                        <p className="text-xs font-semibold text-gray-500 mb-1">Assigned Classes:</p>
-                                        <div className="flex flex-wrap gap-1">
-                                            {teacher.grades.map((grade) => (
-                                                <span
-                                                    key={grade.id}
-                                                    className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                        grade.pivot.is_class_teacher
-                                                            ? 'bg-orange-600 text-white'
-                                                            : 'bg-orange-100 text-orange-700'
-                                                    }`}
-                                                >
-                                                    {grade.name}
-                                                    {grade.pivot.is_class_teacher && ' ★'}
-                                                </span>
-                                            ))}
-                                        </div>
+                        {teacher.grades && teacher.grades.length > 0 && (
+                            <div className="flex items-start gap-2 border-t border-gray-100 mt-2 pt-2">
+                                <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <p className="text-xs font-semibold text-gray-500 mb-1">Assigned Classes:</p>
+                                    <div className="flex flex-wrap gap-1">
+                                        {teacher.grades.map((grade) => (
+                                            <span
+                                                key={grade.id}
+                                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                                                    grade.pivot.is_class_teacher
+                                                        ? 'bg-orange-600 text-white'
+                                                        : 'bg-orange-100 text-orange-700'
+                                                }`}
+                                            >
+                                                {grade.name}
+                                                {grade.pivot.is_class_teacher && ' ★'}
+                                            </span>
+                                        ))}
                                     </div>
                                 </div>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            <Link
-                                href={`/teachers/${teacher.id}`}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-                            >
-                                <Eye className="w-3.5 h-3.5" />
-                                View
-                            </Link>
-                            <Link
-                                href={`/teachers/${teacher.id}/edit`}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-                            >
-                                <Edit className="w-3.5 h-3.5" />
-                                Edit
-                            </Link>
-
-                            {teacher.user?.email && (
-                                <a
-                                    href={`mailto:${teacher.user.email}`}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
-                                >
-                                    <Mail className="w-3.5 h-3.5" />
-                                    Email
-                                </a>
-                            )}
-
-                            <button
-                                onClick={() => onDelete(teacher)}
-                                className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors ${teacher.user?.email ? '' : 'col-span-2'}`}
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Delete
-                            </button>
-                        </div>
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
-        </div>
+
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-2">
+                        <Link
+                            href={`/teachers/${teacher.id}`}
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
+                        >
+                            <Eye className="w-3.5 h-3.5" />
+                            View
+                        </Link>
+                        <Link
+                            href={`/teachers/${teacher.id}/edit`}
+                            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                        >
+                            <Edit className="w-3.5 h-3.5" />
+                            Edit
+                        </Link>
+
+                        {teacher.user?.email && (
+                            <a
+                                href={`mailto:${teacher.user.email}`}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors"
+                            >
+                                <Mail className="w-3.5 h-3.5" />
+                                Email
+                            </a>
+                        )}
+
+                        <button
+                            onClick={() => onDelete(teacher)}
+                            className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors ${
+                                teacher.user?.email ? '' : 'col-span-2'
+                            }`}
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            Delete
+                        </button>
+                    </div>
+                </div>
+            </ExpandableCard>
+        </SwipeableListItem>
     );
 }
 
-export default function TeachersIndex({ teachers, filters, auth }) {
-    const [search, setSearch] = useState(filters.search || '');
+export default function TeachersIndex({ teachers, filters: initialFilters = {}, auth }) {
+    // Use the new useFilters hook
+    const { filters, updateFilter } = useFilters({
+        route: '/teachers',
+        initialFilters: {
+            search: initialFilters.search || '',
+        },
+    });
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedTeacher, setSelectedTeacher] = useState(null);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get('/teachers', { search }, { preserveState: true });
-    };
-
-    const confirmDelete = (teacher) => {
+    // Memoize handlers passed to child components
+    const confirmDelete = useCallback((teacher) => {
         setSelectedTeacher(teacher);
         setShowDeleteModal(true);
-    };
+    }, []);
 
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (selectedTeacher) {
             router.delete(`/teachers/${selectedTeacher.id}`, {
                 onSuccess: () => {
@@ -267,30 +214,25 @@ export default function TeachersIndex({ teachers, filters, auth }) {
                 },
             });
         }
-    };
+    }, [selectedTeacher]);
 
     return (
         <AuthenticatedLayout header="Teachers Management">
             <Head title="Teachers" />
 
             <div className="space-y-6">
-                {/* Header Actions */}
+                {/* Header Actions - Refactored with SearchInput */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <form onSubmit={handleSearch} className="flex-1 w-full sm:max-w-md">
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <input
-                                type="text"
-                                value={search}
-                                onChange={(e) => setSearch(e.target.value)}
-                                placeholder="Search teachers..."
-                                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
-                            />
-                        </div>
-                    </form>
+                    <div className="flex-1 w-full sm:max-w-md">
+                        <SearchInput
+                            value={filters.search}
+                            onChange={(e) => updateFilter('search', e.target.value)}
+                            placeholder="Search teachers..."
+                        />
+                    </div>
 
                     <Link
-                        href="/teachers/create"
+                        href={route('teachers.create')}
                         className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                         <Plus className="w-5 h-5 mr-2" />
@@ -298,24 +240,24 @@ export default function TeachersIndex({ teachers, filters, auth }) {
                     </Link>
                 </div>
 
-                {/* Mobile List View */}
-                <div className="block md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    {teachers.data && teachers.data.length > 0 ? (
-                        teachers.data.map((teacher) => (
+                {/* Mobile List View - Refactored with MobileListContainer */}
+                <div className="block md:hidden">
+                    <MobileListContainer
+                        emptyState={{
+                            icon: GraduationCap,
+                            title: 'No teachers found',
+                            message: 'Try adjusting your search',
+                        }}
+                    >
+                        {teachers.data && teachers.data.length > 0 && teachers.data.map((teacher) => (
                             <MobileTeacherItem
                                 key={teacher.id}
                                 teacher={teacher}
                                 auth={auth}
                                 onDelete={confirmDelete}
                             />
-                        ))
-                    ) : (
-                        <div className="px-6 py-16 text-center">
-                            <GraduationCap className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-500 font-bold text-lg">No teachers found</p>
-                            <p className="text-sm text-gray-400 mt-2">Try adjusting your search</p>
-                        </div>
-                    )}
+                        ))}
+                    </MobileListContainer>
                 </div>
 
                 {/* Desktop Table View - UNCHANGED */}
@@ -384,13 +326,7 @@ export default function TeachersIndex({ teachers, filters, auth }) {
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                teacher.status === 'active' 
-                                                    ? 'bg-green-100 text-green-800' 
-                                                    : 'bg-red-100 text-red-800'
-                                            }`}>
-                                                {teacher.status}
-                                            </span>
+                                            <Badge variant="status" value={teacher.status} />
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                                             <Link

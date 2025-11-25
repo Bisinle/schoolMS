@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from '@inertiajs/react';
 
 /**
@@ -34,21 +35,20 @@ import { Link } from '@inertiajs/react';
  * />
  * 
  * @example
- * // Anchor variant (for tel: links)
  * <SwipeActionButton 
  *   icon={Phone}
  *   href={`tel:${phone}`}
  *   onClick={() => setSwipeAction(null)}
  * />
  */
-export default function SwipeActionButton({ 
-    icon: Icon, 
-    href, 
-    onClick, 
+export default function SwipeActionButton({
+    icon: Icon,
+    href,
+    onClick,
     size = 'medium',
     className = '',
     preserveScroll = false,
-    ...props 
+    ...props
 }) {
     // Size variants with padding and border radius
     const sizeConfig = {
@@ -56,18 +56,21 @@ export default function SwipeActionButton({
             padding: 'p-2',
             radius: 'rounded-lg',
             iconSize: 'w-4 h-4',
+            iconSizePx: 16,
             shadow: '',
         },
         medium: {
             padding: 'p-3',
             radius: 'rounded-xl',
             iconSize: 'w-5 h-5',
+            iconSizePx: 20,
             shadow: '',
         },
         large: {
             padding: 'p-4',
             radius: 'rounded-2xl',
             iconSize: 'w-6 h-6',
+            iconSizePx: 24,
             shadow: 'shadow-lg',
         },
     };
@@ -93,11 +96,27 @@ export default function SwipeActionButton({
     const buttonClasses = `${baseClasses} ${className}`.trim();
 
     // Icon with proper sizing and color
-    const iconElement = typeof Icon === 'function' ? (
-        <Icon className={`${config.iconSize} text-white`} />
-    ) : (
-        Icon
-    );
+    // Handle both component (function) and element (JSX) formats
+    const iconElement = Icon ? (
+        typeof Icon === 'function' ? (
+            <Icon
+                size={config.iconSizePx}
+                className="text-white"
+                strokeWidth={2.5}
+                aria-hidden="true"
+            />
+        ) : (
+            // If Icon is already a JSX element, clone it with proper classes
+            React.isValidElement(Icon) ? (
+                React.cloneElement(Icon, {
+                    size: config.iconSizePx,
+                    className: `text-white ${Icon.props?.className || ''}`,
+                    strokeWidth: 2.5,
+                    'aria-hidden': true
+                })
+            ) : null
+        )
+    ) : null;
 
     // If href starts with 'tel:', 'mailto:', or 'http', use native anchor
     const isExternalLink = href && (

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Head, Link, router, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ConfirmationModal from "@/Components/ConfirmationModal";
+import { Badge } from "@/Components/UI";
 import {
     Download,
     Eye,
@@ -82,41 +83,35 @@ export default function Show({ document, auth }) {
         });
     };
 
-    const getStatusBadge = () => {
-        const badges = {
-            pending: {
-                color: "bg-yellow-100 text-yellow-800 border-yellow-200",
-                icon: Clock,
-                text: "Pending Review",
-            },
-            verified: {
-                color: "bg-green-100 text-green-800 border-green-200",
-                icon: CheckCircle,
-                text: "Verified",
-            },
-            rejected: {
-                color: "bg-red-100 text-red-800 border-red-200",
-                icon: XCircle,
-                text: "Rejected",
-            },
-            expired: {
-                color: "bg-gray-100 text-gray-800 border-gray-200",
-                icon: AlertCircle,
-                text: "Expired",
-            },
+    // Helper to get status badge icon
+    const getStatusIcon = (status) => {
+        const icons = {
+            pending: Clock,
+            verified: CheckCircle,
+            rejected: XCircle,
+            expired: AlertCircle,
         };
+        return icons[status] || Clock;
+    };
 
-        const badge = badges[document.status] || badges.pending;
-        const Icon = badge.icon;
+    const getStatusVariant = (status) => {
+        const variants = {
+            pending: 'warning',
+            verified: 'success',
+            rejected: 'danger',
+            expired: 'secondary',
+        };
+        return variants[status] || 'warning';
+    };
 
-        return (
-            <span
-                className={`inline-flex items-center px-3 py-1 text-sm font-medium rounded-full border ${badge.color}`}
-            >
-                <Icon className="w-4 h-4 mr-1.5" />
-                {badge.text}
-            </span>
-        );
+    const getStatusLabel = (status) => {
+        const labels = {
+            pending: 'Pending Review',
+            verified: 'Verified',
+            rejected: 'Rejected',
+            expired: 'Expired',
+        };
+        return labels[status] || 'Pending Review';
     };
 
     const getEntityName = () => {
@@ -180,7 +175,21 @@ export default function Show({ document, auth }) {
                                     </p>
                                 </div>
                             </div>
-                            <div>{getStatusBadge()}</div>
+                            <div>
+                                <Badge
+                                    variant={getStatusVariant(document.status)}
+                                    value={
+                                        <span className="inline-flex items-center gap-1.5">
+                                            {(() => {
+                                                const Icon = getStatusIcon(document.status);
+                                                return <Icon className="w-3.5 h-3.5" />;
+                                            })()}
+                                            {getStatusLabel(document.status)}
+                                        </span>
+                                    }
+                                    size="md"
+                                />
+                            </div>
                         </div>
                     </div>
 

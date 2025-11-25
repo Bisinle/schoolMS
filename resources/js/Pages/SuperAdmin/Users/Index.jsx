@@ -1,202 +1,213 @@
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
-import { Search, Eye, Power, Trash2, RefreshCw, Filter, ChevronDown, ChevronUp, Mail, Phone, School as SchoolIcon, User, X } from 'lucide-react';
-import { useState } from 'react';
-import ConfirmationModal from '@/Components/ConfirmationModal';
-import { useSwipeable } from 'react-swipeable';
-import SwipeActionButton from '@/Components/SwipeActionButton';
+import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
+import { Head, Link, router } from "@inertiajs/react";
+import {
+    Eye,
+    Power,
+    Trash2,
+    RefreshCw,
+    Mail,
+    Phone,
+    School as SchoolIcon,
+    User,
+    CheckCircle,
+    XCircle,
+} from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import ConfirmationModal from "@/Components/ConfirmationModal";
+import useFilters from '@/Hooks/useFilters';
+import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
+import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
+import { Badge } from "@/Components/UI";
 
-// Mobile List Item Component - Redesigned
-function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete, getRoleBadgeColor }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [swipeAction, setSwipeAction] = useState(null);
+// Helper to get role badge variant
+function getRoleBadgeVariant(role) {
+    const variants = {
+        admin: "primary",
+        teacher: "info",
+        guardian: "success",
+        accountant: "warning",
+        receptionist: "secondary",
+        nurse: "danger",
+        it_staff: "secondary",
+    };
+    return variants[role] || "secondary";
+}
 
-    const handlers = useSwipeable({
-        onSwipedLeft: () => setSwipeAction('primary'),
-        onSwipedRight: () => setSwipeAction('secondary'),
-        onSwiping: () => {},
-        trackMouse: false,
-        preventScrollOnSwipe: false,
-        delta: 60,
-    });
+// Mobile List Item Component - Refactored with new components
+function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete }) {
+    // Get role color scheme
+    const getRoleColors = (role) => {
+        const colors = {
+            admin: { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', icon: 'bg-blue-100', iconColor: 'text-blue-600', border: 'border-blue-200' },
+            teacher: { bg: 'bg-gradient-to-br from-purple-500 to-purple-600', icon: 'bg-purple-100', iconColor: 'text-purple-600', border: 'border-purple-200' },
+            guardian: { bg: 'bg-gradient-to-br from-green-500 to-green-600', icon: 'bg-green-100', iconColor: 'text-green-600', border: 'border-green-200' },
+            accountant: { bg: 'bg-gradient-to-br from-yellow-500 to-yellow-600', icon: 'bg-yellow-100', iconColor: 'text-yellow-600', border: 'border-yellow-200' },
+            receptionist: { bg: 'bg-gradient-to-br from-pink-500 to-pink-600', icon: 'bg-pink-100', iconColor: 'text-pink-600', border: 'border-pink-200' },
+            nurse: { bg: 'bg-gradient-to-br from-red-500 to-red-600', icon: 'bg-red-100', iconColor: 'text-red-600', border: 'border-red-200' },
+            it_staff: { bg: 'bg-gradient-to-br from-indigo-500 to-indigo-600', icon: 'bg-indigo-100', iconColor: 'text-indigo-600', border: 'border-indigo-200' },
+        };
+        return colors[role] || { bg: 'bg-gradient-to-br from-gray-500 to-gray-600', icon: 'bg-gray-100', iconColor: 'text-gray-600', border: 'border-gray-200' };
+    };
 
-    return (
-        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
-            {/* Swipe Actions Background */}
-            {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-6 gap-3 z-10">
-                    <SwipeActionButton
-                        icon={<Eye className="w-6 h-6 text-white" />}
-                        href={route('super-admin.users.show', user.id)}
-                        onClick={() => setSwipeAction(null)}
-                        size="large"
-                    />
-                    <SwipeActionButton
-                        icon={<RefreshCw className="w-6 h-6 text-white" />}
-                        onClick={() => {
-                            onResetPassword(user);
-                            setSwipeAction(null);
-                        }}
-                        size="large"
-                    />
+    const roleColors = getRoleColors(user.role);
+
+    // Define swipe actions
+    const primaryActions = [
+        { icon: Eye, label: 'View', color: 'blue', href: `/super-admin/users/${user.id}` },
+        { icon: RefreshCw, label: 'Reset Password', color: 'yellow', onClick: () => onResetPassword(user) },
+    ];
+
+    const secondaryActions = [
+        { icon: Power, label: user.is_active ? 'Suspend' : 'Activate', color: user.is_active ? 'red' : 'green', onClick: () => onToggleActive(user) },
+        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(user) },
+    ];
+
+    // Header content
+    const header = (
+        <div className="flex gap-3">
+            {/* Left: Avatar with Role Color */}
+            <div className="flex-shrink-0">
+                <div className={`w-12 h-12 rounded-full ${roleColors.bg} flex items-center justify-center text-white font-bold text-lg shadow-md`}>
+                    {user.name.charAt(0).toUpperCase()}
                 </div>
-            )}
-            {swipeAction === 'secondary' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-6 gap-3 z-10">
-                    <SwipeActionButton
-                        icon={<Power className="w-6 h-6 text-white" />}
-                        onClick={() => {
-                            onToggleActive(user);
-                            setSwipeAction(null);
-                        }}
-                        size="large"
-                    />
-                    <SwipeActionButton
-                        icon={<Trash2 className="w-6 h-6 text-white" />}
-                        onClick={() => {
-                            onDelete(user);
-                            setSwipeAction(null);
-                        }}
-                        size="large"
-                    />
-                </div>
-            )}
+            </div>
 
-            {/* Main Content */}
-            <div
-                {...handlers}
-                className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-44' :
-                    swipeAction === 'secondary' ? 'translate-x-44' : ''
-                }`}
-                onClick={() => {
-                    if (swipeAction) {
-                        setSwipeAction(null);
-                    }
-                }}
-            >
-                {/* Summary Row - Compact Design */}
-                <div
-                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => {
-                        if (!swipeAction) {
-                            setIsExpanded(!isExpanded);
-                        }
-                    }}
-                >
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                            {/* Unique Identifier Badge at Top */}
-                            {(user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number) && (
-                                <div className="mb-2">
-                                    <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                        {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
-                                    </span>
-                                </div>
-                            )}
-
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-base font-bold text-gray-900 truncate">
-                                    {user.name}
-                                </h3>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
-                                    user.is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                }`}>
-                                    {user.is_active ? 'Active' : 'Suspended'}
-                                </span>
-                            </div>
-
-                            <p className="text-xs text-gray-600 truncate mb-2">{user.email}</p>
-
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${getRoleBadgeColor(user.role)}`}>
-                                    {user.role.replace('_', ' ')}
-                                </span>
-                                {user.school && (
-                                    <>
-                                        <span className="text-gray-400">•</span>
-                                        <span className="text-xs text-gray-500 truncate">{user.school.name}</span>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex-shrink-0">
-                            {isExpanded ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </div>
+            {/* Right: User Info */}
+            <div className="flex-1 min-w-0">
+                {/* Top Row: Name & Status */}
+                <div className="flex items-start justify-between gap-2 mb-1.5">
+                    <h3 className="text-base font-bold text-gray-900 truncate leading-tight">
+                        {user.name}
+                    </h3>
+                    <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                        user.is_active
+                            ? 'bg-green-100 text-green-700 border border-green-200'
+                            : 'bg-red-100 text-red-700 border border-red-200'
+                    }`}>
+                        {user.is_active ? 'Active' : 'Suspended'}
                     </div>
                 </div>
 
-                {/* Expanded Details - Compact Design */}
-                {isExpanded && (
-                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
-                        {/* Info Grid - Compact */}
-                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
-                            {user.phone && (
-                                <div className="flex items-center gap-2">
-                                    <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                    <span className="text-xs text-gray-600">{user.phone}</span>
-                                </div>
-                            )}
+                {/* Role Badge */}
+                <div className="mb-2">
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${roleColors.icon} ${roleColors.iconColor} border ${roleColors.border}`}>
+                        <User className="w-3 h-3" />
+                        {user.role.replace("_", " ")}
+                    </span>
+                </div>
 
-                            <div className="flex items-center gap-2">
-                                <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                <span className="text-xs text-gray-600">ID: #{user.id}</span>
-                            </div>
-                        </div>
+                {/* Email */}
+                <p className="text-xs text-gray-700 truncate font-medium mb-1.5">{user.email}</p>
 
-                        {/* Action Buttons - Compact */}
-                        <div className="grid grid-cols-2 gap-2">
-                            <Link
-                                href={route('super-admin.users.show', user.id)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-                            >
-                                <Eye className="w-3.5 h-3.5" />
-                                View
-                            </Link>
-                            <button
-                                onClick={() => onResetPassword(user)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-yellow-600 text-white rounded-lg text-xs font-medium hover:bg-yellow-700 transition-colors"
-                            >
-                                <RefreshCw className="w-3.5 h-3.5" />
-                                Reset
-                            </button>
-                            <button
-                                onClick={() => onToggleActive(user)}
-                                className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors ${
-                                    user.is_active
-                                        ? 'bg-red-600 text-white hover:bg-red-700'
-                                        : 'bg-green-600 text-white hover:bg-green-700'
-                                }`}
-                            >
-                                <Power className="w-3.5 h-3.5" />
-                                {user.is_active ? 'Suspend' : 'Activate'}
-                            </button>
-                            <button
-                                onClick={() => onDelete(user)}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-700 text-white rounded-lg text-xs font-medium hover:bg-red-800 transition-colors"
-                            >
-                                <Trash2 className="w-3.5 h-3.5" />
-                                Delete
-                            </button>
+                {/* School & Employee Number */}
+                <div className="flex items-center gap-3 flex-wrap">
+                    {user.school && (
+                        <span className="text-xs text-gray-600 truncate font-medium">
+                            🏫 {user.school.name}
+                        </span>
+                    )}
+                    {(user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number) && (
+                        <div className="flex items-center gap-1">
+                            <span className="text-xs text-gray-500">ID:</span>
+                            <span className="text-xs font-semibold text-gray-700">
+                                {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                            </span>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
         </div>
     );
+
+    // Expanded content
+    const expandedContent = (
+        <div className="px-4 pb-4 pt-3 space-y-3">
+            {/* Info Section */}
+            <div className="grid grid-cols-1 gap-2">
+                {user.phone && (
+                    <div className="flex items-center gap-2.5 text-sm">
+                        <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                            <Phone className="w-4 h-4 text-green-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-500 mb-0.5">Phone</p>
+                            <p className="text-sm font-medium text-gray-900">{user.phone}</p>
+                        </div>
+                    </div>
+                )}
+
+                <div className="flex items-center gap-2.5 text-sm">
+                    <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center flex-shrink-0">
+                        <User className="w-4 h-4 text-indigo-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                        <p className="text-xs text-gray-500 mb-0.5">User ID</p>
+                        <p className="text-sm font-medium text-gray-900">#{user.id}</p>
+                    </div>
+                </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 pt-2">
+                <Link
+                    href={`/super-admin/users/${user.id}`}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow active:scale-95"
+                >
+                    <Eye className="w-3.5 h-3.5" />
+                    View
+                </Link>
+                <button
+                    onClick={() => onResetPassword(user)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-yellow-600 to-yellow-700 text-white rounded-lg text-xs font-semibold hover:from-yellow-700 hover:to-yellow-800 transition-all shadow-sm hover:shadow active:scale-95"
+                >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    Reset
+                </button>
+                <button
+                    onClick={() => onToggleActive(user)}
+                    className={`flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-lg text-xs font-semibold transition-all shadow-sm hover:shadow active:scale-95 ${
+                        user.is_active
+                            ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800'
+                            : 'bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800'
+                    }`}
+                >
+                    <Power className="w-3.5 h-3.5" />
+                    {user.is_active ? 'Suspend' : 'Activate'}
+                </button>
+                <button
+                    onClick={() => onDelete(user)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-red-700 to-red-800 text-white rounded-lg text-xs font-semibold hover:from-red-800 hover:to-red-900 transition-all shadow-sm hover:shadow active:scale-95"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Delete
+                </button>
+            </div>
+        </div>
+    );
+
+    return (
+        <SwipeableListItem
+            primaryActions={primaryActions}
+            secondaryActions={secondaryActions}
+        >
+            <ExpandableCard header={header}>
+                {expandedContent}
+            </ExpandableCard>
+        </SwipeableListItem>
+    );
 }
 
-export default function Index({ users, schools, filters }) {
-    const [search, setSearch] = useState(filters.search || '');
-    const [schoolFilter, setSchoolFilter] = useState(filters.school_id || '');
-    const [roleFilter, setRoleFilter] = useState(filters.role || '');
-    const [activeFilter, setActiveFilter] = useState(filters.is_active || '');
-    const [showFilters, setShowFilters] = useState(false);
+export default function Index({ users, schools, filters: initialFilters = {} }) {
+    // Use the new useFilters hook
+    const { filters, updateFilter, clearFilters } = useFilters({
+        route: '/super-admin/users',
+        initialFilters: {
+            search: initialFilters.search || '',
+            school_id: initialFilters.school_id || '',
+            role: initialFilters.role || '',
+            is_active: initialFilters.is_active || '',
+        },
+    });
 
     // Modal states
     const [showActivateModal, setShowActivateModal] = useState(false);
@@ -204,102 +215,92 @@ export default function Index({ users, schools, filters }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedUser, setSelectedUser] = useState(null);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get(route('super-admin.users.index'), {
-            search,
-            school_id: schoolFilter,
-            role: roleFilter,
-            is_active: activeFilter,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    // Filter options with useMemo
+    const schoolOptions = useMemo(() => [
+        { value: '', label: 'All Schools' },
+        ...schools.map(school => ({ value: school.id, label: school.name }))
+    ], [schools]);
 
-    const handleClearFilters = () => {
-        setSearch('');
-        setSchoolFilter('');
-        setRoleFilter('');
-        setActiveFilter('');
-        router.get(route('super-admin.users.index'));
-    };
+    const roleOptions = useMemo(() => [
+        { value: '', label: 'All Roles' },
+        { value: 'admin', label: 'Admin' },
+        { value: 'teacher', label: 'Teacher' },
+        { value: 'guardian', label: 'Guardian' },
+        { value: 'accountant', label: 'Accountant' },
+        { value: 'receptionist', label: 'Receptionist' },
+        { value: 'nurse', label: 'Nurse' },
+        { value: 'it_staff', label: 'IT Staff' },
+    ], []);
 
-    const handleToggleActive = (user) => {
+    const statusOptions = useMemo(() => [
+        { value: '', label: 'All Status' },
+        { value: '1', label: 'Active' },
+        { value: '0', label: 'Suspended' },
+    ], []);
+
+    // Event handlers with useCallback
+    const handleToggleActive = useCallback((user) => {
         setSelectedUser(user);
         setShowActivateModal(true);
-    };
+    }, []);
 
-    const confirmToggleActive = () => {
+    const confirmToggleActive = useCallback(() => {
         if (selectedUser) {
-            router.post(route('super-admin.users.toggle-active', selectedUser.id), {}, {
-                onSuccess: () => {
-                    setShowActivateModal(false);
-                    setSelectedUser(null);
-                },
-            });
+            router.post(
+                `/super-admin/users/${selectedUser.id}/toggle-active`,
+                {},
+                {
+                    onSuccess: () => {
+                        setShowActivateModal(false);
+                        setSelectedUser(null);
+                    },
+                }
+            );
         }
-    };
+    }, [selectedUser]);
 
-    const handleResetPassword = (user) => {
+    const handleResetPassword = useCallback((user) => {
         setSelectedUser(user);
         setShowResetPasswordModal(true);
-    };
+    }, []);
 
-    const confirmResetPassword = () => {
+    const confirmResetPassword = useCallback(() => {
         if (selectedUser) {
-            router.post(route('super-admin.users.reset-password', selectedUser.id), {}, {
-                onSuccess: () => {
-                    setShowResetPasswordModal(false);
-                    setSelectedUser(null);
-                },
-            });
+            router.post(
+                `/super-admin/users/${selectedUser.id}/reset-password`,
+                {},
+                {
+                    onSuccess: () => {
+                        setShowResetPasswordModal(false);
+                        setSelectedUser(null);
+                    },
+                }
+            );
         }
-    };
+    }, [selectedUser]);
 
-    const handleDelete = (user) => {
+    const handleDelete = useCallback((user) => {
         setSelectedUser(user);
         setShowDeleteModal(true);
-    };
+    }, []);
 
-    const confirmDelete = () => {
+    const confirmDelete = useCallback(() => {
         if (selectedUser) {
-            router.delete(route('super-admin.users.destroy', selectedUser.id), {
+            router.delete(`/super-admin/users/${selectedUser.id}`, {
                 onSuccess: () => {
                     setShowDeleteModal(false);
                     setSelectedUser(null);
                 },
             });
         }
-    };
+    }, [selectedUser]);
 
-    const getRoleBadgeColor = (role) => {
-        const colors = {
-            admin: 'bg-purple-100 text-purple-700',
-            teacher: 'bg-blue-100 text-blue-700',
-            guardian: 'bg-green-100 text-green-700',
-            accountant: 'bg-yellow-100 text-yellow-700',
-            receptionist: 'bg-pink-100 text-pink-700',
-            nurse: 'bg-red-100 text-red-700',
-            it_staff: 'bg-gray-100 text-gray-700',
-        };
-        return colors[role] || 'bg-gray-100 text-gray-700';
-    };
-
-    const getRoleBadgeColorGradient = (role) => {
-        const colors = {
-            admin: 'from-purple-500 to-purple-600',
-            teacher: 'from-blue-500 to-blue-600',
-            guardian: 'from-green-500 to-green-600',
-            accountant: 'from-yellow-500 to-yellow-600',
-            receptionist: 'from-pink-500 to-pink-600',
-            nurse: 'from-red-500 to-red-600',
-            it_staff: 'from-gray-500 to-gray-600',
-        };
-        return colors[role] || 'from-gray-500 to-gray-600';
-    };
-
-    const activeFiltersCount = [search, schoolFilter, roleFilter, activeFilter].filter(Boolean).length;
+    const activeFiltersCount = [
+        search,
+        schoolFilter,
+        roleFilter,
+        activeFilter,
+    ].filter(Boolean).length;
 
     return (
         <AuthenticatedLayout
@@ -325,20 +326,36 @@ export default function Index({ users, schools, filters }) {
                                     <Filter className="w-5 h-5 text-white" />
                                 </div>
                                 <div className="text-left">
-                                    <p className="text-lg font-black text-gray-900">Search & Filters</p>
+                                    <p className="text-lg font-black text-gray-900">
+                                        Search & Filters
+                                    </p>
                                     {activeFiltersCount > 0 && (
-                                        <p className="text-xs text-indigo-600 font-semibold">{activeFiltersCount} active filter{activeFiltersCount > 1 ? 's' : ''}</p>
+                                        <p className="text-xs text-indigo-600 font-semibold">
+                                            {activeFiltersCount} active filter
+                                            {activeFiltersCount > 1 ? "s" : ""}
+                                        </p>
                                     )}
                                 </div>
                             </div>
-                            <ChevronDown className={`w-6 h-6 text-gray-400 transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+                            <ChevronDown
+                                className={`w-6 h-6 text-gray-400 transition-transform ${
+                                    showFilters ? "rotate-180" : ""
+                                }`}
+                            />
                         </button>
-                        
+
                         {/* Filter Form */}
-                        <form onSubmit={handleSearch} className={`p-5 space-y-4 ${showFilters ? 'block' : 'hidden'}`}>
+                        <form
+                            onSubmit={handleSearch}
+                            className={`p-5 space-y-4 ${
+                                showFilters ? "block" : "hidden"
+                            }`}
+                        >
                             {/* Search */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Search</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                    Search
+                                </label>
                                 <input
                                     type="text"
                                     value={search}
@@ -350,15 +367,22 @@ export default function Index({ users, schools, filters }) {
 
                             {/* School Filter */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">School</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                    School
+                                </label>
                                 <select
                                     value={schoolFilter}
-                                    onChange={(e) => setSchoolFilter(e.target.value)}
+                                    onChange={(e) =>
+                                        setSchoolFilter(e.target.value)
+                                    }
                                     className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base font-medium"
                                 >
                                     <option value="">All Schools</option>
                                     {schools.map((school) => (
-                                        <option key={school.id} value={school.id}>
+                                        <option
+                                            key={school.id}
+                                            value={school.id}
+                                        >
                                             {school.name}
                                         </option>
                                     ))}
@@ -367,18 +391,26 @@ export default function Index({ users, schools, filters }) {
 
                             {/* Role Filter */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Role</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                    Role
+                                </label>
                                 <select
                                     value={roleFilter}
-                                    onChange={(e) => setRoleFilter(e.target.value)}
+                                    onChange={(e) =>
+                                        setRoleFilter(e.target.value)
+                                    }
                                     className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base font-medium"
                                 >
                                     <option value="">All Roles</option>
                                     <option value="admin">Admin</option>
                                     <option value="teacher">Teacher</option>
                                     <option value="guardian">Guardian</option>
-                                    <option value="accountant">Accountant</option>
-                                    <option value="receptionist">Receptionist</option>
+                                    <option value="accountant">
+                                        Accountant
+                                    </option>
+                                    <option value="receptionist">
+                                        Receptionist
+                                    </option>
                                     <option value="nurse">Nurse</option>
                                     <option value="it_staff">IT Staff</option>
                                 </select>
@@ -386,10 +418,14 @@ export default function Index({ users, schools, filters }) {
 
                             {/* Status Filter */}
                             <div>
-                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">Status</label>
+                                <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
+                                    Status
+                                </label>
                                 <select
                                     value={activeFilter}
-                                    onChange={(e) => setActiveFilter(e.target.value)}
+                                    onChange={(e) =>
+                                        setActiveFilter(e.target.value)
+                                    }
                                     className="block w-full px-4 py-4 border-2 border-gray-300 rounded-xl shadow-sm focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500 text-base font-medium"
                                 >
                                     <option value="">All Status</option>
@@ -425,8 +461,12 @@ export default function Index({ users, schools, filters }) {
                                 <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4 mx-auto">
                                     <Search className="w-10 h-10 text-gray-400" />
                                 </div>
-                                <p className="text-gray-500 font-bold text-lg">No users found</p>
-                                <p className="text-sm text-gray-400 mt-2">Try adjusting your filters</p>
+                                <p className="text-gray-500 font-bold text-lg">
+                                    No users found
+                                </p>
+                                <p className="text-sm text-gray-400 mt-2">
+                                    Try adjusting your filters
+                                </p>
                             </div>
                         ) : (
                             users.data.map((user) => (
@@ -471,31 +511,51 @@ export default function Index({ users, schools, filters }) {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {users.data.length === 0 ? (
                                         <tr>
-                                            <td colSpan="6" className="px-6 py-12 text-center">
+                                            <td
+                                                colSpan="6"
+                                                className="px-6 py-12 text-center"
+                                            >
                                                 <div className="flex flex-col items-center">
                                                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3">
                                                         <Search className="w-8 h-8 text-gray-400" />
                                                     </div>
-                                                    <p className="text-gray-500 font-medium">No users found</p>
+                                                    <p className="text-gray-500 font-medium">
+                                                        No users found
+                                                    </p>
                                                 </div>
                                             </td>
                                         </tr>
                                     ) : (
                                         users.data.map((user) => (
-                                            <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                            <tr
+                                                key={user.id}
+                                                className="hover:bg-gray-50 transition-colors"
+                                            >
                                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                    {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number ? (
+                                                    {user.employee_number ||
+                                                    user.teacher
+                                                        ?.employee_number ||
+                                                    user.guardian
+                                                        ?.guardian_number ? (
                                                         <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                                            {user.employee_number || user.teacher?.employee_number || user.guardian?.guardian_number}
+                                                            {user.employee_number ||
+                                                                user.teacher
+                                                                    ?.employee_number ||
+                                                                user.guardian
+                                                                    ?.guardian_number}
                                                         </span>
                                                     ) : (
-                                                        <span className="text-xs text-gray-400">N/A</span>
+                                                        <span className="text-xs text-gray-400">
+                                                            N/A
+                                                        </span>
                                                     )}
                                                 </td>
                                                 <td className="px-4 sm:px-6 py-4">
                                                     <div className="flex items-center gap-3">
                                                         <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold">
-                                                            {user.name.charAt(0).toUpperCase()}
+                                                            {user.name
+                                                                .charAt(0)
+                                                                .toUpperCase()}
                                                         </div>
                                                         <div className="min-w-0">
                                                             <div className="text-sm font-bold text-gray-900 truncate">
@@ -509,48 +569,80 @@ export default function Index({ users, schools, filters }) {
                                                 </td>
                                                 <td className="hidden md:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm text-gray-900 font-medium">
-                                                        {user.school?.name || 'N/A'}
+                                                        {user.school?.name ||
+                                                            "N/A"}
                                                     </div>
                                                 </td>
                                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full bg-gradient-to-r ${getRoleBadgeColorGradient(user.role)} text-white shadow-sm`}>
-                                                        {user.role.replace('_', ' ').toUpperCase()}
-                                                    </span>
+                                                    <Badge
+                                                        variant={getRoleBadgeVariant(
+                                                            user.role
+                                                        )}
+                                                        value={user.role
+                                                            .replace("_", " ")
+                                                            .toUpperCase()}
+                                                        size="sm"
+                                                    />
                                                 </td>
                                                 <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                    <span className={`inline-flex px-3 py-1 text-xs font-bold rounded-full ${
-                                                        user.is_active
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-red-100 text-red-800'
-                                                    }`}>
-                                                        {user.is_active ? 'Active' : 'Suspended'}
-                                                    </span>
+                                                    <Badge
+                                                        variant="status"
+                                                        value={
+                                                            user.is_active
+                                                                ? "Active"
+                                                                : "Inactive"
+                                                        }
+                                                        size="sm"
+                                                    />
                                                 </td>
                                                 <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                                     <div className="flex gap-2">
                                                         <Link
-                                                            href={route('super-admin.users.show', user.id)}
+                                                            href={route(
+                                                                "super-admin.users.show",
+                                                                user.id
+                                                            )}
                                                             className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                                             title="View"
                                                         >
                                                             <Eye className="w-4 h-4" />
                                                         </Link>
                                                         <button
-                                                            onClick={() => handleToggleActive(user)}
-                                                            className={`p-2 rounded-lg transition-colors ${user.is_active ? 'text-red-600 hover:bg-red-50' : 'text-green-600 hover:bg-green-50'}`}
-                                                            title={user.is_active ? 'Suspend' : 'Activate'}
+                                                            onClick={() =>
+                                                                handleToggleActive(
+                                                                    user
+                                                                )
+                                                            }
+                                                            className={`p-2 rounded-lg transition-colors ${
+                                                                user.is_active
+                                                                    ? "text-red-600 hover:bg-red-50"
+                                                                    : "text-green-600 hover:bg-green-50"
+                                                            }`}
+                                                            title={
+                                                                user.is_active
+                                                                    ? "Suspend"
+                                                                    : "Activate"
+                                                            }
                                                         >
                                                             <Power className="w-4 h-4" />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleResetPassword(user)}
+                                                            onClick={() =>
+                                                                handleResetPassword(
+                                                                    user
+                                                                )
+                                                            }
                                                             className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
                                                             title="Reset Password"
                                                         >
                                                             <RefreshCw className="w-4 h-4" />
                                                         </button>
                                                         <button
-                                                            onClick={() => handleDelete(user)}
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    user
+                                                                )
+                                                            }
                                                             className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                                                             title="Delete"
                                                         >
@@ -572,13 +664,19 @@ export default function Index({ users, schools, filters }) {
                                     {users.links.map((link, index) => (
                                         <Link
                                             key={index}
-                                            href={link.url || '#'}
+                                            href={link.url || "#"}
                                             className={`px-3 py-2 text-sm border rounded-lg font-medium transition-all ${
                                                 link.active
-                                                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                                                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                                            } ${!link.url ? 'opacity-50 cursor-not-allowed' : ''}`}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
+                                                    ? "bg-indigo-600 text-white border-indigo-600 shadow-sm"
+                                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                            } ${
+                                                !link.url
+                                                    ? "opacity-50 cursor-not-allowed"
+                                                    : ""
+                                            }`}
+                                            dangerouslySetInnerHTML={{
+                                                __html: link.label,
+                                            }}
                                             preserveState
                                             preserveScroll
                                         />
@@ -600,10 +698,18 @@ export default function Index({ users, schools, filters }) {
                             setSelectedUser(null);
                         }}
                         onConfirm={confirmToggleActive}
-                        title={selectedUser.is_active ? 'Suspend User' : 'Activate User'}
-                        message={`Are you sure you want to ${selectedUser.is_active ? 'suspend' : 'activate'} ${selectedUser.name}?`}
-                        confirmText={selectedUser.is_active ? 'Suspend' : 'Activate'}
-                        type={selectedUser.is_active ? 'danger' : 'info'}
+                        title={
+                            selectedUser.is_active
+                                ? "Suspend User"
+                                : "Activate User"
+                        }
+                        message={`Are you sure you want to ${
+                            selectedUser.is_active ? "suspend" : "activate"
+                        } ${selectedUser.name}?`}
+                        confirmText={
+                            selectedUser.is_active ? "Suspend" : "Activate"
+                        }
+                        type={selectedUser.is_active ? "danger" : "info"}
                     />
 
                     <ConfirmationModal

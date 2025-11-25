@@ -1,250 +1,194 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
-import { Plus, Users, Eye, Edit, Trash2, FileText, ChevronDown, ChevronUp, Mail, Phone, User, Calendar, GraduationCap } from 'lucide-react';
+import { useState, useMemo, useCallback } from 'react';
+import { Plus, Users, Eye, Edit, Trash2, FileText, Mail, Phone, User, Calendar, GraduationCap } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import GenerateReportModal from '@/Components/Students/GenerateReportModal';
-import StudentsFilters from '@/Components/Students/StudentsFilters';
-import { useSwipeable } from 'react-swipeable';
-import SwipeActionButton from '@/Components/SwipeActionButton';
+import useFilters from '@/Hooks/useFilters';
+import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
+import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
+import { Badge } from '@/Components/UI';
 
-// Mobile List Item Component
+// Mobile List Item Component - Refactored with new components
 function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [swipeAction, setSwipeAction] = useState(null);
+    // Build swipe actions based on user role
+    const primaryActions = [
+        { icon: Eye, label: 'View', color: 'blue', href: `/students/${student.id}` },
+    ];
 
-    const handlers = useSwipeable({
-        onSwipedLeft: () => setSwipeAction('primary'),
-        onSwipedRight: () => setSwipeAction('secondary'),
-        onSwiping: () => {},
-        trackMouse: false,
-        preventScrollOnSwipe: false,
-        delta: 60,
-    });
+    if (auth.user.role === 'admin') {
+        primaryActions.push(
+            { icon: Edit, label: 'Edit', color: 'indigo', href: `/students/${student.id}/edit` },
+            { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(student) }
+        );
+    }
+
+    const secondaryActions = [
+        { icon: FileText, label: 'Report', color: 'green', onClick: () => onGenerateReport(student) },
+    ];
 
     return (
-        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
-            {/* Swipe Actions Background */}
-            {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <SwipeActionButton
-                        icon={<Eye className="w-5 h-5 text-white" />}
-                        href={`/students/${student.id}`}
-                        onClick={() => setSwipeAction(null)}
-                    />
-                    {auth.user.role === 'admin' && (
-                        <>
-                            <SwipeActionButton
-                                icon={<Edit className="w-5 h-5 text-white" />}
-                                href={`/students/${student.id}/edit`}
-                                onClick={() => setSwipeAction(null)}
-                            />
-                            <SwipeActionButton
-                                icon={<Trash2 className="w-5 h-5 text-white" />}
-                                onClick={() => {
-                                    onDelete(student);
-                                    setSwipeAction(null);
-                                }}
-                            />
-                        </>
-                    )}
-                </div>
-            )}
-            {swipeAction === 'secondary' && (
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-500 flex items-center justify-start px-4 gap-2 z-10">
-                    <SwipeActionButton
-                        icon={<FileText className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onGenerateReport(student);
-                            setSwipeAction(null);
-                        }}
-                    />
-                </div>
-            )}
+        <SwipeableListItem
+            primaryActions={primaryActions}
+            secondaryActions={secondaryActions}
+        >
+            <ExpandableCard
+                header={
+                    <div className="flex-1 min-w-0">
+                        {/* Top Row: Admission Number & Status */}
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                            <Badge variant="primary" value={student.admission_number} size="sm" />
+                            <Badge variant="status" value={student.status} size="sm" />
+                        </div>
 
-            {/* Main Content */}
-            <div
-                {...handlers}
-                className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-44' :
-                    swipeAction === 'secondary' ? 'translate-x-24' : ''
-                }`}
-                onClick={() => {
-                    if (swipeAction) {
-                        setSwipeAction(null);
-                    }
-                }}
+                        {/* Student Name */}
+                        <h3 className="text-base font-bold text-gray-900 truncate mb-2">
+                            {student.first_name} {student.last_name}
+                        </h3>
+
+                        {/* Grade & Gender */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                <GraduationCap className="w-3.5 h-3.5 text-gray-400" />
+                                <span className="font-medium">{student.grade?.name || 'No Grade'}</span>
+                            </div>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-xs text-gray-600 capitalize">{student.gender}</span>
+                        </div>
+                    </div>
+                }
             >
-                {/* Summary Row - Compact Design */}
-                <div
-                    className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => {
-                        if (!swipeAction) {
-                            setIsExpanded(!isExpanded);
-                        }
-                    }}
-                >
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                            {/* Admission Number Badge at Top */}
-                            <div className="mb-2">
-                                <span className="inline-block px-2.5 py-1 text-xs font-bold rounded-md bg-navy text-white">
-                                    {student.admission_number}
-                                </span>
+                {/* Expanded Details */}
+                <div className="px-4 pb-4 pt-3 space-y-3">
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-1 gap-2">
+                        <div className="flex items-center gap-2.5 text-sm">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <Calendar className="w-4 h-4 text-blue-600" />
                             </div>
-
-                            <div className="flex items-center justify-between mb-2">
-                                <h3 className="text-base font-bold text-gray-900 truncate">
-                                    {student.first_name} {student.last_name}
-                                </h3>
-                                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold flex-shrink-0 ml-2 ${
-                                    student.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                                }`}>
-                                    {student.status === 'active' ? 'Active' : 'Inactive'}
-                                </span>
-                            </div>
-
-                            <div className="flex items-center gap-2 flex-wrap">
-                                <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-orange-100 text-orange-700">
-                                    {student.grade?.name || 'No Grade'}
-                                </span>
-                                <span className="text-gray-400">•</span>
-                                <span className="text-xs text-gray-500 capitalize">{student.gender}</span>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-500 mb-0.5">Date of Birth</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                    {new Date(student.date_of_birth).toLocaleDateString()}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="flex-shrink-0">
-                            {isExpanded ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </div>
+                        {student.guardian && (
+                            <>
+                                <div className="flex items-center gap-2.5 text-sm">
+                                    <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0">
+                                        <Users className="w-4 h-4 text-purple-600" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-500 mb-0.5">Guardian</p>
+                                        <p className="text-sm font-medium text-gray-900 truncate">
+                                            {student.guardian.user?.name}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {student.guardian.phone_number && (
+                                    <div className="flex items-center gap-2.5 text-sm">
+                                        <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                                            <Phone className="w-4 h-4 text-green-600" />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs text-gray-500 mb-0.5">Phone</p>
+                                            <p className="text-sm font-medium text-gray-900">
+                                                {student.guardian.phone_number}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="grid grid-cols-2 gap-2 pt-2">
+                        <Link
+                            href={`/students/${student.id}`}
+                            className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg text-xs font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow-sm hover:shadow active:scale-95"
+                        >
+                            <Eye className="w-3.5 h-3.5" />
+                            View
+                        </Link>
+                        {auth.user.role === 'admin' && (
+                            <Link
+                                href={`/students/${student.id}/edit`}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-xs font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-sm hover:shadow active:scale-95"
+                            >
+                                <Edit className="w-3.5 h-3.5" />
+                                Edit
+                            </Link>
+                        )}
+                        <button
+                            onClick={() => onGenerateReport(student)}
+                            className={`flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg text-xs font-semibold hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow active:scale-95 ${
+                                auth.user.role === 'admin' ? '' : 'col-span-2'
+                            }`}
+                        >
+                            <FileText className="w-3.5 h-3.5" />
+                            Report
+                        </button>
+
+                        {auth.user.role === 'admin' && (
+                            <button
+                                onClick={() => onDelete(student)}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg text-xs font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-sm hover:shadow active:scale-95"
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                            </button>
+                        )}
                     </div>
                 </div>
-
-                {/* Expanded Details - Compact Design */}
-                {isExpanded && (
-                    <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
-                        <div className="bg-white rounded-lg p-3 border border-gray-200 space-y-2">
-                            <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                <span className="text-xs text-gray-600">{new Date(student.date_of_birth).toLocaleDateString()}</span>
-                            </div>
-
-                            {student.guardian && (
-                                <>
-                                    <div className="flex items-center gap-2">
-                                        <Users className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                        <span className="text-xs text-gray-600 truncate">{student.guardian.user?.name}</span>
-                                    </div>
-
-                                    {student.guardian.phone_number && (
-                                        <div className="flex items-center gap-2">
-                                            <Phone className="w-4 h-4 text-gray-400 flex-shrink-0" />
-                                            <span className="text-xs text-gray-600">{student.guardian.phone_number}</span>
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            <Link
-                                href={`/students/${student.id}`}
-                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors"
-                            >
-                                <Eye className="w-3.5 h-3.5" />
-                                View
-                            </Link>
-                            {auth.user.role === 'admin' && (
-                                <Link
-                                    href={`/students/${student.id}/edit`}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-                                >
-                                    <Edit className="w-3.5 h-3.5" />
-                                    Edit
-                                </Link>
-                            )}
-                            <button
-                                onClick={() => onGenerateReport(student)}
-                                className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-medium hover:bg-green-700 transition-colors ${auth.user.role === 'admin' ? '' : 'col-span-2'}`}
-                            >
-                                <FileText className="w-3.5 h-3.5" />
-                                Report
-                            </button>
-
-                            {auth.user.role === 'admin' && (
-                                <button
-                                    onClick={() => onDelete(student)}
-                                    className="flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors"
-                                >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                    Delete
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+            </ExpandableCard>
+        </SwipeableListItem>
     );
 }
 
-export default function StudentsIndex({ students, grades, filters = {}, auth }) {
-    const [search, setSearch] = useState(filters.search || '');
-    const [gradeId, setGradeId] = useState(filters.grade_id || '');
-    const [gender, setGender] = useState(filters.gender || '');
-    const [status, setStatus] = useState(filters.status || '');
+export default function StudentsIndex({ students, grades, filters: initialFilters = {}, auth }) {
+    // Use the new useFilters hook
+    const { filters, updateFilter, clearFilters } = useFilters({
+        route: '/students',
+        initialFilters: {
+            search: initialFilters.search || '',
+            grade_id: initialFilters.grade_id || '',
+            gender: initialFilters.gender || '',
+            status: initialFilters.status || '',
+        },
+    });
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedStudentForReport, setSelectedStudentForReport] = useState(null);
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get('/students', {
-            search,
-            grade_id: gradeId,
-            gender,
-            status,
-        }, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
+    // Memoize filter options that don't change
+    const gradeOptions = useMemo(() =>
+        grades.map(g => ({ value: g.id, label: g.name })),
+        [grades]
+    );
 
-    const handleFilterChange = (filterType, value) => {
-        const params = {
-            search,
-            grade_id: gradeId,
-            gender,
-            status,
-        };
+    const genderOptions = useMemo(() => [
+        { value: 'male', label: 'Male' },
+        { value: 'female', label: 'Female' },
+    ], []);
 
-        if (filterType === 'grade') {
-            params.grade_id = value;
-            setGradeId(value);
-        } else if (filterType === 'gender') {
-            params.gender = value;
-            setGender(value);
-        } else if (filterType === 'status') {
-            params.status = value;
-            setStatus(value);
-        }
+    const statusOptions = useMemo(() => [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+    ], []);
 
-        router.get('/students', params, {
-            preserveState: true,
-            preserveScroll: true,
-        });
-    };
-
-    const confirmDelete = (student) => {
+    // Memoize handlers passed to child components
+    const confirmDelete = useCallback((student) => {
         setSelectedStudent(student);
         setShowDeleteModal(true);
-    };
+    }, []);
 
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (selectedStudent) {
             router.delete(`/students/${selectedStudent.id}`, {
                 onSuccess: () => {
@@ -253,12 +197,12 @@ export default function StudentsIndex({ students, grades, filters = {}, auth }) 
                 },
             });
         }
-    };
+    }, [selectedStudent]);
 
-    const handleGenerateReport = (student) => {
+    const handleGenerateReport = useCallback((student) => {
         setSelectedStudentForReport(student);
         setShowReportModal(true);
-    };
+    }, []);
 
     return (
         <AuthenticatedLayout header="Students">
@@ -277,7 +221,7 @@ export default function StudentsIndex({ students, grades, filters = {}, auth }) 
 
                     {auth.user.role === 'admin' && (
                         <Link
-                            href="/students/create"
+                            href={route('students.create')}
                             className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
                         >
                             <Plus className="w-5 h-5 mr-2" />
@@ -286,22 +230,49 @@ export default function StudentsIndex({ students, grades, filters = {}, auth }) 
                     )}
                 </div>
 
-                {/* Filters */}
-                <StudentsFilters
-                    search={search}
-                    setSearch={setSearch}
-                    gradeId={gradeId}
-                    gender={gender}
-                    status={status}
-                    grades={grades}
-                    onFilterChange={handleFilterChange}
-                    onSubmit={handleSearch}
-                />
+                {/* Filters - Refactored with new components */}
+                <FilterBar onClear={clearFilters} gridCols="4">
+                    <SearchInput
+                        value={filters.search}
+                        onChange={(e) => updateFilter('search', e.target.value)}
+                        placeholder="Search students..."
+                    />
 
-                {/* Mobile List View */}
-                <div className="block md:hidden bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                    {students.data && students.data.length > 0 ? (
-                        students.data.map((student) => (
+                    <FilterSelect
+                        value={filters.grade_id}
+                        onChange={(e) => updateFilter('grade_id', e.target.value)}
+                        options={gradeOptions}
+                        allLabel="All Grades"
+                        hideLabel
+                    />
+
+                    <FilterSelect
+                        value={filters.gender}
+                        onChange={(e) => updateFilter('gender', e.target.value)}
+                        options={genderOptions}
+                        allLabel="All Genders"
+                        hideLabel
+                    />
+
+                    <FilterSelect
+                        value={filters.status}
+                        onChange={(e) => updateFilter('status', e.target.value)}
+                        options={statusOptions}
+                        allLabel="All Status"
+                        hideLabel
+                    />
+                </FilterBar>
+
+                {/* Mobile List View - Refactored with MobileListContainer */}
+                <div className="block md:hidden">
+                    <MobileListContainer
+                        emptyState={{
+                            icon: Users,
+                            title: 'No students found',
+                            message: 'Try adjusting your filters',
+                        }}
+                    >
+                        {students.data && students.data.length > 0 && students.data.map((student) => (
                             <MobileStudentItem
                                 key={student.id}
                                 student={student}
@@ -309,14 +280,8 @@ export default function StudentsIndex({ students, grades, filters = {}, auth }) 
                                 onDelete={confirmDelete}
                                 onGenerateReport={handleGenerateReport}
                             />
-                        ))
-                    ) : (
-                        <div className="px-6 py-16 text-center">
-                            <Users className="w-20 h-20 text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-500 font-bold text-lg">No students found</p>
-                            <p className="text-sm text-gray-400 mt-2">Try adjusting your filters</p>
-                        </div>
-                    )}
+                        ))}
+                    </MobileListContainer>
                 </div>
 
                 {/* Desktop Table View - UNCHANGED */}
@@ -352,11 +317,7 @@ export default function StudentsIndex({ students, grades, filters = {}, auth }) 
                                                 {student.gender}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                                    student.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                                                }`}>
-                                                    {student.status}
-                                                </span>
+                                                <Badge variant="status" value={student.status} />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                                                 <Link

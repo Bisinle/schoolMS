@@ -3,8 +3,6 @@ import { Head, Link, router } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import {
-    Search,
-    Filter,
     Download,
     Eye,
     Trash2,
@@ -14,199 +12,164 @@ import {
     XCircle,
     Clock,
     AlertCircle,
-    ChevronDown,
-    ChevronUp,
     User,
     Calendar,
     Tag,
 } from "lucide-react";
-import { useSwipeable } from "react-swipeable";
-import SwipeActionButton from "@/Components/SwipeActionButton";
+import useFilters from '@/Hooks/useFilters';
+import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
+import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
+import { Badge } from '@/Components/UI';
 
-// Mobile List Item Component
+// Helper to get status badge variant and icon
+function getStatusBadgeConfig(status) {
+    const configs = {
+        pending: { variant: 'warning', icon: Clock },
+        verified: { variant: 'success', icon: CheckCircle },
+        rejected: { variant: 'danger', icon: XCircle },
+        expired: { variant: 'secondary', icon: AlertCircle },
+    };
+    return configs[status] || configs.pending;
+}
+
+// Mobile List Item Component - Refactored with new components
 function MobileDocumentItem({
     doc,
     auth,
     onDelete,
     onDownload,
-    getStatusBadge,
     getEntityName,
 }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [swipeAction, setSwipeAction] = useState(null);
+    // Define swipe actions
+    const primaryActions = [
+        { icon: Eye, label: 'View', color: 'blue', href: route("documents.show", doc.id) },
+        { icon: Download, label: 'Download', color: 'indigo', onClick: () => onDownload(doc) },
+    ];
 
-    const handlers = useSwipeable({
-        onSwipedLeft: () => setSwipeAction("primary"),
-        onSwipedRight: () => setSwipeAction("secondary"),
-        onSwiping: () => {},
-        trackMouse: false,
-        preventScrollOnSwipe: false,
-        delta: 60,
-    });
+    const secondaryActions = [
+        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(doc) },
+    ];
 
-    return (
-        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
-            {/* Swipe Actions Background */}
-            {swipeAction === "primary" && (
-                <div className="absolute inset-0 bg-gradient-to-l from-blue-500 to-indigo-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <SwipeActionButton
-                        icon={<Eye className="w-5 h-5 text-white" />}
-                        href={route("documents.show", doc.id)}
-                        onClick={() => setSwipeAction(null)}
-                    />
-                    <SwipeActionButton
-                        icon={<Download className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onDownload(doc);
-                            setSwipeAction(null);
-                        }}
-                    />
-                </div>
-            )}
-            {swipeAction === "secondary" && (
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-500 flex items-center justify-start px-4 gap-2 z-10">
-                    <SwipeActionButton
-                        icon={<Trash2 className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onDelete(doc);
-                            setSwipeAction(null);
-                        }}
-                    />
-                </div>
-            )}
+    const statusConfig = getStatusBadgeConfig(doc.status);
+    const StatusIcon = statusConfig.icon;
 
-            {/* Main Content */}
-            <div
-                {...handlers}
-                className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === "primary"
-                        ? "-translate-x-32"
-                        : swipeAction === "secondary"
-                        ? "translate-x-20"
-                        : ""
-                }`}
-                onClick={() => {
-                    if (swipeAction) {
-                        setSwipeAction(null);
-                    }
-                }}
-            >
-                {/* Summary Row */}
-                <div
-                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => {
-                        if (!swipeAction) {
-                            setIsExpanded(!isExpanded);
+    // Header content with Badge component
+    const header = (
+        <div className="flex items-start gap-4 flex-1 min-w-0">
+            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg">
+                <FileText className="w-7 h-7" />
+            </div>
+
+            <div className="flex-1 min-w-0">
+                <h3 className="text-base font-black text-gray-900 truncate leading-tight">
+                    {doc.original_filename}
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                    {doc.category?.name}
+                </p>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                    <Badge
+                        variant={statusConfig.variant}
+                        value={
+                            <span className="inline-flex items-center gap-1">
+                                <StatusIcon className="w-3 h-3" />
+                                {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
+                            </span>
                         }
-                    }}
-                >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg">
-                                <FileText className="w-7 h-7" />
-                            </div>
+                        size="sm"
+                    />
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
+                        {doc.file_size_human}
+                    </span>
+                </div>
+            </div>
+        </div>
+    );
 
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-base font-black text-gray-900 truncate leading-tight">
-                                    {doc.original_filename}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">
-                                    {doc.category?.name}
-                                </p>
-                                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                    {getStatusBadge(doc)}
-                                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700">
-                                        {doc.file_size_human}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-                        <button className="flex-shrink-0 p-1">
-                            {isExpanded ? (
-                                <ChevronUp className="w-6 h-6 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-6 h-6 text-gray-400" />
-                            )}
-                        </button>
+    // Expanded content
+    const expandedContent = (
+        <div className="space-y-4">
+            {/* Info Grid */}
+            <div className="space-y-3 text-sm">
+                <div className="flex items-start gap-3">
+                    <Tag className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <span className="text-xs text-gray-500 block">
+                            Category
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                            {doc.category?.name}
+                        </span>
                     </div>
                 </div>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4">
-                        {/* Info Grid */}
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-start gap-3">
-                                <Tag className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <span className="text-xs text-gray-500 block">
-                                        Category
-                                    </span>
-                                    <span className="font-semibold text-gray-900">
-                                        {doc.category?.name}
-                                    </span>
-                                </div>
-                            </div>
-                            {auth.user.role === "admin" && (
-                                <div className="flex items-start gap-3">
-                                    <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                    <div className="flex-1">
-                                        <span className="text-xs text-gray-500 block">
-                                            Owner
-                                        </span>
-                                        <span className="font-semibold text-gray-900">
-                                            {getEntityName(doc)}
-                                        </span>
-                                    </div>
-                                </div>
-                            )}
-                            <div className="flex items-start gap-3">
-                                <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <span className="text-xs text-gray-500 block">
-                                        Uploaded
-                                    </span>
-                                    <span className="font-semibold text-gray-900">
-                                        {new Date(
-                                            doc.created_at
-                                        ).toLocaleDateString("en-US", {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                        })}
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100">
-                            <Link
-                                href={route("documents.show", doc.id)}
-                                className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95"
-                            >
-                                <Eye className="w-4 h-4" />
-                                View
-                            </Link>
-                            <button
-                                onClick={() => onDownload(doc)}
-                                className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 rounded-xl font-bold text-sm hover:bg-green-100 transition-colors active:scale-95"
-                            >
-                                <Download className="w-4 h-4" />
-                                Download
-                            </button>
-                            <button
-                                onClick={() => onDelete(doc)}
-                                className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                Delete Document
-                            </button>
+                {auth.user.role === "admin" && (
+                    <div className="flex items-start gap-3">
+                        <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <span className="text-xs text-gray-500 block">
+                                Owner
+                            </span>
+                            <span className="font-semibold text-gray-900">
+                                {getEntityName(doc)}
+                            </span>
                         </div>
                     </div>
                 )}
+                <div className="flex items-start gap-3">
+                    <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                        <span className="text-xs text-gray-500 block">
+                            Uploaded
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                            {new Date(
+                                doc.created_at
+                            ).toLocaleDateString("en-US", {
+                                year: "numeric",
+                                month: "short",
+                                day: "numeric",
+                            })}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100">
+                <Link
+                    href={route("documents.show", doc.id)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95"
+                >
+                    <Eye className="w-4 h-4" />
+                    View
+                </Link>
+                <button
+                    onClick={() => onDownload(doc)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 bg-green-50 text-green-700 rounded-xl font-bold text-sm hover:bg-green-100 transition-colors active:scale-95"
+                >
+                    <Download className="w-4 h-4" />
+                    Download
+                </button>
+                <button
+                    onClick={() => onDelete(doc)}
+                    className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
+                >
+                    <Trash2 className="w-4 h-4" />
+                    Delete Document
+                </button>
             </div>
         </div>
+    );
+
+    return (
+        <SwipeableListItem
+            primaryActions={primaryActions}
+            secondaryActions={secondaryActions}
+        >
+            <ExpandableCard header={header}>
+                {expandedContent}
+            </ExpandableCard>
+        </SwipeableListItem>
     );
 }
 
@@ -214,15 +177,22 @@ export default function Index({
     documents,
     categories,
     stats,
-    filters,
+    filters: initialFilters = {},
     entityTypes,
     auth,
     flash,
 }) {
-    const [ownerSearch, setOwnerSearch] = useState(filters.owner_search || "");
-    const [categoryId, setCategoryId] = useState(filters.category_id || "all");
-    const [status, setStatus] = useState(filters.status || "all");
-    const [entityType, setEntityType] = useState(filters.entity_type || "all");
+    // Use the new useFilters hook
+    const { filters, updateFilter, clearFilters } = useFilters({
+        route: '/documents',
+        initialFilters: {
+            owner_search: initialFilters.owner_search || '',
+            category_id: initialFilters.category_id || '',
+            status: initialFilters.status || '',
+            entity_type: initialFilters.entity_type || '',
+        },
+        debounceMs: 500, // Debounce owner search
+    });
 
     // Confirmation modal state
     const [confirmAction, setConfirmAction] = useState({
@@ -245,20 +215,6 @@ export default function Index({
         });
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        router.get(
-            route("documents.index"),
-            {
-                owner_search: ownerSearch,
-                category_id: categoryId,
-                status,
-                entity_type: entityType,
-            },
-            { preserveState: true, preserveScroll: true }
-        );
-    };
-
     const handleDeleteClick = (doc) => {
         setConfirmAction({
             show: true,
@@ -276,39 +232,20 @@ export default function Index({
     };
 
     const getStatusBadge = (doc) => {
-        const badges = {
-            pending: {
-                color: "bg-yellow-100 text-yellow-800",
-                icon: Clock,
-                text: "Pending",
-            },
-            verified: {
-                color: "bg-green-100 text-green-800",
-                icon: CheckCircle,
-                text: "Verified",
-            },
-            rejected: {
-                color: "bg-red-100 text-red-800",
-                icon: XCircle,
-                text: "Rejected",
-            },
-            expired: {
-                color: "bg-gray-100 text-gray-800",
-                icon: AlertCircle,
-                text: "Expired",
-            },
-        };
-
-        const badge = badges[doc.status] || badges.pending;
-        const Icon = badge.icon;
+        const statusConfig = getStatusBadgeConfig(doc.status);
+        const StatusIcon = statusConfig.icon;
 
         return (
-            <span
-                className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-full ${badge.color}`}
-            >
-                <Icon className="w-3 h-3 mr-1" />
-                {badge.text}
-            </span>
+            <Badge
+                variant={statusConfig.variant}
+                value={
+                    <span className="inline-flex items-center gap-1">
+                        <StatusIcon className="w-3 h-3" />
+                        {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
+                    </span>
+                }
+                size="sm"
+            />
         );
     };
 
@@ -420,142 +357,84 @@ export default function Index({
                     </div>
                 </div>
 
-                {/* Filters */}
+                {/* Filters - Refactored with FilterBar */}
                 <div className="bg-white rounded-lg shadow-sm p-6">
-                    <form onSubmit={handleSearch} className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            {/* Owner Search (Admin only) */}
-                            {auth.user.role === "admin" && (
-                                <div className="md:col-span-2">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Search by Owner Name
-                                    </label>
-                                    <div className="relative">
-                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                        <input
-                                            type="text"
-                                            value={ownerSearch}
-                                            onChange={(e) =>
-                                                setOwnerSearch(e.target.value)
-                                            }
-                                            placeholder="Search by teacher, student, or guardian name..."
-                                            className="pl-10 w-full rounded-lg border-gray-300 focus:border-orange focus:ring focus:ring-orange focus:ring-opacity-50"
-                                        />
-                                    </div>
-                                </div>
-                            )}
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Category
-                                </label>
-                                <select
-                                    value={categoryId}
-                                    onChange={(e) =>
-                                        setCategoryId(e.target.value)
-                                    }
-                                    className="w-full rounded-lg border-gray-300 focus:border-orange focus:ring focus:ring-orange focus:ring-opacity-50"
-                                >
-                                    <option value="all">All Categories</option>
-                                    {categories.map((cat) => (
-                                        <option key={cat.id} value={cat.id}>
-                                            {cat.name}
-                                        </option>
-                                    ))}
-                                </select>
+                    <FilterBar onClear={clearFilters} gridCols={auth.user.role === "admin" ? "4" : "2"}>
+                        {/* Owner Search (Admin only) - spans 2 columns */}
+                        {auth.user.role === "admin" && (
+                            <div className="md:col-span-2">
+                                <SearchInput
+                                    value={filters.owner_search}
+                                    onChange={(e) => updateFilter('owner_search', e.target.value)}
+                                    placeholder="Search by teacher, student, or guardian name..."
+                                    label="Search by Owner Name"
+                                />
                             </div>
+                        )}
 
-                            {auth.user.role === "admin" && (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Entity Type
-                                    </label>
-                                    <select
-                                        value={entityType}
-                                        onChange={(e) =>
-                                            setEntityType(e.target.value)
-                                        }
-                                        className="w-full rounded-lg border-gray-300 focus:border-orange focus:ring focus:ring-orange focus:ring-opacity-50"
-                                    >
-                                        <option value="all">All Types</option>
-                                        {entityTypes.map((type) => (
-                                            <option key={type} value={type}>
-                                                {type}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-                            )}
+                        <FilterSelect
+                            value={filters.category_id}
+                            onChange={(e) => updateFilter('category_id', e.target.value)}
+                            options={categories.map(cat => ({ value: cat.id, label: cat.name }))}
+                            allLabel="All Categories"
+                            label="Category"
+                        />
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Status
-                                </label>
-                                <select
-                                    value={status}
-                                    onChange={(e) => setStatus(e.target.value)}
-                                    className="w-full rounded-lg border-gray-300 focus:border-orange focus:ring focus:ring-orange focus:ring-opacity-50"
-                                >
-                                    <option value="all">All Status</option>
-                                    <option value="pending">Pending</option>
-                                    <option value="verified">Verified</option>
-                                    <option value="rejected">Rejected</option>
-                                    <option value="expired">Expired</option>
-                                </select>
-                            </div>
-                        </div>
+                        {auth.user.role === "admin" && (
+                            <FilterSelect
+                                value={filters.entity_type}
+                                onChange={(e) => updateFilter('entity_type', e.target.value)}
+                                options={entityTypes.map(type => ({ value: type, label: type }))}
+                                allLabel="All Types"
+                                label="Entity Type"
+                            />
+                        )}
 
-                        <div className="flex justify-end">
-                            <button
-                                type="submit"
-                                className="inline-flex items-center px-4 py-2 bg-navy text-white rounded-lg hover:bg-navy-light transition-colors"
-                            >
-                                <Filter className="w-4 h-4 mr-2" />
-                                Apply Filters
-                            </button>
-                        </div>
-                    </form>
+                        <FilterSelect
+                            value={filters.status}
+                            onChange={(e) => updateFilter('status', e.target.value)}
+                            options={[
+                                { value: 'pending', label: 'Pending' },
+                                { value: 'verified', label: 'Verified' },
+                                { value: 'rejected', label: 'Rejected' },
+                                { value: 'expired', label: 'Expired' }
+                            ]}
+                            allLabel="All Status"
+                            label="Status"
+                        />
+                    </FilterBar>
                 </div>
 
-                {/* Mobile List View */}
-                <div className="block md:hidden bg-white rounded-lg shadow-sm overflow-hidden">
-                    {documents.data.length > 0 ? (
-                        documents.data.map((doc) => (
+                {/* Mobile List View - Refactored with MobileListContainer */}
+                <div className="block md:hidden">
+                    <MobileListContainer
+                        emptyState={{
+                            icon: FileText,
+                            title: 'No documents found',
+                            message: filters.owner_search || filters.category_id || filters.status || filters.entity_type ? 'Try adjusting your filters' : 'Upload your first document',
+                            action: {
+                                label: 'Upload Document',
+                                href: route("documents.create"),
+                                icon: Plus,
+                            }
+                        }}
+                    >
+                        {documents.data.length > 0 && documents.data.map((doc) => (
                             <MobileDocumentItem
                                 key={doc.id}
                                 doc={doc}
                                 auth={auth}
-                                onDelete={(doc) =>
-                                    handleDeleteClick(
-                                        doc.id,
-                                        doc.original_filename
-                                    )
-                                }
+                                onDelete={handleDeleteClick}
                                 onDownload={(doc) =>
                                     window.open(
                                         route("documents.download", doc.id),
                                         "_blank"
                                     )
                                 }
-                                getStatusBadge={getStatusBadge}
                                 getEntityName={getEntityName}
                             />
-                        ))
-                    ) : (
-                        <div className="px-6 py-12 text-center">
-                            <FileText className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-                            <p className="text-gray-500 font-medium">
-                                No documents found
-                            </p>
-                            <Link
-                                href={route("documents.create")}
-                                className="inline-flex items-center mt-4 text-orange hover:text-orange-dark"
-                            >
-                                <Plus className="w-4 h-4 mr-1" />
-                                Upload your first document
-                            </Link>
-                        </div>
-                    )}
+                        ))}
+                    </MobileListContainer>
                 </div>
 
                 {/* Desktop Table View */}
