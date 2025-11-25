@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, usePage } from "@inertiajs/react";
 import ImpersonationBanner from '@/Components/ImpersonationBanner';
 
@@ -26,7 +26,34 @@ import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, school, impersonation } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [bannerVisible, setBannerVisible] = useState(true); // 🆕 Banner state
+
+    // 🆕 Initialize banner visibility from localStorage
+    const [bannerVisible, setBannerVisible] = useState(() => {
+        // Default to true if not in localStorage
+        const stored = localStorage.getItem('impersonation_banner_hidden');
+        return stored !== 'true';
+    });
+
+    // 🆕 Handle localStorage cleanup when impersonation ends
+    useEffect(() => {
+        if (!impersonation?.isImpersonating) {
+            // When not impersonating, clear the localStorage flag
+            localStorage.removeItem('impersonation_banner_hidden');
+        }
+    }, [impersonation?.isImpersonating]);
+
+    // 🆕 Handle banner toggle with localStorage persistence
+    const handleBannerToggle = () => {
+        const newVisibility = !bannerVisible;
+        setBannerVisible(newVisibility);
+
+        // Save to localStorage
+        if (!newVisibility) {
+            localStorage.setItem('impersonation_banner_hidden', 'true');
+        } else {
+            localStorage.removeItem('impersonation_banner_hidden');
+        }
+    };
 
     // Determine branding based on user role
     const isSuperAdmin = auth.user.role === 'super_admin';
@@ -80,13 +107,13 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* 🆕 Impersonation Banner with toggle */}
+            {/* 🆕 Impersonation Banner with localStorage-based toggle */}
             {impersonation?.isImpersonating && (
-                <ImpersonationBanner 
+                <ImpersonationBanner
                     user={impersonation.impersonatedUser}
                     originalAdmin={{ id: impersonation.impersonatorId }}
                     isVisible={bannerVisible}
-                    onToggle={() => setBannerVisible(!bannerVisible)}
+                    onToggle={handleBannerToggle}
                 />
             )}
 

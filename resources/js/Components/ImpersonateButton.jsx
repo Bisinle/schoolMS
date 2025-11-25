@@ -8,7 +8,10 @@ export default function ImpersonateButton({ user, className = '' }) {
 
     const handleImpersonate = () => {
         setIsLoading(true);
-        
+
+        // 🆕 Clear localStorage when starting impersonation to ensure banner is visible
+        localStorage.removeItem('impersonation_banner_hidden');
+
         router.get(
             route('impersonate', user.id), // 🆕 Changed route name
             {},

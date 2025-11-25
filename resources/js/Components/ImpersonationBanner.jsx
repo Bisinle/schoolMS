@@ -9,7 +9,10 @@ export default function ImpersonationBanner({ user, originalAdmin, isVisible, on
 
     const handleLeave = () => {
         setIsLeaving(true);
-        
+
+        // 🆕 Clear localStorage when exiting impersonation
+        localStorage.removeItem('impersonation_banner_hidden');
+
         router.get(
             route('impersonate.leave'),
             {},
