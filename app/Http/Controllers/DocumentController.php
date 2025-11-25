@@ -328,7 +328,7 @@ class DocumentController extends Controller
                 ];
             });
 
-            $options['User'] = User::whereNotIn('role', ['teacher', 'guardian'])
+            $options['User'] = User::whereNotIn('role', ['teacher', 'guardian', 'super_admin'])
                 ->get()
                 ->map(function ($user) {
                     return [
