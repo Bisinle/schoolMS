@@ -10,7 +10,7 @@ import { Menu, LogOut } from "lucide-react";
  */
 export default function TopBar({ header, auth, setSidebarOpen }) {
     return (
-        <div className="sticky top-0 z-[40] flex-shrink-0 flex h-16 bg-white shadow-sm">
+        <div className="sticky top-0 z-[45] flex-shrink-0 flex h-16 bg-white shadow-sm">
             <button
                 type="button"
                 className="px-4 text-gray-500 focus:outline-none md:hidden"
