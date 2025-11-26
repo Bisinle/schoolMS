@@ -53,13 +53,13 @@ function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete }) {
 
     // Define swipe actions
     const primaryActions = [
-        { icon: Eye, label: 'View', color: 'blue', href: `/super-admin/users/${user.id}` },
-        { icon: RefreshCw, label: 'Reset Password', color: 'yellow', onClick: () => onResetPassword(user) },
+        { icon: Eye, label: 'View', href: `/super-admin/users/${user.id}` },
+        { icon: RefreshCw, label: 'Reset Password', onClick: () => onResetPassword(user) },
     ];
 
     const secondaryActions = [
-        { icon: Power, label: user.is_active ? 'Suspend' : 'Activate', color: user.is_active ? 'red' : 'green', onClick: () => onToggleActive(user) },
-        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(user) },
+        { icon: Power, label: user.is_active ? 'Suspend' : 'Activate', onClick: () => onToggleActive(user) },
+        { icon: Trash2, label: 'Delete', onClick: () => onDelete(user) },
     ];
 
     // Header content

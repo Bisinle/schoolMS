@@ -13,18 +13,18 @@ import { Badge } from '@/Components/UI';
 function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
     // Build swipe actions based on user role
     const primaryActions = [
-        { icon: Eye, label: 'View', color: 'blue', href: `/students/${student.id}` },
+        { icon: Eye, label: 'View', href: `/students/${student.id}` },
     ];
 
     if (auth.user.role === 'admin') {
         primaryActions.push(
-            { icon: Edit, label: 'Edit', color: 'indigo', href: `/students/${student.id}/edit` },
-            { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(student) }
+            { icon: Edit, label: 'Edit', href: `/students/${student.id}/edit` },
+            { icon: Trash2, label: 'Delete', onClick: () => onDelete(student) }
         );
     }
 
     const secondaryActions = [
-        { icon: FileText, label: 'Report', color: 'green', onClick: () => onGenerateReport(student) },
+        { icon: FileText, label: 'Report', onClick: () => onGenerateReport(student) },
     ];
 
     return (

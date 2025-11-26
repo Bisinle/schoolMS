@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from '@inertiajs/react';
+import { getActionColor } from '@/Utils/swipeActions';
 
 /**
  * SwipeActionButton Component
@@ -43,9 +44,11 @@ import { Link } from '@inertiajs/react';
  */
 export default function SwipeActionButton({
     icon: Icon,
+    label,
     href,
     onClick,
     size = 'medium',
+    color, // Optional: can override auto-determined color
     className = '',
     preserveScroll = false,
     ...props
@@ -77,19 +80,55 @@ export default function SwipeActionButton({
 
     const config = sizeConfig[size];
 
+    // Auto-determine color from label, or use provided color as override
+    const buttonColor = color || getActionColor(label);
+
+    // Color variants for buttons
+    const colorConfig = {
+        blue: {
+            bg: 'bg-blue-500 hover:bg-blue-600',
+            icon: 'text-white',
+        },
+        indigo: {
+            bg: 'bg-indigo-500 hover:bg-indigo-600',
+            icon: 'text-white',
+        },
+        green: {
+            bg: 'bg-green-500 hover:bg-green-600',
+            icon: 'text-white',
+        },
+        red: {
+            bg: 'bg-red-500 hover:bg-red-600',
+            icon: 'text-white',
+        },
+        yellow: {
+            bg: 'bg-yellow-500 hover:bg-yellow-600',
+            icon: 'text-gray-800', // Dark text for yellow background
+        },
+        orange: {
+            bg: 'bg-orange-500 hover:bg-orange-600',
+            icon: 'text-white',
+        },
+        purple: {
+            bg: 'bg-purple-500 hover:bg-purple-600',
+            icon: 'text-white',
+        },
+    };
+
+    const colors = colorConfig[buttonColor] || colorConfig.blue;
+
     // Base classes (consistent across all buttons)
     const baseClasses = `
         ${config.padding}
         ${config.radius}
         ${config.shadow}
-        bg-white/90
-        backdrop-blur-sm
+        ${colors.bg}
         active:scale-95
-        transition-transform
+        transition-all
         inline-flex
         items-center
         justify-center
-        hover:bg-white
+        shadow-md
     `.trim().replace(/\s+/g, ' ');
 
     // Combine classes
@@ -106,7 +145,7 @@ export default function SwipeActionButton({
         isComponent ? (
             <Icon
                 size={config.iconSizePx}
-                className="text-gray-700"
+                className={colors.icon}
                 strokeWidth={2.5}
                 aria-hidden="true"
             />
@@ -115,7 +154,7 @@ export default function SwipeActionButton({
             React.isValidElement(Icon) ? (
                 React.cloneElement(Icon, {
                     size: config.iconSizePx,
-                    className: `text-gray-700 ${Icon.props?.className || ''}`,
+                    className: `${colors.icon} ${Icon.props?.className || ''}`,
                     strokeWidth: 2.5,
                     'aria-hidden': true
                 })

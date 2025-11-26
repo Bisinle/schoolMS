@@ -30,14 +30,14 @@ function MobileQuranTrackingItem({ student, auth }) {
 
     // Define swipe actions
     const primaryActions = student.latest_tracking ? [
-        { icon: Eye, label: 'View', color: 'blue', href: `/quran-tracking/${student.latest_tracking.id}` },
+        { icon: Eye, label: 'View', href: `/quran-tracking/${student.latest_tracking.id}` },
         ...(auth.user.role === 'admin' || auth.user.role === 'teacher' ? [
-            { icon: Edit, label: 'Edit', color: 'indigo', href: `/quran-tracking/${student.latest_tracking.id}/edit` }
+            { icon: Edit, label: 'Edit', href: `/quran-tracking/${student.latest_tracking.id}/edit` }
         ] : []),
     ] : [];
 
     const secondaryActions = student.latest_tracking ? [
-        { icon: FileText, label: 'Report', color: 'green', href: `/quran-tracking/student/${student.id}/report` },
+        { icon: FileText, label: 'Report', href: `/quran-tracking/student/${student.id}/report` },
     ] : [];
 
     // Header content for the card

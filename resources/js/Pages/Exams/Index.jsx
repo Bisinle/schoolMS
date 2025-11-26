@@ -32,12 +32,12 @@ function getExamTypeLabel(type) {
 function MobileExamItem({ exam, auth, onDelete }) {
     // Define swipe actions
     const primaryActions = [
-        { icon: Eye, label: 'View', color: 'blue', href: `/exams/${exam.id}` },
-        { icon: Edit, label: 'Edit', color: 'indigo', href: `/exams/${exam.id}/edit` },
+        { icon: Eye, label: 'View', href: `/exams/${exam.id}` },
+        { icon: Edit, label: 'Edit', href: `/exams/${exam.id}/edit` },
     ];
 
     const secondaryActions = [
-        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(exam) },
+        { icon: Trash2, label: 'Delete', onClick: () => onDelete(exam) },
     ];
 
     // Header content with Badge component

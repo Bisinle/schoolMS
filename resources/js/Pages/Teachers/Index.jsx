@@ -12,13 +12,13 @@ import { Badge } from '@/Components/UI';
 function MobileTeacherItem({ teacher, auth, onDelete }) {
     // Build swipe actions
     const primaryActions = [
-        { icon: Eye, label: 'View', color: 'blue', href: `/teachers/${teacher.id}` },
-        { icon: Edit, label: 'Edit', color: 'indigo', href: `/teachers/${teacher.id}/edit` },
-        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(teacher) },
+        { icon: Eye, label: 'View', href: `/teachers/${teacher.id}` },
+        { icon: Edit, label: 'Edit', href: `/teachers/${teacher.id}/edit` },
+        { icon: Trash2, label: 'Delete', onClick: () => onDelete(teacher) },
     ];
 
     const secondaryActions = teacher.user?.phone ? [
-        { icon: Phone, label: 'Call', color: 'green', href: `tel:${teacher.user.phone}` },
+        { icon: Phone, label: 'Call', href: `tel:${teacher.user.phone}` },
     ] : [];
 
     return (

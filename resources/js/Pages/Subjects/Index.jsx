@@ -22,12 +22,12 @@ function MobileSubjectItem({ subject, auth, onDelete }) {
 
     // Build swipe actions
     const primaryActions = [
-        { icon: Eye, label: 'View', color: 'blue', href: `/subjects/${subject.id}` },
-        { icon: Edit, label: 'Edit', color: 'indigo', href: `/subjects/${subject.id}/edit` },
+        { icon: Eye, label: 'View', href: `/subjects/${subject.id}` },
+        { icon: Edit, label: 'Edit', href: `/subjects/${subject.id}/edit` },
     ];
 
     const secondaryActions = [
-        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(subject) },
+        { icon: Trash2, label: 'Delete', onClick: () => onDelete(subject) },
     ];
 
     return (

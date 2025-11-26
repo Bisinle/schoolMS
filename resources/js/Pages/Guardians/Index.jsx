@@ -12,18 +12,18 @@ import { Badge } from '@/Components/UI';
 function MobileGuardianItem({ guardian, auth, onDelete }) {
     // Build swipe actions
     const primaryActions = [
-        { icon: Eye, label: 'View', color: 'blue', href: `/guardians/${guardian.id}` },
+        { icon: Eye, label: 'View', href: `/guardians/${guardian.id}` },
     ];
 
     if (auth.user.role === 'admin') {
         primaryActions.push(
-            { icon: Edit, label: 'Edit', color: 'indigo', href: `/guardians/${guardian.id}/edit` },
-            { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(guardian) }
+            { icon: Edit, label: 'Edit', href: `/guardians/${guardian.id}/edit` },
+            { icon: Trash2, label: 'Delete', onClick: () => onDelete(guardian) }
         );
     }
 
     const secondaryActions = guardian.phone_number ? [
-        { icon: Phone, label: 'Call', color: 'green', href: `tel:${guardian.phone_number}` },
+        { icon: Phone, label: 'Call', href: `tel:${guardian.phone_number}` },
     ] : [];
 
     return (

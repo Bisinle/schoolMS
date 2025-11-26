@@ -42,12 +42,12 @@ function MobileDocumentItem({
 }) {
     // Define swipe actions
     const primaryActions = [
-        { icon: Eye, label: 'View', color: 'blue', href: route("documents.show", doc.id) },
-        { icon: Download, label: 'Download', color: 'indigo', onClick: () => onDownload(doc) },
+        { icon: Eye, label: 'View', href: route("documents.show", doc.id) },
+        { icon: Download, label: 'Download', onClick: () => onDownload(doc) },
     ];
 
     const secondaryActions = [
-        { icon: Trash2, label: 'Delete', color: 'red', onClick: () => onDelete(doc) },
+        { icon: Trash2, label: 'Delete', onClick: () => onDelete(doc) },
     ];
 
     const statusConfig = getStatusBadgeConfig(doc.status);
