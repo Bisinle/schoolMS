@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { FileText, Users } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import GenerateReportModal from '@/Components/Students/GenerateReportModal';
 import ReportsFilters from '@/Components/Reports/ReportsFilters';
 import ReportsTable from '@/Components/Reports/ReportsTable';
