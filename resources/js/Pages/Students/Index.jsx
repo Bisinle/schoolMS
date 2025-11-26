@@ -205,7 +205,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
     }, []);
 
     return (
-        <AuthenticatedLayout header="Students">
+        <AuthenticatedLayout header="All Students">
             <Head title="Students" />
 
             <div className="space-y-6">

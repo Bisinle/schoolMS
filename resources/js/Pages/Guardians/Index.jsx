@@ -171,7 +171,7 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
     }, [selectedGuardian]);
 
     return (
-        <AuthenticatedLayout header="Guardians Management">
+        <AuthenticatedLayout header="All Guardians">
             <Head title="Guardians" />
 
             <div className="space-y-6">

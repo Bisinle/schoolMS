@@ -283,7 +283,7 @@ export default function Index({ users, schools, filters: initialFilters = {} }) 
         <AuthenticatedLayout
             header={
                 <h2 className="text-xl sm:text-xl font-bold leading-tight text-gray-800">
-                    All Users Management
+                    Users 
                 </h2>
             }
         >

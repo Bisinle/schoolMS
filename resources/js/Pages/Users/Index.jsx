@@ -478,7 +478,7 @@ export default function Index({
     };
 
     return (
-        <AuthenticatedLayout header="User Management">
+        <AuthenticatedLayout header="All Users">
             <Head title="Users" />
 
             {/* Success/Error Messages */}

@@ -32,10 +32,14 @@ export default function Dashboard({
     examsNeedingAttention,
 }) {
     const { flash } = usePage().props;
+    const { auth } = usePage().props;
+    const dashboardTitle = auth?.user?.role ?? 'User';
+    const passedDashboardTitle = `${role} Dashboard`;
 
     return (
-        <AuthenticatedLayout header="Dashboard">
-            <Head title="Dashboard" />
+        <AuthenticatedLayout header={passedDashboardTitle}>
+            <Head title="Dashboardfgsdfgd" />
+            
 
             {/* Success message for password reset */}
             {flash?.status && (
