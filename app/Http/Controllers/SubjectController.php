@@ -65,9 +65,12 @@ class SubjectController extends Controller
             'grade_ids.*' => 'exists:grades,id',
         ]);
 
-        // Check for duplicate subject name in same category
+        $schoolId = $request->user()->school_id;
+
+        // Check for duplicate subject name in same category (within same school)
         $exists = Subject::where('name', $validated['name'])
             ->where('category', $validated['category'])
+            ->where('school_id', $schoolId)
             ->exists();
 
         if ($exists) {
@@ -138,9 +141,10 @@ class SubjectController extends Controller
             'grade_ids.*' => 'exists:grades,id',
         ]);
 
-        // Check for duplicate subject name in same category (excluding current subject)
+        // Check for duplicate subject name in same category (excluding current subject, within same school)
         $exists = Subject::where('name', $validated['name'])
             ->where('category', $validated['category'])
+            ->where('school_id', $subject->school_id)
             ->where('id', '!=', $subject->id)
             ->exists();
 

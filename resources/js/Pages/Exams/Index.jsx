@@ -186,9 +186,19 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
             <div className="space-y-6">
                 {/* Header Actions */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div className="flex items-center space-x-3">
+                        <FileText className="w-8 h-8 text-orange" />
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">Exams</h2>
+                            <p className="text-sm text-gray-600">
+                                Manage and schedule examinations
+                            </p>
+                        </div>
+                    </div>
+
                     <Link
                         href="/exams/create"
-                        className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
+                        className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
                     >
                         <Plus className="w-5 h-5 mr-2" />
                         Schedule Exam
@@ -196,43 +206,41 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                 </div>
 
                 {/* Filters - Refactored with FilterBar */}
-                <div className="bg-white rounded-lg shadow-sm p-6">
-                    <FilterBar onClear={clearFilters} gridCols="4">
-                        <SearchInput
-                            value={filters.search}
-                            onChange={(e) => updateFilter('search', e.target.value)}
-                            placeholder="Search exams..."
-                            hideLabel
+                <FilterBar onClear={clearFilters} gridCols="4">
+                    <SearchInput
+                        value={filters.search}
+                        onChange={(e) => updateFilter('search', e.target.value)}
+                        placeholder="Search exams..."
+                        hideLabel
+                    />
+                    <FilterSelect
+                        value={filters.grade_id}
+                        onChange={(e) => updateFilter('grade_id', e.target.value)}
+                        options={grades.map(grade => ({ value: grade.id, label: grade.name }))}
+                        allLabel="All Grades"
+                        hideLabel
+                    />
+                    <FilterSelect
+                        value={filters.term}
+                        onChange={(e) => updateFilter('term', e.target.value)}
+                        options={[
+                            { value: '1', label: 'Term 1' },
+                            { value: '2', label: 'Term 2' },
+                            { value: '3', label: 'Term 3' }
+                        ]}
+                        allLabel="All Terms"
+                        hideLabel
+                    />
+                    <div>
+                        <input
+                            type="number"
+                            value={filters.academic_year}
+                            onChange={(e) => updateFilter('academic_year', e.target.value)}
+                            placeholder="Academic Year"
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                         />
-                        <FilterSelect
-                            value={filters.grade_id}
-                            onChange={(e) => updateFilter('grade_id', e.target.value)}
-                            options={grades.map(grade => ({ value: grade.id, label: grade.name }))}
-                            allLabel="All Grades"
-                            hideLabel
-                        />
-                        <FilterSelect
-                            value={filters.term}
-                            onChange={(e) => updateFilter('term', e.target.value)}
-                            options={[
-                                { value: '1', label: 'Term 1' },
-                                { value: '2', label: 'Term 2' },
-                                { value: '3', label: 'Term 3' }
-                            ]}
-                            allLabel="All Terms"
-                            hideLabel
-                        />
-                        <div>
-                            <input
-                                type="number"
-                                value={filters.academic_year}
-                                onChange={(e) => updateFilter('academic_year', e.target.value)}
-                                placeholder="Academic Year"
-                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
-                            />
-                        </div>
-                    </FilterBar>
-                </div>
+                    </div>
+                </FilterBar>
 
                 {/* Mobile List View - Refactored with MobileListContainer */}
                 <div className="block md:hidden">
@@ -355,7 +363,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                             <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                             <p className="text-lg font-medium">No exams found</p>
                                             <p className="text-sm mt-1">
-                                                {search || gradeId || term || academicYear ? 'Try adjusting your filters' : 'Get started by scheduling a new exam'}
+                                                {filters.search || filters.grade_id || filters.term || filters.academic_year ? 'Try adjusting your filters' : 'Get started by scheduling a new exam'}
                                             </p>
                                         </td>
                                     </tr>

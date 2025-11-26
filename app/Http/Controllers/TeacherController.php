@@ -9,6 +9,7 @@ use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class TeacherController extends Controller
@@ -53,9 +54,17 @@ class TeacherController extends Controller
     {
         $this->authorize('create', Teacher::class);
 
+        $schoolId = $request->user()->school_id;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->where('school_id', $schoolId),
+            ],
             'password' => 'required|string|min:8',
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
@@ -143,7 +152,15 @@ class TeacherController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $teacher->user_id,
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')
+                    ->ignore($teacher->user_id)
+                    ->where('school_id', $teacher->user->school_id),
+            ],
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
             'qualification' => 'nullable|string|max:255',

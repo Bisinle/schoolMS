@@ -9,6 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class GradeController extends Controller
@@ -95,10 +96,21 @@ class GradeController extends Controller
         // Get school type from authenticated user's school
         $school = $request->user()->school;
         $isMadrasah = $school && $school->school_type === 'madrasah';
+        $schoolId = $request->user()->school_id;
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:grades,name',
-            'code' => 'nullable|string|max:50|unique:grades,code',
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('grades', 'name')->where('school_id', $schoolId),
+            ],
+            'code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('grades', 'code')->where('school_id', $schoolId),
+            ],
             'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
@@ -207,8 +219,22 @@ class GradeController extends Controller
         $isMadrasah = $school && $school->school_type === 'madrasah';
 
         $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:grades,name,' . $grade->id,
-            'code' => 'nullable|string|max:50|unique:grades,code,' . $grade->id,
+            'name' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('grades', 'name')
+                    ->ignore($grade->id)
+                    ->where('school_id', $grade->school_id),
+            ],
+            'code' => [
+                'nullable',
+                'string',
+                'max:50',
+                Rule::unique('grades', 'code')
+                    ->ignore($grade->id)
+                    ->where('school_id', $grade->school_id),
+            ],
             'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',

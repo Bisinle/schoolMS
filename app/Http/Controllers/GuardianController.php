@@ -8,6 +8,7 @@ use App\Services\UniqueIdentifierService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class GuardianController extends Controller
@@ -45,9 +46,17 @@ class GuardianController extends Controller
     {
         $this->authorize('create', Guardian::class);
 
+        $schoolId = $request->user()->school_id;
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->where('school_id', $schoolId),
+            ],
             'password' => 'required|string|min:8',
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
@@ -118,7 +127,15 @@ class GuardianController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email,' . $guardian->user_id,
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')
+                    ->ignore($guardian->user_id)
+                    ->where('school_id', $guardian->user->school_id),
+            ],
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
             'occupation' => 'nullable|string|max:255',

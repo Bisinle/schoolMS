@@ -90,62 +90,58 @@ export default function GradesIndex({ grades, filters: initialFilters = {}, auth
                 {/* Header Actions */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="flex items-center space-x-3">
-                        <BookOpen className="w-6 sm:w-8 h-6 sm:h-8 text-orange" />
+                        <BookOpen className="w-8 h-8 text-orange" />
                         <div>
-                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Grades</h2>
-                            <p className="text-xs sm:text-sm text-gray-600">
+                            <h2 className="text-2xl font-bold text-gray-900">Grades</h2>
+                            <p className="text-sm text-gray-600">
                                 Manage grades and class levels
                             </p>
                         </div>
                     </div>
 
-                    {/* Search and Filter - Refactored with FilterBar */}
-                    <div className="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                        <div className="flex-1 w-full lg:max-w-3xl">
-                            <FilterBar onClear={clearFilters} gridCols={isMadrasah ? "2" : "3"}>
-                                <SearchInput
-                                    value={filters.search}
-                                    onChange={(e) => updateFilter('search', e.target.value)}
-                                    placeholder="Search grades..."
-                                />
-                                {!isMadrasah && (
-                                    <FilterSelect
-                                        value={filters.level}
-                                        onChange={(e) => updateFilter('level', e.target.value)}
-                                        options={[
-                                            { value: 'ECD', label: 'ECD' },
-                                            { value: 'LOWER PRIMARY', label: 'Lower Primary' },
-                                            { value: 'UPPER PRIMARY', label: 'Upper Primary' },
-                                            { value: 'JUNIOR SECONDARY', label: 'Junior Secondary' }
-                                        ]}
-                                        allLabel="All Levels"
-                                        hideLabel
-                                    />
-                                )}
-                                <FilterSelect
-                                    value={filters.show_archived}
-                                    onChange={(e) => updateFilter('show_archived', e.target.value)}
-                                    options={[
-                                        { value: 'true', label: 'All (Including Archived)' },
-                                        { value: 'only', label: 'Archived Only' }
-                                    ]}
-                                    allLabel="Active Only"
-                                    hideLabel
-                                />
-                            </FilterBar>
-                        </div>
-
-                        {auth.user.role === 'admin' && (
-                            <Link
-                                href={route('grades.create')}
-                                className="inline-flex items-center justify-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md whitespace-nowrap"
-                            >
-                                <Plus className="w-5 h-5 mr-2" />
-                                Add Grade
-                            </Link>
-                        )}
-                    </div>
+                    {auth.user.role === 'admin' && (
+                        <Link
+                            href={route('grades.create')}
+                            className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Add Grade
+                        </Link>
+                    )}
                 </div>
+
+                {/* Filters */}
+                <FilterBar onClear={clearFilters} gridCols={isMadrasah ? "2" : "3"}>
+                    <SearchInput
+                        value={filters.search}
+                        onChange={(e) => updateFilter('search', e.target.value)}
+                        placeholder="Search grades..."
+                    />
+                    {!isMadrasah && (
+                        <FilterSelect
+                            value={filters.level}
+                            onChange={(e) => updateFilter('level', e.target.value)}
+                            options={[
+                                { value: 'ECD', label: 'ECD' },
+                                { value: 'LOWER PRIMARY', label: 'Lower Primary' },
+                                { value: 'UPPER PRIMARY', label: 'Upper Primary' },
+                                { value: 'JUNIOR SECONDARY', label: 'Junior Secondary' }
+                            ]}
+                            allLabel="All Levels"
+                            hideLabel
+                        />
+                    )}
+                    <FilterSelect
+                        value={filters.show_archived}
+                        onChange={(e) => updateFilter('show_archived', e.target.value)}
+                        options={[
+                            { value: 'true', label: 'All (Including Archived)' },
+                            { value: 'only', label: 'Archived Only' }
+                        ]}
+                        allLabel="Active Only"
+                        hideLabel
+                    />
+                </FilterBar>
 
                 {/* Grades Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-5">

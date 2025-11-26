@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Arr;
 
@@ -116,9 +117,19 @@ class UserController extends Controller
                 'roles_string' => implode(',', UserRole::values()),
             ]);
 
+            $schoolId = $request->user()->school_id;
+
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
-                'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,NULL,id,deleted_at,NULL'],
+                'email' => [
+                    'required',
+                    'string',
+                    'email',
+                    'max:255',
+                    Rule::unique('users', 'email')
+                        ->where('school_id', $schoolId)
+                        ->whereNull('deleted_at'),
+                ],
                 'phone' => ['nullable', 'string', 'max:20'],
                 'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
                 'password_setup_method' => ['required', 'in:generate,send_email,custom'],
@@ -234,7 +245,16 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $user->id . ',id,deleted_at,NULL'],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')
+                    ->ignore($user->id)
+                    ->where('school_id', $user->school_id)
+                    ->whereNull('deleted_at'),
+            ],
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
             'is_active' => ['required', 'boolean'],

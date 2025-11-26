@@ -6,7 +6,6 @@ use App\Models\User;
 use App\Models\School;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use App\Services\UniqueIdentifierService;
 
 class UserSeeder extends Seeder
 {
@@ -20,44 +19,7 @@ class UserSeeder extends Seeder
             return;
         }
 
-        // Create Admin Users
-        $school1 = $schools->random();
-        User::create([
-            'school_id' => $school1->id,
-            'name' => 'Abdi Elmi',
-            'email' => 'admin@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'employee_number' => UniqueIdentifierService::generateAdminEmployeeNumber($school1->id),
-            'is_active' => true,
-            'phone' => '0758500708',
-        ]);
-
-        $school2 = $schools->random();
-        User::create([
-            'school_id' => $school2->id,
-            'name' => 'Michelle Mwangi',
-            'email' => 'mich.admin@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'employee_number' => UniqueIdentifierService::generateAdminEmployeeNumber($school2->id),
-            'is_active' => true,
-            'phone' => '0700562291',
-        ]);
-
-        $school3 = $schools->random();
-        User::create([
-            'school_id' => $school3->id,
-            'name' => 'Bisinle Maki',
-            'email' => 'bisinle77@gmail.com',
-            'password' => Hash::make('password'),
-            'role' => 'admin',
-            'employee_number' => UniqueIdentifierService::generateAdminEmployeeNumber($school3->id),
-            'is_active' => true,
-            'phone' => '0700562291',
-        ]);
-
-        // Create Teacher Users
+        // Create Teacher Users (for TeacherSeeder to use)
         User::create([
             'school_id' => $schools->random()->id,
             'name' => 'Faith Teacher',
@@ -108,17 +70,8 @@ class UserSeeder extends Seeder
             'phone' => '0712345675',
         ]);
 
-        // Create Guardian User
-        User::create([
-            'school_id' => $schools->random()->id,
-            'name' => 'Jane Doe',
-            'email' => 'guardian@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'guardian',
-            'is_active' => true,
-            'phone' => '0712345680',
-        ]);
-
-        $this->command->info('✅ Users seeded successfully with random school assignments!');
+        $this->command->info('✅ Teacher users seeded successfully!');
+        $this->command->info('ℹ️  Admin users are created by SchoolSeeder');
+        $this->command->info('ℹ️  Guardian users are created by GuardianSeeder');
     }
 }
