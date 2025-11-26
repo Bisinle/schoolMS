@@ -106,7 +106,7 @@ export default function SwipeableListItem({
     const getTranslateDistance = (action, direction) => {
         if (!action?.buttons) return 0;
         const buttonCount = action.buttons.length;
-        const baseDistance = 20; // Base distance per button
+        const baseDistance = 44; // Base distance per button
         const distance = baseDistance * buttonCount + (buttonCount - 1) * 8; // 8px gap between buttons
         return direction === 'left' ? `-${distance + 24}` : distance + 24; // 24px for padding
     };
