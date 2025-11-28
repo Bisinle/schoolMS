@@ -1,7 +1,7 @@
-const CACHE_NAME = 'schoolms-v3';
-const STATIC_CACHE = 'schoolms-static-v2';
-const DYNAMIC_CACHE = 'schoolms-dynamic-v2';
-const IMAGE_CACHE = 'schoolms-images-v2';
+const CACHE_NAME = 'schoolms-v4';
+const STATIC_CACHE = 'schoolms-static-v4';
+const DYNAMIC_CACHE = 'schoolms-dynamic-v4';
+const IMAGE_CACHE = 'schoolms-images-v4';
 
 // Core files to cache immediately
 const urlsToCache = [
@@ -37,8 +37,7 @@ self.addEventListener('install', (event) => {
         console.error('Cache addAll failed:', error);
       })
   );
-  // Force the waiting service worker to become the active service worker
-  self.skipWaiting();
+  // Don't auto-skip waiting - let the user decide via update notification
 });
 
 // Activate service worker

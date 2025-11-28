@@ -80,16 +80,18 @@
             // Show update notification banner
             function showUpdateNotification(registration) {
                 const banner = document.createElement('div');
-                banner.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-4 rounded-lg shadow-2xl z-50 max-w-sm';
+                banner.className = 'fixed bottom-4 right-4 text-white px-6 py-4 rounded-lg shadow-2xl z-50 max-w-sm border border-orange-500';
+                banner.style.background = 'linear-gradient(135deg, #0b1a34 0%, #1e3a5f 100%)';
                 banner.innerHTML = `
                     <div class="flex items-center justify-between gap-4">
                         <div>
-                            <p class="font-semibold mb-1">Update Available!</p>
-                            <p class="text-sm text-blue-100">A new version of SchoolMS is ready.</p>
+                            <p class="font-semibold mb-1 text-orange-500">Update Available!</p>
+                            <p class="text-sm text-gray-300">A new version of SchoolMS is ready.</p>
                         </div>
                         <button
                             onclick="this.parentElement.parentElement.querySelector('.update-btn').click()"
-                            class="update-btn bg-white text-blue-600 px-4 py-2 rounded font-medium hover:bg-blue-50 transition-colors"
+                            class="update-btn bg-orange-500 text-white px-4 py-2 rounded font-medium hover:bg-orange-600 transition-colors"
+                            style="background-color: #ff6b35;"
                         >
                             Update
                         </button>
