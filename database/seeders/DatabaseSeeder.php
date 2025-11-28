@@ -28,7 +28,7 @@ class DatabaseSeeder extends Seeder
             AttendanceSeeder::class,        // 8️⃣ Create attendance records
             DocumentCategorySeeder::class,  // 9️⃣ Create document categories
             DocumentSeeder::class,          // 🔟 Create sample documents
-            SuperAdminSeeder::class,        // 1️⃣1️⃣ Create super admin (global access)
+            // SuperAdminSeeder::class,        // 1️⃣1️⃣ Create super admin (global access)
         ]);
 
         $this->command->newLine();

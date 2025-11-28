@@ -14,10 +14,10 @@ class SuperAdminSeeder extends Seeder
     public function run(): void
     {
         // ✅ Skip this seeder if not in local environment
-        if (!app()->environment('local')) {
-            $this->command->info('SuperAdminSeeder skipped in non-local environment.');
-            return;
-        }
+        // if (!app()->environment('local')) {
+        //     $this->command->info('SuperAdminSeeder skipped in non-local environment.');
+        //     return;
+        // }
 
         // ✅ Use updateOrCreate to avoid duplicate entries
         User::updateOrCreate(
@@ -25,7 +25,7 @@ class SuperAdminSeeder extends Seeder
             [
                 'school_id' => null, // Super admins don't belong to any school
                 'name' => 'Super Administrator',
-                'password' => Hash::make('password'), // Change this in production!
+                'password' => Hash::make('adminMS@SCHOOL'), // Change this in production!
                 'role' => 'super_admin',
                 'is_active' => true,
                 'email_verified_at' => now(),
