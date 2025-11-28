@@ -12,6 +12,11 @@ class ExamSeeder extends Seeder
      */
     public function run(): void
     {
+                    // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('ExamSeeder skipped in non-local environment.');
+            return;
+        }
         //
     }
 }

@@ -1,7 +1,7 @@
-const CACHE_NAME = 'schoolms-v5';
-const STATIC_CACHE = 'schoolms-static-v4';
-const DYNAMIC_CACHE = 'schoolms-dynamic-v4';
-const IMAGE_CACHE = 'schoolms-images-v4';
+const CACHE_NAME = 'schoolms-__CACHE_VERSION__';
+const STATIC_CACHE = 'schoolms-static-__CACHE_VERSION__';
+const DYNAMIC_CACHE = 'schoolms-dynamic-__CACHE_VERSION__';
+const IMAGE_CACHE = 'schoolms-images-__CACHE_VERSION__';
 
 // Core files to cache immediately
 const urlsToCache = [

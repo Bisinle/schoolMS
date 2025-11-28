@@ -12,6 +12,11 @@ class ReportCommentSeeder extends Seeder
      */
     public function run(): void
     {
+                    // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('ReportCommentSeeder skipped in non-local environment.');
+            return;
+        }
         //
     }
 }

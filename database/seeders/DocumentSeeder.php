@@ -16,6 +16,11 @@ class DocumentSeeder extends Seeder
 {
     public function run(): void
     {
+        // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('DocumentSeeder skipped in non-local environment.');
+            return;
+        }
         $this->command->info('📄 Seeding Documents...');
 
         // Ensure storage directories exist
@@ -138,18 +143,18 @@ class DocumentSeeder extends Seeder
     ): void {
         // Generate fake PDF content
         $pdfContent = $this->generateFakePDF($category->name);
-        
+
         // Generate UUID filename
         $extension = $category->allowed_extensions[0] ?? 'pdf';
         $storedFilename = Str::uuid() . '.' . $extension;
-        
+
         // Determine folder
         $entityFolder = strtolower(class_basename($entityType)) . 's';
         $filePath = "documents/{$entityFolder}/{$storedFilename}";
-        
+
         // Store fake file
         Storage::put($filePath, $pdfContent);
-        
+
         // Random status (80% verified, 10% pending, 10% rejected)
         $rand = rand(1, 100);
         if ($rand <= 80) {

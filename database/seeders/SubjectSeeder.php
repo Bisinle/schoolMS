@@ -11,6 +11,11 @@ class SubjectSeeder extends Seeder
 {
     public function run(): void
     {
+        // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('SubjectSeeder skipped in non-local environment.');
+            return;
+        }
         // Get all schools to create subjects for each
         $schools = School::all();
 
@@ -46,7 +51,7 @@ class SubjectSeeder extends Seeder
             ['name' => 'الأربعون النووية', 'code' => 'ARBAEEN', 'category' => 'islamic', 'status' => 'active'],
             ['name' => 'السيرة', 'code' => 'SEERAH', 'category' => 'islamic', 'status' => 'active'],
             ['name' => 'القراءة والكتابة', 'code' => 'QIRAHA_KITABAH', 'category' => 'islamic', 'status' => 'active'],
-                ];
+        ];
 
         // Create subjects for each school
         foreach ($schools as $school) {

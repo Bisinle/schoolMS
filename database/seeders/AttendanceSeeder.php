@@ -13,6 +13,11 @@ class AttendanceSeeder extends Seeder
 {
     public function run(): void
     {
+          // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('AttendanceSeeder skipped in non-local environment.');
+            return;
+        }
         $students = Student::with('grade')->where('status', 'active')->get();
         $adminUser = User::where('role', 'admin')->first();
         $teachers = User::where('role', 'teacher')->get();

@@ -11,6 +11,11 @@ class TeacherSeeder extends Seeder
 {
     public function run(): void
     {
+        // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('TeacherSeeder skipped in non-local environment.');
+            return;
+        }
         $teacherUsers = User::where('role', 'teacher')->get();
 
         if ($teacherUsers->count() < 3) {

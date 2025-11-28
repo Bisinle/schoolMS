@@ -15,6 +15,11 @@ class SchoolSeeder extends Seeder
      */
     public function run(): void
     {
+        // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('SchoolSeeder skipped in non-local environment.');
+            return;
+        }
         // School 1: Elmi Academy (Islamic School - shows all subjects)
         $school1 = School::create([
             'name' => 'Elmi Academy',
@@ -105,4 +110,3 @@ class SchoolSeeder extends Seeder
         $this->command->info('  Email: admin@alnoor.school | Password: password');
     }
 }
-

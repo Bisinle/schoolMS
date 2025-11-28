@@ -15,6 +15,11 @@ class StudentSeeder extends Seeder
 {
     public function run(): void
     {
+        // ✅ Skip this seeder if not in local environment
+        if (!app()->environment('local')) {
+            $this->command->info('StudentSeeder skipped in non-local environment.');
+            return;
+        }
         $faker = Faker::create();
 
         $schools = School::all();
