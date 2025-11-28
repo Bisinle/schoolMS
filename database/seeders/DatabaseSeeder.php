@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
              // ✅ Skip this seeder if not in local environment
              if (!app()->environment('local')) {
                 $this->command->info('DatabaseSeeder skipped in non-local environment.');
-                return;
+                return;}
                 
         $this->command->info('🌱 Starting database seeding...');
         $this->command->newLine();
