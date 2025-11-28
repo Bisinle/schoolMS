@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SchoolMS Icon Generator</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .instructions {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 30px;
+        }
+        .icons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 30px;
+            margin-top: 30px;
+        }
+        .icon-wrapper {
+            text-align: center;
+        }
+        .icon-label {
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #333;
+        }
+        .icon {
+            background: #0b1a34;
+            border-radius: 20%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .icon svg {
+            color: #ff6b35;
+        }
+        /* Different sizes */
+        .icon-72 { width: 72px; height: 72px; }
+        .icon-72 svg { width: 42px; height: 42px; stroke-width: 2; }
+
+        .icon-96 { width: 96px; height: 96px; }
+        .icon-96 svg { width: 56px; height: 56px; stroke-width: 2; }
+
+        .icon-128 { width: 128px; height: 128px; }
+        .icon-128 svg { width: 76px; height: 76px; stroke-width: 2; }
+
+        .icon-144 { width: 144px; height: 144px; }
+        .icon-144 svg { width: 86px; height: 86px; stroke-width: 2; }
+
+        .icon-152 { width: 152px; height: 152px; }
+        .icon-152 svg { width: 90px; height: 90px; stroke-width: 2; }
+
+        .icon-192 { width: 192px; height: 192px; }
+        .icon-192 svg { width: 115px; height: 115px; stroke-width: 2; }
+
+        .icon-384 { width: 384px; height: 384px; }
+        .icon-384 svg { width: 230px; height: 230px; stroke-width: 2; }
+
+        .icon-512 { width: 512px; height: 512px; }
+        .icon-512 svg { width: 307px; height: 307px; stroke-width: 2; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SchoolMS PWA Icon Generator</h1>
+
+        <div class="instructions">
+            <h2>Instructions:</h2>
+            <ol>
+                <li>Open this file in Chrome browser</li>
+                <li>Right-click on each icon below</li>
+                <li>Select "Inspect Element"</li>
+                <li>In DevTools, right-click the element and select "Capture node screenshot"</li>
+                <li>Save each screenshot with the corresponding filename</li>
+                <li>Place all images in <code>public/images/</code> folder</li>
+            </ol>
+            <p><strong>OR use the automated script below to generate all icons at once!</strong></p>
+        </div>
+
+        <div class="icons-grid">
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-72x72.png</div>
+                <div class="icon icon-72" id="icon-72">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-96x96.png</div>
+                <div class="icon icon-96" id="icon-96">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-128x128.png</div>
+                <div class="icon icon-128" id="icon-128">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-144x144.png</div>
+                <div class="icon icon-144" id="icon-144">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-152x152.png</div>
+                <div class="icon icon-152" id="icon-152">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-192x192.png</div>
+                <div class="icon icon-192" id="icon-192">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-384x384.png</div>
+                <div class="icon icon-384" id="icon-384">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="icon-wrapper">
+                <div class="icon-label">icon-512x512.png</div>
+                <div class="icon icon-512" id="icon-512">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M14 22v-4a2 2 0 1 0-4 0v4"/>
+                        <path d="m18 10 4 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-8l4-2"/>
+                        <path d="M18 5v17"/>
+                        <path d="m4 6 8-4 8 4"/>
+                        <path d="M6 5v17"/>
+                        <circle cx="12" cy="9" r="2"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Optional: Add download functionality
+            console.log('Icon generator loaded. Use browser DevTools to capture node screenshots.');
+        </script>
+    </div>
+</body>
+</html>
+

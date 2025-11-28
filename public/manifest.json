@@ -4,8 +4,8 @@
   "description": "Complete school management solution for Islamic schools following CBC curriculum",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1e3a5f",
-  "theme_color": "#ff6b35",
+  "background_color": "#0a1f44",
+  "theme_color": "#0a1f44",
   "orientation": "portrait-primary",
   "icons": [
     {
@@ -178,23 +178,5 @@
         }
       ]
     }
-  ],
-  "share_target": {
-    "action": "/share",
-    "method": "POST",
-    "enctype": "multipart/form-data",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url",
-      "files": [
-        {
-          "name": "documents",
-          "accept": ["image/*", "application/pdf", ".doc", ".docx"]
-        }
-      ]
-    }
-  },
-  "categories": ["education", "productivity"],
-  "prefer_related_applications": false
+  ]
 }
