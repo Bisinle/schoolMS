@@ -1,16 +1,34 @@
-const CACHE_NAME = 'schoolms-v1';
+const CACHE_NAME = 'schoolms-v2';
+const STATIC_CACHE = 'schoolms-static-v2';
+const DYNAMIC_CACHE = 'schoolms-dynamic-v2';
+const IMAGE_CACHE = 'schoolms-images-v2';
+
+// Core files to cache immediately
 const urlsToCache = [
-  '/build/manifest.json',
+  '/',
   '/manifest.json',
   '/images/icon-192x192.png',
   '/images/icon-512x512.png',
+  '/images/icon-72x72.png',
+  '/images/icon-96x96.png',
+  '/images/icon-128x128.png',
+  '/images/icon-144x144.png',
+  '/images/icon-152x152.png',
+  '/images/icon-384x384.png',
 ];
+
+// Listen for skip waiting message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+});
 
 // Install service worker
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing...');
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(STATIC_CACHE)
       .then((cache) => {
         console.log('Opened cache');
         return cache.addAll(urlsToCache);
@@ -26,7 +44,7 @@ self.addEventListener('install', (event) => {
 // Activate service worker
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating...');
-  const cacheWhitelist = [CACHE_NAME];
+  const cacheWhitelist = [STATIC_CACHE, DYNAMIC_CACHE, IMAGE_CACHE];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -43,7 +61,18 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch strategy: Network first, then cache
+// Helper function to determine cache strategy
+function getCacheName(url) {
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico)$/)) {
+    return IMAGE_CACHE;
+  }
+  if (url.pathname.match(/\.(js|css|woff|woff2|ttf|eot)$/)) {
+    return STATIC_CACHE;
+  }
+  return DYNAMIC_CACHE;
+}
+
+// Fetch strategy with intelligent caching
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
@@ -51,29 +80,58 @@ self.addEventListener('fetch', (event) => {
   // Skip caching for:
   // 1. Non-GET requests
   // 2. Chrome extensions
-  // 3. API calls
-  // 4. Root route (/)
+  // 3. Different origins (except fonts)
   if (
     request.method !== 'GET' ||
     url.protocol === 'chrome-extension:' ||
-    url.pathname.startsWith('/api/') ||
-    url.pathname === '/' ||
-    url.pathname === '/login' ||
-    url.pathname === '/dashboard'
+    (url.origin !== self.location.origin && !url.pathname.match(/\.(woff|woff2|ttf|eot)$/))
   ) {
     return;
   }
 
+  // Cache-first strategy for static assets (images, fonts, CSS, JS)
+  if (url.pathname.match(/\.(png|jpg|jpeg|svg|gif|webp|ico|js|css|woff|woff2|ttf|eot)$/)) {
+    event.respondWith(
+      caches.match(request).then((cachedResponse) => {
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        return fetch(request).then((response) => {
+          // Don't cache non-successful responses
+          if (!response || response.status !== 200) {
+            return response;
+          }
+
+          const responseToCache = response.clone();
+          const cacheName = getCacheName(url);
+
+          caches.open(cacheName).then((cache) => {
+            cache.put(request, responseToCache);
+          });
+
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // Network-first strategy for HTML and API calls
   event.respondWith(
-    // Try network first
     fetch(request)
       .then((response) => {
+        // Don't cache redirects or errors
+        if (!response || response.status !== 200 || response.type === 'error') {
+          return response;
+        }
+
         // Clone the response
         const responseToCache = response.clone();
 
-        // Cache successful responses
-        if (response.status === 200) {
-          caches.open(CACHE_NAME).then((cache) => {
+        // Cache successful responses (except login/logout)
+        if (!url.pathname.match(/\/(login|logout|csrf-token)/)) {
+          caches.open(DYNAMIC_CACHE).then((cache) => {
             cache.put(request, responseToCache);
           });
         }
@@ -83,7 +141,24 @@ self.addEventListener('fetch', (event) => {
       .catch(() => {
         // If network fails, try cache
         return caches.match(request).then((response) => {
-          return response || new Response('Offline - content not available', {
+          if (response) {
+            return response;
+          }
+
+          // Return offline page for navigation requests
+          if (request.mode === 'navigate') {
+            return caches.match('/').then((cachedHome) => {
+              return cachedHome || new Response('Offline - Please check your connection', {
+                status: 503,
+                statusText: 'Service Unavailable',
+                headers: new Headers({
+                  'Content-Type': 'text/html'
+                })
+              });
+            });
+          }
+
+          return new Response('Offline - content not available', {
             status: 503,
             statusText: 'Service Unavailable',
           });

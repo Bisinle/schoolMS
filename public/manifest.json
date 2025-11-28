@@ -1,75 +1,200 @@
 {
-    "name": "School Management System",
-    "short_name": "SchoolMS",
-    "description": "Islamic School Management System following Kenyan CBC Curriculum",
-    "start_url": "/login",
-    "display": "standalone",
-    "background_color": "#0b1a34",
-    "theme_color": "#f97316",
-    "orientation": "portrait-primary",
-    "scope": "/",
-    "icons": [
-      {
-        "src": "/images/icon-72x72.png",
-        "sizes": "72x72",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-96x96.png",
-        "sizes": "96x96",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-128x128.png",
-        "sizes": "128x128",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-144x144.png",
-        "sizes": "144x144",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-152x152.png",
-        "sizes": "152x152",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-192x192.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-384x384.png",
-        "sizes": "384x384",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-512x512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "any"
-      },
-      {
-        "src": "/images/icon-192x192.png",
-        "sizes": "192x192",
-        "type": "image/png",
-        "purpose": "maskable"
-      },
-      {
-        "src": "/images/icon-512x512.png",
-        "sizes": "512x512",
-        "type": "image/png",
-        "purpose": "maskable"
-      }
-    ],
-    "categories": ["education", "productivity"],
-    "prefer_related_applications": false
-  }
+  "name": "SchoolMS - School Management System",
+  "short_name": "SchoolMS",
+  "description": "Complete school management solution for Islamic schools following CBC curriculum",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1e3a5f",
+  "theme_color": "#ff6b35",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/images/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/images/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/images/screenshots/desktop_dashboard.png",
+      "sizes": "1498x845",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Admin Dashboard - Complete school overview with stats and analytics"
+    },
+    {
+      "src": "/images/screenshots/attendance_report_dekstop.png",
+      "sizes": "1498x845",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Attendance Reports - Detailed student attendance tracking and analytics"
+    },
+    {
+      "src": "/images/screenshots/student_reports_desktop.png",
+      "sizes": "1498x845",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Student Reports - Generate comprehensive report cards for students"
+    },
+    {
+      "src": "/images/screenshots/documents_desktop.png",
+      "sizes": "1372x845",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Document Management - Secure document upload and verification system"
+    },
+    {
+      "src": "/images/screenshots/admin_Dashboard_mobileView.jpeg",
+      "sizes": "540x1165",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Mobile Dashboard - Access school data anywhere, anytime"
+    },
+    {
+      "src": "/images/screenshots/Glass management_mobileView.jpeg",
+      "sizes": "540x1165",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Grades Management - Organize and manage classes on the go"
+    },
+    {
+      "src": "/images/screenshots/student_attendancy_tracker_mobileView.jpeg",
+      "sizes": "540x1165",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Attendance Tracking - Mark student attendance from your phone"
+    },
+    {
+      "src": "/images/screenshots/student_reportCard_mobileView.jpeg",
+      "sizes": "540x1165",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Student Report Cards - View grades and academic performance"
+    },
+    {
+      "src": "/images/screenshots/quran_tracking_process_mobileView.jpeg",
+      "sizes": "540x1165",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Quran Tracking - Monitor Quran memorization and learning progress"
+    },
+    {
+      "src": "/images/screenshots/user_management_with _wipe _unctionality_mobileView.jpeg",
+      "sizes": "540x1165",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "User Management - Swipe gestures for quick actions and management"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Student",
+      "short_name": "New Student",
+      "description": "Quickly add a new student to the system",
+      "url": "/students/create",
+      "icons": [
+        {
+          "src": "/images/icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Mark Attendance",
+      "short_name": "Attendance",
+      "description": "Mark student attendance for today",
+      "url": "/attendance",
+      "icons": [
+        {
+          "src": "/images/icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "View Students",
+      "short_name": "Students",
+      "description": "View all registered students",
+      "url": "/students",
+      "icons": [
+        {
+          "src": "/images/icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "Go to main dashboard",
+      "url": "/dashboard",
+      "icons": [
+        {
+          "src": "/images/icon-96x96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [
+        {
+          "name": "documents",
+          "accept": ["image/*", "application/pdf", ".doc", ".docx"]
+        }
+      ]
+    }
+  },
+  "categories": ["education", "productivity"],
+  "prefer_related_applications": false
+}

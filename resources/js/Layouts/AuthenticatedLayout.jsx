@@ -2,6 +2,7 @@ import { useState } from "react";
 import { usePage } from "@inertiajs/react";
 import ImpersonationBanner from "@/Components/ImpersonationBanner";
 import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
+import OfflineIndicator from "@/Components/OfflineIndicator";
 import Sidebar from "@/Layouts/Sidebar";
 import TopBar from "@/Layouts/TopBar";
 import { getNavigation } from "@/Config/navigation";
@@ -27,6 +28,9 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* Offline Indicator */}
+            <OfflineIndicator />
+
             {/* Impersonation Banner */}
             {impersonation?.isImpersonating && (
                 <ImpersonationBanner
