@@ -1,4 +1,4 @@
-const CACHE_NAME = 'schoolms-v4';
+const CACHE_NAME = 'schoolms-v5';
 const STATIC_CACHE = 'schoolms-static-v4';
 const DYNAMIC_CACHE = 'schoolms-dynamic-v4';
 const IMAGE_CACHE = 'schoolms-images-v4';
