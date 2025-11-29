@@ -1,9 +1,42 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Calendar, User, CheckCircle, XCircle, Clock, AlertCircle, ArrowLeft, TrendingUp, Filter } from 'lucide-react';
+import { Calendar, CheckCircle, XCircle, Clock, AlertCircle, ArrowLeft, TrendingUp, Filter } from 'lucide-react';
 import { useState } from 'react';
+import MobileListContainer from '@/Components/Mobile/MobileListContainer';
+import { StatCard, StatusBadge, EmptyState } from '@/Components/UI';
 
-export default function StudentHistory({ 
+// Mobile History Item Component
+function MobileHistoryItem({ attendance }) {
+    const date = new Date(attendance.attendance_date);
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    return (
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+            <div className="flex items-center gap-3">
+                <div className="text-center min-w-[50px]">
+                    <p className="text-xs text-gray-500">{dayName}</p>
+                    <p className="text-sm font-bold text-gray-900">{formattedDate}</p>
+                </div>
+                <StatusBadge status={attendance.status} size="md" />
+            </div>
+            <div className="flex items-center gap-2">
+                {attendance.remarks && (
+                    <p className="text-xs text-gray-500 truncate max-w-[100px]" title={attendance.remarks}>
+                        {attendance.remarks}
+                    </p>
+                )}
+                {attendance.marked_by?.name && (
+                    <span className="text-xs text-gray-400 hidden sm:inline">
+                        by {attendance.marked_by.name.split(' ')[0]}
+                    </span>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default function StudentHistory({
     student, 
     attendances, 
     stats,
@@ -152,56 +185,111 @@ export default function StudentHistory({
                     </div>
                 </div>
 
-                {/* Statistics Cards */}
+                {/* Statistics Cards - Using StatCard Component */}
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                        <p className="text-xs text-gray-500 mb-1">Total Days</p>
-                        <p className="text-2xl font-bold text-navy">{stats.total}</p>
-                    </div>
+                    <StatCard
+                        icon={Calendar}
+                        title="Total Days"
+                        value={stats.total}
+                        gradient="from-gray-500 to-gray-600"
+                    />
+                    <StatCard
+                        icon={CheckCircle}
+                        title="Present"
+                        value={stats.present}
+                        gradient="from-green-500 to-green-600"
+                    />
+                    <StatCard
+                        icon={XCircle}
+                        title="Absent"
+                        value={stats.absent}
+                        gradient="from-red-500 to-red-600"
+                    />
+                    <StatCard
+                        icon={Clock}
+                        title="Late"
+                        value={stats.late}
+                        gradient="from-yellow-500 to-yellow-600"
+                    />
+                    <StatCard
+                        icon={AlertCircle}
+                        title="Excused"
+                        value={stats.excused}
+                        gradient="from-blue-500 to-blue-600"
+                    />
+                    <StatCard
+                        icon={TrendingUp}
+                        title="Rate"
+                        value={`${stats.attendance_rate}%`}
+                        gradient="from-orange-500 to-red-600"
+                    />
+                </div>
 
-                    <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-sm p-4 text-white">
-                        <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-green-100">Present</p>
-                            <CheckCircle className="w-5 h-5 text-green-200" />
+                {/* Attendance History - Mobile View */}
+                <div className="block md:hidden">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                            <h4 className="text-base font-semibold text-navy">
+                                Attendance Records
+                            </h4>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                                {new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()}
+                            </p>
                         </div>
-                        <p className="text-2xl font-bold">{stats.present}</p>
-                    </div>
 
-                    <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-sm p-4 text-white">
-                        <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-red-100">Absent</p>
-                            <XCircle className="w-5 h-5 text-red-200" />
-                        </div>
-                        <p className="text-2xl font-bold">{stats.absent}</p>
-                    </div>
+                        {attendances.data && attendances.data.length > 0 ? (
+                            <>
+                                <MobileListContainer
+                                    isEmpty={false}
+                                    rounded={false}
+                                    shadow={false}
+                                    border={false}
+                                >
+                                    {attendances.data.map((attendance) => (
+                                        <MobileHistoryItem key={attendance.id} attendance={attendance} />
+                                    ))}
+                                </MobileListContainer>
 
-                    <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-sm p-4 text-white">
-                        <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-yellow-100">Late</p>
-                            <Clock className="w-5 h-5 text-yellow-200" />
-                        </div>
-                        <p className="text-2xl font-bold">{stats.late}</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm p-4 text-white">
-                        <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-blue-100">Excused</p>
-                            <AlertCircle className="w-5 h-5 text-blue-200" />
-                        </div>
-                        <p className="text-2xl font-bold">{stats.excused}</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-orange to-orange-dark rounded-xl shadow-sm p-4 text-white">
-                        <div className="flex items-center justify-between mb-1">
-                            <p className="text-xs text-orange-100">Rate</p>
-                            <TrendingUp className="w-5 h-5 text-orange-200" />
-                        </div>
-                        <p className="text-2xl font-bold">{stats.attendance_rate}%</p>
+                                {/* Mobile Pagination */}
+                                {attendances.links && (
+                                    <div className="px-4 py-3 border-t border-gray-200 bg-gray-50">
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-xs text-gray-500">
+                                                Page {attendances.current_page} of {attendances.last_page}
+                                            </span>
+                                            <div className="flex gap-2">
+                                                {attendances.links.map((link, index) => (
+                                                    <Link
+                                                        key={index}
+                                                        href={link.url || '#'}
+                                                        preserveState
+                                                        className={`px-3 py-1.5 text-xs rounded-lg transition-all ${
+                                                            link.active
+                                                                ? 'bg-orange text-white font-medium'
+                                                                : link.url
+                                                                ? 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+                                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                        }`}
+                                                        dangerouslySetInnerHTML={{ __html: link.label }}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        ) : (
+                            <EmptyState
+                                icon={Calendar}
+                                title="No Attendance Records"
+                                message="No attendance has been marked for this student in the selected date range."
+                            />
+                        )}
                     </div>
                 </div>
 
-                {/* Attendance History Table */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {/* Attendance History - Desktop Table (UNCHANGED) */}
+                <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                         <h4 className="text-lg font-semibold text-navy">
                             Attendance Records
@@ -305,14 +393,13 @@ export default function StudentHistory({
                             )}
                         </>
                     ) : (
-                        <div className="p-12 text-center">
-                            <Calendar className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                            <h3 className="text-lg font-medium text-gray-900 mb-2">
-                                No Attendance Records
-                            </h3>
-                            <p className="text-gray-500">
-                                No attendance has been marked for this student in the selected date range.
-                            </p>
+                        <div className="p-12">
+                            <EmptyState
+                                icon={Calendar}
+                                title="No Attendance Records"
+                                message="No attendance has been marked for this student in the selected date range."
+                                size="lg"
+                            />
                         </div>
                     )}
                 </div>

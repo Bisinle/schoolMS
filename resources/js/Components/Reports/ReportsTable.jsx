@@ -1,127 +1,83 @@
 import { Link } from '@inertiajs/react';
-import { FileText, Users, ChevronDown, ChevronUp, GraduationCap, User } from 'lucide-react';
-import { useState } from 'react';
-import { useSwipeable } from 'react-swipeable';
-import SwipeActionButton from '@/Components/SwipeActionButton';
+import { FileText, Users, GraduationCap, User } from 'lucide-react';
+import MobileListContainer from '@/Components/Mobile/MobileListContainer';
+import { SwipeableListItem, ExpandableCard } from '@/Components/Mobile';
+import { Badge, EmptyState } from '@/Components/UI';
 
-// Mobile List Item Component
+// Mobile List Item Component - Refactored with SwipeableListItem + ExpandableCard
 function MobileStudentReportItem({ student, onGenerateReport }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [swipeAction, setSwipeAction] = useState(null);
-
-    const handlers = useSwipeable({
-        onSwipedLeft: () => setSwipeAction('primary'),
-        onSwipedRight: () => {},
-        onSwiping: () => {},
-        trackMouse: false,
-        preventScrollOnSwipe: false,
-        delta: 60,
-    });
+    const primaryActions = [
+        {
+            icon: FileText,
+            label: 'Generate',
+            onClick: () => onGenerateReport(student),
+            color: 'orange',
+        },
+    ];
 
     return (
-        <div className="relative bg-white border-b border-gray-200 overflow-hidden">
-            {/* Swipe Actions Background */}
-            {swipeAction === 'primary' && (
-                <div className="absolute inset-0 bg-gradient-to-l from-orange-500 to-red-600 flex items-center justify-end px-4 gap-2 z-10">
-                    <SwipeActionButton
-                        icon={<FileText className="w-5 h-5 text-white" />}
-                        onClick={() => {
-                            onGenerateReport(student);
-                            setSwipeAction(null);
-                        }}
-                    />
-                </div>
-            )}
+        <SwipeableListItem primaryActions={primaryActions}>
+            <ExpandableCard
+                header={
+                    <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-lg">
+                            {student.first_name?.charAt(0)}{student.last_name?.charAt(0)}
+                        </div>
 
-            {/* Main Content */}
-            <div
-                {...handlers}
-                className={`relative bg-white transition-transform duration-300 z-20 ${
-                    swipeAction === 'primary' ? '-translate-x-20' : ''
-                }`}
-                onClick={() => {
-                    if (swipeAction) {
-                        setSwipeAction(null);
-                    }
-                }}
-            >
-                {/* Summary Row */}
-                <div
-                    className="p-5 cursor-pointer active:bg-gray-50 transition-colors"
-                    onClick={() => {
-                        if (!swipeAction) {
-                            setIsExpanded(!isExpanded);
-                        }
-                    }}
-                >
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex items-start gap-4 flex-1 min-w-0">
-                            <div className="flex-shrink-0 w-14 h-14 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg text-lg">
-                                {student.first_name?.charAt(0)}{student.last_name?.charAt(0)}
-                            </div>
-
-                            <div className="flex-1 min-w-0">
-                                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
-                                    {student.first_name} {student.last_name}
-                                </h3>
-                                <p className="text-sm text-gray-600 mt-1">{student.admission_number}</p>
-                                <div className="flex items-center gap-2 mt-2 flex-wrap">
-                                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
-                                        {student.grade?.name || 'Not Assigned'}
-                                    </span>
-                                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                                        student.gender === 'Male' ? 'bg-indigo-100 text-indigo-800' : 'bg-pink-100 text-pink-800'
-                                    }`}>
-                                        {student.gender}
-                                    </span>
-                                </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
+                                {student.first_name} {student.last_name}
+                            </h3>
+                            <p className="text-sm text-gray-600 mt-1">{student.admission_number}</p>
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                                <Badge
+                                    variant="primary"
+                                    value={student.grade?.name || 'Not Assigned'}
+                                    className="bg-blue-100 text-blue-800"
+                                />
+                                <Badge
+                                    variant="gender"
+                                    value={student.gender}
+                                />
                             </div>
                         </div>
-                        <button className="flex-shrink-0 p-1">
-                            {isExpanded ? (
-                                <ChevronUp className="w-6 h-6 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-6 h-6 text-gray-400" />
-                            )}
+                    </div>
+                }
+                headerClassName="p-5"
+                contentClassName="px-5 pb-5 pt-4"
+            >
+                <div className="space-y-4">
+                    {/* Info Grid */}
+                    <div className="space-y-3 text-sm">
+                        <div className="flex items-start gap-3">
+                            <GraduationCap className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <span className="text-xs text-gray-500 block">Grade</span>
+                                <span className="font-semibold text-gray-900">{student.grade?.name || 'Not Assigned'}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <span className="text-xs text-gray-500 block">Guardian</span>
+                                <span className="font-semibold text-gray-900">{student.guardian?.user?.name || 'N/A'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Action Button */}
+                    <div className="pt-4 border-t border-gray-100">
+                        <button
+                            onClick={() => onGenerateReport(student)}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange text-white rounded-xl font-bold text-sm hover:bg-orange-dark transition-colors active:scale-95"
+                        >
+                            <FileText className="w-4 h-4" />
+                            Generate Report
                         </button>
                     </div>
                 </div>
-
-                {/* Expanded Details */}
-                {isExpanded && (
-                    <div className="px-5 pb-5 space-y-4 border-t border-gray-100 pt-4">
-                        {/* Info Grid */}
-                        <div className="space-y-3 text-sm">
-                            <div className="flex items-start gap-3">
-                                <GraduationCap className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <span className="text-xs text-gray-500 block">Grade</span>
-                                    <span className="font-semibold text-gray-900">{student.grade?.name || 'Not Assigned'}</span>
-                                </div>
-                            </div>
-                            <div className="flex items-start gap-3">
-                                <User className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
-                                <div className="flex-1">
-                                    <span className="text-xs text-gray-500 block">Guardian</span>
-                                    <span className="font-semibold text-gray-900">{student.guardian?.user?.name || 'N/A'}</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Button */}
-                        <div className="pt-4 border-t border-gray-100">
-                            <button
-                                onClick={() => onGenerateReport(student)}
-                                className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-orange text-white rounded-xl font-bold text-sm hover:bg-orange-dark transition-colors active:scale-95"
-                            >
-                                <FileText className="w-4 h-4" />
-                                Generate Report
-                            </button>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </div>
+            </ExpandableCard>
+        </SwipeableListItem>
     );
 }
 
@@ -141,26 +97,25 @@ export default function ReportsTable({ students, isGuardian, onGenerateReport })
     return (
         <>
             {/* Mobile List View */}
-            <div className="block md:hidden bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                {studentsList.length > 0 ? (
-                    studentsList.map((student) => (
+            <div className="block md:hidden">
+                <MobileListContainer
+                    emptyState={{
+                        icon: Users,
+                        title: 'No students found',
+                        message: isGuardian
+                            ? 'No students are assigned to your account'
+                            : 'Try adjusting your filters',
+                    }}
+                    isEmpty={studentsList.length === 0}
+                >
+                    {studentsList.map((student) => (
                         <MobileStudentReportItem
                             key={student.id}
                             student={student}
                             onGenerateReport={onGenerateReport}
                         />
-                    ))
-                ) : (
-                    <div className="px-6 py-12 text-center">
-                        <Users className="w-16 h-16 text-gray-300 mx-auto mb-3" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-                        <p className="text-gray-600">
-                            {isGuardian
-                                ? 'No students are assigned to your account'
-                                : 'Try adjusting your filters'}
-                        </p>
-                    </div>
-                )}
+                    ))}
+                </MobileListContainer>
             </div>
 
             {/* Desktop Table View */}
@@ -228,14 +183,15 @@ export default function ReportsTable({ students, isGuardian, onGenerateReport })
                             ))
                         ) : (
                             <tr>
-                                <td colSpan="5" className="px-6 py-12 text-center">
-                                    <Users className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-                                    <h3 className="text-lg font-medium text-gray-900 mb-2">No students found</h3>
-                                    <p className="text-gray-600">
-                                        {isGuardian 
+                                <td colSpan="5" className="px-6 py-12">
+                                    <EmptyState
+                                        icon={Users}
+                                        title="No students found"
+                                        message={isGuardian
                                             ? 'No students are assigned to your account'
                                             : 'Try adjusting your filters'}
-                                    </p>
+                                        size="md"
+                                    />
                                 </td>
                             </tr>
                         )}

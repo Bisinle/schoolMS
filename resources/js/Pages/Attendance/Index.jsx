@@ -9,53 +9,18 @@ import {
     Clock,
     AlertCircle,
     FileText,
-    ChevronDown,
-    ChevronUp,
+    Zap,
 } from "lucide-react";
 import { useState, useEffect } from "react";
+import { MobileListContainer, ExpandableCard } from '@/Components/Mobile';
+import { StatusBadge, StatCard } from '@/Components/UI';
 
-// Mobile Student Attendance Item Component
+// Mobile Student Attendance Item Component - Refactored with ExpandableCard
 function MobileAttendanceItem({ student, index, attendance, updateStudentStatus, canMarkAttendance }) {
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'present':
-                return 'bg-green-100 text-green-800 border-green-300';
-            case 'absent':
-                return 'bg-red-100 text-red-800 border-red-300';
-            case 'late':
-                return 'bg-yellow-100 text-yellow-800 border-yellow-300';
-            case 'excused':
-                return 'bg-blue-100 text-blue-800 border-blue-300';
-            default:
-                return 'bg-gray-100 text-gray-800 border-gray-300';
-        }
-    };
-
-    const getStatusIcon = (status) => {
-        switch (status) {
-            case 'present':
-                return '✓';
-            case 'absent':
-                return '✗';
-            case 'late':
-                return '⏰';
-            case 'excused':
-                return '📝';
-            default:
-                return '?';
-        }
-    };
-
     return (
-        <div className="border-b border-gray-200 bg-white">
-            {/* Summary Row */}
-            <div
-                className="p-4 cursor-pointer active:bg-gray-50 transition-colors"
-                onClick={() => setIsExpanded(!isExpanded)}
-            >
-                <div className="flex items-center justify-between gap-4">
+        <ExpandableCard
+            header={
+                <div className="flex items-center justify-between gap-4 w-full">
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
                             {index + 1}
@@ -69,102 +34,95 @@ function MobileAttendanceItem({ student, index, attendance, updateStudentStatus,
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1.5 rounded-lg text-sm font-bold border-2 ${getStatusColor(attendance?.status || 'present')}`}>
-                            {getStatusIcon(attendance?.status || 'present')}
-                        </span>
-                        <button className="flex-shrink-0 p-1">
-                            {isExpanded ? (
-                                <ChevronUp className="w-5 h-5 text-gray-400" />
-                            ) : (
-                                <ChevronDown className="w-5 h-5 text-gray-400" />
-                            )}
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Expanded Details */}
-            {isExpanded && (
-                <div className="px-4 pb-4 space-y-4 border-t border-gray-100 pt-4">
-                    {/* Status Selection */}
-                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                            Attendance Status
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                            <button
-                                type="button"
-                                onClick={() => updateStudentStatus(student.student_id, 'status', 'present')}
-                                disabled={!canMarkAttendance}
-                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                                    attendance?.status === 'present'
-                                        ? 'bg-green-500 text-white shadow-lg'
-                                        : 'bg-green-50 text-green-700 hover:bg-green-100'
-                                }`}
-                            >
-                                <CheckCircle className="w-4 h-4 inline mr-1" />
-                                Present
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => updateStudentStatus(student.student_id, 'status', 'absent')}
-                                disabled={!canMarkAttendance}
-                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                                    attendance?.status === 'absent'
-                                        ? 'bg-red-500 text-white shadow-lg'
-                                        : 'bg-red-50 text-red-700 hover:bg-red-100'
-                                }`}
-                            >
-                                <XCircle className="w-4 h-4 inline mr-1" />
-                                Absent
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => updateStudentStatus(student.student_id, 'status', 'late')}
-                                disabled={!canMarkAttendance}
-                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                                    attendance?.status === 'late'
-                                        ? 'bg-yellow-500 text-white shadow-lg'
-                                        : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-                                }`}
-                            >
-                                <Clock className="w-4 h-4 inline mr-1" />
-                                Late
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => updateStudentStatus(student.student_id, 'status', 'excused')}
-                                disabled={!canMarkAttendance}
-                                className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
-                                    attendance?.status === 'excused'
-                                        ? 'bg-blue-500 text-white shadow-lg'
-                                        : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                                }`}
-                            >
-                                <AlertCircle className="w-4 h-4 inline mr-1" />
-                                Excused
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Remarks */}
-                    <div>
-                        <label className="block text-xs font-medium text-gray-700 mb-2">
-                            Remarks (Optional)
-                        </label>
-                        <textarea
-                            value={attendance?.remarks || ''}
-                            onChange={(e) => updateStudentStatus(student.student_id, 'remarks', e.target.value)}
-                            disabled={!canMarkAttendance}
-                            placeholder="Add any notes..."
-                            rows="2"
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent text-sm"
+                    <div className="flex-shrink-0">
+                        <StatusBadge
+                            status={attendance?.status || 'present'}
+                            size="sm"
                         />
                     </div>
                 </div>
-            )}
-        </div>
+            }
+            headerClassName="p-4"
+            contentClassName="px-4 pb-4 pt-4"
+        >
+            <div className="space-y-4">
+                {/* Status Selection */}
+                <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                        Attendance Status
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            onClick={() => updateStudentStatus(student.student_id, 'status', 'present')}
+                            disabled={!canMarkAttendance}
+                            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                attendance?.status === 'present'
+                                    ? 'bg-green-500 text-white shadow-lg'
+                                    : 'bg-green-50 text-green-700 hover:bg-green-100'
+                            }`}
+                        >
+                            <CheckCircle className="w-4 h-4 inline mr-1" />
+                            Present
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => updateStudentStatus(student.student_id, 'status', 'absent')}
+                            disabled={!canMarkAttendance}
+                            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                attendance?.status === 'absent'
+                                    ? 'bg-red-500 text-white shadow-lg'
+                                    : 'bg-red-50 text-red-700 hover:bg-red-100'
+                            }`}
+                        >
+                            <XCircle className="w-4 h-4 inline mr-1" />
+                            Absent
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => updateStudentStatus(student.student_id, 'status', 'late')}
+                            disabled={!canMarkAttendance}
+                            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                attendance?.status === 'late'
+                                    ? 'bg-yellow-500 text-white shadow-lg'
+                                    : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+                            }`}
+                        >
+                            <Clock className="w-4 h-4 inline mr-1" />
+                            Late
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => updateStudentStatus(student.student_id, 'status', 'excused')}
+                            disabled={!canMarkAttendance}
+                            className={`px-4 py-3 rounded-xl text-sm font-bold transition-all active:scale-95 ${
+                                attendance?.status === 'excused'
+                                    ? 'bg-blue-500 text-white shadow-lg'
+                                    : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                            }`}
+                        >
+                            <AlertCircle className="w-4 h-4 inline mr-1" />
+                            Excused
+                        </button>
+                    </div>
+                </div>
+
+                {/* Remarks */}
+                <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-2">
+                        Remarks (Optional)
+                    </label>
+                    <textarea
+                        value={attendance?.remarks || ''}
+                        onChange={(e) => updateStudentStatus(student.student_id, 'remarks', e.target.value)}
+                        disabled={!canMarkAttendance}
+                        placeholder="Add any notes..."
+                        rows="2"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent text-sm"
+                    />
+                </div>
+            </div>
+        </ExpandableCard>
     );
 }
 
@@ -179,8 +137,9 @@ export default function AttendanceIndex({
     const [localDate, setLocalDate] = useState(
         selectedDate || new Date().toISOString().split("T")[0]
     );
+    const [showQuickActions, setShowQuickActions] = useState(false);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         grade_id: selectedGradeId || "",
         attendance_date: selectedDate || new Date().toISOString().split("T")[0],
         attendances: [],
@@ -237,6 +196,7 @@ export default function AttendanceIndex({
             status: status,
         }));
         setData("attendances", updatedAttendances);
+        setShowQuickActions(false); // Close drawer after action
     };
 
     // Submit attendance
@@ -371,68 +331,40 @@ export default function AttendanceIndex({
                     </div>
                 )}
 
-                {/* Stats Cards - Mobile Optimized */}
+                {/* Stats Cards - Using StatCard Component */}
                 {attendanceData && (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                            <div className="flex flex-col items-center text-center">
-                                <Users className="w-8 h-8 sm:w-10 sm:h-10 text-gray-400 mb-2" />
-                                <p className="text-xs text-gray-500">
-                                    Total
-                                </p>
-                                <p className="text-xl sm:text-2xl font-bold text-navy mt-1">
-                                    {stats.total}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-md p-4 text-white">
-                            <div className="flex flex-col items-center text-center">
-                                <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-green-100 mb-2" />
-                                <p className="text-xs text-green-100">
-                                    Present
-                                </p>
-                                <p className="text-xl sm:text-2xl font-bold mt-1">
-                                    {stats.present}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-xl shadow-md p-4 text-white">
-                            <div className="flex flex-col items-center text-center">
-                                <XCircle className="w-8 h-8 sm:w-10 sm:h-10 text-red-100 mb-2" />
-                                <p className="text-xs text-red-100">
-                                    Absent
-                                </p>
-                                <p className="text-xl sm:text-2xl font-bold mt-1">
-                                    {stats.absent}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-xl shadow-md p-4 text-white">
-                            <div className="flex flex-col items-center text-center">
-                                <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-100 mb-2" />
-                                <p className="text-xs text-yellow-100">
-                                    Late
-                                </p>
-                                <p className="text-xl sm:text-2xl font-bold mt-1">
-                                    {stats.late}
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-md p-4 text-white col-span-2 sm:col-span-1">
-                            <div className="flex flex-col items-center text-center">
-                                <AlertCircle className="w-8 h-8 sm:w-10 sm:h-10 text-blue-100 mb-2" />
-                                <p className="text-xs text-blue-100">
-                                    Excused
-                                </p>
-                                <p className="text-xl sm:text-2xl font-bold mt-1">
-                                    {stats.excused}
-                                </p>
-                            </div>
-                        </div>
+                        <StatCard
+                            icon={Users}
+                            title="Total"
+                            value={stats.total}
+                            gradient="from-gray-500 to-gray-600"
+                        />
+                        <StatCard
+                            icon={CheckCircle}
+                            title="Present"
+                            value={stats.present}
+                            gradient="from-green-500 to-green-600"
+                        />
+                        <StatCard
+                            icon={XCircle}
+                            title="Absent"
+                            value={stats.absent}
+                            gradient="from-red-500 to-red-600"
+                        />
+                        <StatCard
+                            icon={Clock}
+                            title="Late"
+                            value={stats.late}
+                            gradient="from-yellow-500 to-yellow-600"
+                        />
+                        <StatCard
+                            icon={AlertCircle}
+                            title="Excused"
+                            value={stats.excused}
+                            gradient="from-blue-500 to-blue-600"
+                            className="col-span-2 sm:col-span-1"
+                        />
                     </div>
                 )}
 
@@ -492,47 +424,125 @@ export default function AttendanceIndex({
                             </div>
                         )}
 
-                        {/* Bulk Actions */}
+                        {/* Floating Quick Actions Button - Mobile Only */}
                         {canMarkAttendance && (
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                                <p className="text-sm font-medium text-gray-700 mb-3">
-                                    Quick Actions:
-                                </p>
-                                <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => markAllAs("present")}
-                                        className="px-3 sm:px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-all text-xs sm:text-sm font-medium"
-                                    >
-                                        <CheckCircle className="w-4 h-4 inline mr-1" />
-                                        All Present
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => markAllAs("absent")}
-                                        className="px-3 sm:px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-all text-xs sm:text-sm font-medium"
-                                    >
-                                        <XCircle className="w-4 h-4 inline mr-1" />
-                                        All Absent
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => markAllAs("late")}
-                                        className="px-3 sm:px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-all text-xs sm:text-sm font-medium"
-                                    >
-                                        <Clock className="w-4 h-4 inline mr-1" />
-                                        All Late
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => markAllAs("excused")}
-                                        className="px-3 sm:px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-all text-xs sm:text-sm font-medium"
-                                    >
-                                        <AlertCircle className="w-4 h-4 inline mr-1" />
-                                        All Excused
-                                    </button>
+                            <>
+                                {/* Mobile: Floating Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowQuickActions(!showQuickActions)}
+                                    className="md:hidden fixed bottom-20 right-4 z-40 w-14 h-14 bg-gradient-to-br from-orange to-orange-dark text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-transform active:scale-95"
+                                >
+                                    <Zap className="w-6 h-6" />
+                                </button>
+
+                                {/* Mobile: Quick Actions Drawer */}
+                                {showQuickActions && (
+                                    <>
+                                        {/* Backdrop */}
+                                        <div 
+                                            className="md:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+                                            onClick={() => setShowQuickActions(false)}
+                                        />
+                                        
+                                        {/* Drawer */}
+                                        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl z-50 p-6 space-y-4 animate-slide-up">
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Zap className="w-5 h-5 text-orange" />
+                                                    <h3 className="text-lg font-bold text-gray-900">Quick Actions</h3>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setShowQuickActions(false)}
+                                                    className="text-gray-400 hover:text-gray-600"
+                                                >
+                                                    ✕
+                                                </button>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-3">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => markAllAs("present")}
+                                                    className="px-4 py-4 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-xl hover:shadow-lg transition-all text-sm font-bold active:scale-95"
+                                                >
+                                                    <CheckCircle className="w-5 h-5 mx-auto mb-1" />
+                                                    All Present
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => markAllAs("absent")}
+                                                    className="px-4 py-4 bg-gradient-to-br from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg transition-all text-sm font-bold active:scale-95"
+                                                >
+                                                    <XCircle className="w-5 h-5 mx-auto mb-1" />
+                                                    All Absent
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => markAllAs("late")}
+                                                    className="px-4 py-4 bg-gradient-to-br from-yellow-500 to-yellow-600 text-white rounded-xl hover:shadow-lg transition-all text-sm font-bold active:scale-95"
+                                                >
+                                                    <Clock className="w-5 h-5 mx-auto mb-1" />
+                                                    All Late
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => markAllAs("excused")}
+                                                    className="px-4 py-4 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-xl hover:shadow-lg transition-all text-sm font-bold active:scale-95"
+                                                >
+                                                    <AlertCircle className="w-5 h-5 mx-auto mb-1" />
+                                                    All Excused
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </>
+                                )}
+
+                                {/* Desktop: Original Quick Actions */}
+                                <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Zap className="w-5 h-5 text-orange" />
+                                        <p className="text-sm font-medium text-gray-700">
+                                            Quick Actions:
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => markAllAs("present")}
+                                            className="px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 transition-all text-sm font-medium"
+                                        >
+                                            <CheckCircle className="w-4 h-4 inline mr-1" />
+                                            All Present
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => markAllAs("absent")}
+                                            className="px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 transition-all text-sm font-medium"
+                                        >
+                                            <XCircle className="w-4 h-4 inline mr-1" />
+                                            All Absent
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => markAllAs("late")}
+                                            className="px-4 py-2 bg-yellow-100 text-yellow-800 rounded-lg hover:bg-yellow-200 transition-all text-sm font-medium"
+                                        >
+                                            <Clock className="w-4 h-4 inline mr-1" />
+                                            All Late
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => markAllAs("excused")}
+                                            className="px-4 py-2 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 transition-all text-sm font-medium"
+                                        >
+                                            <AlertCircle className="w-4 h-4 inline mr-1" />
+                                            All Excused
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
+                            </>
                         )}
 
                         {/* Student List */}
@@ -549,21 +559,30 @@ export default function AttendanceIndex({
 
                             {/* Mobile List View */}
                             <div className="block md:hidden">
-                                {attendanceData.students.map((student, index) => {
-                                    const attendance = data.attendances.find(
-                                        (a) => a.student_id === student.student_id
-                                    );
-                                    return (
-                                        <MobileAttendanceItem
-                                            key={student.student_id}
-                                            student={student}
-                                            index={index}
-                                            attendance={attendance}
-                                            updateStudentStatus={updateStudentStatus}
-                                            canMarkAttendance={canMarkAttendance}
-                                        />
-                                    );
-                                })}
+                                <MobileListContainer
+                                    isEmpty={!attendanceData?.students?.length}
+                                    emptyState={{
+                                        icon: Users,
+                                        title: "No students found",
+                                        message: "Select a grade and load students to mark attendance",
+                                    }}
+                                >
+                                    {attendanceData.students.map((student, index) => {
+                                        const attendance = data.attendances.find(
+                                            (a) => a.student_id === student.student_id
+                                        );
+                                        return (
+                                            <MobileAttendanceItem
+                                                key={student.student_id}
+                                                student={student}
+                                                index={index}
+                                                attendance={attendance}
+                                                updateStudentStatus={updateStudentStatus}
+                                                canMarkAttendance={canMarkAttendance}
+                                            />
+                                        );
+                                    })}
+                                </MobileListContainer>
                             </div>
 
                             {/* Desktop Table View */}
@@ -734,6 +753,22 @@ export default function AttendanceIndex({
                     </form>
                 ) : null}
             </div>
+            
+
+            {/* Add CSS animation */}
+            <style>{`
+                @keyframes slide-up {
+                    from {
+                        transform: translateY(100%);
+                    }
+                    to {
+                        transform: translateY(0);
+                    }
+                }
+                .animate-slide-up {
+                    animation: slide-up 0.3s ease-out;
+                }
+            `}</style>
         </AuthenticatedLayout>
     );
 }

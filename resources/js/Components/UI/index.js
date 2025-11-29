@@ -7,6 +7,7 @@
 
 export { default as Badge } from './Badge';
 export { default as StatCard } from './StatCard';
+export { default as StatusBadge } from './StatusBadge';
 export { default as ProgressBar } from './ProgressBar';
 export { default as EmptyState } from './EmptyState';
 export { default as Avatar } from './Avatar';

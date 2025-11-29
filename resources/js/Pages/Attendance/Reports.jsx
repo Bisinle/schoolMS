@@ -1,9 +1,83 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
-import { Calendar, BarChart3, Download, TrendingUp, TrendingDown } from 'lucide-react';
+import { Head, router, Link } from '@inertiajs/react';
+import { Calendar, BarChart3, Download, TrendingUp, TrendingDown, ChevronUp, ChevronDown, Users } from 'lucide-react';
 import { useState } from 'react';
+import MobileListContainer from '@/Components/Mobile/MobileListContainer';
+import { StatCard, EmptyState } from '@/Components/UI';
 
-export default function AttendanceReports({ 
+// Mobile Report Item Component
+function MobileReportItem({ student, index, startDate, endDate }) {
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    return (
+        <div className="border-b border-gray-200 bg-white">
+            <div
+                className="p-4 cursor-pointer active:bg-gray-50"
+                onClick={() => setIsExpanded(!isExpanded)}
+            >
+                <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange to-red-600 rounded-xl flex items-center justify-center text-white font-bold text-sm">
+                            {index + 1}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="text-base font-bold text-gray-900 truncate">
+                                {student.student_name}
+                            </h3>
+                            <p className="text-sm text-gray-500">{student.admission_number}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                            student.attendance_rate >= 90 ? 'bg-green-100 text-green-800' :
+                            student.attendance_rate >= 75 ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                        }`}>
+                            {student.attendance_rate}%
+                        </span>
+                        {isExpanded ? (
+                            <ChevronUp className="w-5 h-5 text-gray-400" />
+                        ) : (
+                            <ChevronDown className="w-5 h-5 text-gray-400" />
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {isExpanded && (
+                <div className="px-4 pb-4 space-y-3 border-t border-gray-100 pt-3 bg-gray-50">
+                    <div className="grid grid-cols-2 gap-2">
+                        <div className="bg-white rounded-lg p-3 text-center border border-gray-200">
+                            <p className="text-xs text-gray-500">Total Days</p>
+                            <p className="text-lg font-bold text-gray-900">{student.total_days}</p>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3 text-center border border-green-200">
+                            <p className="text-xs text-green-600">Present</p>
+                            <p className="text-lg font-bold text-green-700">{student.present}</p>
+                        </div>
+                        <div className="bg-red-50 rounded-lg p-3 text-center border border-red-200">
+                            <p className="text-xs text-red-600">Absent</p>
+                            <p className="text-lg font-bold text-red-700">{student.absent}</p>
+                        </div>
+                        <div className="bg-yellow-50 rounded-lg p-3 text-center border border-yellow-200">
+                            <p className="text-xs text-yellow-600">Late</p>
+                            <p className="text-lg font-bold text-yellow-700">{student.late}</p>
+                        </div>
+                    </div>
+
+                    <Link
+                        href={`/attendance/student/${student.student_id}?start_date=${startDate}&end_date=${endDate}`}
+                        className="block w-full text-center px-4 py-2.5 bg-orange text-white rounded-lg font-semibold text-sm hover:bg-orange-dark transition-colors active:scale-95"
+                    >
+                        View Details
+                    </Link>
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function AttendanceReports({
     grades, 
     selectedGradeId, 
     startDate, 
@@ -135,39 +209,32 @@ export default function AttendanceReports({
                 {/* Report Content */}
                 {reportData ? (
                     <>
-                        {/* Summary Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-sm p-6 text-white">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm text-blue-100">Total Students</p>
-                                    <BarChart3 className="w-8 h-8 text-blue-200" />
-                                </div>
-                                <p className="text-3xl font-bold">{reportData.summary.total_students}</p>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-sm p-6 text-white">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm text-purple-100">Total Days</p>
-                                    <Calendar className="w-8 h-8 text-purple-200" />
-                                </div>
-                                <p className="text-3xl font-bold">{reportData.summary.total_days}</p>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl shadow-sm p-6 text-white">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm text-green-100">Total Present</p>
-                                    <TrendingUp className="w-8 h-8 text-green-200" />
-                                </div>
-                                <p className="text-3xl font-bold">{reportData.summary.total_present}</p>
-                            </div>
-
-                            <div className="bg-gradient-to-br from-orange to-orange-dark rounded-xl shadow-sm p-6 text-white">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-sm text-orange-100">Attendance Rate</p>
-                                    <BarChart3 className="w-8 h-8 text-orange-200" />
-                                </div>
-                                <p className="text-3xl font-bold">{reportData.summary.grade_attendance_rate}%</p>
-                            </div>
+                        {/* Summary Cards - Using StatCard Component */}
+                        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                            <StatCard
+                                icon={BarChart3}
+                                title="Total Students"
+                                value={reportData.summary.total_students}
+                                gradient="from-blue-500 to-blue-600"
+                            />
+                            <StatCard
+                                icon={Calendar}
+                                title="Total Days"
+                                value={reportData.summary.total_days}
+                                gradient="from-purple-500 to-purple-600"
+                            />
+                            <StatCard
+                                icon={TrendingUp}
+                                title="Total Present"
+                                value={reportData.summary.total_present}
+                                gradient="from-green-500 to-green-600"
+                            />
+                            <StatCard
+                                icon={BarChart3}
+                                title="Attendance Rate"
+                                value={`${reportData.summary.grade_attendance_rate}%`}
+                                gradient="from-orange-500 to-red-600"
+                            />
                         </div>
 
                         {/* Grade Info & Export */}
@@ -194,12 +261,41 @@ export default function AttendanceReports({
                             </div>
                         </div>
 
-                        {/* Student-wise Report Table */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        {/* Student-wise Report - Mobile View */}
+                        <div className="block md:hidden">
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                                <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                                    <h4 className="text-base font-semibold text-navy">Student Attendance</h4>
+                                </div>
+                                <MobileListContainer
+                                    isEmpty={!reportData?.students?.length}
+                                    emptyState={{
+                                        icon: Users,
+                                        title: "No data available",
+                                        message: "Generate a report to see student attendance",
+                                    }}
+                                    rounded={false}
+                                    shadow={false}
+                                    border={false}
+                                >
+                                    {reportData.students.map((student, index) => (
+                                        <MobileReportItem
+                                            key={student.student_id}
+                                            student={student}
+                                            index={index}
+                                            startDate={startDate}
+                                            endDate={endDate}
+                                        />
+                                    ))}
+                                </MobileListContainer>
+                            </div>
+                        </div>
+
+                        {/* Student-wise Report - Desktop Table (UNCHANGED) */}
+                        <div className="hidden md:block bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
                                 <h4 className="text-lg font-semibold text-navy">Student-wise Attendance</h4>
                             </div>
-                            
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
@@ -325,14 +421,13 @@ export default function AttendanceReports({
                         </div>
                     </>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12 text-center">
-                        <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
-                            No Report Generated
-                        </h3>
-                        <p className="text-gray-500">
-                            Please select a grade and date range to generate an attendance report.
-                        </p>
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-12">
+                        <EmptyState
+                            icon={BarChart3}
+                            title="No Report Generated"
+                            message="Please select a grade and date range to generate an attendance report."
+                            size="lg"
+                        />
                     </div>
                 )}
             </div>
