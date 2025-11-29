@@ -14,10 +14,10 @@ class SuperAdminSeeder extends Seeder
     public function run(): void
     {
         // ✅ Skip this seeder if not in local environment
-        // if (!app()->environment('local')) {
-        //     $this->command->info('SuperAdminSeeder skipped in non-local environment.');
-        //     return;
-        // }
+        if (!app()->environment('local')) {
+            $this->command->info('SuperAdminSeeder skipped in non-local environment.');
+            return;
+        }
 
         // ✅ Use updateOrCreate to avoid duplicate entries
         User::updateOrCreate(

@@ -292,7 +292,7 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                                             <BookOpen className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                             <p className="text-lg font-medium">No subjects found</p>
                                             <p className="text-sm mt-1">
-                                                {search || category ? 'Try adjusting your filters' : 'Get started by adding a new subject'}
+                                                {filters.search || filters.category ? 'Try adjusting your filters' : 'Get started by adding a new subject'}
                                             </p>
                                         </td>
                                     </tr>
