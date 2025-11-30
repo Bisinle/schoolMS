@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { usePage } from "@inertiajs/react";
+import { motion } from "framer-motion";
 import ImpersonationBanner from "@/Components/ImpersonationBanner";
 import PWAInstallPrompt from "@/Components/PWAInstallPrompt";
 import OfflineIndicator from "@/Components/OfflineIndicator";
@@ -13,14 +14,14 @@ export default function AuthenticatedLayout({ header, children }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     // Impersonation banner state management
-    const { visible: bannerVisible, toggle: toggleBanner } = useImpersonationBanner(
-        impersonation?.isImpersonating
-    );
+    const { visible: bannerVisible, toggle: toggleBanner } =
+        useImpersonationBanner(impersonation?.isImpersonating);
 
     // Determine branding based on user role
     const isSuperAdmin = auth.user.role === "super_admin";
     const brandName = isSuperAdmin ? "SchoolMS" : school?.name || "SchoolMS";
-    const brandLogo = !isSuperAdmin && school?.logo_path ? school.logo_path : null;
+    const brandLogo =
+        !isSuperAdmin && school?.logo_path ? school.logo_path : null;
 
     // Get navigation items based on role and school type
     const isMadrasah = school?.school_type === "madrasah";
@@ -56,20 +57,33 @@ export default function AuthenticatedLayout({ header, children }) {
             {/* Main content */}
             <div
                 className={`md:pl-64 flex flex-col flex-1 ${
-                    impersonation?.isImpersonating ? "md:pt-14 lg:pt-[4.5rem]" : ""
+                    impersonation?.isImpersonating
+                        ? "md:pt-14 lg:pt-[4.5rem]"
+                        : ""
                 }`}
             >
                 {/* Top navbar */}
-                <TopBar header={header} auth={auth} setSidebarOpen={setSidebarOpen} />
+                <TopBar
+                    header={header}
+                    auth={auth}
+                    setSidebarOpen={setSidebarOpen}
+                />
 
-                {/* Page content */}
-                <main className="flex-1">
-                    <div className="py-6">
-                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                            {children}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.6, ease: "easeOut" }}
+                >
+                    {/* Page content */}
+                    <main className="flex-1">
+                        <div className="py-6">
+                            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                                {children}
+                            </div>
                         </div>
-                    </div>
-                </main>
+                    </main>
+                </motion.div>
             </div>
 
             {/* PWA Install Prompt */}

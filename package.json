@@ -25,6 +25,7 @@
         "vite": "^7.1.12"
     },
     "dependencies": {
+        "framer-motion": "^12.23.24",
         "lucide-react": "^0.548.0",
         "react-swipeable": "^7.0.2"
     }

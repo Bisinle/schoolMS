@@ -17,6 +17,8 @@ import {
     Calendar,
     TrendingUp,
 } from "lucide-react";
+import { motion } from "framer-motion";
+
 import { StatCard } from "@/Components/UI";
 import StudentsByGradeChart from "./StudentsByGradeChart";
 import ExamCompletionChart from "./ExamCompletionChart";
@@ -54,7 +56,20 @@ export default function AdminDashboardContent({
             </div>
 
             {/* Stats Grid - Mobile Optimized */}
+
+            <motion.div
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -50, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.15 }}
+                >
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
+            <motion.div
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -50, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 60, damping: 12 }}
+                >
                 <StatCard
                     icon={Users}
                     label="Total Students"
@@ -67,6 +82,7 @@ export default function AdminDashboardContent({
                     }
                     link="/students"
                 />
+                    </motion.div>
                 <StatCard
                     icon={UserCheck}
                     label="Active Students"
@@ -118,6 +134,7 @@ export default function AdminDashboardContent({
                 />
             </div>
 
+                    </motion.div>
             {/* Document Management Widget - Mobile Optimized */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
