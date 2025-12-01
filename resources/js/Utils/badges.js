@@ -141,3 +141,18 @@ export const getDocumentStatusBadge = (status) => {
     return badges[status] || 'bg-gray-100 text-gray-800';
 };
 
+/**
+ * Get badge classes for invoice status
+ * @param {string} status - The invoice status ('pending', 'partial', 'paid', 'overdue')
+ * @returns {string} Tailwind CSS classes
+ */
+export const getInvoiceStatusBadge = (status) => {
+    const badges = {
+        pending: 'bg-red-100 text-red-700 border border-red-200',
+        partial: 'bg-yellow-100 text-yellow-700 border border-yellow-200',
+        paid: 'bg-green-100 text-green-700 border border-green-200',
+        overdue: 'bg-red-100 text-red-700 border border-red-200',
+    };
+    return badges[status] || 'bg-gray-100 text-gray-700 border border-gray-200';
+};
+

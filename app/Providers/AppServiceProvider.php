@@ -6,6 +6,7 @@ use App\Models\Attendance;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Grade;
+use App\Models\GuardianInvoice;
 use App\Models\QuranTracking;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Student;
@@ -18,6 +19,7 @@ use App\Policies\AttendancePolicy;
 use App\Policies\ExamPolicy;
 use App\Policies\ExamResultPolicy;
 use App\Policies\GradePolicy;
+use App\Policies\GuardianInvoicePolicy;
 use App\Policies\StudentPolicy;
 use App\Policies\GuardianPolicy;
 use App\Policies\ReportCommentPolicy;
@@ -52,6 +54,7 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::policy(Student::class, StudentPolicy::class);
         Gate::policy(Guardian::class, GuardianPolicy::class);
+        Gate::policy(GuardianInvoice::class, GuardianInvoicePolicy::class);
         Gate::policy(Teacher::class, TeacherPolicy::class);
         Gate::policy(Grade::class, GradePolicy::class);
         Gate::policy(Attendance::class, AttendancePolicy::class);

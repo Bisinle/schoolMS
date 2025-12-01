@@ -12,6 +12,7 @@ import {
     School,
     Settings,
     Book,
+    DollarSign,
 } from "lucide-react";
 
 /**
@@ -39,6 +40,7 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
             ...(isMadrasah ? [{ name: "Quran Tracking", href: "/quran-tracking", icon: Book }] : []),
+            { name: "Fees", href: "/fees", icon: DollarSign },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
         ],
@@ -57,6 +59,7 @@ export const getNavigation = (role, isMadrasah = false) => {
         guardian: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             ...(isMadrasah ? [{ name: "Quran Tracking", href: "/guardian/quran-tracking", icon: Book }] : []),
+            { name: "Invoices", href: "/guardian/invoices", icon: DollarSign },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
         ],

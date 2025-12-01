@@ -8,6 +8,7 @@ import {
     getGenderBadge,
     getLevelBadge,
     getDocumentStatusBadge,
+    getInvoiceStatusBadge,
 } from '@/Utils/badges';
 
 /**
@@ -17,7 +18,7 @@ import {
  * Supports multiple variants for different use cases.
  * 
  * @param {Object} props
- * @param {string} props.variant - Badge variant: 'status', 'category', 'difficulty', 'readingType', 'role', 'gender', 'level', 'documentStatus'
+ * @param {string} props.variant - Badge variant: 'status', 'category', 'difficulty', 'readingType', 'role', 'gender', 'level', 'documentStatus', 'invoiceStatus'
  * @param {string} props.value - The value to determine badge styling
  * @param {string} props.label - Optional custom label (defaults to value)
  * @param {string} props.className - Additional CSS classes to apply
@@ -54,6 +55,8 @@ export default function Badge({
                 return getLevelBadge(value);
             case 'documentStatus':
                 return getDocumentStatusBadge(value);
+            case 'invoiceStatus':
+                return getInvoiceStatusBadge(value);
             default:
                 return 'bg-gray-100 text-gray-700';
         }

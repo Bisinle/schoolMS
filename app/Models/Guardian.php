@@ -64,4 +64,43 @@ class Guardian extends Model
 
         return $uploadedVerifiedDocs >= $requiredCategories;
     }
+
+    // Fee Management relationships
+    public function invoices()
+    {
+        return $this->hasMany(GuardianInvoice::class);
+    }
+
+    public function feeAdjustments()
+    {
+        return $this->hasMany(GuardianFeeAdjustment::class);
+    }
+
+    // Helper to get current term invoice
+    public function getCurrentTermInvoice()
+    {
+        $currentTerm = AcademicTerm::where('school_id', $this->school_id)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$currentTerm) {
+            return null;
+        }
+
+        return $this->invoices()
+            ->where('academic_term_id', $currentTerm->id)
+            ->first();
+    }
+
+    // Helper to get payment status for current term
+    public function getPaymentStatus()
+    {
+        $invoice = $this->getCurrentTermInvoice();
+
+        if (!$invoice) {
+            return null;
+        }
+
+        return $invoice->status;
+    }
 }

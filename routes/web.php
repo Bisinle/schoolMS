@@ -23,6 +23,9 @@ use App\Http\Controllers\DocumentCategoryController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Admin\AdminPasswordController;
 use App\Http\Controllers\QuranTrackingController;
+use App\Http\Controllers\FeeManagementController;
+use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\PaymentController;
 use App\Models\Grade;
 
 /*
@@ -306,6 +309,38 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::middleware(['role:admin'])->prefix('admin')->group(function () {
         Route::post('/users/{user}/reset-password', [AdminPasswordController::class, 'generateTemporaryPassword'])
             ->name('admin.users.reset-password');
+    });
+
+    //^ Fee Management Routes (Admin only)
+    Route::middleware(['role:admin'])->group(function () {
+        // Fee Management Dashboard
+        Route::get('/fees', [FeeManagementController::class, 'index'])->name('fees.index');
+
+        // Bulk Invoice Generation
+        Route::get('/fees/bulk-generate', [FeeManagementController::class, 'bulkGenerate'])->name('fees.bulk-generate');
+        Route::post('/fees/bulk-generate', [FeeManagementController::class, 'processBulkGenerate'])->name('fees.process-bulk-generate');
+
+        // Invoice Management
+        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+        Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+        Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+        Route::put('/invoices/{invoice}/line-items', [InvoiceController::class, 'updateLineItems'])->name('invoices.updateLineItems');
+        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
+        Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+
+        // Payment Management
+        Route::get('/invoices/{invoice}/payments/create', [PaymentController::class, 'create'])->name('payments.create');
+        Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+        Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+        Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+    });
+
+    //^ Guardian Invoice Routes (Guardians can view their own invoices)
+    Route::middleware(['role:guardian'])->group(function () {
+        Route::get('/guardian/invoices', [InvoiceController::class, 'index'])->name('guardian.invoices');
+        Route::get('/guardian/invoices/{invoice}', [InvoiceController::class, 'show'])->name('guardian.invoices.show');
+        Route::get('/guardian/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('guardian.invoices.pdf');
     });
 });
 
