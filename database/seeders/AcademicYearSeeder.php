@@ -54,6 +54,16 @@ class AcademicYearSeeder extends Seeder
             ];
 
             foreach ($years as $yearData) {
+                // Check if academic year already exists
+                $existingYear = AcademicYear::where('school_id', $school->id)
+                    ->where('year', $yearData['year'])
+                    ->first();
+
+                if ($existingYear) {
+                    $this->command->warn("   ⚠️  Academic Year {$yearData['year']} already exists. Skipping...");
+                    continue;
+                }
+
                 AcademicYear::create([
                     'school_id' => $school->id,
                     'year' => $yearData['year'],

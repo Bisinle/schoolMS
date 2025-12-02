@@ -75,6 +75,16 @@ class AcademicTermSeeder extends Seeder
                 ];
 
                 foreach ($terms as $termData) {
+                    // Check if term already exists
+                    $existingTerm = AcademicTerm::where('academic_year_id', $academicYear->id)
+                        ->where('term_number', $termData['term_number'])
+                        ->first();
+
+                    if ($existingTerm) {
+                        $this->command->warn("      ⚠️  {$termData['name']} already exists. Skipping...");
+                        continue;
+                    }
+
                     AcademicTerm::create([
                         'school_id' => $school->id,
                         'academic_year_id' => $academicYear->id,
