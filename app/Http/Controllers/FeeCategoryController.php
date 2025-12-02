@@ -3,132 +3,153 @@
 namespace App\Http\Controllers;
 
 use App\Models\FeeCategory;
-use App\Models\Grade;
+use App\Models\FeeAmount;
+use App\Models\AcademicYear;
 use Illuminate\Http\Request;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Inertia\Inertia;
 
 class FeeCategoryController extends Controller
 {
-    use AuthorizesRequests;
-
+    /**
+     * Display a listing of fee categories with their amounts
+     */
     public function index(Request $request)
     {
-        $query = FeeCategory::with(['grade']);
+        // Get the active academic year or the first one
+        $activeYear = AcademicYear::active()->first() ?? AcademicYear::orderBy('year', 'desc')->first();
 
-        // Search
+        $query = FeeCategory::with(['feeAmounts' => function ($query) use ($activeYear) {
+            if ($activeYear) {
+                $query->where('academic_year_id', $activeYear->id);
+            }
+            $query->orderBy('grade_range');
+        }]);
+
+        // Apply search filter
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('category_name', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
             });
         }
 
-        // Filter by grade
-        if ($request->filled('grade_id') && $request->grade_id !== 'all') {
-            $query->where('grade_id', $request->grade_id);
+        // Apply type filter (universal/grade-specific)
+        if ($request->filled('type')) {
+            if ($request->type === 'universal') {
+                $query->universal();
+            } elseif ($request->type === 'grade_specific') {
+                $query->gradeSpecific();
+            }
         }
 
-        // Filter by status
-        if ($request->filled('status') && $request->status !== 'all') {
-            $isActive = $request->status === 'active';
-            $query->where('is_active', $isActive);
+        // Apply status filter
+        if ($request->filled('status')) {
+            if ($request->status === 'active') {
+                $query->active();
+            } elseif ($request->status === 'inactive') {
+                $query->where('is_active', false);
+            }
         }
 
-        // Sort
-        $sortField = $request->get('sort_field', 'category_name');
-        $sortDirection = $request->get('sort_direction', 'asc');
-        $query->orderBy($sortField, $sortDirection);
+        $feeCategories = $query->orderBy('name')->get();
 
-        $feeCategories = $query->paginate(15)->withQueryString();
-
-        $grades = Grade::orderBy('name')->get(['id', 'name']);
+        // Get all academic years for the year selector
+        $academicYears = AcademicYear::orderBy('year', 'desc')->get();
 
         return Inertia::render('Fees/Categories/Index', [
             'feeCategories' => $feeCategories,
-            'grades' => $grades,
-            'filters' => $request->only(['search', 'grade_id', 'status', 'sort_field', 'sort_direction']),
+            'academicYears' => $academicYears,
+            'activeYear' => $activeYear,
+            'filters' => [
+                'search' => $request->search ?? '',
+                'type' => $request->type ?? '',
+                'status' => $request->status ?? '',
+            ],
         ]);
     }
 
+    /**
+     * Store a newly created fee category
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'grade_id' => 'required|exists:grades,id',
-            'category_name' => 'required|string|max:255',
-            'default_amount' => 'required|numeric|min:0',
-            'is_per_child' => 'boolean',
+            'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'is_universal' => 'required|boolean',
             'is_active' => 'boolean',
         ]);
 
-        // Check if fee category already exists for this grade
-        $exists = FeeCategory::where('grade_id', $validated['grade_id'])
-            ->where('category_name', $validated['category_name'])
-            ->exists();
-
+        // Check for duplicate category name
+        $exists = FeeCategory::where('name', $validated['name'])->exists();
         if ($exists) {
             return redirect()->back()
-                ->withErrors(['category_name' => 'A fee category with this name already exists for the selected grade.'])
+                ->withErrors(['name' => 'A fee category with this name already exists.'])
                 ->withInput();
         }
 
-        $validated['is_per_child'] = $validated['is_per_child'] ?? true;
         $validated['is_active'] = $validated['is_active'] ?? true;
 
         FeeCategory::create($validated);
 
-        return redirect()->route('fee-categories.index')->with('success', 'Fee category created successfully.');
+        return redirect()->back()->with('success', 'Fee category created successfully.');
     }
 
+    /**
+     * Update the specified fee category
+     */
     public function update(Request $request, FeeCategory $feeCategory)
     {
         $validated = $request->validate([
-            'grade_id' => 'required|exists:grades,id',
-            'category_name' => 'required|string|max:255',
-            'default_amount' => 'required|numeric|min:0',
-            'is_per_child' => 'boolean',
+            'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'is_universal' => 'required|boolean',
             'is_active' => 'boolean',
         ]);
 
-        // Check if fee category already exists for this grade (excluding current record)
-        $exists = FeeCategory::where('grade_id', $validated['grade_id'])
-            ->where('category_name', $validated['category_name'])
+        // Check for duplicate category name (excluding current record)
+        $exists = FeeCategory::where('name', $validated['name'])
             ->where('id', '!=', $feeCategory->id)
             ->exists();
 
         if ($exists) {
             return redirect()->back()
-                ->withErrors(['category_name' => 'A fee category with this name already exists for the selected grade.'])
+                ->withErrors(['name' => 'A fee category with this name already exists.'])
                 ->withInput();
         }
 
         $feeCategory->update($validated);
 
-        return redirect()->route('fee-categories.index')->with('success', 'Fee category updated successfully.');
+        return redirect()->back()->with('success', 'Fee category updated successfully.');
     }
 
+    /**
+     * Remove the specified fee category
+     * Note: This will cascade delete all associated fee amounts
+     */
     public function destroy(FeeCategory $feeCategory)
     {
-        // Check if fee category is used in any invoices
-        // For now, we'll allow deletion
-        // TODO: Add check for invoice line items if needed
-        
+        $amountsCount = $feeCategory->feeAmounts()->count();
+
         $feeCategory->delete();
 
-        return redirect()->route('fee-categories.index')->with('success', 'Fee category deleted successfully.');
+        $message = 'Fee category deleted successfully!';
+        if ($amountsCount > 0) {
+            $message .= " ({$amountsCount} associated fee amount" . ($amountsCount > 1 ? 's' : '') . " also deleted)";
+        }
+
+        return redirect()->back()->with('success', $message);
     }
 
+    /**
+     * Toggle the active status of a fee category
+     */
     public function toggleStatus(FeeCategory $feeCategory)
     {
-        $feeCategory->update([
-            'is_active' => !$feeCategory->is_active
-        ]);
+        $feeCategory->update(['is_active' => !$feeCategory->is_active]);
 
-        $status = $feeCategory->is_active ? 'activated' : 'deactivated';
-        return redirect()->route('fee-categories.index')->with('success', "Fee category {$status} successfully.");
+        return redirect()->back()->with('success', 'Fee category status updated successfully.');
     }
 }
 

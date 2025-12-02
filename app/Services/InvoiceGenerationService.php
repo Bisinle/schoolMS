@@ -7,6 +7,7 @@ use App\Models\Guardian;
 use App\Models\GuardianInvoice;
 use App\Models\InvoiceLineItem;
 use App\Models\FeeCategory;
+use App\Models\FeeAmount;
 use App\Models\GuardianFeeAdjustment;
 use App\Models\OneTimeFee;
 use Illuminate\Support\Facades\DB;
@@ -113,6 +114,7 @@ class InvoiceGenerationService
     /**
      * Generate line items for an invoice
      * NEW: Creates ONE line item per student with all fees in JSON
+     * Uses new fee structure with FeeAmount and grade range matching
      */
     protected function generateLineItems(
         GuardianInvoice $invoice,
@@ -133,34 +135,38 @@ class InvoiceGenerationService
             ->get()
             ->keyBy('category_name');
 
+        // Get the academic year for this term
+        $academicYearId = $term->academic_year_id;
+
         // Create ONE line item per student
         foreach ($students as $student) {
             $grade = $student->grade;
+            $gradeName = $grade->name; // e.g., "PP1", "1", "5", etc.
 
-            // Get fee categories for this student's grade
-            $feeCategories = FeeCategory::where('grade_id', $grade->id)
-                ->where('is_active', true)
-                ->get();
+            // Get all applicable fee amounts for this student's grade and academic year
+            $applicableFees = FeeAmount::getApplicableFeesForGrade($gradeName, $academicYearId);
 
             // Build fee breakdown JSON
             $feeBreakdown = [];
 
-            foreach ($feeCategories as $feeCategory) {
+            foreach ($applicableFees as $feeAmount) {
+                $categoryName = $feeAmount->feeCategory->name;
+
                 // Check if this category is excluded or adjusted
-                $adjustment = $adjustments->get($feeCategory->category_name);
+                $adjustment = $adjustments->get($categoryName);
 
                 if ($adjustment && $adjustment->adjustment_type === 'exclude') {
                     continue; // Skip this category
                 }
 
                 // Determine the amount to use
-                $amount = $feeCategory->default_amount;
+                $amount = $feeAmount->amount;
                 if ($adjustment && $adjustment->adjustment_type === 'custom_amount') {
                     $amount = $adjustment->custom_amount;
                 }
 
                 // Add to fee breakdown
-                $feeBreakdown[$feeCategory->category_name] = (float) $amount;
+                $feeBreakdown[$categoryName] = (float) $amount;
             }
 
             // Create single line item for this student with all fees

@@ -12,27 +12,35 @@ class FeeCategory extends Model
 
     protected $fillable = [
         'school_id',
-        'grade_id',
-        'category_name',
-        'default_amount',
-        'is_per_child',
+        'name',
         'description',
+        'is_universal',
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'default_amount' => 'decimal:2',
-            'is_per_child' => 'boolean',
+            'is_universal' => 'boolean',
             'is_active' => 'boolean',
         ];
     }
 
     // Relationships
-    public function grade()
+    public function feeAmounts()
     {
-        return $this->belongsTo(Grade::class);
+        return $this->hasMany(FeeAmount::class);
+    }
+
+    public function activeFeeAmounts()
+    {
+        return $this->hasMany(FeeAmount::class)->where('is_active', true);
+    }
+
+    // Get fee amounts for a specific academic year
+    public function feeAmountsForYear($academicYearId)
+    {
+        return $this->feeAmounts()->where('academic_year_id', $academicYearId);
     }
 
     // Scopes
@@ -41,9 +49,25 @@ class FeeCategory extends Model
         return $query->where('is_active', true);
     }
 
-    public function scopeForGrade($query, $gradeId)
+    public function scopeUniversal($query)
     {
-        return $query->where('grade_id', $gradeId);
+        return $query->where('is_universal', true);
+    }
+
+    public function scopeGradeSpecific($query)
+    {
+        return $query->where('is_universal', false);
+    }
+
+    // Helper methods
+    public function isUniversal(): bool
+    {
+        return $this->is_universal;
+    }
+
+    public function isGradeSpecific(): bool
+    {
+        return !$this->is_universal;
     }
 }
 

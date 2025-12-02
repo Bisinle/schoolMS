@@ -25,6 +25,7 @@ use App\Http\Controllers\Admin\AdminPasswordController;
 use App\Http\Controllers\QuranTrackingController;
 use App\Http\Controllers\FeeManagementController;
 use App\Http\Controllers\FeeCategoryController;
+use App\Http\Controllers\FeeAmountController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\Settings\SchoolProfileController;
@@ -357,6 +358,12 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::put('/fee-categories/{feeCategory}', [FeeCategoryController::class, 'update'])->name('fee-categories.update');
         Route::delete('/fee-categories/{feeCategory}', [FeeCategoryController::class, 'destroy'])->name('fee-categories.destroy');
         Route::post('/fee-categories/{feeCategory}/toggle-status', [FeeCategoryController::class, 'toggleStatus'])->name('fee-categories.toggle-status');
+
+        // Fee Amounts
+        Route::post('/fee-amounts', [FeeAmountController::class, 'store'])->name('fee-amounts.store');
+        Route::put('/fee-amounts/{feeAmount}', [FeeAmountController::class, 'update'])->name('fee-amounts.update');
+        Route::delete('/fee-amounts/{feeAmount}', [FeeAmountController::class, 'destroy'])->name('fee-amounts.destroy');
+        Route::post('/fee-amounts/{feeAmount}/toggle-status', [FeeAmountController::class, 'toggleStatus'])->name('fee-amounts.toggle-status');
 
         // Invoice Management
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
