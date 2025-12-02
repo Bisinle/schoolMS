@@ -43,6 +43,16 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Fees", href: "/fees", icon: DollarSign },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
+            {
+                name: "Settings",
+                icon: Settings,
+                submenu: [
+                    { name: "School Profile", href: "/admin/settings/profile" },
+                    { name: "Academic Years", href: "/admin/settings/academic-years" },
+                    { name: "Academic Terms", href: "/admin/settings/academic-terms" },
+                    { name: "Preferences", href: "/admin/settings/preferences" },
+                ]
+            },
         ],
         teacher: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },

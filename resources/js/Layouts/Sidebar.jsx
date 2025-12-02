@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
-import { X } from "lucide-react";
+import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { useState } from "react";
 
 /**
  * Sidebar component for both mobile and desktop navigation
@@ -41,10 +42,73 @@ export default function Sidebar({
         );
     };
 
+    const [openSubmenus, setOpenSubmenus] = useState({});
+
+    const toggleSubmenu = (itemName) => {
+        setOpenSubmenus(prev => ({
+            ...prev,
+            [itemName]: !prev[itemName]
+        }));
+    };
+
     const renderNavigationItems = (onClickHandler = null) => {
         return navigation.map((item) => {
-            const isActive = route().current(item.href.substring(1) + "*");
             const Icon = item.icon;
+
+            // Handle items with submenu
+            if (item.submenu) {
+                const isOpen = openSubmenus[item.name];
+                const isAnySubmenuActive = item.submenu.some(subItem =>
+                    route().current(subItem.href.substring(1) + "*")
+                );
+
+                return (
+                    <div key={item.name}>
+                        <button
+                            onClick={() => toggleSubmenu(item.name)}
+                            className={`group flex items-center justify-between w-full px-3 py-2.5 md:py-3 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                isAnySubmenuActive
+                                    ? "bg-orange text-white shadow-lg"
+                                    : "text-gray-300 hover:bg-orange hover:text-white"
+                            }`}
+                        >
+                            <div className="flex items-center">
+                                <Icon className="w-5 h-5 mr-3" />
+                                {item.name}
+                            </div>
+                            {isOpen ? (
+                                <ChevronDown className="w-4 h-4" />
+                            ) : (
+                                <ChevronRight className="w-4 h-4" />
+                            )}
+                        </button>
+                        {isOpen && (
+                            <div className="ml-8 mt-1 space-y-1">
+                                {item.submenu.map((subItem) => {
+                                    const isSubActive = route().current(subItem.href.substring(1) + "*");
+                                    return (
+                                        <Link
+                                            key={subItem.name}
+                                            href={subItem.href}
+                                            className={`block px-3 py-2 text-sm rounded-lg transition-all duration-200 ${
+                                                isSubActive
+                                                    ? "bg-orange/20 text-orange font-medium"
+                                                    : "text-gray-400 hover:bg-orange/10 hover:text-gray-200"
+                                            }`}
+                                            onClick={onClickHandler}
+                                        >
+                                            {subItem.name}
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            // Handle regular menu items
+            const isActive = route().current(item.href.substring(1) + "*");
 
             return (
                 <Link

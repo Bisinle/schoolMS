@@ -24,8 +24,13 @@ use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Admin\AdminPasswordController;
 use App\Http\Controllers\QuranTrackingController;
 use App\Http\Controllers\FeeManagementController;
+use App\Http\Controllers\FeeCategoryController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\Settings\SchoolProfileController;
+use App\Http\Controllers\Settings\AcademicYearController;
+use App\Http\Controllers\Settings\AcademicTermController;
+use App\Http\Controllers\Settings\SystemPreferencesController;
 use App\Models\Grade;
 
 /*
@@ -311,6 +316,32 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             ->name('admin.users.reset-password');
     });
 
+    //^ Settings Routes (Admin only)
+    Route::middleware(['role:admin'])->prefix('admin/settings')->group(function () {
+        // School Profile
+        Route::get('/profile', [SchoolProfileController::class, 'index'])->name('settings.profile');
+        Route::put('/profile', [SchoolProfileController::class, 'update'])->name('settings.profile.update');
+        Route::delete('/profile/logo', [SchoolProfileController::class, 'deleteLogo'])->name('settings.profile.delete-logo');
+
+        // Academic Years
+        Route::get('/academic-years', [AcademicYearController::class, 'index'])->name('settings.academic-years');
+        Route::post('/academic-years', [AcademicYearController::class, 'store'])->name('settings.academic-years.store');
+        Route::put('/academic-years/{academicYear}', [AcademicYearController::class, 'update'])->name('settings.academic-years.update');
+        Route::delete('/academic-years/{academicYear}', [AcademicYearController::class, 'destroy'])->name('settings.academic-years.destroy');
+        Route::post('/academic-years/{academicYear}/toggle-active', [AcademicYearController::class, 'toggleActive'])->name('settings.academic-years.toggle-active');
+
+        // Academic Terms
+        Route::get('/academic-terms', [AcademicTermController::class, 'index'])->name('settings.academic-terms');
+        Route::post('/academic-terms', [AcademicTermController::class, 'store'])->name('settings.academic-terms.store');
+        Route::put('/academic-terms/{academicTerm}', [AcademicTermController::class, 'update'])->name('settings.academic-terms.update');
+        Route::delete('/academic-terms/{academicTerm}', [AcademicTermController::class, 'destroy'])->name('settings.academic-terms.destroy');
+        Route::post('/academic-terms/{academicTerm}/toggle-active', [AcademicTermController::class, 'toggleActive'])->name('settings.academic-terms.toggle-active');
+
+        // System Preferences
+        Route::get('/preferences', [SystemPreferencesController::class, 'index'])->name('settings.preferences');
+        Route::put('/preferences', [SystemPreferencesController::class, 'update'])->name('settings.preferences.update');
+    });
+
     //^ Fee Management Routes (Admin only)
     Route::middleware(['role:admin'])->group(function () {
         // Fee Management Dashboard
@@ -319,6 +350,13 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         // Bulk Invoice Generation
         Route::get('/fees/bulk-generate', [FeeManagementController::class, 'bulkGenerate'])->name('fees.bulk-generate');
         Route::post('/fees/bulk-generate', [FeeManagementController::class, 'processBulkGenerate'])->name('fees.process-bulk-generate');
+
+        // Fee Categories
+        Route::get('/fee-categories', [FeeCategoryController::class, 'index'])->name('fee-categories.index');
+        Route::post('/fee-categories', [FeeCategoryController::class, 'store'])->name('fee-categories.store');
+        Route::put('/fee-categories/{feeCategory}', [FeeCategoryController::class, 'update'])->name('fee-categories.update');
+        Route::delete('/fee-categories/{feeCategory}', [FeeCategoryController::class, 'destroy'])->name('fee-categories.destroy');
+        Route::post('/fee-categories/{feeCategory}/toggle-status', [FeeCategoryController::class, 'toggleStatus'])->name('fee-categories.toggle-status');
 
         // Invoice Management
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');

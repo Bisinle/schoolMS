@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
-import { DollarSign, Receipt, Users, FileText, TrendingUp, Calendar, Plus } from 'lucide-react';
+import { DollarSign, Receipt, Users, FileText, TrendingUp, Calendar, Plus, Tag } from 'lucide-react';
 import { Badge } from '@/Components/UI';
 
 export default function FeeManagementDashboard({ auth, currentTerm, stats, terms }) {
@@ -21,13 +21,22 @@ export default function FeeManagementDashboard({ auth, currentTerm, stats, terms
                         </div>
                     </div>
 
-                    <Link
-                        href="/fees/bulk-generate"
-                        className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
-                    >
-                        <Plus className="w-5 h-5 mr-2" />
-                        Bulk Generate
-                    </Link>
+                    <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                        <Link
+                            href="/fee-categories"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold sm:font-medium rounded-xl shadow-sm hover:shadow-md hover:from-orange-600 hover:to-orange-700 transition-all duration-200 text-sm sm:text-base"
+                        >
+                            <Tag className="w-5 h-5" />
+                            <span>Fee Categories</span>
+                        </Link>
+                        <Link
+                            href="/fees/bulk-generate"
+                            className="inline-flex items-center justify-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Bulk Generate
+                        </Link>
+                    </div>
                 </div>
                 {/* Stats Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
