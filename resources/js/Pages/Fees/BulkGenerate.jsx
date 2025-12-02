@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, Link } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeft, Users, FileText, AlertCircle } from 'lucide-react';
 
@@ -39,27 +39,31 @@ export default function BulkGenerate({ auth, terms, guardians }) {
     };
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
-                <div className="flex items-center gap-4">
-                    <a
-                        href="/fees"
-                        className="text-gray-600 hover:text-gray-900"
-                    >
-                        <ArrowLeft className="w-6 h-6" />
-                    </a>
-                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                        Bulk Generate Invoices
-                    </h2>
-                </div>
-            }
-        >
+        <AuthenticatedLayout header="Bulk Generate Invoices">
             <Head title="Bulk Generate Invoices" />
 
-            <div className="py-12">
-                <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-center space-x-3">
+                    <Link
+                        href="/fees"
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-150"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <FileText className="w-8 h-8 text-orange" />
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            Bulk Generate Invoices
+                        </h2>
+                        <p className="text-sm text-gray-600">
+                            Generate invoices for multiple guardians at once
+                        </p>
+                    </div>
+                </div>
+
+                <div className="max-w-7xl">
+                    <div className="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-200">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             {/* Info Alert */}
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">

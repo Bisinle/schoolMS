@@ -12,6 +12,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
@@ -35,9 +36,14 @@ class InvoiceController extends Controller
             $query = GuardianInvoice::query();
         }
 
+        // Get filter values (handle both string and array inputs)
+        $search = is_array($request->search) ? '' : $request->search;
+        $termId = is_array($request->term_id) ? '' : $request->term_id;
+        $status = is_array($request->status) ? '' : $request->status;
+
         // Apply filters
         $query->with(['guardian.user', 'academicTerm.academicYear'])
-            ->when($request->search, function ($q, $search) {
+            ->when($search, function ($q, $search) {
                 $q->where(function($query) use ($search) {
                     $query->where('invoice_number', 'like', "%{$search}%")
                         ->orWhereHas('guardian.user', function($q) use ($search) {
@@ -45,10 +51,10 @@ class InvoiceController extends Controller
                         });
                 });
             })
-            ->when($request->term_id, function ($q, $termId) {
+            ->when($termId, function ($q, $termId) {
                 $q->where('academic_term_id', $termId);
             })
-            ->when($request->status, function ($q, $status) {
+            ->when($status, function ($q, $status) {
                 $q->where('status', $status);
             });
 
@@ -64,7 +70,11 @@ class InvoiceController extends Controller
         return Inertia::render('Fees/Invoices/Index', [
             'invoices' => $invoices,
             'terms' => $terms,
-            'filters' => $request->only(['search', 'term_id', 'status']),
+            'filters' => [
+                'search' => $search ?? '',
+                'term_id' => $termId ?? '',
+                'status' => $status ?? '',
+            ],
         ]);
     }
 
@@ -209,6 +219,39 @@ class InvoiceController extends Controller
             ]);
             return back()->withErrors(['error' => 'Failed to update invoice: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Download invoice as PDF
+     */
+    public function downloadPdf(GuardianInvoice $invoice)
+    {
+        // Authorize: Admins can download all, guardians can only download their own
+        $this->authorize('view', $invoice);
+
+        $invoice->load([
+            'guardian.user',
+            'guardian.students.grade',
+            'academicTerm.academicYear',
+            'lineItems',
+            'payments.recordedBy',
+            'generatedBy'
+        ]);
+
+        // Get school information for invoice header
+        $school = \App\Models\School::find(auth()->user()->school_id);
+
+        // Generate PDF
+        $pdf = Pdf::loadView('invoices.pdf', [
+            'invoice' => $invoice,
+            'school' => $school,
+        ]);
+
+        // Set paper size and orientation
+        $pdf->setPaper('a4', 'portrait');
+
+        // Download the PDF
+        return $pdf->download('invoice-' . $invoice->invoice_number . '.pdf');
     }
 
     /**

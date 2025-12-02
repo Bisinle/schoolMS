@@ -24,29 +24,38 @@ export default function CreatePayment({ auth, invoice }) {
     ];
 
     return (
-        <AuthenticatedLayout
-            user={auth.user}
-            header={
-                <div className="flex items-center gap-4">
-                    <Link
-                        href={`/invoices/${invoice.id}`}
-                        className="text-gray-600 hover:text-gray-900"
-                    >
-                        <ArrowLeft className="w-6 h-6" />
-                    </Link>
-                    <h2 className="font-semibold text-xl text-gray-800 leading-tight">
-                        Record Payment
-                    </h2>
-                </div>
-            }
-        >
+        <AuthenticatedLayout header="Record Payment">
             <Head title="Record Payment" />
 
-            <div className="py-12">
-                <div className="max-w-3xl mx-auto sm:px-6 lg:px-8">
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex items-center space-x-3">
+                    <Link
+                        href={`/invoices/${invoice.id}`}
+                        className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors duration-150"
+                    >
+                        <ArrowLeft className="w-5 h-5" />
+                    </Link>
+                    <DollarSign className="w-8 h-8 text-orange" />
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900">
+                            Record Payment
+                        </h2>
+                        <p className="text-sm text-gray-600">
+                            Invoice {invoice.invoice_number}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="max-w-3xl">
                     {/* Invoice Summary */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg mb-6 p-6">
-                        <h3 className="text-lg font-semibold text-gray-900 mb-4">Invoice Details</h3>
+                    <div className="bg-gradient-to-br from-white to-gray-50 overflow-hidden shadow-lg rounded-xl border border-gray-200 mb-6 p-6">
+                        <div className="flex items-center gap-2 mb-4">
+                            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
+                                <CreditCard className="w-4 h-4 text-white" />
+                            </div>
+                            <h3 className="text-lg font-bold text-gray-900">Invoice Details</h3>
+                        </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div>
                                 <p className="text-sm text-gray-600">Invoice Number</p>
@@ -72,14 +81,14 @@ export default function CreatePayment({ auth, invoice }) {
                     </div>
 
                     {/* Payment Form */}
-                    <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
+                    <div className="bg-white overflow-hidden shadow-lg rounded-xl border border-gray-200">
                         <form onSubmit={handleSubmit} className="p-6 space-y-6">
                             {/* Info Alert */}
-                            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-l-4 border-blue-500 rounded-lg p-4 shadow-sm">
                                 <div className="flex items-start gap-2">
                                     <AlertCircle className="w-5 h-5 text-blue-600 mt-0.5" />
                                     <div>
-                                        <p className="text-sm font-medium text-blue-900">
+                                        <p className="text-sm font-semibold text-blue-900">
                                             Payment Recording
                                         </p>
                                         <p className="text-xs text-blue-700 mt-1">

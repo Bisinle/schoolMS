@@ -26,23 +26,21 @@ class FeeManagementController extends Controller
     public function index()
     {
         $currentTerm = AcademicTerm::where('is_active', true)->first();
-        
+
         $stats = [
             'total_guardians' => Guardian::whereHas('students', function($q) {
                 $q->where('status', 'active');
             })->count(),
-            'invoices_generated' => 0,
-            'total_invoiced' => 0,
-            'total_paid' => 0,
-            'total_pending' => 0,
+            'total_invoices' => 0,
+            'total_billed' => 0,
+            'total_collected' => 0,
         ];
 
         if ($currentTerm) {
             $invoices = GuardianInvoice::where('academic_term_id', $currentTerm->id)->get();
-            $stats['invoices_generated'] = $invoices->count();
-            $stats['total_invoiced'] = $invoices->sum('total_amount');
-            $stats['total_paid'] = $invoices->sum('amount_paid');
-            $stats['total_pending'] = $invoices->sum('balance_due');
+            $stats['total_invoices'] = $invoices->count();
+            $stats['total_billed'] = $invoices->sum('total_amount');
+            $stats['total_collected'] = $invoices->sum('amount_paid');
         }
 
         $terms = AcademicTerm::with('academicYear')
