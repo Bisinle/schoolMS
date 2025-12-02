@@ -56,6 +56,8 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- 13 Document Categories');
         $this->command->info('- Multiple Documents with fake PDFs');
         $this->command->info('- Attendance records for all students');
+        $this->command->info('- 4 Academic Years (2023-2026, 2025 active)');
+        $this->command->info('- 12 Academic Terms (3 per year)');
         $this->command->info('===========================================');
         $this->command->info('👤 Global Super Admin:');
         $this->command->info('📧 superadmin@schoolms.com / password');
