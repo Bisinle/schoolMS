@@ -14,6 +14,12 @@ class AcademicYearSeeder extends Seeder
      */
     public function run(): void
     {
+
+// ✅ Skip this seeder if not in local environment
+             if (!app()->environment('local')) {
+                $this->command->info('AcademicYearSeeder skipped in non-local environment.');
+                return;}
+
         // Get all schools
         $schools = School::all();
 
