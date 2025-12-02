@@ -28,7 +28,9 @@ class DatabaseSeeder extends Seeder
             AttendanceSeeder::class,        // 8️⃣ Create attendance records
             DocumentCategorySeeder::class,  // 9️⃣ Create document categories
             DocumentSeeder::class,          // 🔟 Create sample documents
-            // SuperAdminSeeder::class,        // 1️⃣1️⃣ Create super admin (global access)
+            AcademicYearSeeder::class,      // 1️⃣1️⃣ Create academic years (2023-2026)
+            AcademicTermSeeder::class,      // 1️⃣2️⃣ Create academic terms (3 per year)
+            // SuperAdminSeeder::class,        // 1️⃣3️⃣ Create super admin (global access)
         ]);
 
         $this->command->newLine();
