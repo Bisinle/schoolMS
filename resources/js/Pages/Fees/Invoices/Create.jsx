@@ -4,10 +4,10 @@ import { ArrowLeft, AlertCircle, Check, ChevronDown, Receipt, Plus } from 'lucid
 import { Combobox } from '@headlessui/react';
 import { useState } from 'react';
 
-export default function CreateInvoice({ auth, guardians, terms }) {
+export default function CreateInvoice({ auth, guardians, activeTerm }) {
     const { data, setData, post, processing, errors } = useForm({
         guardian_id: '',
-        academic_term_id: terms.find(t => t.is_active)?.id || '',
+        academic_term_id: activeTerm?.id || '',
         payment_plan: 'full',
     });
 
@@ -148,25 +148,28 @@ export default function CreateInvoice({ auth, guardians, terms }) {
                                 )}
                             </div>
 
-                            {/* Term Selection */}
+                            {/* Term Display (Read-only) */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Academic Term *
+                                    Academic Term
                                 </label>
-                                <select
-                                    value={data.academic_term_id}
-                                    onChange={(e) => setData('academic_term_id', e.target.value)}
-                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                                    required
-                                >
-                                    <option value="">Select Term</option>
-                                    {terms.map((term) => (
-                                        <option key={term.id} value={term.id}>
-                                            {term.academic_year?.year} - Term {term.term_number}
-                                            {term.is_active && ' (Active)'}
-                                        </option>
-                                    ))}
-                                </select>
+                                <div className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-md text-gray-900">
+                                    {activeTerm ? (
+                                        <div className="flex items-center justify-between">
+                                            <span className="font-medium">
+                                                {activeTerm.academic_year?.year} - Term {activeTerm.term_number}
+                                            </span>
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                Active Term
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-red-600">No active term found</span>
+                                    )}
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Invoices can only be created for the active academic term
+                                </p>
                                 {errors.academic_term_id && (
                                     <p className="mt-1 text-sm text-red-600">{errors.academic_term_id}</p>
                                 )}

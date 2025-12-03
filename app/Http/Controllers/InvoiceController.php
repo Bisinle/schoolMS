@@ -41,6 +41,14 @@ class InvoiceController extends Controller
         $termId = is_array($request->term_id) ? '' : $request->term_id;
         $status = is_array($request->status) ? '' : $request->status;
 
+        // Get active term for default filtering
+        $activeTerm = AcademicTerm::where('is_active', true)->first();
+
+        // If no term filter is specified, default to active term
+        if (!$termId && $activeTerm) {
+            $termId = $activeTerm->id;
+        }
+
         // Apply filters
         $query->with(['guardian.user', 'academicTerm.academicYear'])
             ->when($search, function ($q, $search) {
@@ -70,6 +78,7 @@ class InvoiceController extends Controller
         return Inertia::render('Fees/Invoices/Index', [
             'invoices' => $invoices,
             'terms' => $terms,
+            'activeTerm' => $activeTerm,
             'filters' => [
                 'search' => $search ?? '',
                 'term_id' => $termId ?? '',
@@ -97,13 +106,19 @@ class InvoiceController extends Controller
                 ];
             });
 
-        $terms = AcademicTerm::with('academicYear')
-            ->orderBy('created_at', 'desc')
-            ->get();
+        // Only get the active term for invoice creation
+        $activeTerm = AcademicTerm::where('is_active', true)
+            ->with('academicYear')
+            ->first();
+
+        if (!$activeTerm) {
+            return redirect()->route('fees.index')
+                ->withErrors(['error' => 'No active academic term found. Please activate a term first.']);
+        }
 
         return Inertia::render('Fees/Invoices/Create', [
             'guardians' => $guardians,
-            'terms' => $terms,
+            'activeTerm' => $activeTerm,
         ]);
     }
 
@@ -120,6 +135,11 @@ class InvoiceController extends Controller
 
         $guardian = Guardian::findOrFail($validated['guardian_id']);
         $term = AcademicTerm::findOrFail($validated['academic_term_id']);
+
+        // Ensure the term is active
+        if (!$term->is_active) {
+            return back()->withErrors(['error' => 'Invoices can only be created for the active academic term.']);
+        }
 
         try {
             $invoice = $this->invoiceService->generateInvoiceForGuardian(

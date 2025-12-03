@@ -12,10 +12,12 @@ export default function FeeManagementDashboard({ auth, currentTerm, stats, terms
                 {/* Header */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="flex items-center space-x-3">
-                        <DollarSign className="w-8 h-8 text-orange" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange rounded-lg flex items-center justify-center">
+                            <DollarSign className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+                        </div>
                         <div>
-                            <h2 className="text-2xl font-bold text-gray-900">Fee Management</h2>
-                            <p className="text-sm text-gray-600">
+                            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Fee Management</h2>
+                            <p className="text-xs sm:text-sm text-gray-600">
                                 {currentTerm ? `${currentTerm.academic_year?.year} - Term ${currentTerm.term_number}` : 'No active term'}
                             </p>
                         </div>
@@ -24,124 +26,123 @@ export default function FeeManagementDashboard({ auth, currentTerm, stats, terms
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                         <Link
                             href="/fee-categories"
-                            className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold sm:font-medium rounded-xl shadow-sm hover:shadow-md hover:from-orange-600 hover:to-orange-700 transition-all duration-200 text-sm sm:text-base"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:bg-orange-600 transition-all duration-200"
                         >
                             <Tag className="w-5 h-5" />
                             <span>Fee Categories</span>
                         </Link>
                         <Link
                             href="/fees/bulk-generate"
-                            className="inline-flex items-center justify-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
+                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:bg-orange-dark transition-all duration-200"
                         >
-                            <Plus className="w-5 h-5 mr-2" />
-                            Bulk Generate
+                            <Plus className="w-5 h-5" />
+                            <span>Bulk Generate</span>
                         </Link>
                     </div>
                 </div>
-                {/* Stats Cards */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {/* Total Guardians */}
-                        <div className="bg-gradient-to-br from-white to-blue-50 rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                                    <Users className="w-5 h-5 text-white" />
-                                </div>
-                                <TrendingUp className="w-5 h-5 text-blue-600" />
-                            </div>
-                            <p className="text-sm text-gray-600 mb-1">Total Guardians</p>
-                            <p className="text-3xl font-bold text-gray-900">{stats.total_guardians}</p>
-                        </div>
+{/* Stats Cards - Fully Mobile Responsive */}
+<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+    {/* Total Guardians */}
+    <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 sm:mb-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                <Users className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600 hidden sm:block" />
+        </div>
+        <p className="text-[10px] sm:text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wide">Guardians</p>
+        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{stats.total_guardians}</p>
+    </div>
 
-                        {/* Total Invoices */}
-                        <div className="bg-gradient-to-br from-white to-orange-50 rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
-                                    <Receipt className="w-5 h-5 text-white" />
-                                </div>
-                                <TrendingUp className="w-5 h-5 text-orange-600" />
-                            </div>
-                            <p className="text-sm text-gray-600 mb-1">Total Invoices</p>
-                            <p className="text-3xl font-bold text-gray-900">{stats.total_invoices}</p>
-                        </div>
+    {/* Total Invoices */}
+    <div className="bg-gradient-to-br from-white to-orange-50 rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 sm:mb-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center shadow-md">
+                <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-orange-600 hidden sm:block" />
+        </div>
+        <p className="text-[10px] sm:text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wide">Invoices</p>
+        <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">{stats.total_invoices}</p>
+    </div>
 
-                        {/* Total Billed */}
-                        <div className="bg-gradient-to-br from-white to-green-50 rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
-                                    <DollarSign className="w-5 h-5 text-white" />
-                                </div>
-                                <TrendingUp className="w-5 h-5 text-green-600" />
-                            </div>
-                            <p className="text-sm text-gray-600 mb-1">Total Billed</p>
-                            <p className="text-3xl font-bold text-gray-900">
-                                KSh {Number(stats.total_billed).toLocaleString()}
-                            </p>
-                        </div>
+    {/* Total Billed */}
+    <div className="bg-gradient-to-br from-white to-green-50 rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 sm:mb-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center shadow-md">
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-600 hidden sm:block" />
+        </div>
+        <p className="text-[10px] sm:text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wide">Billed</p>
+        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+            <span className="text-xs sm:text-base lg:text-2xl">KSh</span> {Number(stats.total_billed).toLocaleString()}
+        </div>
+    </div>
 
-                        {/* Total Collected */}
-                        <div className="bg-gradient-to-br from-white to-purple-50 rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-shadow duration-200">
-                            <div className="flex items-center justify-between mb-3">
-                                <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                    <DollarSign className="w-5 h-5 text-white" />
-                                </div>
-                                <TrendingUp className="w-5 h-5 text-purple-600" />
-                            </div>
-                            <p className="text-sm text-gray-600 mb-1">Total Collected</p>
-                            <p className="text-3xl font-bold text-gray-900">
-                                KSh {Number(stats.total_collected).toLocaleString()}
-                            </p>
-                        </div>
-                </div>
+    {/* Total Collected */}
+    <div className="bg-gradient-to-br from-white to-purple-50 rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 sm:mb-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center shadow-md">
+                <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600 hidden sm:block" />
+        </div>
+        <p className="text-[10px] sm:text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wide">Collected</p>
+        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+            <span className="text-xs sm:text-base lg:text-2xl">KSh</span> {Number(stats.total_collected).toLocaleString()}
+        </div>
+    </div>
+</div>
 
-                {/* Quick Actions */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-                        <Link
-                            href="/invoices"
-                            className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200 group"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
-                                    <Receipt className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">View Invoices</h3>
-                                    <p className="text-sm text-gray-600">Manage all invoices</p>
-                                </div>
-                            </div>
-                        </Link>
+              {/* Quick Actions - Mobile Responsive */}
+<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+    <Link
+        href="/invoices"
+        className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200 group"
+    >
+        <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200 flex-shrink-0">
+                <Receipt className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div className="min-w-0">
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">View Invoices</h3>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Manage all invoices</p>
+            </div>
+        </div>
+    </Link>
 
-                        <Link
-                            href="/invoices/create"
-                            className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200 group"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
-                                    <Plus className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">Create Invoice</h3>
-                                    <p className="text-sm text-gray-600">Generate new invoice</p>
-                                </div>
-                            </div>
-                        </Link>
+    <Link
+        href="/invoices/create"
+        className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200 group"
+    >
+        <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200 flex-shrink-0">
+                <Plus className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div className="min-w-0">
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">Create Invoice</h3>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Generate new invoice</p>
+            </div>
+        </div>
+    </Link>
 
-                        <Link
-                            href="/fees/bulk-generate"
-                            className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm hover:shadow-md transition-all duration-200 group"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-200">
-                                    <FileText className="w-6 h-6 text-white" />
-                                </div>
-                                <div>
-                                    <h3 className="text-lg font-bold text-gray-900">Bulk Generate</h3>
-                                    <p className="text-sm text-gray-600">Generate multiple invoices</p>
-                                </div>
-                            </div>
-                        </Link>
-                </div>
+    <Link
+        href="/fees/bulk-generate"
+        className="bg-white rounded-lg sm:rounded-xl border border-gray-200 p-4 sm:p-5 shadow-sm hover:shadow-md transition-all duration-200 group"
+    >
+        <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform duration-200 flex-shrink-0">
+                <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <div className="min-w-0">
+                <h3 className="text-sm sm:text-base lg:text-lg font-bold text-gray-900">Bulk Generate</h3>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Generate multiple invoices</p>
+            </div>
+        </div>
+    </Link>
+</div>
             </div>
         </AuthenticatedLayout>
     );
 }
-
