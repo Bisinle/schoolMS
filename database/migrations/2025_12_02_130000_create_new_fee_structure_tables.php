@@ -8,10 +8,17 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
+     *
+     * This migration replaces the old fee structure with a new one.
+     * It drops the old tables (if they exist) and creates new ones with updated schema.
      */
     public function up(): void
     {
-        // Create fee_categories table
+        // Drop old tables if they exist (from previous migration)
+        Schema::dropIfExists('fee_amounts');
+        Schema::dropIfExists('fee_categories');
+
+        // Create fee_categories table with new structure
         Schema::create('fee_categories', function (Blueprint $table) {
             $table->id();
             $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
