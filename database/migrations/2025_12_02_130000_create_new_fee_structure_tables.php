@@ -14,10 +14,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // Drop old tables if they exist (from previous migration)
-        Schema::dropIfExists('fee_amounts');
-        Schema::dropIfExists('fee_categories');
-
+      
         // Create fee_categories table with new structure
         Schema::create('fee_categories', function (Blueprint $table) {
             $table->id();
