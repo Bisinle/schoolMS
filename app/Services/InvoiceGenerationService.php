@@ -146,6 +146,15 @@ class InvoiceGenerationService
             // Get all applicable fee amounts for this student's grade and academic year
             $applicableFees = FeeAmount::getApplicableFeesForGrade($gradeName, $academicYearId);
 
+            // DEBUG: Log fee retrieval
+            Log::info('Invoice Generation - Fee Retrieval', [
+                'student' => $student->first_name . ' ' . $student->last_name,
+                'grade' => $gradeName,
+                'academic_year_id' => $academicYearId,
+                'fees_found' => $applicableFees->count(),
+                'fee_names' => $applicableFees->pluck('feeCategory.name')->toArray(),
+            ]);
+
             // Build fee breakdown JSON
             $feeBreakdown = [];
 
