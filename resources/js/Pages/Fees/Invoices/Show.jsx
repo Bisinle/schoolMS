@@ -180,17 +180,17 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                     <span className="sm:hidden">PDF</span>
                                 </Link>
 
-                                {/* Delete - Admin only */}
-                                {auth.user.role === 'admin' && invoice.amount_paid === 0 && (
+                                {/* Delete - Admin only (always visible for development) */}
+                                {auth.user.role === 'admin' && (
                                     <Link
                                         href={`/invoices/${invoice.id}`}
                                         method="delete"
                                         as="button"
                                         className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 shadow-md hover:shadow-lg transition-all duration-200 font-semibold"
-                                        onBefore={() => confirm('Are you sure you want to delete this invoice? This action cannot be undone.')}
+                                        onBefore={() => confirm('Are you sure you want to delete this invoice? This will also delete all associated payments. This action cannot be undone.')}
                                     >
                                         <Trash2 className="w-4 h-4" />
-                                        <span className="hidden sm:inline">Delete</span>
+                                        <span className="hidden sm:inline">Delete Invoice</span>
                                         <span className="sm:hidden">Delete</span>
                                     </Link>
                                 )}

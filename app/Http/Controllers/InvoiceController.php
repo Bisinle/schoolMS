@@ -6,6 +6,7 @@ use App\Models\GuardianInvoice;
 use App\Models\Guardian;
 use App\Models\AcademicTerm;
 use App\Models\InvoiceLineItem;
+use App\Models\GuardianPayment;
 use App\Services\InvoiceGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -113,7 +114,7 @@ class InvoiceController extends Controller
 
         if (!$activeTerm) {
             return redirect()->route('fees.index')
-                ->withErrors(['error' => 'No active academic term found. Please activate a term first.']);
+                ->with('error', 'No active academic term found. Please activate a term in Settings → Academic Years before creating invoices.');
         }
 
         return Inertia::render('Fees/Invoices/Create', [
@@ -276,18 +277,53 @@ class InvoiceController extends Controller
 
     /**
      * Remove the specified invoice
+     * Note: Payments and line items will be cascade deleted automatically
      */
     public function destroy(GuardianInvoice $invoice)
     {
-        // Only allow deletion if no payments have been made
-        if ($invoice->amount_paid > 0) {
-            return back()->withErrors(['error' => 'Cannot delete invoice with payments']);
-        }
+        // Allow deletion even with payments (for development)
+        // Payments and line items will be cascade deleted due to foreign key constraints
 
+        $invoiceNumber = $invoice->invoice_number;
         $invoice->delete();
 
         return redirect()->route('invoices.index')
-            ->with('success', 'Invoice deleted successfully');
+            ->with('success', "Invoice {$invoiceNumber} and all associated payments deleted successfully");
+    }
+
+    /**
+     * Clear all invoices (for development)
+     * Deletes all invoices, line items, and payments
+     */
+    public function clearAll()
+    {
+        DB::beginTransaction();
+
+        try {
+            $schoolId = auth()->user()->school_id;
+
+            // Count before deletion
+            $invoiceCount = GuardianInvoice::where('school_id', $schoolId)->count();
+            $paymentCount = GuardianPayment::where('school_id', $schoolId)->count();
+
+            // Delete all payments first
+            GuardianPayment::where('school_id', $schoolId)->delete();
+
+            // Delete all line items
+            InvoiceLineItem::where('school_id', $schoolId)->delete();
+
+            // Delete all invoices
+            GuardianInvoice::where('school_id', $schoolId)->delete();
+
+            DB::commit();
+
+            return redirect()->route('invoices.index')
+                ->with('success', "Successfully deleted {$invoiceCount} invoices and {$paymentCount} payments");
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return back()->withErrors(['error' => 'Failed to clear invoices: ' . $e->getMessage()]);
+        }
     }
 }
 

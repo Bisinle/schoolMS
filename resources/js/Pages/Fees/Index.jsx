@@ -1,14 +1,30 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link } from '@inertiajs/react';
-import { DollarSign, Receipt, Users, FileText, TrendingUp, Calendar, Plus, Tag } from 'lucide-react';
+import { Head, Link, usePage } from '@inertiajs/react';
+import { DollarSign, Receipt, Users, FileText, TrendingUp, Calendar, Plus, Tag, AlertCircle } from 'lucide-react';
 import { Badge } from '@/Components/UI';
 
 export default function FeeManagementDashboard({ auth, currentTerm, stats, terms }) {
+    const { flash } = usePage().props;
+
     return (
         <AuthenticatedLayout header="Fee Management">
             <Head title="Fee Management" />
 
             <div className="space-y-6">
+                {/* Flash Messages */}
+                {flash?.error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                        <div className="flex items-start">
+                            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                            <div className="ml-3">
+                                <p className="text-sm font-medium text-red-800">
+                                    {flash.error}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="flex items-center space-x-3">

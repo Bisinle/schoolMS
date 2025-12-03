@@ -34,7 +34,8 @@ function MobileInvoiceItem({ invoice, auth, onDelete }) {
         },
     ];
 
-    if (auth.user.role === "admin" && invoice.amount_paid === 0) {
+    // Always show delete for admins (for development)
+    if (auth.user.role === "admin") {
         primaryActions.push({
             icon: Trash2,
             label: "Delete",
@@ -197,15 +198,36 @@ export default function InvoicesIndex({
                         </div>
                     </div>
 
-                    {/* Action Button - Admin Only */}
+                    {/* Action Buttons - Admin Only */}
                     {auth.user.role === "admin" && (
-                        <Link
-                            href="/invoices/create"
-                            className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
-                        >
-                            <Plus className="w-5 h-5 mr-2" />
-                            Create Invoice
-                        </Link>
+                        <div className="flex gap-3">
+                            <Link
+                                href="/invoices/create"
+                                className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
+                            >
+                                <Plus className="w-5 h-5 mr-2" />
+                                Create Invoice
+                            </Link>
+
+                            {/* Clear All Button - Development Only */}
+                            {invoices.data.length > 0 && (
+                                <button
+                                    onClick={() => {
+                                        if (confirm(`Are you sure you want to delete ALL ${invoices.total} invoices and their payments? This action cannot be undone.`)) {
+                                            router.post('/invoices/clear-all', {}, {
+                                                onSuccess: () => {
+                                                    alert('All invoices cleared successfully!');
+                                                }
+                                            });
+                                        }
+                                    }}
+                                    className="inline-flex items-center px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md hover:shadow-lg"
+                                >
+                                    <Trash2 className="w-5 h-5 mr-2" />
+                                    Clear All
+                                </button>
+                            )}
+                        </div>
                     )}
                 </div>
 
@@ -402,22 +424,20 @@ export default function InvoicesIndex({
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </Link>
-                                                    {auth.user.role ===
-                                                        "admin" &&
-                                                        invoice.amount_paid ===
-                                                            0 && (
-                                                            <button
-                                                                onClick={() =>
-                                                                    handleDelete(
-                                                                        invoice
-                                                                    )
-                                                                }
-                                                                className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors duration-150"
-                                                                title="Delete Invoice"
-                                                            >
-                                                                <Trash2 className="w-4 h-4" />
-                                                            </button>
-                                                        )}
+                                                    {/* Always show delete for admins (for development) */}
+                                                    {auth.user.role === "admin" && (
+                                                        <button
+                                                            onClick={() =>
+                                                                handleDelete(
+                                                                    invoice
+                                                                )
+                                                            }
+                                                            className="p-2 text-red-600 hover:text-red-900 hover:bg-red-50 rounded-lg transition-colors duration-150"
+                                                            title="Delete Invoice"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </div>
                                             </td>
                                         </tr>
