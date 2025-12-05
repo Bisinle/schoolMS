@@ -7,6 +7,10 @@ use App\Models\Guardian;
 use App\Models\AcademicTerm;
 use App\Models\InvoiceLineItem;
 use App\Models\GuardianPayment;
+use App\Models\GuardianFeePreference;
+use App\Models\TuitionFee;
+use App\Models\TransportRoute;
+use App\Models\UniversalFee;
 use App\Services\InvoiceGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -91,22 +95,8 @@ class InvoiceController extends Controller
     /**
      * Show the form for creating a new invoice
      */
-    public function create()
+    public function create(Request $request)
     {
-        $guardians = Guardian::with(['user', 'students'])
-            ->whereHas('students', function($q) {
-                $q->where('status', 'active');
-            })
-            ->get()
-            ->map(function ($guardian) {
-                return [
-                    'id' => $guardian->id,
-                    'name' => $guardian->user->name,
-                    'guardian_number' => $guardian->guardian_number,
-                    'students_count' => $guardian->students->where('status', 'active')->count(),
-                ];
-            });
-
         // Only get the active term for invoice creation
         $activeTerm = AcademicTerm::where('is_active', true)
             ->with('academicYear')
@@ -117,9 +107,158 @@ class InvoiceController extends Controller
                 ->with('error', 'No active academic term found. Please activate a term in Settings → Academic Years before creating invoices.');
         }
 
+        $guardians = Guardian::with(['user', 'students' => function($q) {
+                $q->where('status', 'active')->with('grade');
+            }])
+            ->whereHas('students', function($q) {
+                $q->where('status', 'active');
+            })
+            ->get()
+            ->map(function ($guardian) use ($activeTerm) {
+                $activeStudents = $guardian->students->where('status', 'active');
+
+                // Check if preferences exist for this guardian
+                $preferencesCount = GuardianFeePreference::where('guardian_id', $guardian->id)
+                    ->where('academic_term_id', $activeTerm->id)
+                    ->count();
+
+                return [
+                    'id' => $guardian->id,
+                    'name' => $guardian->user->name,
+                    'guardian_number' => $guardian->guardian_number,
+                    'students_count' => $activeStudents->count(),
+                    'has_preferences' => $preferencesCount === $activeStudents->count() && $activeStudents->count() > 0,
+                    'preferences_count' => $preferencesCount,
+                ];
+            });
+
+        // Get fee structure data for preview
+        $tuitionFees = TuitionFee::where('academic_year_id', $activeTerm->academic_year_id)
+            ->where('is_active', true)
+            ->with('grade')
+            ->get()
+            ->keyBy('grade_id');
+
+        $transportRoutes = TransportRoute::where('is_active', true)
+            ->orderBy('route_name')
+            ->get();
+
+        $universalFees = UniversalFee::where('academic_year_id', $activeTerm->academic_year_id)
+            ->where('is_active', true)
+            ->get()
+            ->keyBy('fee_type');
+
         return Inertia::render('Fees/Invoices/Create', [
             'guardians' => $guardians,
             'activeTerm' => $activeTerm,
+            'tuitionFees' => $tuitionFees,
+            'transportRoutes' => $transportRoutes,
+            'universalFees' => $universalFees,
+        ]);
+    }
+
+    /**
+     * Get invoice preview for a guardian (AJAX endpoint)
+     */
+    public function preview(Request $request)
+    {
+        $validated = $request->validate([
+            'guardian_id' => 'required|exists:guardians,id',
+            'academic_term_id' => 'required|exists:academic_terms,id',
+        ]);
+
+        $guardian = Guardian::with(['students' => function($q) {
+            $q->where('status', 'active')->with('grade');
+        }])->findOrFail($validated['guardian_id']);
+
+        $term = AcademicTerm::with('academicYear')->findOrFail($validated['academic_term_id']);
+
+        // Get preferences for this guardian and term
+        $preferences = GuardianFeePreference::where('guardian_id', $guardian->id)
+            ->where('academic_term_id', $term->id)
+            ->with(['transportRoute'])
+            ->get()
+            ->keyBy('student_id');
+
+        // Get universal fees
+        $universalFees = UniversalFee::where('academic_year_id', $term->academic_year_id)
+            ->where('is_active', true)
+            ->get()
+            ->keyBy('fee_type');
+
+        // Build preview data
+        $students = $guardian->students->where('status', 'active')->map(function($student) use ($preferences, $term, $universalFees) {
+            $preference = $preferences->get($student->id);
+            $feeBreakdown = [];
+            $total = 0;
+
+            if ($preference) {
+                // Get tuition fee
+                $tuitionFee = TuitionFee::where('grade_id', $student->grade_id)
+                    ->where('academic_year_id', $term->academic_year_id)
+                    ->where('is_active', true)
+                    ->first();
+
+                if ($tuitionFee) {
+                    $tuitionAmount = $preference->tuition_type === 'full_day'
+                        ? $tuitionFee->amount_full_day
+                        : $tuitionFee->amount_half_day;
+                    $feeBreakdown['Tuition'] = [
+                        'amount' => (float) $tuitionAmount,
+                        'type' => $preference->tuition_type === 'full_day' ? 'Full Day' : 'Half Day',
+                    ];
+                    $total += $tuitionAmount;
+                }
+
+                // Get transport fee
+                if ($preference->transport_route_id && $preference->transport_type !== 'none') {
+                    $route = $preference->transportRoute;
+                    if ($route) {
+                        $transportAmount = $preference->transport_type === 'two_way'
+                            ? $route->amount_two_way
+                            : $route->amount_one_way;
+                        $feeBreakdown['Transport'] = [
+                            'amount' => (float) $transportAmount,
+                            'route' => $route->route_name,
+                            'type' => $preference->transport_type === 'two_way' ? '2-Way' : '1-Way',
+                        ];
+                        $total += $transportAmount;
+                    }
+                }
+
+                // Food fee
+                if ($preference->include_food && isset($universalFees['food'])) {
+                    $feeBreakdown['Food'] = [
+                        'amount' => (float) $universalFees['food']->amount,
+                    ];
+                    $total += $universalFees['food']->amount;
+                }
+
+                // Sports fee
+                if ($preference->include_sports && isset($universalFees['sports'])) {
+                    $feeBreakdown['Sports'] = [
+                        'amount' => (float) $universalFees['sports']->amount,
+                    ];
+                    $total += $universalFees['sports']->amount;
+                }
+            }
+
+            return [
+                'id' => $student->id,
+                'name' => $student->first_name . ' ' . $student->last_name,
+                'grade' => $student->grade->name,
+                'has_preference' => $preference !== null,
+                'fee_breakdown' => $feeBreakdown,
+                'total' => $total,
+            ];
+        })->values();
+
+        $grandTotal = $students->sum('total');
+
+        return response()->json([
+            'students' => $students,
+            'grand_total' => $grandTotal,
+            'has_preferences' => $preferences->isNotEmpty(),
         ]);
     }
 

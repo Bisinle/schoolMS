@@ -7,6 +7,7 @@ use App\Models\AcademicYear;
 use App\Models\FeeCategory;
 use App\Models\Guardian;
 use App\Models\GuardianInvoice;
+use App\Models\GuardianFeePreference;
 use App\Models\OneTimeFee;
 use App\Services\InvoiceGenerationService;
 use Illuminate\Http\Request;
@@ -63,23 +64,42 @@ class FeeManagementController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
-        $guardians = Guardian::with(['user', 'students'])
+        // Get active term for preference checking
+        $activeTerm = AcademicTerm::where('is_active', true)->first();
+
+        $guardians = Guardian::with(['user', 'students' => function($q) {
+                $q->where('status', 'active');
+            }])
             ->whereHas('students', function($q) {
                 $q->where('status', 'active');
             })
             ->get()
-            ->map(function ($guardian) {
+            ->map(function ($guardian) use ($activeTerm) {
+                $activeStudents = $guardian->students->where('status', 'active');
+                $studentsCount = $activeStudents->count();
+
+                // Check preference status for active term
+                $preferencesCount = 0;
+                if ($activeTerm) {
+                    $preferencesCount = GuardianFeePreference::where('guardian_id', $guardian->id)
+                        ->where('academic_term_id', $activeTerm->id)
+                        ->count();
+                }
+
                 return [
                     'id' => $guardian->id,
                     'name' => $guardian->user->name,
                     'guardian_number' => $guardian->guardian_number,
-                    'students_count' => $guardian->students->where('status', 'active')->count(),
+                    'students_count' => $studentsCount,
+                    'has_preferences' => $preferencesCount === $studentsCount && $studentsCount > 0,
+                    'preferences_count' => $preferencesCount,
                 ];
             });
 
         return Inertia::render('Fees/BulkGenerate', [
             'terms' => $terms,
             'guardians' => $guardians,
+            'activeTerm' => $activeTerm,
         ]);
     }
 

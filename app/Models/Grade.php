@@ -57,9 +57,9 @@ class Grade extends Model
         return $this->hasMany(Exam::class);
     }
 
-    public function feeCategories()
+    public function tuitionFees()
     {
-        return $this->hasMany(FeeCategory::class);
+        return $this->hasMany(TuitionFee::class);
     }
 
     // Helper methods

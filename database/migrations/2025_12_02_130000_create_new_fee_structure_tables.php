@@ -9,8 +9,15 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * This migration replaces the old fee structure with a new one.
-     * It drops the old tables (if they exist) and creates new ones with updated schema.
+     * DEPRECATED: This migration created the OLD fee_categories and fee_amounts tables.
+     * This system has been REPLACED by the Fee Preference System (2025_12_05_000001 onwards):
+     * - transport_routes (Transport fees with one-way/two-way pricing)
+     * - tuition_fees (Grade-level tuition with full-day/half-day pricing)
+     * - universal_fees (School-wide fees: Food, Sports, Library, Technology)
+     * - guardian_fee_preferences (Guardian choices per student per term)
+     *
+     * This migration is kept for historical reference only.
+     * The tables created here are NO LONGER USED and should be dropped.
      */
     public function up(): void
     {

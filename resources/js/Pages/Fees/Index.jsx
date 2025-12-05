@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { DollarSign, Receipt, Users, FileText, TrendingUp, Calendar, Plus, Tag, AlertCircle } from 'lucide-react';
+import { DollarSign, Receipt, Users, FileText, TrendingUp, Calendar, Plus, AlertCircle } from 'lucide-react';
 import { Badge } from '@/Components/UI';
 
 export default function FeeManagementDashboard({ auth, currentTerm, stats, terms }) {
@@ -40,13 +40,6 @@ export default function FeeManagementDashboard({ auth, currentTerm, stats, terms
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                        <Link
-                            href="/fee-categories"
-                            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-500 text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:bg-orange-600 transition-all duration-200"
-                        >
-                            <Tag className="w-5 h-5" />
-                            <span>Fee Categories</span>
-                        </Link>
                         <Link
                             href="/fees/bulk-generate"
                             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange text-white font-semibold rounded-lg shadow-md hover:shadow-lg hover:bg-orange-dark transition-all duration-200"

@@ -62,6 +62,9 @@ class Student extends Model
         return $this->hasMany(QuranTracking::class);
     }
 
+    // Note: Fee preferences belong to guardians, not students
+    // Access via: $student->guardian->feePreferences()->where('student_id', $student->id)
+
     // 🆕 NEW: Documents relationship
     public function documents()
     {

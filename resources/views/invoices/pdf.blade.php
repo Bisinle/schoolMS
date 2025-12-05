@@ -222,6 +222,14 @@
             color: #111827;
         }
 
+        tbody td.amount .fee-type {
+            font-size: 8px;
+            color: #6b7280;
+            font-family: 'DejaVu Sans', sans-serif;
+            display: block;
+            margin-top: 2px;
+        }
+
         tbody td.total-amount {
             text-align: right;
             font-weight: bold;
@@ -431,8 +439,25 @@
                         <td class="grade">{{ $item->grade_name }}</td>
                         @foreach($feeCategories as $category)
                             <td class="amount">
-                                @if(isset($item->fee_breakdown[$category]) && $item->fee_breakdown[$category] > 0)
-                                    KSh {{ number_format($item->fee_breakdown[$category], 2) }}
+                                @php
+                                    $feeData = $item->fee_breakdown[$category] ?? null;
+                                    $amount = 0;
+                                    $type = null;
+
+                                    if ($feeData) {
+                                        if (is_array($feeData)) {
+                                            $amount = $feeData['amount'] ?? 0;
+                                            $type = $feeData['type'] ?? null;
+                                        } else {
+                                            $amount = $feeData;
+                                        }
+                                    }
+                                @endphp
+                                @if($amount > 0)
+                                    <div>KSh {{ number_format($amount, 2) }}</div>
+                                    @if($type)
+                                        <div class="fee-type">({{ $type }})</div>
+                                    @endif
                                 @else
                                     -
                                 @endif

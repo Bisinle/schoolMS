@@ -8,28 +8,21 @@ return new class extends Migration
 {
     /**
      * Run the migrations.
-     * 
-     * NOTE: This migration created the OLD fee structure.
-     * It has been superseded by 2025_12_02_130000_create_new_fee_structure_tables.php
+     *
+     * DEPRECATED: This migration created the ORIGINAL OLD fee structure.
+     * It was superseded by 2025_12_02_130000_create_new_fee_structure_tables.php
+     * which was then REPLACED by the Fee Preference System (2025_12_05_000001 onwards).
+     *
      * This file is kept for migration history tracking only.
      */
     public function up(): void
     {
-        // Old structure - kept for reference only
-        // This was the original fee_categories table with grade_id
-        // Schema::create('fee_categories', function (Blueprint $table) {
-        //     $table->id();
-        //     $table->foreignId('school_id')->constrained('schools')->cascadeOnDelete();
-        //     $table->foreignId('grade_id')->constrained('grades')->cascadeOnDelete();
-        //     $table->string('name');
-        //     $table->decimal('amount', 10, 2);
-        //     $table->boolean('is_active')->default(true);
-        //     $table->timestamps();
-        //     $table->unique(['school_id', 'grade_id', 'name']);
-        // });
-        
-        // This migration is now a no-op since the tables are recreated
-        // in 2025_12_02_130000_create_new_fee_structure_tables.php
+        // DEPRECATED - No longer used
+        // The fee_categories and fee_amounts tables have been replaced by:
+        // - transport_routes
+        // - tuition_fees
+        // - universal_fees
+        // - guardian_fee_preferences
     }
 
     /**

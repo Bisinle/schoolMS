@@ -46,6 +46,11 @@ class AcademicTerm extends Model
         return $this->hasMany(GuardianFeeAdjustment::class);
     }
 
+    public function guardianFeePreferences()
+    {
+        return $this->hasMany(GuardianFeePreference::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

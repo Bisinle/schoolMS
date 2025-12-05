@@ -13,6 +13,9 @@ import {
     Settings,
     Book,
     DollarSign,
+    Bus,
+    Tag,
+    Receipt,
 } from "lucide-react";
 
 /**
@@ -40,7 +43,19 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
             ...(isMadrasah ? [{ name: "Quran Tracking", href: "/quran-tracking", icon: Book }] : []),
-            { name: "Fees", href: "/fees", icon: DollarSign },
+            {
+                name: "Fees",
+                icon: DollarSign,
+                submenu: [
+                    { name: "Dashboard", href: "/fees", icon: LayoutDashboard },
+                    { name: "Invoices", href: "/invoices", icon: Receipt },
+                    { name: "Fee Categories", href: "/fee-categories", icon: Tag },
+                    { name: "Transport Routes", href: "/transport-routes", icon: Bus },
+                    { name: "Tuition Fees", href: "/tuition-fees", icon: GraduationCap },
+                    { name: "Universal Fees", href: "/universal-fees", icon: BookOpen },
+                    { name: "Fee Preferences", href: "/fee-preferences", icon: Settings },
+                ]
+            },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
             {

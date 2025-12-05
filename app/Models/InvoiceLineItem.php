@@ -47,7 +47,19 @@ class InvoiceLineItem extends Model
         static::saving(function ($lineItem) {
             // Calculate total from fee_breakdown JSON
             if ($lineItem->fee_breakdown && is_array($lineItem->fee_breakdown)) {
-                $lineItem->total_amount = array_sum($lineItem->fee_breakdown);
+                $total = 0;
+
+                foreach ($lineItem->fee_breakdown as $fee) {
+                    // Support both old format (number) and new format (array with 'amount' key)
+                    if (is_array($fee) && isset($fee['amount'])) {
+                        $total += $fee['amount'];
+                    } elseif (is_numeric($fee)) {
+                        // Backward compatibility with old format
+                        $total += $fee;
+                    }
+                }
+
+                $lineItem->total_amount = $total;
             } else {
                 $lineItem->total_amount = 0;
             }

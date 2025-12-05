@@ -30,6 +30,12 @@ class Guardian extends Model
         return $this->hasMany(Student::class);
     }
 
+    // Fee preferences relationship
+    public function feePreferences()
+    {
+        return $this->hasMany(GuardianFeePreference::class);
+    }
+
     // 🆕 NEW: Documents relationship
     public function documents()
     {
@@ -102,5 +108,21 @@ class Guardian extends Model
         }
 
         return $invoice->status;
+    }
+
+    // Accessor methods to get user data
+    public function getFullNameAttribute()
+    {
+        return $this->user?->name ?? 'N/A';
+    }
+
+    public function getEmailAttribute()
+    {
+        return $this->user?->email ?? 'N/A';
+    }
+
+    public function getPhoneAttribute()
+    {
+        return $this->user?->phone ?? $this->phone_number ?? 'N/A';
     }
 }
