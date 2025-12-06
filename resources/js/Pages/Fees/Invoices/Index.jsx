@@ -226,12 +226,13 @@ export default function InvoicesIndex({
                                 updateFilter("term_id", e.target.value)
                             }
                             options={[
-                                { value: "", label: "All Terms" },
+                                { value: "all", label: "All Terms" },
                                 ...terms.map((term) => ({
                                     value: term.id,
                                     label: `${term.academic_year?.year} - Term ${term.term_number}`,
                                 })),
                             ]}
+                            showAllOption={false}
                             className="w-full sm:w-48"
                         />
                         <FilterSelect
@@ -246,6 +247,7 @@ export default function InvoicesIndex({
                                 { value: "paid", label: "Paid" },
                                 { value: "overdue", label: "Overdue" },
                             ]}
+                            showAllOption={false}
                             className="w-full sm:w-40"
                         />
                     </FilterBar>

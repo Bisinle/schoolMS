@@ -8,7 +8,6 @@ import {
     AlertCircle,
     XCircle,
     Settings,
-    Filter,
     UserCog,
 } from "lucide-react";
 import Badge from "@/Components/UI/Badge";
@@ -83,87 +82,78 @@ export default function Index({ auth, guardians, academicTerms, selectedTerm, fi
     };
 
     return (
-        <AuthenticatedLayout user={auth.user}>
+        <AuthenticatedLayout header="Guardian Fee Preferences">
             <Head title="Fee Preferences" />
 
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-4 sm:py-8 px-3 sm:px-6 lg:px-8">
-                <div className="max-w-7xl mx-auto">
-                    {/* Header */}
-                    <div className="bg-gradient-to-r from-orange-500 to-orange-600 rounded-t-2xl shadow-lg p-4 sm:p-6">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-white/20 backdrop-blur-sm p-2 sm:p-3 rounded-xl">
-                                    <UserCog className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-                                </div>
-                                <div>
-                                    <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white">
-                                        Guardian Fee Preferences
-                                    </h1>
-                                    <p className="text-orange-100 text-xs sm:text-sm mt-1">
-                                        Manage fee preferences for each guardian's children
-                                    </p>
-                                </div>
-                            </div>
+            <div className="space-y-6">
+                {/* Header */}
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div className="flex items-center space-x-3">
+                        <UserCog className="w-8 h-8 text-orange" />
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">Guardian Fee Preferences</h2>
+                            <p className="text-sm text-gray-600">Manage fee preferences for each guardian's children</p>
                         </div>
                     </div>
+                </div>
 
-                    {/* Filters */}
-                    <div className="bg-white border-x border-gray-200 p-4">
-                        <div className="flex flex-col gap-3">
-                            {/* Term and Status Filters */}
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                {/* Academic Term Filter */}
-                                <select
-                                    value={selectedTermId || ""}
-                                    onChange={(e) => handleFilterChange('term', e.target.value)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base min-h-[48px]"
-                                >
-                                    <option value="">All Terms</option>
-                                    {academicTerms.map((term) => (
-                                        <option key={term.id} value={term.id}>
-                                            {term.display_name}
-                                        </option>
-                                    ))}
-                                </select>
+                {/* Filters */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="flex flex-col gap-3">
+                        {/* Term and Status Filters */}
+                        <div className="flex flex-col sm:flex-row gap-3">
+                            {/* Academic Term Filter */}
+                            <select
+                                value={selectedTermId || ""}
+                                onChange={(e) => handleFilterChange('term', e.target.value)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base min-h-[48px]"
+                            >
+                                <option value="">All Terms</option>
+                                {academicTerms.map((term) => (
+                                    <option key={term.id} value={term.id}>
+                                        {term.display_name}
+                                    </option>
+                                ))}
+                            </select>
 
-                                {/* Status Filter */}
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => handleFilterChange('status', e.target.value)}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base min-h-[48px]"
-                                >
-                                    <option value="">All Status</option>
-                                    <option value="complete">Complete</option>
-                                    <option value="incomplete">Incomplete</option>
-                                    <option value="none">None</option>
-                                </select>
+                            {/* Status Filter */}
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => handleFilterChange('status', e.target.value)}
+                                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base min-h-[48px]"
+                            >
+                                <option value="">All Status</option>
+                                <option value="complete">Complete</option>
+                                <option value="incomplete">Incomplete</option>
+                                <option value="none">None</option>
+                            </select>
+                        </div>
+
+                        {/* Search Bar */}
+                        <div className="flex gap-2">
+                            <div className="flex-1 relative">
+                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                                    placeholder="Search by guardian name or ID..."
+                                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base min-h-[48px]"
+                                />
                             </div>
-
-                            {/* Search Bar */}
-                            <div className="flex gap-2">
-                                <div className="flex-1 relative">
-                                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                                        placeholder="Search by guardian name or ID..."
-                                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base min-h-[48px]"
-                                    />
-                                </div>
-                                <button
-                                    onClick={handleSearch}
-                                    className="px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg min-h-[48px]"
-                                >
-                                    Search
-                                </button>
-                            </div>
+                            <button
+                                onClick={handleSearch}
+                                className="px-4 sm:px-6 py-2 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg hover:from-orange-600 hover:to-orange-700 transition-all duration-200 font-medium shadow-md hover:shadow-lg min-h-[48px]"
+                            >
+                                Search
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    {/* Content */}
-                    <div className="bg-white rounded-b-2xl shadow-lg p-4 sm:p-6">
+                {/* Content */}
+                <div className="bg-white rounded-lg shadow-sm p-6">
                         {guardians.data.length === 0 ? (
                             <div className="text-center py-12">
                                 <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
@@ -239,7 +229,7 @@ export default function Index({ auth, guardians, academicTerms, selectedTerm, fi
                                                                 guardian: guardian.id,
                                                                 term: selectedTermId,
                                                             })}
-                                                            className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 min-h-[48px] rounded-lg transition-colors text-sm font-medium"
+                                                            className="inline-flex items-center gap-2  bg-indigo-800 hover:bg-indigo-900 text-white px-4 py-3 min-h-[48px] rounded-lg transition-colors text-sm font-medium"
                                                         >
                                                             <Settings className="w-4 h-4" />
                                                             Set Preferences
@@ -296,7 +286,7 @@ export default function Index({ auth, guardians, academicTerms, selectedTerm, fi
                                                     guardian: guardian.id,
                                                     term: selectedTermId,
                                                 })}
-                                                className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-lg transition-colors text-sm font-medium w-full min-h-[48px]"
+                                                className="flex items-center justify-center gap-2 bg-indigo-800 hover:bg-indigo-900 text-white px-4 py-3 rounded-lg transition-colors text-sm font-medium w-full min-h-[48px]"
                                             >
                                                 <Settings className="w-4 h-4" />
                                                 Set Preferences
@@ -329,7 +319,6 @@ export default function Index({ auth, guardians, academicTerms, selectedTerm, fi
                             </>
                         )}
                     </div>
-                </div>
             </div>
         </AuthenticatedLayout>
     );

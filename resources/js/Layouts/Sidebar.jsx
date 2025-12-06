@@ -1,6 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { X, ChevronDown, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 /**
  * Sidebar component for both mobile and desktop navigation
@@ -43,6 +43,22 @@ export default function Sidebar({
     };
 
     const [openSubmenus, setOpenSubmenus] = useState({});
+
+    // Auto-open submenus when their child routes are active
+    useEffect(() => {
+        const activeSubmenus = {};
+        navigation.forEach((item) => {
+            if (item.submenu) {
+                const isAnySubmenuActive = item.submenu.some(subItem =>
+                    route().current(subItem.href.substring(1) + "*")
+                );
+                if (isAnySubmenuActive) {
+                    activeSubmenus[item.name] = true;
+                }
+            }
+        });
+        setOpenSubmenus(activeSubmenus);
+    }, [navigation]);
 
     const toggleSubmenu = (itemName) => {
         setOpenSubmenus(prev => ({
@@ -95,7 +111,7 @@ export default function Sidebar({
                                                     ? "bg-orange/20 text-orange font-medium"
                                                     : "text-gray-400 hover:bg-orange/10 hover:text-gray-200"
                                             }`}
-                                            onClick={onClickHandler}
+                                            onClick={onClickHandler ? onClickHandler : undefined}
                                         >
                                             {subItem.name}
                                         </Link>

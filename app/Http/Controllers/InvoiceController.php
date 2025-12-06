@@ -50,8 +50,11 @@ class InvoiceController extends Controller
         $activeTerm = AcademicTerm::where('is_active', true)->first();
 
         // If no term filter is specified, default to active term
-        if (!$termId && $activeTerm) {
+        // If term_id is "all", don't filter by term (show all invoices)
+        if (!$request->has('term_id') && $activeTerm) {
             $termId = $activeTerm->id;
+        } elseif ($termId === 'all') {
+            $termId = null; // Don't filter by term
         }
 
         // Apply filters
@@ -86,7 +89,7 @@ class InvoiceController extends Controller
             'activeTerm' => $activeTerm,
             'filters' => [
                 'search' => $search ?? '',
-                'term_id' => $termId ?? '',
+                'term_id' => $termId === null ? 'all' : ($termId ?? ''),
                 'status' => $status ?? '',
             ],
         ]);

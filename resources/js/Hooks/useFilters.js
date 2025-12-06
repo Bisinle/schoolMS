@@ -58,9 +58,9 @@ export default function useFilters({
      * Apply filters to the route
      */
     const applyFilters = (filterValues = filters) => {
-        // Remove empty values
+        // Remove empty values (but keep 'all' as it's a valid filter value)
         const cleanedFilters = Object.entries(filterValues).reduce((acc, [key, value]) => {
-            if (value !== '' && value !== null && value !== undefined && value !== 'all') {
+            if (value !== '' && value !== null && value !== undefined) {
                 acc[key] = value;
             }
             return acc;
