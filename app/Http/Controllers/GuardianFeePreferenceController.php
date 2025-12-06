@@ -230,9 +230,9 @@ class GuardianFeePreferenceController extends Controller
                 ];
             });
 
-        // Get all academic terms for the term selector
+        // Get only the active academic term for the term selector
         $academicTerms = AcademicTerm::with('academicYear')
-            ->orderBy('start_date', 'desc')
+            ->active()
             ->get()
             ->map(function ($term) {
                 return [
@@ -316,6 +316,12 @@ class GuardianFeePreferenceController extends Controller
                     throw new \Exception("No active tuition fee found for {$student->full_name}'s grade.");
                 }
 
+                // Normalize transport_type: convert 'none' to null
+                $transportType = $prefData['transport_type'] ?? null;
+                if ($transportType === 'none') {
+                    $transportType = null;
+                }
+
                 // Update or create preference
                 GuardianFeePreference::updateOrCreate(
                     [
@@ -327,7 +333,7 @@ class GuardianFeePreferenceController extends Controller
                         'school_id' => auth()->user()->school_id,
                         'tuition_type' => $prefData['tuition_type'],
                         'transport_route_id' => $prefData['transport_route_id'] ?? null,
-                        'transport_type' => $prefData['transport_type'] ?? 'none',
+                        'transport_type' => $transportType,
                         'include_food' => $prefData['include_food'] ?? false,
                         'include_sports' => $prefData['include_sports'] ?? false,
                         'notes' => $prefData['notes'] ?? null,
@@ -469,6 +475,12 @@ class GuardianFeePreferenceController extends Controller
                         continue; // Skip if no tuition fee found
                     }
 
+                    // Normalize transport_type: convert 'none' to null
+                    $transportType = $validated['defaults']['transport_type'];
+                    if ($transportType === 'none') {
+                        $transportType = null;
+                    }
+
                     // Create or update preference
                     GuardianFeePreference::updateOrCreate(
                         [
@@ -480,7 +492,7 @@ class GuardianFeePreferenceController extends Controller
                             'school_id' => $schoolId,
                             'tuition_type' => $validated['defaults']['tuition_type'],
                             'transport_route_id' => $validated['defaults']['transport_route_id'] ?? null,
-                            'transport_type' => $validated['defaults']['transport_type'],
+                            'transport_type' => $transportType,
                             'include_food' => $validated['defaults']['include_food'] ?? false,
                             'include_sports' => $validated['defaults']['include_sports'] ?? false,
                         ]

@@ -14,6 +14,7 @@ import {
     RefreshCw,
     History,
     Clock,
+    ExternalLink,
 } from "lucide-react";
 
 export default function Edit({
@@ -51,6 +52,9 @@ export default function Edit({
         preferences: initialPreferences,
         regenerate_invoice: false,
     });
+
+    // Check if any students are missing active tuition fees
+    const studentsWithoutTuition = students.filter(student => !tuitionFees[student.grade_id]);
 
     const toggleStudent = (studentId) => {
         setExpandedStudents((prev) => ({
@@ -185,23 +189,18 @@ export default function Edit({
                                 </div>
                             </div>
 
-                            {/* Term Selector and History Button */}
+                            {/* Active Term Display and History Button */}
                             <div className="flex flex-col sm:flex-row gap-3">
                                 <div className="bg-white/10 backdrop-blur-sm rounded-lg p-3 flex-1">
                                     <label className="block text-white text-sm font-medium mb-2">
                                         Academic Term
                                     </label>
-                                    <select
-                                        value={selectedTermId || ""}
-                                        onChange={(e) => handleTermChange(e.target.value)}
-                                        className="w-full px-4 py-2 border border-white/20 bg-white/10 text-white rounded-lg focus:ring-2 focus:ring-white/50 focus:border-transparent backdrop-blur-sm"
-                                    >
-                                        {academicTerms.map((term) => (
-                                            <option key={term.id} value={term.id} className="text-gray-900">
-                                                {term.display_name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                    <div className="flex items-center gap-2 px-4 py-2 bg-white/5 rounded-lg border border-white/20">
+                                        <Clock className="w-4 h-4 text-white/80" />
+                                        <span className="text-white font-semibold">
+                                            {selectedTerm?.display_name || selectedTerm?.name}
+                                        </span>
+                                    </div>
                                 </div>
                                 <div className="flex items-end">
                                     <button
@@ -218,6 +217,42 @@ export default function Edit({
                         </div>
                     </div>
 
+                    {/* Error Banner - Students Without Active Tuition Fees */}
+                    {studentsWithoutTuition.length > 0 && (
+                        <div className="bg-red-50 border-2 border-red-300 rounded-xl p-4 sm:p-5 mx-4 sm:mx-6 mt-4 sm:mt-6">
+                            <div className="flex items-start gap-3">
+                                <AlertTriangle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <h4 className="font-bold text-red-900 mb-2 text-sm sm:text-base">
+                                        Missing Active Tuition Fees
+                                    </h4>
+                                    <p className="text-sm text-red-800 mb-3">
+                                        The following student(s) cannot have preferences set because there is no active tuition fee configured for their grade:
+                                    </p>
+                                    <ul className="list-disc list-inside space-y-1 text-sm text-red-800">
+                                        {studentsWithoutTuition.map(student => (
+                                            <li key={student.id}>
+                                                <span className="font-semibold">{student.full_name}</span> - {student.grade_name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                    <div className="mt-4 flex flex-col sm:flex-row gap-2 sm:items-center">
+                                        <p className="text-sm text-red-700 font-medium">
+                                            Please activate tuition fees for the above grade(s) before setting preferences.
+                                        </p>
+                                        <Link
+                                            href={route('tuition-fees.index')}
+                                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-red-700 hover:text-red-900 bg-red-100 hover:bg-red-200 px-3 py-2 rounded-lg transition-colors w-fit"
+                                        >
+                                            <span>Go to Tuition Fees</span>
+                                            <ExternalLink className="w-4 h-4" />
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Form */}
                     <form onSubmit={handleSubmit} className="bg-white rounded-b-2xl shadow-lg">
                         <div className="p-4 sm:p-6 space-y-4">
@@ -231,6 +266,7 @@ export default function Edit({
                                     const isExpanded = expandedStudents[student.id];
                                     const studentTotal = calculateStudentTotal(studentIndex);
                                     const tuitionFee = tuitionFees[student.grade_id];
+                                    const hasTuitionFee = !!tuitionFee;
 
                                     return (
                                         <div
@@ -285,69 +321,93 @@ export default function Edit({
                                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                                             Tuition Type *
                                                         </label>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                                            <label
-                                                                className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                                                                    preference.tuition_type === "full_day"
-                                                                        ? "border-green-500 bg-green-50"
-                                                                        : "border-gray-200 hover:border-gray-300"
-                                                                }`}
-                                                            >
-                                                                <div className="flex items-center gap-2">
-                                                                    <input
-                                                                        type="radio"
-                                                                        name={`tuition_type_${student.id}`}
-                                                                        value="full_day"
-                                                                        checked={preference.tuition_type === "full_day"}
-                                                                        onChange={(e) =>
-                                                                            updatePreference(
-                                                                                studentIndex,
-                                                                                "tuition_type",
-                                                                                e.target.value
-                                                                            )
-                                                                        }
-                                                                        className="w-4 h-4 text-green-600"
-                                                                    />
-                                                                    <span className="font-medium text-gray-900">
-                                                                        Full Day
-                                                                    </span>
-                                                                </div>
-                                                                <span className="text-sm font-semibold text-green-700">
-                                                                    KSh {tuitionFee?.amount_full_day?.toLocaleString() || "N/A"}
-                                                                </span>
-                                                            </label>
 
-                                                            <label
-                                                                className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
-                                                                    preference.tuition_type === "half_day"
-                                                                        ? "border-blue-500 bg-blue-50"
-                                                                        : "border-gray-200 hover:border-gray-300"
-                                                                }`}
-                                                            >
-                                                                <div className="flex items-center gap-2">
-                                                                    <input
-                                                                        type="radio"
-                                                                        name={`tuition_type_${student.id}`}
-                                                                        value="half_day"
-                                                                        checked={preference.tuition_type === "half_day"}
-                                                                        onChange={(e) =>
-                                                                            updatePreference(
-                                                                                studentIndex,
-                                                                                "tuition_type",
-                                                                                e.target.value
-                                                                            )
-                                                                        }
-                                                                        className="w-4 h-4 text-blue-600"
-                                                                    />
-                                                                    <span className="font-medium text-gray-900">
-                                                                        Half Day
-                                                                    </span>
+                                                        {!hasTuitionFee ? (
+                                                            <div className="bg-amber-50 border border-amber-300 rounded-lg p-4">
+                                                                <div className="flex items-start gap-3">
+                                                                    <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                                                                    <div className="flex-1">
+                                                                        <p className="text-sm font-semibold text-amber-900 mb-1">
+                                                                            No Active Tuition Fee
+                                                                        </p>
+                                                                        <p className="text-sm text-amber-800 mb-3">
+                                                                            There is no active tuition fee configured for <span className="font-semibold">{student.grade_name}</span>.
+                                                                        </p>
+                                                                        <Link
+                                                                            href={route('tuition-fees.index')}
+                                                                            className="inline-flex items-center gap-1.5 text-sm font-semibold text-amber-700 hover:text-amber-900 bg-amber-100 hover:bg-amber-200 px-3 py-2 rounded-lg transition-colors"
+                                                                        >
+                                                                            <span>Go to Tuition Fees</span>
+                                                                            <ExternalLink className="w-4 h-4" />
+                                                                        </Link>
+                                                                    </div>
                                                                 </div>
-                                                                <span className="text-sm font-semibold text-blue-700">
-                                                                    KSh {tuitionFee?.amount_half_day?.toLocaleString() || "N/A"}
-                                                                </span>
-                                                            </label>
-                                                        </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                                                <label
+                                                                    className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                                                                        preference.tuition_type === "full_day"
+                                                                            ? "border-green-500 bg-green-50"
+                                                                            : "border-gray-200 hover:border-gray-300"
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-2">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name={`tuition_type_${student.id}`}
+                                                                            value="full_day"
+                                                                            checked={preference.tuition_type === "full_day"}
+                                                                            onChange={(e) =>
+                                                                                updatePreference(
+                                                                                    studentIndex,
+                                                                                    "tuition_type",
+                                                                                    e.target.value
+                                                                                )
+                                                                            }
+                                                                            className="w-4 h-4 text-green-600"
+                                                                        />
+                                                                        <span className="font-medium text-gray-900">
+                                                                            Full Day
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="text-sm font-semibold text-green-700">
+                                                                        KSh {tuitionFee.amount_full_day.toLocaleString()}
+                                                                    </span>
+                                                                </label>
+
+                                                                <label
+                                                                    className={`flex items-center justify-between p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                                                                        preference.tuition_type === "half_day"
+                                                                            ? "border-blue-500 bg-blue-50"
+                                                                            : "border-gray-200 hover:border-gray-300"
+                                                                    }`}
+                                                                >
+                                                                    <div className="flex items-center gap-2">
+                                                                        <input
+                                                                            type="radio"
+                                                                            name={`tuition_type_${student.id}`}
+                                                                            value="half_day"
+                                                                            checked={preference.tuition_type === "half_day"}
+                                                                            onChange={(e) =>
+                                                                                updatePreference(
+                                                                                    studentIndex,
+                                                                                    "tuition_type",
+                                                                                    e.target.value
+                                                                                )
+                                                                            }
+                                                                            className="w-4 h-4 text-blue-600"
+                                                                        />
+                                                                        <span className="font-medium text-gray-900">
+                                                                            Half Day
+                                                                        </span>
+                                                                    </div>
+                                                                    <span className="text-sm font-semibold text-blue-700">
+                                                                        KSh {tuitionFee.amount_half_day.toLocaleString()}
+                                                                    </span>
+                                                                </label>
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     {/* Transport */}
