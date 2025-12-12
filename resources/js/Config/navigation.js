@@ -16,6 +16,7 @@ import {
     Bus,
     Tag,
     Receipt,
+    Home,
 } from "lucide-react";
 
 /**
@@ -42,7 +43,18 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Grades", href: "/grades", icon: BookOpen },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
-            ...(isMadrasah ? [{ name: "Quran Tracking", href: "/quran-tracking", icon: Book }] : []),
+            ...(isMadrasah ? [
+                {
+                    name: "Quran",
+                    icon: Book,
+                    submenu: [
+                        { name: "Dashboard", href: "/quran", icon: LayoutDashboard },
+                        { name: "Tracking", href: "/quran-tracking", icon: Book },
+                        { name: "Homework", href: "/quran-homework", icon: BookOpen },
+                        { name: "Schedules", href: "/quran-schedule", icon: Calendar },
+                    ]
+                },
+            ] : []),
             {
                 name: "Fees",
                 icon: DollarSign,
@@ -77,13 +89,34 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
-            ...(isMadrasah ? [{ name: "Quran Tracking", href: "/quran-tracking", icon: Book }] : []),
+            ...(isMadrasah ? [
+                {
+                    name: "Quran",
+                    icon: Book,
+                    submenu: [
+                        { name: "Dashboard", href: "/quran", icon: LayoutDashboard },
+                        { name: "Tracking", href: "/quran-tracking", icon: Book },
+                        { name: "Homework", href: "/quran-homework", icon: BookOpen },
+                        { name: "Schedules", href: "/quran-schedule", icon: Calendar },
+                    ]
+                },
+            ] : []),
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "My Documents", href: "/documents", icon: FolderOpen },
         ],
         guardian: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            ...(isMadrasah ? [{ name: "Quran Tracking", href: "/guardian/quran-tracking", icon: Book }] : []),
+            ...(isMadrasah ? [
+                {
+                    name: "Quran",
+                    icon: Book,
+                    submenu: [
+                        { name: "Dashboard", href: "/quran", icon: LayoutDashboard },
+                        { name: "Tracking", href: "/guardian/quran-tracking", icon: Book },
+                        { name: "Home Practice", href: "/quran-home-practice", icon: Home },
+                    ]
+                },
+            ] : []),
             { name: "Invoices", href: "/guardian/invoices", icon: DollarSign },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },

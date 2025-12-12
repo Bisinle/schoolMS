@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\QuranTracking;
+use App\Models\QuranAssessment;
 use App\Models\Student;
 use App\Services\QuranApiService;
 use Illuminate\Http\Request;
@@ -69,11 +70,11 @@ class QuranTrackingController extends Controller
             if ($latestTracking) {
                 // Handle multi-surah display
                 if ($latestTracking->surah_from == $latestTracking->surah_to) {
-                    $latestTracking->surah_name = $surahsMap[$latestTracking->surah_from]['name'] ?? "Surah {$latestTracking->surah_from}";
+                    $latestTracking->surah_name = $surahsMap[$latestTracking->surah_from]['name_simple'] ?? "Surah {$latestTracking->surah_from}";
                     $latestTracking->surah_name_arabic = $surahsMap[$latestTracking->surah_from]['name_arabic'] ?? '';
                 } else {
-                    $fromName = $surahsMap[$latestTracking->surah_from]['name'] ?? "Surah {$latestTracking->surah_from}";
-                    $toName = $surahsMap[$latestTracking->surah_to]['name'] ?? "Surah {$latestTracking->surah_to}";
+                    $fromName = $surahsMap[$latestTracking->surah_from]['name_simple'] ?? "Surah {$latestTracking->surah_from}";
+                    $toName = $surahsMap[$latestTracking->surah_to]['name_simple'] ?? "Surah {$latestTracking->surah_to}";
                     $latestTracking->surah_name = "{$fromName} - {$toName}";
                     $latestTracking->surah_name_arabic = '';
                 }
@@ -102,7 +103,7 @@ class QuranTrackingController extends Controller
                 ->orderBy('name')
                 ->get();
 
-        return Inertia::render('QuranTracking/Index', [
+        return Inertia::render('Quran/Tracking/Index', [
             'students' => $students,
             'grades' => $grades,
             'filters' => $request->only(['search', 'grade_id', 'reading_type']),
@@ -143,7 +144,7 @@ class QuranTrackingController extends Controller
         // Check if pre-selected student from query parameter
         $preSelectedStudentId = $request->query('student_id');
 
-        return Inertia::render('QuranTracking/Create', [
+        return Inertia::render('Quran/Tracking/Create', [
             'students' => $students,
             'surahs' => $surahs,
             'preSelectedStudentId' => $preSelectedStudentId,
@@ -168,18 +169,23 @@ class QuranTrackingController extends Controller
             'difficulty' => 'required|in:very_well,middle,difficult',
             'subac_participation' => 'nullable|boolean',
             'notes' => 'nullable|string|max:1000',
+            // Assessment fields (optional)
+            'fluency_rating' => 'nullable|integer|min:1|max:5',
+            'tajweed_rating' => 'nullable|integer|min:1|max:5',
+            'mistakes_count' => 'nullable|integer|min:0',
+            'assessment_notes' => 'nullable|string|max:1000',
         ]);
 
         // Validate multi-surah verse range using API
         $validation = $this->quranApi->validateMultiSurahRange(
             $validated['surah_from'],
-            $validated['verse_from'],
             $validated['surah_to'],
+            $validated['verse_from'],
             $validated['verse_to']
         );
 
         if (!$validation['valid']) {
-            return back()->withErrors(['verse_range' => $validation['message']])->withInput();
+            return back()->withErrors(['verse_range' => $validation['error']])->withInput();
         }
 
         // Calculate total verses for display message
@@ -194,8 +200,24 @@ class QuranTrackingController extends Controller
         $validated['school_id'] = auth()->user()->school_id;
         $validated['subac_participation'] = $validated['subac_participation'] ?? false;
 
+        // Extract assessment data
+        $assessmentData = [
+            'fluency_rating' => $validated['fluency_rating'] ?? null,
+            'tajweed_rating' => $validated['tajweed_rating'] ?? null,
+            'mistakes_count' => $validated['mistakes_count'] ?? 0,
+            'assessment_notes' => $validated['assessment_notes'] ?? null,
+        ];
+
+        // Remove assessment fields from tracking data
+        unset($validated['fluency_rating'], $validated['tajweed_rating'], $validated['mistakes_count'], $validated['assessment_notes']);
+
         // Observer will automatically compute pages_memorized, surahs_memorized, juz_memorized
         $tracking = QuranTracking::create($validated);
+
+        // Create assessment if any rating is provided
+        if ($assessmentData['fluency_rating'] !== null || $assessmentData['tajweed_rating'] !== null) {
+            $tracking->assessment()->create($assessmentData);
+        }
 
         return redirect()->route('quran-tracking.index')
             ->with('success', "Quran tracking record created successfully. Total verses: {$totalVerses}, Pages: {$tracking->pages_memorized}, Juz: {$tracking->juz_memorized}");
@@ -215,7 +237,7 @@ class QuranTrackingController extends Controller
             }
         }
 
-        $quranTracking->load(['student', 'teacher']);
+        $quranTracking->load(['student', 'teacher', 'assessment']);
 
         // Handle multi-surah display
         $surahs = $this->quranApi->getSurahs();
@@ -223,14 +245,14 @@ class QuranTrackingController extends Controller
 
         if ($quranTracking->surah_from == $quranTracking->surah_to) {
             $surah = $surahsById->get($quranTracking->surah_from);
-            $quranTracking->surah_name = $surah['name'] ?? "Surah {$quranTracking->surah_from}";
+            $quranTracking->surah_name = $surah['name_simple'] ?? "Surah {$quranTracking->surah_from}";
             $quranTracking->surah_name_arabic = $surah['name_arabic'] ?? '';
         } else {
             $fromSurah = $surahsById->get($quranTracking->surah_from);
             $toSurah = $surahsById->get($quranTracking->surah_to);
-            $quranTracking->surah_name = ($fromSurah['name'] ?? "Surah {$quranTracking->surah_from}") .
+            $quranTracking->surah_name = ($fromSurah['name_simple'] ?? "Surah {$quranTracking->surah_from}") .
                                          " - " .
-                                         ($toSurah['name'] ?? "Surah {$quranTracking->surah_to}");
+                                         ($toSurah['name_simple'] ?? "Surah {$quranTracking->surah_to}");
             $quranTracking->surah_name_arabic = '';
         }
 
@@ -252,7 +274,7 @@ class QuranTrackingController extends Controller
             ')
             ->first();
 
-        return Inertia::render('QuranTracking/Show', [
+        return Inertia::render('Quran/Tracking/Show', [
             'tracking' => $quranTracking,
             'studentStats' => $studentStats,
         ]);
@@ -263,7 +285,7 @@ class QuranTrackingController extends Controller
      */
     public function edit(Request $request, QuranTracking $quranTracking)
     {
-        $quranTracking->load(['student']);
+        $quranTracking->load(['student', 'assessment']);
 
         $user = $request->user();
 
@@ -291,7 +313,7 @@ class QuranTrackingController extends Controller
 
         $surahs = $this->quranApi->getSurahs();
 
-        return Inertia::render('QuranTracking/Edit', [
+        return Inertia::render('Quran/Tracking/Edit', [
             'tracking' => $quranTracking,
             'students' => $students,
             'surahs' => $surahs,
@@ -316,18 +338,23 @@ class QuranTrackingController extends Controller
             'difficulty' => 'required|in:very_well,middle,difficult',
             'subac_participation' => 'nullable|boolean',
             'notes' => 'nullable|string|max:1000',
+            // Assessment fields (optional)
+            'fluency_rating' => 'nullable|integer|min:1|max:5',
+            'tajweed_rating' => 'nullable|integer|min:1|max:5',
+            'mistakes_count' => 'nullable|integer|min:0',
+            'assessment_notes' => 'nullable|string|max:1000',
         ]);
 
         // Validate multi-surah verse range using API
         $validation = $this->quranApi->validateMultiSurahRange(
             $validated['surah_from'],
-            $validated['verse_from'],
             $validated['surah_to'],
+            $validated['verse_from'],
             $validated['verse_to']
         );
 
         if (!$validation['valid']) {
-            return back()->withErrors(['verse_range' => $validation['message']])->withInput();
+            return back()->withErrors(['verse_range' => $validation['error']])->withInput();
         }
 
         // Calculate total verses for display message
@@ -340,9 +367,31 @@ class QuranTrackingController extends Controller
 
         $validated['subac_participation'] = $validated['subac_participation'] ?? false;
 
+        // Extract assessment data
+        $assessmentData = [
+            'fluency_rating' => $validated['fluency_rating'] ?? null,
+            'tajweed_rating' => $validated['tajweed_rating'] ?? null,
+            'mistakes_count' => $validated['mistakes_count'] ?? 0,
+            'assessment_notes' => $validated['assessment_notes'] ?? null,
+        ];
+
+        // Remove assessment fields from tracking data
+        unset($validated['fluency_rating'], $validated['tajweed_rating'], $validated['mistakes_count'], $validated['assessment_notes']);
+
         // Observer will automatically compute pages_memorized, surahs_memorized, juz_memorized
         $quranTracking->update($validated);
         $quranTracking->refresh();
+
+        // Update or create assessment if any rating is provided
+        if ($assessmentData['fluency_rating'] !== null || $assessmentData['tajweed_rating'] !== null) {
+            $quranTracking->assessment()->updateOrCreate(
+                ['quran_tracking_id' => $quranTracking->id],
+                $assessmentData
+            );
+        } elseif ($quranTracking->assessment) {
+            // Delete assessment if both ratings are null
+            $quranTracking->assessment()->delete();
+        }
 
         return redirect()->route('quran-tracking.index')
             ->with('success', "Quran tracking record updated successfully. Total verses: {$totalVerses}, Pages: {$quranTracking->pages_memorized}, Juz: {$quranTracking->juz_memorized}");
@@ -364,7 +413,7 @@ class QuranTrackingController extends Controller
 
         // Get all tracking sessions for this student
         $sessions = QuranTracking::where('student_id', $student->id)
-            ->with(['teacher'])
+            ->with(['teacher', 'assessment'])
             ->orderBy('date', 'desc')
             ->get();
 
@@ -394,11 +443,11 @@ class QuranTrackingController extends Controller
 
             // Handle multi-surah display (temporary attributes for display only)
             if ($record->surah_from == $record->surah_to) {
-                $record->surah_name = $surahsMap[$record->surah_from]['name'] ?? "Surah {$record->surah_from}";
+                $record->surah_name = $surahsMap[$record->surah_from]['name_simple'] ?? "Surah {$record->surah_from}";
                 $record->surah_name_arabic = $surahsMap[$record->surah_from]['name_arabic'] ?? '';
             } else {
-                $fromName = $surahsMap[$record->surah_from]['name'] ?? "Surah {$record->surah_from}";
-                $toName = $surahsMap[$record->surah_to]['name'] ?? "Surah {$record->surah_to}";
+                $fromName = $surahsMap[$record->surah_from]['name_simple'] ?? "Surah {$record->surah_from}";
+                $toName = $surahsMap[$record->surah_to]['name_simple'] ?? "Surah {$record->surah_to}";
                 $record->surah_name = "{$fromName} - {$toName}";
                 $record->surah_name_arabic = '';
             }
@@ -468,13 +517,32 @@ class QuranTrackingController extends Controller
             'difficult' => $sessions->where('difficulty', 'difficult')->count(),
         ];
 
-        return Inertia::render('QuranTracking/StudentReport', [
+        // Calculate assessment analytics
+        $sessionsWithAssessment = $sessions->filter(fn($s) => $s->assessment !== null);
+        $assessmentAnalytics = null;
+
+        if ($sessionsWithAssessment->count() > 0) {
+            $fluencyRatings = $sessionsWithAssessment->pluck('assessment.fluency_rating')->filter();
+            $tajweedRatings = $sessionsWithAssessment->pluck('assessment.tajweed_rating')->filter();
+            $totalMistakes = $sessionsWithAssessment->sum('assessment.mistakes_count');
+
+            $assessmentAnalytics = [
+                'sessions_with_assessment' => $sessionsWithAssessment->count(),
+                'avg_fluency_rating' => $fluencyRatings->count() > 0 ? round($fluencyRatings->avg(), 1) : null,
+                'avg_tajweed_rating' => $tajweedRatings->count() > 0 ? round($tajweedRatings->avg(), 1) : null,
+                'total_mistakes' => $totalMistakes,
+                'avg_mistakes_per_session' => $sessionsWithAssessment->count() > 0 ? round($totalMistakes / $sessionsWithAssessment->count(), 1) : 0,
+            ];
+        }
+
+        return Inertia::render('Quran/Tracking/StudentReport', [
             'student' => $student->load('grade'),
             'sessions' => $sessions,
             'analytics' => $analytics,
             'sessionsByMonth' => $sessionsByMonth,
             'sessionsByType' => $sessionsByType,
             'sessionsByDifficulty' => $sessionsByDifficulty,
+            'assessmentAnalytics' => $assessmentAnalytics,
         ]);
     }
 
@@ -501,6 +569,63 @@ class QuranTrackingController extends Controller
         }
 
         return response()->json($surah);
+    }
+
+    /**
+     * API endpoint to get page image URL.
+     */
+    public function getPageImage(int $pageNumber, Request $request)
+    {
+        try {
+            $quality = $request->query('quality', 'medium');
+            $imageUrl = $this->quranApi->getPageImageUrl($pageNumber, $quality);
+
+            return response()->json([
+                'page_number' => $pageNumber,
+                'image_url' => $imageUrl,
+                'quality' => $quality,
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['error' => $e->getMessage()], 400);
+        }
+    }
+
+    /**
+     * API endpoint to get page details.
+     */
+    public function getPageDetails(int $pageNumber)
+    {
+        $details = $this->quranApi->getPageDetails($pageNumber);
+
+        return response()->json($details);
+    }
+
+    /**
+     * API endpoint to get all Juz information.
+     */
+    public function getAllJuz()
+    {
+        $juzData = $this->quranApi->getAllJuz();
+
+        return response()->json($juzData);
+    }
+
+    /**
+     * API endpoint to get verse text.
+     */
+    public function getVerseText(int $surahNumber, int $verseNumber)
+    {
+        $text = $this->quranApi->getVerseText($surahNumber, $verseNumber);
+
+        if (!$text) {
+            return response()->json(['error' => 'Verse not found'], 404);
+        }
+
+        return response()->json([
+            'surah_number' => $surahNumber,
+            'verse_number' => $verseNumber,
+            'text' => $text,
+        ]);
     }
 }
 

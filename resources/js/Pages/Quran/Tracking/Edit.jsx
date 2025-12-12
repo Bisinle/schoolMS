@@ -2,36 +2,61 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save, BookOpen, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import axios from 'axios';
+import StarRating from '@/Components/UI/StarRating';
 
-export default function QuranTrackingCreate({ students, surahs, preSelectedStudentId }) {
+export default function QuranTrackingEdit({ tracking, students, surahs }) {
     const [selectedSurahFrom, setSelectedSurahFrom] = useState(null);
     const [selectedSurahTo, setSelectedSurahTo] = useState(null);
     const [verseFromOptions, setVerseFromOptions] = useState([]);
     const [verseToOptions, setVerseToOptions] = useState([]);
     const [totalVerses, setTotalVerses] = useState(0);
 
-    const { data, setData, post, processing, errors } = useForm({
-        student_id: preSelectedStudentId || '',
-        date: new Date().toISOString().split('T')[0],
-        reading_type: 'new_learning',
-        surah_from: '',
-        surah_to: '',
-        verse_from: '',
-        verse_to: '',
-        page_from: '',
-        page_to: '',
-        difficulty: 'middle',
-        pages_memorized: '',
-        surahs_memorized: '',
-        juz_memorized: '',
-        subac_participation: false,
-        notes: '',
+    const { data, setData, put, processing, errors } = useForm({
+        student_id: tracking.student_id || '',
+        date: tracking.date || '',
+        reading_type: tracking.reading_type || 'new_learning',
+        surah_from: tracking.surah_from || '',
+        surah_to: tracking.surah_to || '',
+        verse_from: tracking.verse_from || '',
+        verse_to: tracking.verse_to || '',
+        page_from: tracking.page_from || '',
+        page_to: tracking.page_to || '',
+        difficulty: tracking.difficulty || 'middle',
+        pages_memorized: tracking.pages_memorized || '',
+        surahs_memorized: tracking.surahs_memorized || '',
+        juz_memorized: tracking.juz_memorized || '',
+        subac_participation: tracking.subac_participation || false,
+        notes: tracking.notes || '',
+        // Assessment fields (optional)
+        fluency_rating: tracking.assessment?.fluency_rating || '',
+        tajweed_rating: tracking.assessment?.tajweed_rating || '',
+        mistakes_count: tracking.assessment?.mistakes_count || '',
+        assessment_notes: tracking.assessment?.assessment_notes || '',
     });
+
+    // Initialize surahs and verses on mount
+    useEffect(() => {
+        if (data.surah_from) {
+            const surahFrom = surahs.find(s => s.id == data.surah_from);
+            setSelectedSurahFrom(surahFrom);
+            if (surahFrom) {
+                const options = Array.from({ length: surahFrom.verses_count }, (_, i) => i + 1);
+                setVerseFromOptions(options);
+            }
+        }
+        if (data.surah_to) {
+            const surahTo = surahs.find(s => s.id == data.surah_to);
+            setSelectedSurahTo(surahTo);
+            if (surahTo) {
+                const options = Array.from({ length: surahTo.verses_count }, (_, i) => i + 1);
+                setVerseToOptions(options);
+            }
+        }
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post('/quran-tracking');
+        put(`/quran-tracking/${tracking.id}`);
     };
 
     const handleSurahFromChange = (e) => {
@@ -50,7 +75,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
         setSelectedSurahFrom(surah);
 
         if (surah) {
-            const options = Array.from({ length: surah.total_verses }, (_, i) => i + 1);
+            const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
             setVerseFromOptions(options);
         }
     };
@@ -70,8 +95,32 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
         setSelectedSurahTo(surah);
 
         if (surah) {
-            const options = Array.from({ length: surah.total_verses }, (_, i) => i + 1);
+            // If same surah and verse_from is selected, filter options
+            if (data.surah_from == surahNumber && data.verse_from) {
+                const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1)
+                    .filter(v => v > parseInt(data.verse_from));
+                setVerseToOptions(options);
+            } else {
+                const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
+                setVerseToOptions(options);
+            }
+        }
+    };
+
+    const handleVerseFromChange = (e) => {
+        const verseNumber = parseInt(e.target.value);
+        setData('verse_from', verseNumber);
+
+        // If same surah, update verse_to options to only show verses after verse_from
+        if (data.surah_from && data.surah_to && data.surah_from == data.surah_to && selectedSurahTo) {
+            const options = Array.from({ length: selectedSurahTo.verses_count }, (_, i) => i + 1)
+                .filter(v => v > verseNumber);
             setVerseToOptions(options);
+
+            // Reset verse_to if it's now invalid
+            if (data.verse_to && data.verse_to <= verseNumber) {
+                setData('verse_to', '');
+            }
         }
     };
 
@@ -102,14 +151,14 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
             // First surah: from verse_from to end
             const firstSurah = surahsById[surahFrom];
             if (firstSurah) {
-                total += (firstSurah.total_verses - verseFrom) + 1;
+                total += (firstSurah.verses_count - verseFrom) + 1;
             }
 
             // Middle surahs: all verses
             for (let i = surahFrom + 1; i < surahTo; i++) {
                 const middleSurah = surahsById[i];
                 if (middleSurah) {
-                    total += middleSurah.total_verses;
+                    total += middleSurah.verses_count;
                 }
             }
 
@@ -126,14 +175,14 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
             for (let i = surahFrom - 1; i > surahTo; i--) {
                 const middleSurah = surahsById[i];
                 if (middleSurah) {
-                    total += middleSurah.total_verses;
+                    total += middleSurah.verses_count;
                 }
             }
 
             // Last surah: from verse_to to end
             const lastSurah = surahsById[surahTo];
             if (lastSurah) {
-                total += (lastSurah.total_verses - verseTo) + 1;
+                total += (lastSurah.verses_count - verseTo) + 1;
             }
         }
 
@@ -141,8 +190,8 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
     };
 
     return (
-        <AuthenticatedLayout header="Add Quran Tracking">
-            <Head title="Add Quran Tracking" />
+        <AuthenticatedLayout header="Edit Quran Tracking">
+            <Head title="Edit Quran Tracking" />
 
             <div className="py-6 sm:py-8">
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -158,13 +207,13 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                         <div className="flex items-center space-x-3">
                             <BookOpen className="w-8 h-8 text-orange" />
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900">Add Quran Tracking</h2>
-                                <p className="text-sm text-gray-600">Record student Quran progress</p>
+                                <h2 className="text-2xl font-bold text-gray-900">Edit Quran Tracking</h2>
+                                <p className="text-sm text-gray-600">Update student Quran progress</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Form */}
+                    {/* Form - Same as Create.jsx */}
                     <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Student */}
@@ -249,7 +298,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                     <option value="">Select Surah</option>
                                     {surahs.map((surah) => (
                                         <option key={surah.id} value={surah.id}>
-                                            {surah.id}. {surah.name} - {surah.total_verses} verses
+                                            {surah.id}. {surah.name_arabic} - {surah.verses_count} verses
                                         </option>
                                     ))}
                                 </select>
@@ -266,7 +315,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                 <select
                                     id="verse_from"
                                     value={data.verse_from}
-                                    onChange={(e) => setData('verse_from', e.target.value)}
+                                    onChange={handleVerseFromChange}
                                     disabled={!selectedSurahFrom}
                                     className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
                                         errors.verse_from ? 'border-red-500' : 'border-gray-300'
@@ -301,7 +350,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                     <option value="">Select Surah</option>
                                     {surahs.map((surah) => (
                                         <option key={surah.id} value={surah.id}>
-                                            {surah.id}. {surah.name} - {surah.total_verses} verses
+                                            {surah.id}. {surah.name_arabic} - {surah.verses_count} verses
                                         </option>
                                     ))}
                                 </select>
@@ -335,7 +384,16 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                     <p className="mt-1 text-sm text-red-600">{errors.verse_to}</p>
                                 )}
                             </div>
+                        </div>
 
+                        {/* Verse Range Validation Error */}
+                        {errors.verse_range && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p className="text-sm text-red-600">{errors.verse_range}</p>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {/* Total Verses Display */}
                             {totalVerses > 0 && (
                                 <div className="md:col-span-2">
@@ -405,7 +463,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                             {/* Difficulty */}
                             <div className="md:col-span-2">
                                 <label htmlFor="difficulty" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Difficulty <span className="text-red-500">*</span>
+                                    Overall Performance <span className="text-red-500">*</span>
                                 </label>
                                 <div className="grid grid-cols-3 gap-3">
                                     <button
@@ -447,10 +505,93 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                 )}
                             </div>
 
-                            {/* Notes */}
+                            {/* Assessment Section Header */}
+                            <div className="md:col-span-2 mt-4">
+                                <div className="border-t border-gray-200 pt-4">
+                                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                                        📊 Detailed Assessment (Optional)
+                                    </h3>
+                                    <p className="text-sm text-gray-600">
+                                        Provide detailed ratings for fluency and tajweed
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Fluency Rating */}
+                            <div>
+                                <label htmlFor="fluency_rating" className="block text-sm font-medium text-gray-700 mb-3 text-center">
+                                    Fluency Rating (Optional)
+                                </label>
+                                <StarRating
+                                    value={data.fluency_rating || 0}
+                                    onChange={(rating) => setData('fluency_rating', rating)}
+                                    size="lg"
+                                />
+                                {errors.fluency_rating && (
+                                    <p className="mt-2 text-sm text-red-600 text-center">{errors.fluency_rating}</p>
+                                )}
+                            </div>
+
+                            {/* Tajweed Rating */}
+                            <div>
+                                <label htmlFor="tajweed_rating" className="block text-sm font-medium text-gray-700 mb-3 text-center">
+                                    Tajweed Rating (Optional)
+                                </label>
+                                <StarRating
+                                    value={data.tajweed_rating || 0}
+                                    onChange={(rating) => setData('tajweed_rating', rating)}
+                                    size="lg"
+                                />
+                                {errors.tajweed_rating && (
+                                    <p className="mt-2 text-sm text-red-600 text-center">{errors.tajweed_rating}</p>
+                                )}
+                            </div>
+
+                            {/* Mistakes Count */}
+                            <div>
+                                <label htmlFor="mistakes_count" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Number of Mistakes (Optional)
+                                </label>
+                                <input
+                                    type="number"
+                                    id="mistakes_count"
+                                    value={data.mistakes_count}
+                                    onChange={(e) => setData('mistakes_count', e.target.value)}
+                                    min="0"
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                        errors.mistakes_count ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                    placeholder="0"
+                                />
+                                {errors.mistakes_count && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.mistakes_count}</p>
+                                )}
+                            </div>
+
+                            {/* Assessment Notes */}
+                            <div className="md:col-span-2">
+                                <label htmlFor="assessment_notes" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Assessment Notes (Optional)
+                                </label>
+                                <textarea
+                                    id="assessment_notes"
+                                    value={data.assessment_notes}
+                                    onChange={(e) => setData('assessment_notes', e.target.value)}
+                                    rows="2"
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                        errors.assessment_notes ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                    placeholder="Specific feedback on fluency, tajweed, or areas for improvement..."
+                                />
+                                {errors.assessment_notes && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.assessment_notes}</p>
+                                )}
+                            </div>
+
+                            {/* General Notes */}
                             <div className="md:col-span-2">
                                 <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
-                                    Notes (Optional)
+                                    General Notes (Optional)
                                 </label>
                                 <textarea
                                     id="notes"
@@ -460,7 +601,7 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                     className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
                                         errors.notes ? 'border-red-500' : 'border-gray-300'
                                     }`}
-                                    placeholder="Add any additional notes..."
+                                    placeholder="Add any additional notes about the session..."
                                 />
                                 {errors.notes && (
                                     <p className="mt-1 text-sm text-red-600">{errors.notes}</p>
@@ -484,12 +625,12 @@ export default function QuranTrackingCreate({ students, surahs, preSelectedStude
                                 {processing ? (
                                     <>
                                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                                        Saving...
+                                        Updating...
                                     </>
                                 ) : (
                                     <>
                                         <Save className="w-5 h-5 mr-2" />
-                                        Save Tracking
+                                        Update Tracking
                                     </>
                                 )}
                             </button>

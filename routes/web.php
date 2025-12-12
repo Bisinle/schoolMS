@@ -22,7 +22,11 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\DocumentCategoryController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Admin\AdminPasswordController;
+use App\Http\Controllers\QuranController;
 use App\Http\Controllers\QuranTrackingController;
+use App\Http\Controllers\QuranHomeworkController;
+use App\Http\Controllers\QuranHomePracticeController;
+use App\Http\Controllers\QuranScheduleController;
 use App\Http\Controllers\FeeManagementController;
 use App\Http\Controllers\TransportRouteController;
 use App\Http\Controllers\TuitionFeeController;
@@ -260,8 +264,13 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         return $grade->subjects()->where('status', 'active')->get();
     });
 
-    //^ Quran Tracking Routes (Madrasah schools only)
+    //^ Quran Module Routes (Madrasah schools only)
     Route::middleware(['madrasah.only'])->group(function () {
+        // Quran Dashboard (all roles)
+        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+            Route::get('/quran', [QuranController::class, 'index'])->name('quran.index');
+        });
+
         // Admin and Teacher only routes (must come BEFORE wildcard routes)
         Route::middleware(['role:admin,teacher'])->group(function () {
             Route::get('/quran-tracking', [QuranTrackingController::class, 'index'])->name('quran-tracking.index');
@@ -271,14 +280,68 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::put('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'update'])->name('quran-tracking.update');
             Route::delete('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'destroy'])->name('quran-tracking.destroy');
 
-            // API endpoint for surah details
+            // API endpoints for Quran data
             Route::get('/api/quran/surah/{surahNumber}', [QuranTrackingController::class, 'getSurahDetails'])->name('api.quran.surah');
+            Route::get('/api/quran/page/{pageNumber}/image', [QuranTrackingController::class, 'getPageImage'])->name('api.quran.page-image');
+            Route::get('/api/quran/page/{pageNumber}/details', [QuranTrackingController::class, 'getPageDetails'])->name('api.quran.page-details');
+            Route::get('/api/quran/juz', [QuranTrackingController::class, 'getAllJuz'])->name('api.quran.juz');
+            Route::get('/api/quran/verse/{surahNumber}/{verseNumber}', [QuranTrackingController::class, 'getVerseText'])->name('api.quran.verse');
         });
 
         // Read-only routes (admin, teacher, guardian) - wildcard routes come AFTER specific routes
         Route::middleware(['role:admin,teacher,guardian'])->group(function () {
             Route::get('/quran-tracking/student/{student}/report', [QuranTrackingController::class, 'studentReport'])->name('quran-tracking.student-report');
             Route::get('/quran-tracking/{quranTracking}', [QuranTrackingController::class, 'show'])->name('quran-tracking.show');
+        });
+
+        // Quran Homework Routes (admin and teacher only)
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/quran-homework', [QuranHomeworkController::class, 'index'])->name('quran-homework.index');
+            Route::get('/quran-homework/create', [QuranHomeworkController::class, 'create'])->name('quran-homework.create');
+            Route::post('/quran-homework', [QuranHomeworkController::class, 'store'])->name('quran-homework.store');
+            Route::get('/quran-homework/{quranHomework}/edit', [QuranHomeworkController::class, 'edit'])->name('quran-homework.edit');
+            Route::put('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'update'])->name('quran-homework.update');
+            Route::delete('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'destroy'])->name('quran-homework.destroy');
+            Route::post('/quran-homework/{quranHomework}/mark-complete', [QuranHomeworkController::class, 'markComplete'])->name('quran-homework.mark-complete');
+        });
+
+        // Quran Homework read-only routes (admin, teacher, guardian)
+        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+            Route::get('/quran-homework/student/{student}', [QuranHomeworkController::class, 'studentHomework'])->name('quran-homework.student');
+            Route::get('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'show'])->name('quran-homework.show');
+        });
+
+        // Quran Home Practice Routes (guardians can CRUD their own, teachers/admins can view)
+        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+            Route::get('/quran-home-practice', [QuranHomePracticeController::class, 'index'])->name('quran-home-practice.index');
+            Route::get('/quran-home-practice/{quranHomePractice}', [QuranHomePracticeController::class, 'show'])->name('quran-home-practice.show');
+            Route::get('/api/quran-home-practice/student/{student}/stats', [QuranHomePracticeController::class, 'studentStats'])->name('quran-home-practice.student-stats');
+        });
+
+        // Guardian-only routes for creating/editing home practice
+        Route::middleware(['role:guardian'])->group(function () {
+            Route::get('/quran-home-practice/create', [QuranHomePracticeController::class, 'create'])->name('quran-home-practice.create');
+            Route::post('/quran-home-practice', [QuranHomePracticeController::class, 'store'])->name('quran-home-practice.store');
+            Route::get('/quran-home-practice/{quranHomePractice}/edit', [QuranHomePracticeController::class, 'edit'])->name('quran-home-practice.edit');
+            Route::put('/quran-home-practice/{quranHomePractice}', [QuranHomePracticeController::class, 'update'])->name('quran-home-practice.update');
+            Route::delete('/quran-home-practice/{quranHomePractice}', [QuranHomePracticeController::class, 'destroy'])->name('quran-home-practice.destroy');
+        });
+
+        // Quran Schedule Routes (admin and teacher only)
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/quran-schedule', [QuranScheduleController::class, 'index'])->name('quran-schedule.index');
+            Route::get('/quran-schedule/create', [QuranScheduleController::class, 'create'])->name('quran-schedule.create');
+            Route::post('/quran-schedule', [QuranScheduleController::class, 'store'])->name('quran-schedule.store');
+            Route::get('/quran-schedule/{quranSchedule}/edit', [QuranScheduleController::class, 'edit'])->name('quran-schedule.edit');
+            Route::put('/quran-schedule/{quranSchedule}', [QuranScheduleController::class, 'update'])->name('quran-schedule.update');
+            Route::post('/quran-schedule/{quranSchedule}/activate', [QuranScheduleController::class, 'activate'])->name('quran-schedule.activate');
+            Route::post('/quran-schedule/{quranSchedule}/deactivate', [QuranScheduleController::class, 'deactivate'])->name('quran-schedule.deactivate');
+            Route::delete('/quran-schedule/{quranSchedule}', [QuranScheduleController::class, 'destroy'])->name('quran-schedule.destroy');
+        });
+
+        // Quran Schedule read-only routes (admin, teacher, guardian)
+        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+            Route::get('/quran-schedule/{quranSchedule}', [QuranScheduleController::class, 'show'])->name('quran-schedule.show');
         });
     });
 

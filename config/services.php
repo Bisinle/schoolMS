@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'quran' => [
+        'client_id' => env('QURAN_API_CLIENT_ID'),
+        'client_secret' => env('QURAN_API_CLIENT_SECRET'),
+        'environment' => env('QURAN_API_ENVIRONMENT', 'production'),
+    ],
+
 ];

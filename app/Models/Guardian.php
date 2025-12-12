@@ -82,6 +82,12 @@ class Guardian extends Model
         return $this->hasMany(GuardianFeeAdjustment::class);
     }
 
+    // Quran tracking relationships
+    public function quranHomePractice()
+    {
+        return $this->hasMany(QuranHomePractice::class);
+    }
+
     // Helper to get current term invoice
     public function getCurrentTermInvoice()
     {

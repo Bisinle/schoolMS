@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User, Eye } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User, Eye, Star, AlertCircle } from 'lucide-react';
 
 // Mobile Session Card Component
 function MobileSessionCard({ session, getReadingTypeBadge, getDifficultyBadge }) {
@@ -44,7 +44,7 @@ function MobileSessionCard({ session, getReadingTypeBadge, getDifficultyBadge })
     );
 }
 
-export default function StudentReport({ student, sessions, analytics, sessionsByMonth, sessionsByType, sessionsByDifficulty }) {
+export default function StudentReport({ student, sessions, analytics, sessionsByMonth, sessionsByType, sessionsByDifficulty, assessmentAnalytics }) {
     const { auth } = usePage().props;
     const isGuardian = auth.user.role === 'guardian';
 
@@ -280,6 +280,112 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                             </div>
                         </div>
                     </div>
+
+                    {/* Assessment Analytics */}
+                    {assessmentAnalytics && (
+                        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
+                            <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
+                                <Star className="w-5 h-5 mr-2 text-orange" />
+                                Assessment Analytics
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                {/* Sessions with Assessment */}
+                                <div className="text-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl">
+                                    <div className="text-4xl font-bold text-indigo-600 mb-2">
+                                        {assessmentAnalytics.sessions_with_assessment}
+                                    </div>
+                                    <div className="text-sm text-gray-700 font-medium">Assessed Sessions</div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        Out of {analytics.total_sessions} total
+                                    </div>
+                                </div>
+
+                                {/* Average Fluency Rating */}
+                                {assessmentAnalytics.avg_fluency_rating && (
+                                    <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                                        <div className="flex items-center justify-center gap-2 mb-2">
+                                            <Star className="w-6 h-6 fill-blue-600 text-blue-600" />
+                                            <div className="text-4xl font-bold text-blue-600">
+                                                {assessmentAnalytics.avg_fluency_rating}
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-gray-700 font-medium">Avg Fluency</div>
+                                        <div className="text-xs text-gray-500 mt-1">Out of 5 stars</div>
+                                    </div>
+                                )}
+
+                                {/* Average Tajweed Rating */}
+                                {assessmentAnalytics.avg_tajweed_rating && (
+                                    <div className="text-center p-6 bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl">
+                                        <div className="flex items-center justify-center gap-2 mb-2">
+                                            <Star className="w-6 h-6 fill-teal-600 text-teal-600" />
+                                            <div className="text-4xl font-bold text-teal-600">
+                                                {assessmentAnalytics.avg_tajweed_rating}
+                                            </div>
+                                        </div>
+                                        <div className="text-sm text-gray-700 font-medium">Avg Tajweed</div>
+                                        <div className="text-xs text-gray-500 mt-1">Out of 5 stars</div>
+                                    </div>
+                                )}
+
+                                {/* Total Mistakes */}
+                                <div className="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-xl">
+                                    <div className="flex items-center justify-center gap-2 mb-2">
+                                        <AlertCircle className={`w-6 h-6 ${
+                                            assessmentAnalytics.total_mistakes === 0
+                                                ? 'text-green-600'
+                                                : assessmentAnalytics.avg_mistakes_per_session <= 2
+                                                ? 'text-yellow-600'
+                                                : 'text-red-600'
+                                        }`} />
+                                        <div className={`text-4xl font-bold ${
+                                            assessmentAnalytics.total_mistakes === 0
+                                                ? 'text-green-600'
+                                                : assessmentAnalytics.avg_mistakes_per_session <= 2
+                                                ? 'text-yellow-600'
+                                                : 'text-red-600'
+                                        }`}>
+                                            {assessmentAnalytics.total_mistakes}
+                                        </div>
+                                    </div>
+                                    <div className="text-sm text-gray-700 font-medium">Total Mistakes</div>
+                                    <div className="text-xs text-gray-500 mt-1">
+                                        Avg: {assessmentAnalytics.avg_mistakes_per_session} per session
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Performance Insight */}
+                            {(assessmentAnalytics.avg_fluency_rating || assessmentAnalytics.avg_tajweed_rating) && (
+                                <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                                    <div className="flex items-start gap-3">
+                                        <TrendingUp className="w-5 h-5 text-orange mt-0.5" />
+                                        <div>
+                                            <div className="font-semibold text-gray-900 mb-1">Performance Insight</div>
+                                            <div className="text-sm text-gray-700">
+                                                {(() => {
+                                                    const avgRating = (
+                                                        (assessmentAnalytics.avg_fluency_rating || 0) +
+                                                        (assessmentAnalytics.avg_tajweed_rating || 0)
+                                                    ) / 2;
+
+                                                    if (avgRating >= 4.5) {
+                                                        return "Excellent performance! The student demonstrates outstanding mastery of Quran recitation.";
+                                                    } else if (avgRating >= 3.5) {
+                                                        return "Very good progress! The student is performing well with consistent improvement.";
+                                                    } else if (avgRating >= 2.5) {
+                                                        return "Good effort! Continue practicing to improve fluency and tajweed.";
+                                                    } else {
+                                                        return "Keep practicing! Focus on improving fluency and tajweed rules.";
+                                                    }
+                                                })()}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
 
                     {/* All Sessions Table */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">

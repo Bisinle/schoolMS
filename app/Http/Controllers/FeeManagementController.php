@@ -35,13 +35,51 @@ class FeeManagementController extends Controller
             'total_invoices' => 0,
             'total_billed' => 0,
             'total_collected' => 0,
+            'total_pending' => 0,
         ];
+
+        $invoicesByStatus = [
+            'pending' => 0,
+            'partial' => 0,
+            'paid' => 0,
+        ];
+
+        $monthlyCollections = [];
 
         if ($currentTerm) {
             $invoices = GuardianInvoice::where('academic_term_id', $currentTerm->id)->get();
             $stats['total_invoices'] = $invoices->count();
             $stats['total_billed'] = $invoices->sum('total_amount');
             $stats['total_collected'] = $invoices->sum('amount_paid');
+            $stats['total_pending'] = $stats['total_billed'] - $stats['total_collected'];
+
+            // Invoice status breakdown
+            $invoicesByStatus = [
+                'pending' => $invoices->where('status', 'pending')->count(),
+                'partial' => $invoices->where('status', 'partial')->count(),
+                'paid' => $invoices->where('status', 'paid')->count(),
+            ];
+
+            // Monthly collections for the current term (last 6 months)
+            $monthlyCollections = DB::table('guardian_payments')
+                ->join('guardian_invoices', 'guardian_payments.guardian_invoice_id', '=', 'guardian_invoices.id')
+                ->where('guardian_invoices.academic_term_id', $currentTerm->id)
+                ->select(
+                    DB::raw('DATE_FORMAT(guardian_payments.payment_date, "%Y-%m") as month'),
+                    DB::raw('SUM(guardian_payments.amount) as total')
+                )
+                ->groupBy('month')
+                ->orderBy('month', 'desc')
+                ->limit(6)
+                ->get()
+                ->reverse()
+                ->values()
+                ->map(function($item) {
+                    return [
+                        'month' => date('M Y', strtotime($item->month . '-01')),
+                        'total' => (float) $item->total,
+                    ];
+                });
         }
 
         $terms = AcademicTerm::with('academicYear')
@@ -52,6 +90,8 @@ class FeeManagementController extends Controller
             'currentTerm' => $currentTerm,
             'stats' => $stats,
             'terms' => $terms,
+            'invoicesByStatus' => $invoicesByStatus,
+            'monthlyCollections' => $monthlyCollections,
         ]);
     }
 

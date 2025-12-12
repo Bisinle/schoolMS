@@ -62,6 +62,34 @@ class Student extends Model
         return $this->hasMany(QuranTracking::class);
     }
 
+    public function quranHomework()
+    {
+        return $this->hasMany(QuranHomework::class);
+    }
+
+    public function pendingQuranHomework()
+    {
+        return $this->hasMany(QuranHomework::class)
+            ->where('completed', false);
+    }
+
+    public function quranHomePractice()
+    {
+        return $this->hasMany(QuranHomePractice::class);
+    }
+
+    public function quranSchedules()
+    {
+        return $this->hasMany(QuranSchedule::class);
+    }
+
+    public function activeQuranSchedule()
+    {
+        return $this->hasOne(QuranSchedule::class)
+            ->where('is_active', true)
+            ->latest('start_date');
+    }
+
     // Note: Fee preferences belong to guardians, not students
     // Access via: $student->guardian->feePreferences()->where('student_id', $student->id)
 

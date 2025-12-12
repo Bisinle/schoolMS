@@ -73,6 +73,14 @@ class QuranTracking extends Model
     }
 
     /**
+     * Get the assessment for this tracking record.
+     */
+    public function assessment()
+    {
+        return $this->hasOne(QuranAssessment::class);
+    }
+
+    /**
      * Scope to filter by reading type.
      */
     public function scopeReadingType($query, $type)
