@@ -180,12 +180,21 @@ class SchoolController extends Controller
 
     public function update(Request $request, School $school)
     {
+        // Find the current admin user to get their ID for unique validation
+        $currentAdmin = User::where('school_id', $school->id)
+            ->where('role', 'admin')
+            ->first();
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'slug' => ['nullable', 'string', 'max:255', Rule::unique('schools')->ignore($school->id)],
             'domain' => ['nullable', 'string', 'max:255', Rule::unique('schools')->ignore($school->id)],
             'admin_name' => 'required|string|max:255',
-            'admin_email' => 'required|email',
+            'admin_email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($currentAdmin?->id),
+            ],
             'admin_phone' => 'nullable|string|max:20',
             'address' => 'nullable|string',
             'status' => 'required|in:trial,active,suspended,cancelled',
@@ -194,10 +203,100 @@ class SchoolController extends Controller
             'trial_ends_at' => 'nullable|date',
         ]);
 
-        $school->update($validated);
+        DB::beginTransaction();
+        try {
+            // Track if admin credentials changed
+            $adminEmailChanged = $school->admin_email !== $validated['admin_email'];
+            $adminNameChanged = $school->admin_name !== $validated['admin_name'];
+            $adminPhoneChanged = $school->admin_phone !== $validated['admin_phone'];
 
-        return redirect()->route('super-admin.schools.show', $school)
-            ->with('success', 'School updated successfully!');
+            $oldAdminEmail = $school->admin_email;
+
+            // Update school
+            $school->update($validated);
+
+            // If admin credentials changed, sync to the admin user in users table
+            if ($adminEmailChanged || $adminNameChanged || $adminPhoneChanged) {
+                $this->syncAdminCredentialsToUser($school, $oldAdminEmail, [
+                    'email_changed' => $adminEmailChanged,
+                    'name_changed' => $adminNameChanged,
+                    'phone_changed' => $adminPhoneChanged,
+                ]);
+            }
+
+            DB::commit();
+
+            return redirect()->route('super-admin.schools.show', $school)
+                ->with('success', 'School updated successfully! Admin credentials have been synced.');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Failed to update school', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors([
+                'error' => 'Failed to update school: ' . $e->getMessage()
+            ]);
+        }
+    }
+
+    /**
+     * Sync admin credentials from schools table to users table
+     */
+    protected function syncAdminCredentialsToUser(School $school, string $oldEmail, array $changes): void
+    {
+        try {
+            Log::info('=== SYNCING ADMIN CREDENTIALS TO USERS TABLE ===', [
+                'school_id' => $school->id,
+                'old_email' => $oldEmail,
+                'new_email' => $school->admin_email,
+                'changes' => $changes,
+            ]);
+
+            // Prepare update data
+            $updateData = [];
+
+            if ($changes['name_changed']) {
+                $updateData['name'] = $school->admin_name;
+            }
+
+            if ($changes['email_changed']) {
+                $updateData['email'] = $school->admin_email;
+            }
+
+            if ($changes['phone_changed']) {
+                $updateData['phone'] = $school->admin_phone;
+            }
+
+            $updateData['updated_at'] = now();
+
+            // Update the admin user using the OLD email
+            $updated = DB::table('users')
+                ->where('email', $oldEmail)
+                ->where('role', 'admin')
+                ->where('school_id', $school->id)
+                ->update($updateData);
+
+            if (!$updated) {
+                Log::warning('Admin user not found for sync', [
+                    'old_email' => $oldEmail,
+                    'school_id' => $school->id,
+                ]);
+            } else {
+                Log::info('Admin credentials synced successfully to users table', [
+                    'updated_fields' => array_keys($updateData),
+                ]);
+            }
+
+        } catch (\Exception $e) {
+            Log::error('Failed to sync admin credentials to users table', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+            throw $e;
+        }
     }
 
     public function destroy(School $school)

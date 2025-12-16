@@ -1,4 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import {
     School,
     Users,
@@ -9,12 +10,19 @@ import {
     Shield,
     MessageSquare,
     Calendar,
-    Sparkles,
-    TrendingUp,
-    Zap
+    BookOpen,
+    BarChart3,
+    CheckCircle2,
+    ArrowRight,
+    Zap,
+    Phone,
+    Mail,
+    MapPin,
+    Menu,
+    X
 } from 'lucide-react';
+import { useState } from 'react';
 
-// Import screenshots
 import screenshot1 from '../Images/app-screenshot1.png';
 import screenshot2 from '../Images/app-screenshot2.png';
 import screenshot3 from '../Images/app-screenshot3.png';
@@ -30,569 +38,439 @@ import screenshot12 from '../Images/app-screenshot12.png';
 import screenshot13 from '../Images/app-screenshot13.png';
 
 export default function Home() {
-    const features = [
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+    const coreModules = [
         {
             icon: Users,
-            title: 'Students Management',
-            description: 'Comprehensive student profiles, enrollment tracking, and academic records management.',
-            gradient: 'from-blue-500 to-cyan-500'
+            title: 'Student Information Management',
+            description: 'Complete student registration with admission numbers, profiles, grade assignments, and guardian linkage. Track enrollment status and maintain comprehensive student records.'
+        },
+        {
+            icon: Calendar,
+            title: 'Academic Structure Management',
+            description: 'Manages academic years, terms, grades/classes, and subjects. Organize your school structure with flexible grade levels and subject assignments for comprehensive academic tracking.'
+        },
+        {
+            icon: DollarSign,
+            title: 'Fee Management & Invoicing',
+            description: 'Create fee structures (tuition, transport, universal fees), generate guardian invoices, track payments with multiple methods (Cash, M-Pesa, Bank Transfer, Cheque), and monitor balances.'
+        },
+        {
+            icon: FileText,
+            title: 'Examination & Results Management',
+            description: 'Schedule exams (Opening, Mid-Term, End-Term), record student results, generate report cards with automated grading, and track academic performance across terms.'
         },
         {
             icon: UserCheck,
             title: 'Teacher & Staff Management',
-            description: 'Manage faculty profiles, assignments, schedules, and performance tracking.',
-            gradient: 'from-purple-500 to-pink-500'
-        },
-        {
-            icon: DollarSign,
-            title: 'Billing & Payments',
-            description: 'Automated fee collection, payment tracking, and financial reporting.',
-            gradient: 'from-green-500 to-emerald-500'
-        },
-        {
-            icon: FileText,
-            title: 'Exams & Results',
-            description: 'Create exams, record results, generate report cards, and track academic progress.',
-            gradient: 'from-orange-500 to-red-500'
-        },
-        {
-            icon: ClipboardCheck,
-            title: 'Attendance',
-            description: 'Real-time attendance tracking for students and staff with detailed reports.',
-            gradient: 'from-yellow-500 to-orange-500'
-        },
-        {
-            icon: Shield,
-            title: 'User Roles & Permissions',
-            description: 'Granular access control for admins, teachers, students, and guardians.',
-            gradient: 'from-indigo-500 to-purple-500'
+            description: 'Register teachers and staff, manage user accounts with role-based access (Admin, Teacher, Guardian, Accountant, etc.), assign subjects and grades, and track employee information.'
         },
         {
             icon: MessageSquare,
-            title: 'Communication Tools',
-            description: 'Built-in messaging, notifications, and announcements for seamless communication.',
-            gradient: 'from-pink-500 to-rose-500'
+            title: 'Guardian Portal & Communication',
+            description: 'Dedicated guardian portal to view children\'s attendance, exam results, fee balances, and invoices. Guardians can download reports and track their children\'s academic progress.'
         },
+        {
+            icon: ClipboardCheck,
+            title: 'Attendance Tracking',
+            description: 'Daily student attendance recording with present/absent/late status. Generate attendance reports, monitor patterns, and guardians can view their children\'s attendance history.'
+        },
+        {
+            icon: BookOpen,
+            title: 'Quran Tracking (Islamic Schools)',
+            description: 'Track Quran memorization progress with page ranges, automatic calculation of pages/surahs/juz memorized, homework assignments, home practice logging, and progress schedules.'
+        },
+        {
+            icon: Shield,
+            title: 'Document Management',
+            description: 'Upload and organize documents by categories for students, teachers, guardians, and school-wide files. Secure document storage with access control and easy retrieval.'
+        }
     ];
+
+    const features = [
+        'Student & Guardian Management with Complete Profiles',
+        'Academic Structure: Years, Terms, Grades & Subjects',
+        'Fee Management: Invoicing, Payments & Balance Tracking',
+        'Examination & Results: Scheduling, Grading & Report Cards',
+        'Teacher & Staff Management with Role-Based Access',
+        'Attendance Tracking with Detailed Reports',
+        'Quran Memorization Tracking (Islamic Schools)',
+        'Document Management System',
+        'Guardian Portal: View Attendance, Results & Fees',
+        'Multi-Payment Methods: Cash, M-Pesa, Bank Transfer, Cheque',
+        'Custom School Branding (Logo & School Information)',
+        'Super Admin Dashboard for Multi-School Management',
+        'User Impersonation for Support & Training',
+        'Cloud Hosted with Automatic Backups'
+    ];
+
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+        }
+    };
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.5 }
+        }
+    };
 
     return (
         <>
-            <Head title="Welcome to SchoolMS" />
+            <Head title="SchoolMS - Comprehensive School Management System" />
             
-            <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-                {/* Header/Navigation */}
-                <nav className="bg-white/80 backdrop-blur-xl shadow-sm sticky top-0 z-50 border-b border-gray-100">
-                    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
-                        <div className="flex justify-between items-center h-16 sm:h-20">
-                            <div className="flex items-center space-x-2 sm:space-x-3 group cursor-pointer">
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-xl sm:rounded-2xl blur-md sm:blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                                    <div className="relative w-9 h-9 sm:w-12 sm:h-12 bg-gradient-to-br from-[#0b1a34] to-[#1a2f5a] rounded-xl sm:rounded-2xl flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-                                        <School className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500" />
-                                    </div>
+            <div className="min-h-screen bg-white">
+                <nav className="fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-md shadow-sm z-50 border-b border-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center h-16 lg:h-20">
+                            <Link href="/" className="flex items-center space-x-3">
+                                <div className="w-10 h-10 lg:w-12 lg:h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                                    <School className="w-6 h-6 lg:w-7 lg:h-7 text-white" />
                                 </div>
                                 <div>
-                                    <span className="text-base sm:text-2xl font-black bg-gradient-to-r from-[#0b1a34] to-[#1a2f5a] bg-clip-text text-transparent">SchoolMS</span>
-                                    <div className="text-[10px] sm:text-xs text-gray-500 font-medium -mt-0.5 sm:-mt-1">Smart Management</div>
+                                    <span className="text-xl lg:text-2xl font-bold text-gray-900">SchoolMS</span>
+                                    <div className="text-xs text-gray-500 font-medium">School Management System</div>
                                 </div>
-                            </div>
-                            <div className="flex items-center">
-                                <Link
-                                    href="/login"
-                                    className="group relative inline-flex items-center px-3 py-2 sm:px-6 sm:py-2.5 lg:px-8 lg:py-3 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-bold rounded-lg sm:rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl hover:shadow-orange-500/50 hover:scale-105 text-xs sm:text-sm lg:text-base"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-orange-700 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                    <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2 relative z-10 group-hover:rotate-12 transition-transform" />
-                                    <span className="relative z-10 hidden sm:inline">Login</span>
-                                    <span className="relative z-10 sm:hidden">Login</span>
+                            </Link>
+
+                            <div className="hidden md:flex items-center space-x-8">
+                                <a href="#features" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Features</a>
+                                <a href="#pricing" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Pricing</a>
+                                <a href="#contact" className="text-gray-700 hover:text-orange-600 font-medium transition-colors">Contact</a>
+                                <Link href="/login" className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:shadow-lg hover:shadow-orange-500/50 transition-all duration-300">
+                                    Login
                                 </Link>
                             </div>
+
+                            <button onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="md:hidden p-2 rounded-lg hover:bg-gray-100">
+                                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                            </button>
                         </div>
+
+                        {mobileMenuOpen && (
+                            <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="md:hidden py-4 border-t border-gray-100">
+                                <div className="flex flex-col space-y-4">
+                                    <a href="#features" className="text-gray-700 hover:text-orange-600 font-medium">Features</a>
+                                    <a href="#pricing" className="text-gray-700 hover:text-orange-600 font-medium">Pricing</a>
+                                    <a href="#contact" className="text-gray-700 hover:text-orange-600 font-medium">Contact</a>
+                                    <Link href="/login" className="px-6 py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg text-center">
+                                        Login
+                                    </Link>
+                                </div>
+                            </motion.div>
+                        )}
                     </div>
                 </nav>
 
-                {/* Hero Section with Background Image */}
-                <section className="relative min-h-[95vh] flex items-center justify-center overflow-hidden">
-                    {/* Animated Background */}
-                    <div className="absolute inset-0">
-                        {/* Screenshot Background */}
-                        <div
-                            className="absolute inset-0 bg-cover bg-center scale-110 animate-slow-zoom"
-                            style={{backgroundImage: `url(${screenshot2})`}}
-                        ></div>
-
-                        {/* Modern Gradient Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#0b1a34]/95 via-[#1a2f5a]/90 to-[#0b1a34]/95"></div>
-
-                        {/* Animated Mesh Gradient */}
-                        <div className="absolute inset-0 opacity-20">
-                            <div className="absolute top-0 -left-4 w-72 h-72 bg-orange-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-                            <div className="absolute top-0 -right-4 w-72 h-72 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-                            <div className="absolute -bottom-8 left-20 w-72 h-72 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-                        </div>
-
-                        {/* Grid Pattern */}
-                        <div className="absolute inset-0 opacity-10">
-                            <div className="absolute inset-0" style={{
-                                backgroundImage: `
-                                    linear-gradient(to right, rgba(255,255,255,0.1) 1px, transparent 1px),
-                                    linear-gradient(to bottom, rgba(255,255,255,0.1) 1px, transparent 1px)
-                                `,
-                                backgroundSize: '50px 50px'
-                            }}></div>
-                        </div>
-                    </div>
-
-                    {/* Hero Content */}
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 py-24">
-                        <div className="text-center">
-                            {/* Animated Badge */}
-                            <div className="inline-flex items-center px-5 py-2.5 bg-gradient-to-r from-orange-500/20 to-pink-500/20 backdrop-blur-xl border border-orange-500/30 rounded-full mb-8 shadow-lg shadow-orange-500/20 animate-fade-in-down">
-                                <Sparkles className="w-4 h-4 text-orange-400 mr-2 animate-pulse" />
-                                <span className="text-orange-300 font-bold text-sm tracking-wide">Complete School Management Solution</span>
-                                <Zap className="w-4 h-4 text-yellow-400 ml-2 animate-pulse" />
-                            </div>
-
-                            {/* Main Heading with Gradient */}
-                            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black mb-6 leading-tight animate-fade-in">
-                                <span className="block text-white drop-shadow-2xl">Transform Your</span>
-                                <span className="block mt-2 bg-gradient-to-r from-orange-400 via-pink-400 to-purple-400 bg-clip-text text-transparent animate-gradient-x">
-                                    School Management
-                                </span>
-                            </h1>
-
-                            {/* Subheading */}
-                            <p className="text-xl sm:text-2xl md:text-3xl text-gray-100 mb-4 max-w-4xl mx-auto font-bold tracking-tight animate-fade-in-up animation-delay-200">
-                                Streamline Operations • Enhance Learning • Drive Excellence
-                            </p>
-
-                            {/* Description */}
-                            <p className="text-base sm:text-lg md:text-xl text-gray-300 max-w-3xl mx-auto mb-12 leading-relaxed animate-fade-in-up animation-delay-400">
-                                From student enrollment to exam results, attendance tracking to document management—
-                                manage your entire school ecosystem with one powerful, intuitive platform.
-                            </p>
-
-                            {/* CTA Buttons */}
-                            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 animate-fade-in-up animation-delay-600">
-                                <Link
-                                    href="/login"
-                                    className="group relative inline-flex items-center px-6 py-4 sm:px-10 sm:py-5 bg-gradient-to-r from-orange-500 via-orange-600 to-pink-600 text-white font-black rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-500 text-base sm:text-lg shadow-2xl shadow-orange-500/50 hover:shadow-orange-500/70 hover:scale-105 w-full sm:w-auto justify-center max-w-sm sm:max-w-none"
-                                >
-                                    <div className="absolute inset-0 bg-gradient-to-r from-pink-600 via-orange-600 to-orange-500 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                    <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-                                    <span className="relative z-10">Login</span>
-                                    <svg className="w-4 h-4 sm:w-5 sm:h-5 ml-2 relative z-10 group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                                    </svg>
-                                    
-                                    {/* Shine Effect */}
-                                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/30 to-transparent skew-x-12"></div>
-                                </Link>
-                            </div>
-
-                            {/* Trust Indicators */}
-                            <div className="mt-16 flex flex-wrap items-center justify-center gap-6 sm:gap-10 text-gray-200 animate-fade-in-up animation-delay-800">
-                                <div className="flex items-center gap-3 group cursor-pointer">
-                                    <div className="p-2 bg-green-500/20 rounded-lg backdrop-blur-sm group-hover:bg-green-500/30 transition-colors">
-                                        <Shield className="w-5 h-5 text-green-400" />
-                                    </div>
-                                    <span className="text-sm font-semibold">Secure & Reliable</span>
+                <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-50 via-white to-orange-50">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="grid lg:grid-cols-2 gap-12 items-center">
+                            <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
+                                <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-6">
+                                    <Zap className="w-4 h-4 text-orange-600 mr-2" />
+                                    <span className="text-orange-600 font-semibold text-sm">One System. Total School Control.</span>
                                 </div>
-                                <div className="flex items-center gap-3 group cursor-pointer">
-                                    <div className="p-2 bg-blue-500/20 rounded-lg backdrop-blur-sm group-hover:bg-blue-500/30 transition-colors">
-                                        <Users className="w-5 h-5 text-blue-400" />
-                                    </div>
-                                    <span className="text-sm font-semibold">Trusted by Schools</span>
+
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
+                                    SchoolMS: Comprehensive School Management System
+                                </h1>
+
+                                <p className="text-lg text-gray-600 mb-8 leading-relaxed">
+                                    An all-in-one school management system designed to simplify academic, administrative, and communication processes.
+                                    Manage everything from student records and exam results to fee tracking and Quran memorization - all in one powerful platform.
+                                </p>
+
+                                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                                    <Link href="/login" className="group px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 flex items-center justify-center">
+                                        <span>Get Started</span>
+                                        <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+                                    <a href="#contact" className="px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all duration-300 flex items-center justify-center">
+                                        Request Demo
+                                    </a>
                                 </div>
-                                <div className="flex items-center gap-3 group cursor-pointer">
-                                    <div className="p-2 bg-orange-500/20 rounded-lg backdrop-blur-sm group-hover:bg-orange-500/30 transition-colors">
-                                        <TrendingUp className="w-5 h-5 text-orange-400" />
+
+                                <div className="flex flex-wrap gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        <span className="text-sm text-gray-600 font-medium">Cloud Hosted</span>
                                     </div>
-                                    <span className="text-sm font-semibold">Easy to Use</span>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        <span className="text-sm text-gray-600 font-medium">M-Pesa Integrated</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                        <span className="text-sm text-gray-600 font-medium">24/7 Support</span>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
+                            </motion.div>
 
-                    {/* Scroll Indicator */}
-                    <div className="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-                        <div className="w-8 h-12 border-2 border-white/40 rounded-full flex items-start justify-center p-2 backdrop-blur-sm">
-                            <div className="w-1.5 h-3 bg-white/70 rounded-full animate-scroll"></div>
-                        </div>
-                    </div>
-                </section>
-
-                {/* Features Section */}
-                <section className="py-24 bg-gradient-to-br from-white via-gray-50 to-white relative overflow-hidden">
-                    {/* Background Decoration */}
-                    <div className="absolute inset-0 opacity-40">
-                        <div className="absolute top-20 left-10 w-64 h-64 bg-blue-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
-                        <div className="absolute top-40 right-10 w-64 h-64 bg-purple-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
-                        <div className="absolute bottom-20 left-1/2 w-64 h-64 bg-pink-200 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
-                    </div>
-
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                        <div className="text-center mb-16">
-                            <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-4">
-                                <Sparkles className="w-4 h-4 text-orange-600 mr-2" />
-                                <span className="text-orange-600 font-bold text-sm">POWERFUL FEATURES</span>
-                            </div>
-                            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-[#0b1a34] mb-6">
-                                Everything You Need,
-                                <span className="block mt-2 bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
-                                    All in One Place
-                                </span>
-                            </h2>
-                            <p className="text-lg sm:text-xl text-gray-600 max-w-3xl mx-auto font-medium">
-                                Comprehensive tools designed to streamline every aspect of school management
-                            </p>
-                        </div>
-
-                        {/* Features Grid */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
-                            {features.map((feature, index) => (
-                                <div
-                                    key={index}
-                                    className="group relative bg-white rounded-2xl p-8 hover:shadow-2xl transition-all duration-500 border border-gray-100 overflow-hidden transform hover:-translate-y-2"
-                                    style={{
-                                        animationDelay: `${index * 100}ms`
-                                    }}
-                                >
-                                    {/* Gradient Background on Hover */}
-                                    <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500`}></div>
-                                    
-                                    {/* Icon */}
-                                    <div className="relative mb-6">
-                                        <div className={`absolute inset-0 bg-gradient-to-br ${feature.gradient} rounded-2xl blur-xl opacity-0 group-hover:opacity-30 transition-opacity duration-500`}></div>
-                                        <div className={`relative w-16 h-16 bg-gradient-to-br ${feature.gradient} bg-opacity-10 rounded-2xl flex items-center justify-center group-hover:scale-110 group-hover:rotate-6 transition-all duration-500`}>
-                                            <feature.icon className="w-8 h-8 text-orange-600 group-hover:text-white transition-colors duration-500" />
+                            <motion.div initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6, delay: 0.2 }} className="relative">
+                                <div className="relative rounded-2xl overflow-hidden shadow-2xl">
+                                    <img src={screenshot2} alt="SchoolMS Dashboard" className="w-full h-auto" />
+                                </div>
+                                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.8 }} className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-xl p-4 border border-gray-100">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                                            <CheckCircle2 className="w-6 h-6 text-orange-600" />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-900">All-in-One</div>
+                                            <div className="text-sm text-gray-600">Complete Solution</div>
                                         </div>
                                     </div>
-                                    
-                                    {/* Content */}
-                                    <h3 className="text-xl sm:text-2xl font-black text-[#0b1a34] mb-3 group-hover:text-orange-600 transition-colors duration-300">
-                                        {feature.title}
-                                    </h3>
-                                    <p className="text-gray-600 leading-relaxed font-medium">
-                                        {feature.description}
-                                    </p>
-
-                                    {/* Corner Accent */}
-                                    <div className={`absolute top-0 right-0 w-20 h-20 bg-gradient-to-br ${feature.gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-500`}></div>
-                                </div>
-                            ))}
+                                </motion.div>
+                            </motion.div>
                         </div>
                     </div>
                 </section>
 
-                {/* Screenshots Showcase Section */}
-                <section className="py-24 bg-gradient-to-br from-gray-900 via-[#0b1a34] to-gray-900 relative overflow-hidden">
-                    {/* Animated Background */}
-                    <div className="absolute inset-0 opacity-20">
-                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500 rounded-full mix-blend-screen filter blur-3xl animate-pulse-slow"></div>
-                        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-screen filter blur-3xl animate-pulse-slow animation-delay-2000"></div>
-                    </div>
-
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-                        <div className="text-center mb-20">
-                            <div className="inline-flex items-center px-4 py-2 bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full mb-6">
-                                <Sparkles className="w-4 h-4 text-orange-400 mr-2" />
-                                <span className="text-orange-300 font-bold text-sm">LIVE PREVIEW</span>
+                <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+                    <div className="max-w-7xl mx-auto">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
+                            <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-4">
+                                <BookOpen className="w-4 h-4 text-orange-600 mr-2" />
+                                <span className="text-orange-600 font-semibold text-sm">KEY FEATURES</span>
                             </div>
-                            <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6">
-                                See SchoolMS
-                                <span className="block mt-2 bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">
-                                    In Action
-                                </span>
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                                Comprehensive Tools to Simplify School Management
                             </h2>
-                            <p className="text-lg sm:text-xl text-gray-300 max-w-3xl mx-auto font-medium">
+                            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                                Powerful features built to manage every aspect of your school efficiently
+                            </p>
+                        </motion.div>
+
+                        <motion.div variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true }} className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {coreModules.map((module, index) => (
+                                <motion.div key={index} variants={itemVariants} whileHover={{ y: -5 }} className="bg-white rounded-xl p-6 border border-gray-200 hover:border-orange-500 hover:shadow-xl transition-all duration-300">
+                                    <div className="w-14 h-14 bg-orange-100 rounded-lg flex items-center justify-center mb-4">
+                                        <module.icon className="w-7 h-7 text-orange-600" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">{module.title}</h3>
+                                    <p className="text-gray-600 leading-relaxed">{module.description}</p>
+                                </motion.div>
+                            ))}
+                        </motion.div>
+                    </div>
+                </section>
+
+                <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-50 to-white">
+                    <div className="max-w-7xl mx-auto">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                                See SchoolMS In Action
+                            </h2>
+                            <p className="text-lg text-gray-600">
                                 Explore our intuitive interface designed to make school management effortless
                             </p>
-                        </div>
+                        </motion.div>
 
-                        {/* Main Screenshots Grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-8">
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {[
-                                { img: screenshot2, title: 'Dashboard Overview', desc: 'Real-time insights and analytics' },
                                 { img: screenshot3, title: 'Grades & Classes', desc: 'Comprehensive academic tracking' },
                                 { img: screenshot6, title: 'Attendance Tracking', desc: 'Easy attendance management' },
-                                { img: screenshot8, title: 'Student Reports ', desc: 'Organize classes efficiently' },
+                                { img: screenshot8, title: 'Student Reports', desc: 'Detailed performance analytics' },
                                 { img: screenshot4, title: 'Document Management', desc: 'Centralized document storage' },
+                                { img: screenshot5, title: 'Dashboard Overview', desc: 'Real-time insights' }
                             ].map((screenshot, index) => (
-                                <div
+                                <motion.div
                                     key={index}
-                                    className="group relative overflow-hidden rounded-3xl shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 transform hover:-translate-y-3"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                                    whileHover={{ y: -10, scale: 1.02 }}
+                                    className="group relative rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-300 bg-white"
                                 >
-                                    {/* Image Container */}
-                                    <div className="relative aspect-video overflow-hidden bg-gray-800">
-                                        <img
-                                            src={screenshot.img}
-                                            alt={screenshot.title}
-                                            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                    <div className="aspect-video overflow-hidden bg-gray-100">
+                                        <img 
+                                            src={screenshot.img} 
+                                            alt={screenshot.title} 
+                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                         />
-                                        
-                                        {/* Gradient Overlay */}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0b1a34] via-[#0b1a34]/80 to-transparent opacity-60 group-hover:opacity-90 transition-opacity duration-500"></div>
-                                        
-                                        {/* Content Overlay */}
-                                        <div className="absolute inset-0 flex flex-col justify-end p-6 translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                            <h3 className="text-xl sm:text-2xl font-black text-white mb-2 transform translate-y-8 group-hover:translate-y-0 transition-transform duration-500">
-                                                {screenshot.title}
-                                            </h3>
-                                            <p className="text-sm text-gray-300 font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-500 delay-100">
-                                                {screenshot.desc}
-                                            </p>
-                                        </div>
-
-                                        {/* Border Glow Effect */}
-                                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-orange-500/50 rounded-3xl transition-colors duration-500"></div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Mobile Screenshots Grid */}
-                        <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4">
-                            {[
-                                { img: screenshot9, label: 'analytics' },
-                                { img: screenshot10, label: 'dashboard' },
-                                { img: screenshot11, label: 'report card' },
-                                { img: screenshot12, label: 'documents' },
-                                { img: screenshot13, label: 'students per grade' }
-                            ].map((screenshot, index) => (
-                                <div
-                                    key={index}
-                                    className="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105"
-                                >
-                                    {/* Mobile Phone Frame Effect */}
-                                    <div className="relative bg-gray-900 p-2 rounded-2xl">
-                                        <div className="relative aspect-[9/19] overflow-hidden rounded-xl bg-white">
-                                            <img
-                                                src={screenshot.img}
-                                                alt={screenshot.label}
-                                                className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                                            />
-                                            
-                                            {/* Gradient Overlay */}
-                                            <div className="absolute inset-0 bg-gradient-to-t from-[#0b1a34]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                            
-                                            {/* Label on Hover */}
-                                            <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                                                <p className="text-white text-xs font-bold text-center">{screenshot.label}</p>
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Phone Notch */}
-                                        <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-16 h-4 bg-gray-900 rounded-full"></div>
+                                    
+                                    <div className="absolute inset-0 bg-gradient-to-t from-gray-900/90 via-gray-900/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                                    
+                                    <div className="absolute bottom-0 left-0 right-0 p-6 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                                        <h3 className="text-xl font-bold text-white mb-1 drop-shadow-lg">
+                                            {screenshot.title}
+                                        </h3>
+                                        <p className="text-sm text-gray-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-100">
+                                            {screenshot.desc}
+                                        </p>
                                     </div>
 
-                                    {/* Glow Effect */}
-                                    <div className="absolute inset-0 border-2 border-transparent group-hover:border-orange-500/50 rounded-2xl transition-colors duration-500 pointer-events-none"></div>
-                                </div>
+                                    <div className="absolute top-4 right-4 w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 delay-150">
+                                        <ArrowRight className="w-5 h-5 text-white" />
+                                    </div>
+                                </motion.div>
                             ))}
                         </div>
                     </div>
                 </section>
 
-                {/* Call to Action Section */}
-                <section className="relative py-24 overflow-hidden">
-                    {/* Gradient Background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600"></div>
-                    
-                    {/* Animated Mesh */}
-                    <div className="absolute inset-0 opacity-30">
-                        <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full mix-blend-overlay filter blur-3xl animate-blob"></div>
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-yellow-300 rounded-full mix-blend-overlay filter blur-3xl animate-blob animation-delay-2000"></div>
-                        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-300 rounded-full mix-blend-overlay filter blur-3xl animate-blob animation-delay-4000"></div>
+                <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white">
+                    <div className="max-w-4xl mx-auto">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-12">
+                            <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-4">
+                                <DollarSign className="w-4 h-4 text-orange-600 mr-2" />
+                                <span className="text-orange-600 font-semibold text-sm">PRICING</span>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                                Simple, Transparent Pricing
+                            </h2>
+                            <p className="text-lg text-gray-600">
+                                Everything you need to run your school efficiently
+                            </p>
+                        </motion.div>
+
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-8 lg:p-12 border-2 border-orange-500 shadow-2xl">
+                            <div className="text-center mb-8">
+                                <h3 className="text-2xl font-bold text-gray-900 mb-2">SchoolMS Complete Plan</h3>
+                                <div className="flex items-end justify-center mb-2">
+                                    <span className="text-5xl font-bold text-orange-600">KSh 150</span>
+                                    <span className="text-gray-600 font-medium ml-2 mb-2">/student/month</span>
+                                </div>
+                                <p className="text-gray-600">Pay only for active students - Simple & Affordable</p>
+                            </div>
+
+                            <div className="mb-8">
+                                <h4 className="font-bold text-gray-900 mb-4 text-lg">Features Included In Plan:</h4>
+                                <div className="space-y-3">
+                                    {features.map((feature, index) => (
+                                        <div key={index} className="flex items-start gap-3">
+                                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                                            <span className="text-gray-700">{feature}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col sm:flex-row gap-4">
+                                <a href="#contact" className="flex-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 text-center">
+                                    Buy Now
+                                </a>
+                                <a href="#contact" className="flex-1 px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all duration-300 text-center">
+                                    Contact Us
+                                </a>
+                            </div>
+                        </motion.div>
                     </div>
+                </section>
 
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10">
-                        <div className="inline-flex items-center px-4 py-2 bg-white/20 backdrop-blur-sm rounded-full mb-8">
-                            <Sparkles className="w-4 h-4 text-white mr-2 animate-pulse" />
-                            <span className="text-white font-bold text-sm">GET STARTED TODAY</span>
-                        </div>
+                <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 to-gray-800">
+                    <div className="max-w-7xl mx-auto">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-12">
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
+                                Ready to Simplify School Management?
+                            </h2>
+                            <p className="text-lg text-gray-300">
+                                Fill out the form below to Book a Live Demo Session
+                            </p>
+                        </motion.div>
 
-                        <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
-                            Ready to Transform Your
-                            <span className="block mt-2">School Management?</span>
-                        </h2>
-                        
-                        <p className="text-lg sm:text-xl text-white/90 mb-12 max-w-3xl mx-auto font-medium leading-relaxed">
-                            Join hundreds of schools already using SchoolMS to streamline their operations
-                            and enhance the learning experience.
-                        </p>
-                        
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
-                            <Link
-                                href="/login"
-                                className="group relative inline-flex items-center px-8 py-4 sm:px-12 sm:py-6 bg-white text-orange-600 font-black rounded-xl sm:rounded-2xl overflow-hidden transition-all duration-500 text-base sm:text-lg shadow-2xl hover:shadow-white/50 hover:scale-110 w-full sm:w-auto justify-center max-w-sm sm:max-w-none"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-white opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                <Calendar className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 relative z-10 group-hover:rotate-12 transition-transform duration-300" />
-                                <span className="relative z-10">Login</span>
-                                <svg className="w-5 h-5 sm:w-6 sm:h-6 ml-2 relative z-10 group-hover:translate-x-2 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
-                                </svg>
-                                
-                                {/* Shine Effect */}
-                                <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-orange-200/50 to-transparent skew-x-12"></div>
-                            </Link>
-                        </div>
+                        <div className="grid lg:grid-cols-2 gap-12">
+                            <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="bg-white rounded-xl p-8">
+                                <form className="space-y-6">
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
+                                        <input type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
+                                        <input type="email" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
+                                        <input type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
+                                        <textarea rows="4" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required></textarea>
+                                    </div>
+                                    <button type="submit" className="w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300">
+                                        Request Demo
+                                    </button>
+                                </form>
+                            </motion.div>
 
-                        {/* Stats or Trust Badges */}
-                        <div className="mt-16 flex flex-wrap items-center justify-center gap-8 sm:gap-12">
-                            <div className="text-center">
-                                <div className="text-4xl sm:text-5xl font-black text-white mb-2">500+</div>
-                                <div className="text-sm text-white/80 font-semibold">Schools Trust Us</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-4xl sm:text-5xl font-black text-white mb-2">50K+</div>
-                                <div className="text-sm text-white/80 font-semibold">Active Students</div>
-                            </div>
-                            <div className="text-center">
-                                <div className="text-4xl sm:text-5xl font-black text-white mb-2">99.9%</div>
-                                <div className="text-sm text-white/80 font-semibold">Uptime</div>
-                            </div>
+                            <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="space-y-8">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <Mail className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white mb-1">Email</h3>
+                                        <a href="mailto:info@schoolms.com" className="text-gray-300 hover:text-orange-400 transition-colors">
+                                            info@schoolms.com
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <Phone className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white mb-1">Call Us On</h3>
+                                        <p className="text-gray-300">+254 700 000 000</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <MessageSquare className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white mb-1">WhatsApp</h3>
+                                        <p className="text-gray-300">+254 700 000 000</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4">
+                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <MapPin className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white mb-1">Location</h3>
+                                        <p className="text-gray-300">Nairobi, Kenya</p>
+                                    </div>
+                                </div>
+                            </motion.div>
                         </div>
                     </div>
                 </section>
 
-                {/* Footer */}
-                <footer className="bg-gradient-to-br from-[#0b1a34] via-[#1a2f5a] to-[#0b1a34] text-white py-12 relative overflow-hidden">
-                    {/* Background Pattern */}
-                    <div className="absolute inset-0 opacity-5">
-                        <div className="absolute inset-0" style={{
-                            backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)',
-                            backgroundSize: '40px 40px'
-                        }}></div>
-                    </div>
-
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
+                    <div className="max-w-7xl mx-auto">
                         <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-                            <div className="flex items-center space-x-4 group">
-                                <div className="relative">
-                                    <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl blur-lg opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                                    <div className="relative w-14 h-14 bg-gradient-to-br from-white to-gray-100 rounded-2xl flex items-center justify-center transform group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-                                        <School className="w-8 h-8 text-orange-600" />
-                                    </div>
+                            <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center">
+                                    <School className="w-7 h-7 text-white" />
                                 </div>
                                 <div>
-                                    <span className="text-2xl font-black">SchoolMS</span>
-                                    <div className="text-xs text-gray-400 font-medium">Smart School Management</div>
+                                    <span className="text-xl font-bold">SchoolMS</span>
+                                    <div className="text-xs text-gray-400">School Management System</div>
                                 </div>
                             </div>
                             
-                            <div className="text-gray-400 text-sm font-medium text-center md:text-right">
+                            <div className="text-gray-400 text-sm text-center md:text-right">
                                 <p>© {new Date().getFullYear()} SchoolMS. All rights reserved.</p>
-                                <p className="mt-1 text-xs">Empowering Education Through Technology</p>
+                                <p className="mt-1">Empowering Education Through Technology</p>
                             </div>
                         </div>
                     </div>
                 </footer>
             </div>
-
-            {/* Custom Animations */}
-            <style jsx>{`
-                @keyframes gradient-x {
-                    0%, 100% { background-position: 0% 50%; }
-                    50% { background-position: 100% 50%; }
-                }
-                
-                @keyframes blob {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    25% { transform: translate(20px, -50px) scale(1.1); }
-                    50% { transform: translate(-20px, 20px) scale(0.9); }
-                    75% { transform: translate(50px, 30px) scale(1.05); }
-                }
-                
-                @keyframes slow-zoom {
-                    0%, 100% { transform: scale(1.1); }
-                    50% { transform: scale(1.15); }
-                }
-                
-                @keyframes scroll {
-                    0% { transform: translateY(0); opacity: 0; }
-                    50% { opacity: 1; }
-                    100% { transform: translateY(100%); opacity: 0; }
-                }
-                
-                @keyframes fade-in {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                @keyframes fade-in-down {
-                    from { opacity: 0; transform: translateY(-20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                @keyframes fade-in-up {
-                    from { opacity: 0; transform: translateY(20px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
-                @keyframes pulse-slow {
-                    0%, 100% { opacity: 0.2; }
-                    50% { opacity: 0.4; }
-                }
-                
-                .animate-gradient-x {
-                    background-size: 200% 200%;
-                    animation: gradient-x 3s ease infinite;
-                }
-                
-                .animate-blob {
-                    animation: blob 7s infinite;
-                }
-                
-                .animate-slow-zoom {
-                    animation: slow-zoom 20s ease-in-out infinite;
-                }
-                
-                .animate-scroll {
-                    animation: scroll 2s ease-in-out infinite;
-                }
-                
-                .animate-fade-in {
-                    animation: fade-in 1s ease-out;
-                }
-                
-                .animate-fade-in-down {
-                    animation: fade-in-down 1s ease-out;
-                }
-                
-                .animate-fade-in-up {
-                    animation: fade-in-up 1s ease-out;
-                }
-                
-                .animate-pulse-slow {
-                    animation: pulse-slow 4s ease-in-out infinite;
-                }
-                
-                .animation-delay-200 {
-                    animation-delay: 0.2s;
-                }
-                
-                .animation-delay-400 {
-                    animation-delay: 0.4s;
-                }
-                
-                .animation-delay-600 {
-                    animation-delay: 0.6s;
-                }
-                
-                .animation-delay-800 {
-                    animation-delay: 0.8s;
-                }
-                
-                .animation-delay-2000 {
-                    animation-delay: 2s;
-                }
-                
-                .animation-delay-4000 {
-                    animation-delay: 4s;
-                }
-            `}</style>
         </>
     );
 }
