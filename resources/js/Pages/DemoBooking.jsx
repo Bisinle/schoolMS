@@ -108,7 +108,7 @@ export default function DemoBooking() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 relative z-10">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
                         {/* Left Column - Form */}
-                        <div className="order-2 lg:order-1">
+                        <div className="order-1 lg:order-1">
                             {/* Header */}
                             <div className="mb-8 sm:mb-10">
                                 <div className="inline-flex items-center px-4 py-2 bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full mb-6 animate-fade-in-down">
@@ -307,7 +307,7 @@ export default function DemoBooking() {
                         </div>
 
                         {/* Right Column - Info & Screenshots */}
-                        <div className="order-1 lg:order-2 space-y-8">
+                        <div className="order-2 lg:order-2 space-y-8">
                             {/* What to Expect Box */}
                             <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-8 animate-fade-in-up animation-delay-600">
                                 <div className="flex items-center mb-6">
@@ -344,67 +344,7 @@ export default function DemoBooking() {
                                 </ul>
                             </div>
 
-                            {/* Mobile Responsive Preview */}
-                            <div className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-8 animate-fade-in-up animation-delay-800">
-                                <div className="flex items-center mb-6">
-                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
-                                        <Smartphone className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-2xl font-black text-gray-900">Fully Responsive</h3>
-                                        <p className="text-sm text-gray-600 font-medium">Works perfectly on all devices</p>
-                                    </div>
-                                </div>
-
-                                {/* Mobile Screenshots Grid */}
-                                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3 sm:gap-4">
-                                    {[
-                                        { img: screenshot9, label: 'analytics' },
-                                        { img: screenshot10, label: 'dashboard' },
-                                        { img: screenshot11, label: 'report card' },
-                                        { img: screenshot12, label: 'documents' },
-                                        { img: screenshot13, label: 'students per grade' }
-
-                                    ].map((screenshot, index) => (
-                                        <div
-                                            key={index}
-                                            className="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105"
-                                        >
-                                            {/* Mobile Phone Frame Effect */}
-                                            <div className="relative bg-gray-900 p-2 rounded-2xl">
-                                                <div className="relative aspect-[9/19] overflow-hidden rounded-xl bg-white">
-                                                    <img
-                                                        src={screenshot.img}
-                                                        alt={screenshot.label}
-                                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
-                                                    />
-                                                    
-                                                    {/* Gradient Overlay */}
-                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b1a34]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                                                    
-                                                    {/* Label on Hover */}
-                                                    <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
-                                                        <p className="text-white text-xs font-bold text-center">{screenshot.label}</p>
-                                                    </div>
-                                                </div>
-                                                
-                                                {/* Phone Notch */}
-                                                <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-16 h-4 bg-gray-900 rounded-full"></div>
-                                            </div>
-
-                                            {/* Glow Effect */}
-                                            <div className="absolute inset-0 border-2 border-transparent group-hover:border-orange-500/50 rounded-2xl transition-colors duration-500 pointer-events-none"></div>
-                                        </div>
-                                    ))}
-                                </div>
-
-                                {/* Responsive Badge */}
-                                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200">
-                                    <p className="text-sm text-gray-700 font-bold text-center">
-                                        <span className="text-blue-600">✓</span> Optimized for Desktop, Tablet & Mobile
-                                    </p>
-                                </div>
-                            </div>
+                            {/* Screenshots Box */}
                         </div>
                     </div>
                 </div>

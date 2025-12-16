@@ -15,7 +15,10 @@ import {
     CheckCircle2,
     ArrowRight,
     Menu,
-    X
+    X,
+    Smartphone,
+    CheckCircle,
+    Clock
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -183,14 +186,14 @@ export default function Home() {
 
                                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
                                     Complete Management System for
-                                    <span className="block mt-2 bg-gradient-to-r from-orange-600 to-orange-600 bg-clip-text text-transparent">
+                                    <span className="  block mt-2 bg-gradient-to-r from-orange-600 to-orange-600 bg-clip-text text-transparent">
                                         Schools & Madrasahs
                                     </span>
                                 </h1>
 
                                 <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                                    An all-in-one management system designed for both <span className="font-bold text-gray-900">regular schools</span> and <span className="font-bold text-gray-900">madrasahs (Islamic schools)</span>.
-                                    Manage student records, exam results, fee tracking, <span className="font-bold text-green-700">Quran memorization tracking</span>, and more - all in one powerful platform.
+                                    An all-in-one management system designed for both <span className="font-bold text-orange-600">regular schools</span> and <span className="font-bold text-orange-600">madrasahs (Islamic schools)</span>.
+                                    Manage student records, exam results, fee tracking, <span className="font-bold text-orange-600">Quran memorization tracking</span>, and more - all in one powerful platform.
                                 </p>
 
                                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -432,6 +435,96 @@ export default function Home() {
                     </div>
                 </section>
 
+                {/* Fully Responsive Section */}
+                <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
+                    {/* Animated Background */}
+                    <div className="absolute inset-0 opacity-20">
+                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 rounded-full mix-blend-screen filter blur-3xl animate-blob"></div>
+                        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-400 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-2000"></div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
+                            <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full mb-4 border border-blue-200">
+                                <Smartphone className="w-4 h-4 text-blue-600 mr-2" />
+                                <span className="text-blue-700 font-semibold text-sm">WORKS ON ALL DEVICES</span>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                                Fully Responsive Design
+                            </h2>
+                            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                                Access SchoolMS from anywhere, on any device. Our platform is optimized for desktop, tablet, and mobile devices.
+                            </p>
+                        </motion.div>
+
+                        <div className="max-w-5xl mx-auto">
+                            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-8">
+                                <div className="flex items-center mb-6">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mr-4">
+                                        <Smartphone className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-2xl font-black text-gray-900">Mobile Optimized</h3>
+                                        <p className="text-sm text-gray-600 font-medium">Works perfectly on all devices</p>
+                                    </div>
+                                </div>
+
+                                {/* Mobile Screenshots Grid */}
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
+                                    {[
+                                        { img: screenshot9, label: 'Analytics' },
+                                        { img: screenshot10, label: 'Dashboard' },
+                                        { img: screenshot11, label: 'Report Card' },
+                                        { img: screenshot12, label: 'Documents' },
+                                        { img: screenshot13, label: 'Students per Grade' }
+                                    ].map((screenshot, index) => (
+                                        <motion.div
+                                            key={index}
+                                            initial={{ opacity: 0, y: 20 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            viewport={{ once: true }}
+                                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                                            className="group relative overflow-hidden rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 hover:scale-105"
+                                        >
+                                            {/* Mobile Phone Frame Effect */}
+                                            <div className="relative bg-gray-900 p-2 rounded-2xl">
+                                                <div className="relative aspect-[9/19] overflow-hidden rounded-xl bg-white">
+                                                    <img
+                                                        src={screenshot.img}
+                                                        alt={screenshot.label}
+                                                        className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
+                                                    />
+
+                                                    {/* Gradient Overlay */}
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0b1a34]/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+
+                                                    {/* Label on Hover */}
+                                                    <div className="absolute bottom-0 left-0 right-0 p-3 transform translate-y-full group-hover:translate-y-0 transition-transform duration-500">
+                                                        <p className="text-white text-xs font-bold text-center">{screenshot.label}</p>
+                                                    </div>
+                                                </div>
+
+                                                {/* Phone Notch */}
+                                                <div className="absolute top-3 left-1/2 transform -translate-x-1/2 w-16 h-4 bg-gray-900 rounded-full"></div>
+                                            </div>
+
+                                            {/* Glow Effect */}
+                                            <div className="absolute inset-0 border-2 border-transparent group-hover:border-orange-500/50 rounded-2xl transition-colors duration-500 pointer-events-none"></div>
+                                        </motion.div>
+                                    ))}
+                                </div>
+
+                                {/* Responsive Badge */}
+                                <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl border-2 border-blue-200">
+                                    <p className="text-sm text-gray-700 font-bold text-center">
+                                        <span className="text-blue-600">✓</span> Optimized for Desktop, Tablet & Mobile
+                                    </p>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+                </section>
+
                 <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
                     {/* Animated Mesh Gradient */}
                     <div className="absolute inset-0 opacity-20">
@@ -453,14 +546,14 @@ export default function Home() {
                             </p>
                         </motion.div>
 
-                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-8 lg:p-12 border-2 border-orange-500 shadow-2xl">
-                            <div className="text-center mb-8">
-                                <h3 className="text-2xl font-bold text-gray-900 mb-2">SchoolMS Complete Plan</h3>
-                                <div className="flex items-end justify-center mb-2">
-                                    <span className="text-5xl font-bold text-orange-600">KSh 150</span>
-                                    <span className="text-gray-600 font-medium ml-2 mb-2">/student/month</span>
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-6 sm:p-8 lg:p-12 border-2 border-orange-500 shadow-2xl">
+                            <div className="text-center mb-6 sm:mb-8">
+                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">SchoolMS Complete Plan</h3>
+                                <div className="flex flex-col sm:flex-row items-center sm:items-end justify-center mb-3 sm:mb-4 gap-1 sm:gap-0">
+                                    <span className="text-4xl sm:text-5xl lg:text-6xl font-bold text-orange-600">KSh 180</span>
+                                    <span className="text-base sm:text-lg text-gray-600 font-medium sm:ml-2 sm:mb-2">/student/month</span>
                                 </div>
-                                <p className="text-gray-600">Pay only for active students - Simple & Affordable</p>
+                                <p className="text-sm sm:text-base lg:text-lg text-gray-600 px-4">Pay only for active students - Simple & Affordable</p>
                             </div>
 
                             <div className="mb-8">
@@ -487,7 +580,90 @@ export default function Home() {
                     </div>
                 </section>
 
+                {/* Book Your Free Demo Section */}
+                <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-50 via-white to-orange-50 relative overflow-hidden">
+                    {/* Animated Background */}
+                    <div className="absolute inset-0 opacity-20">
+                        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-orange-400 rounded-full mix-blend-screen filter blur-3xl animate-blob"></div>
+                        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-pink-400 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-2000"></div>
+                    </div>
 
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
+                            <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-4 border border-orange-200">
+                                <Calendar className="w-4 h-4 text-orange-600 mr-2" />
+                                <span className="text-orange-700 font-semibold text-sm">FREE PERSONALIZED DEMO</span>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                                Book Your Free Demo Today
+                            </h2>
+                            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                                See SchoolMS in action with a personalized demo tailored to your school's needs. No commitment required.
+                            </p>
+                        </motion.div>
+
+                        <div className="grid lg:grid-cols-2 gap-8 max-w-6xl mx-auto">
+                            {/* What to Expect Box */}
+                            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="bg-white/95 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-6 sm:p-8">
+                                <div className="flex items-center mb-6">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-600 rounded-xl flex items-center justify-center mr-4">
+                                        <Clock className="w-6 h-6 text-white" />
+                                    </div>
+                                    <h3 className="text-2xl font-black text-gray-900">What to Expect</h3>
+                                </div>
+                                <ul className="space-y-4">
+                                    <li className="flex items-start group">
+                                        <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mr-3 mt-0.5 group-hover:scale-110 transition-transform">
+                                            <CheckCircle className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-gray-700 font-medium leading-relaxed">A personalized 30-minute demo tailored to your school's needs</span>
+                                    </li>
+                                    <li className="flex items-start group">
+                                        <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center mr-3 mt-0.5 group-hover:scale-110 transition-transform">
+                                            <CheckCircle className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-gray-700 font-medium leading-relaxed">Live walkthrough of all key features and modules</span>
+                                    </li>
+                                    <li className="flex items-start group">
+                                        <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-purple-400 to-purple-600 rounded-full flex items-center justify-center mr-3 mt-0.5 group-hover:scale-110 transition-transform">
+                                            <CheckCircle className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-gray-700 font-medium leading-relaxed">Q&A session with our product experts</span>
+                                    </li>
+                                    <li className="flex items-start group">
+                                        <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-orange-400 to-orange-600 rounded-full flex items-center justify-center mr-3 mt-0.5 group-hover:scale-110 transition-transform">
+                                            <CheckCircle className="w-4 h-4 text-white" />
+                                        </div>
+                                        <span className="text-gray-700 font-medium leading-relaxed">Custom pricing and implementation timeline discussion</span>
+                                    </li>
+                                </ul>
+                            </motion.div>
+
+                            {/* CTA Box */}
+                            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="bg-gradient-to-br from-orange-600 to-orange-500 rounded-3xl shadow-2xl p-8 sm:p-10 flex flex-col justify-center">
+                                <div className="text-center text-white">
+                                    <div className="w-16 h-16 bg-white/20 backdrop-blur-xl rounded-2xl flex items-center justify-center mx-auto mb-6">
+                                        <Calendar className="w-8 h-8 text-white" />
+                                    </div>
+                                    <h3 className="text-3xl font-black mb-4">Ready to Get Started?</h3>
+                                    <p className="text-orange-50 text-lg mb-8 leading-relaxed">
+                                        Schedule your free personalized demo today and discover how SchoolMS can transform your school management.
+                                    </p>
+                                    <Link
+                                        href="/demo-booking"
+                                        className="inline-flex items-center px-8 py-4 bg-white text-orange-700 font-bold rounded-xl hover:shadow-2xl transition-all duration-300 hover:scale-105 group"
+                                    >
+                                        <span>Schedule Your Free Demo</span>
+                                        <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                                    </Link>
+                                    <p className="text-orange-100 text-sm mt-4">
+                                        No credit card required • 30-minute session
+                                    </p>
+                                </div>
+                            </motion.div>
+                        </div>
+                    </div>
+                </section>
 
                 <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">
