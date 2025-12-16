@@ -14,7 +14,6 @@ import {
     BarChart3,
     CheckCircle2,
     ArrowRight,
-    Zap,
     Menu,
     X
 } from 'lucide-react';
@@ -92,13 +91,13 @@ export default function Home() {
         'Examination & Results: Scheduling, Grading & Report Cards',
         'Teacher & Staff Management with Role-Based Access',
         'Attendance Tracking with Detailed Reports',
-        'Quran Memorization Tracking (Islamic Schools)',
+        'Quran Memorization Tracking (Perfect for Madrasahs)',
+        'Quran Homework & Home Practice Logging',
+        'Islamic Studies & Dual Curriculum Support',
         'Document Management System',
-        'Guardian Portal: View Attendance, Results & Fees',
+        'Guardian Portal: View Attendance, Results, Fees & Quran Progress',
         'Multi-Payment Methods: Cash, M-Pesa, Bank Transfer, Cheque',
         'Custom School Branding (Logo & School Information)',
-        'Super Admin Dashboard for Multi-School Management',
-        'User Impersonation for Support & Training',
         'Cloud Hosted with Automatic Backups'
     ];
 
@@ -177,18 +176,21 @@ export default function Home() {
                     <div className="max-w-7xl mx-auto relative z-10">
                         <div className="grid lg:grid-cols-2 gap-12 items-center">
                             <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.6 }}>
-                                <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-6">
-                                    <Zap className="w-4 h-4 text-orange-600 mr-2" />
-                                    <span className="text-orange-600 font-semibold text-sm">One System. Total School Control.</span>
+                                <div className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-100 to-amber-100 rounded-full mb-6 border border-orange-200">
+                                    <BookOpen className="w-4 h-4 text-orange-600 mr-2" />
+                                    <span className="text-gray-800 font-bold text-sm">For Regular Schools & Madrasahs (Islamic Schools)</span>
                                 </div>
 
                                 <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-gray-900 mb-6 leading-tight">
-                                    SchoolMS: Comprehensive School Management System
+                                    Complete Management System for
+                                    <span className="block mt-2 bg-gradient-to-r from-orange-600 to-orange-600 bg-clip-text text-transparent">
+                                        Schools & Madrasahs
+                                    </span>
                                 </h1>
 
                                 <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-                                    An all-in-one school management system designed to simplify academic, administrative, and communication processes.
-                                    Manage everything from student records and exam results to fee tracking and Quran memorization - all in one powerful platform.
+                                    An all-in-one management system designed for both <span className="font-bold text-gray-900">regular schools</span> and <span className="font-bold text-gray-900">madrasahs (Islamic schools)</span>.
+                                    Manage student records, exam results, fee tracking, <span className="font-bold text-green-700">Quran memorization tracking</span>, and more - all in one powerful platform.
                                 </p>
 
                                 <div className="flex flex-col sm:flex-row gap-4 mb-8">
@@ -268,6 +270,108 @@ export default function Home() {
                                     <p className="text-gray-600 leading-relaxed">{module.description}</p>
                                 </motion.div>
                             ))}
+                        </motion.div>
+                    </div>
+                </section>
+
+                {/* Madrasah-Specific Features Section */}
+                <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-50 via-white to-orange-50 relative overflow-hidden">
+                    {/* Animated Background */}
+                    <div className="absolute inset-0 opacity-20">
+                        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-orange-400 rounded-full mix-blend-screen filter blur-3xl animate-blob"></div>
+                        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-amber-400 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-2000"></div>
+                    </div>
+
+                    <div className="max-w-7xl mx-auto relative z-10">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-16">
+                            <div className="inline-flex items-center px-4 py-2 bg-orange-100 rounded-full mb-4 border border-orange-200">
+                                <BookOpen className="w-4 h-4 text-orange-600 mr-2" />
+                                <span className="text-orange-700 font-semibold text-sm">PERFECT FOR MADRASAHS</span>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+                                Built for Islamic Schools & Madrasahs
+                            </h2>
+                            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+                                Specialized features designed specifically for madrasahs and Islamic schools to track Quran memorization, Islamic studies, and maintain traditional values alongside modern management.
+                            </p>
+                        </motion.div>
+
+                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5 }} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-300">
+                                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6">
+                                    <BookOpen className="w-7 h-7 text-white" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-3">Quran Memorization Tracking</h3>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Track student progress in Quran memorization with page ranges, automatic calculation of surahs and juz completed. Monitor each student's journey in hifdh.
+                                </p>
+                            </motion.div>
+
+                            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.1 }} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-300">
+                                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6">
+                                    <ClipboardCheck className="w-7 h-7 text-white" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-3">Quran Homework & Practice</h3>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Assign Quran homework with specific page ranges and due dates. Track home practice sessions and monitor daily Quran recitation progress.
+                                </p>
+                            </motion.div>
+
+                            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.2 }} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-300">
+                                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6">
+                                    <Calendar className="w-7 h-7 text-white" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-3">Quran Progress Schedules</h3>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Create and manage Quran memorization schedules for students. Set goals, track milestones, and generate progress reports for parents.
+                                </p>
+                            </motion.div>
+
+                            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.3 }} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-300">
+                                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6">
+                                    <BarChart3 className="w-7 h-7 text-white" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-3">Guardian Quran Portal</h3>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Parents can view their children's Quran memorization progress, homework assignments, and practice logs through the dedicated guardian portal.
+                                </p>
+                            </motion.div>
+
+                            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.4 }} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-300">
+                                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6">
+                                    <FileText className="w-7 h-7 text-white" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-3">Islamic Studies Integration</h3>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Manage both secular and Islamic curriculum seamlessly. Track performance in Quran, Hadith, Fiqh, and other Islamic subjects alongside regular academics.
+                                </p>
+                            </motion.div>
+
+                            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.5, delay: 0.5 }} className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border-2 border-orange-100 hover:border-orange-300">
+                                <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center mb-6">
+                                    <Shield className="w-7 h-7 text-white" />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900 mb-3">Dual Curriculum Support</h3>
+                                <p className="text-gray-600 leading-relaxed">
+                                    Perfect for schools offering both national curriculum (CBC, IGCSE, etc.) and Islamic/Madrasah curriculum. Manage both systems in one platform.
+                                </p>
+                            </motion.div>
+                        </div>
+
+                        {/* Call to Action */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.6 }} className="mt-16 text-center">
+                            <div className="bg-gradient-to-r from-orange-600 to-orange-500 rounded-2xl p-8 lg:p-12 shadow-2xl">
+                                <h3 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+                                    Perfect for Both Regular Schools & Madrasahs
+                                </h3>
+                                <p className="text-orange-50 text-lg mb-8 max-w-2xl mx-auto">
+                                    Whether you run a regular school, an Islamic school, or a madrasah, SchoolMS has all the features you need to manage your institution effectively.
+                                </p>
+                                <Link href="/demo-booking" className="inline-flex items-center px-8 py-4 bg-white text-orange-700 font-bold rounded-xl hover:shadow-2xl transition-all duration-300 hover:scale-105">
+                                    <span>Schedule a Demo for Your School</span>
+                                    <ArrowRight className="w-5 h-5 ml-2" />
+                                </Link>
+                            </div>
                         </motion.div>
                     </div>
                 </section>
