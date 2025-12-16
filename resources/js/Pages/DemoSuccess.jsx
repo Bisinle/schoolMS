@@ -92,8 +92,8 @@ export default function DemoSuccess() {
                     <div className="mt-8 text-center">
                         <p className="text-gray-600">
                             Have questions? Contact us at{' '}
-                            <a href="mailto:alelmischoools@gmail.com" className="text-orange hover:text-orange-dark font-semibold">
-                                alelmischoools@gmail.com
+                            <a href="mailto:bisinleabdi@gmail.com" className="text-orange hover:text-orange-dark font-semibold">
+                                bisinleabdi@gmail.com
                             </a>
                         </p>
                     </div>

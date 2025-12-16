@@ -112,6 +112,15 @@
                     </span>
                 </div>
 
+                <div class="info-row">
+                    <span class="info-label">📱 Phone:</span>
+                    <span class="info-value">
+                        <a href="tel:{{ $bookingData['phone'] }}" style="color: #f97316; text-decoration: none;">
+                            {{ $bookingData['phone'] }}
+                        </a>
+                    </span>
+                </div>
+
                 @if(!empty($bookingData['school_name']))
                 <div class="info-row">
                     <span class="info-label">🏫 School Name:</span>

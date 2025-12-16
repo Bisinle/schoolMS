@@ -18,6 +18,7 @@ class DemoBookingController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255',
+            'phone' => 'required|string|max:20',
             'school_name' => 'nullable|string|max:255',
             'date' => 'required|date|after_or_equal:today',
             'time' => 'required|string',
@@ -26,11 +27,12 @@ class DemoBookingController extends Controller
 
         try {
             // Send email synchronously (not queued)
-            Mail::to('alelmischoools@gmail.com')->send(new DemoBookingNotification($validated));
+            Mail::to('bisinleabdi@gmail.com')->send(new DemoBookingNotification($validated));
 
             Log::info('Demo booking submitted successfully', [
                 'name' => $validated['name'],
                 'email' => $validated['email'],
+                'phone' => $validated['phone'],
                 'date' => $validated['date'],
                 'time' => $validated['time'],
             ]);
@@ -45,7 +47,7 @@ class DemoBookingController extends Controller
 
             // Redirect back with error
             return back()->withErrors([
-                'email' => 'Failed to submit your demo request. Please try again or contact us directly at alelmischoools@gmail.com'
+                'email' => 'Failed to submit your demo request. Please try again or contact us directly at bisinleabdi@gmail.com'
             ])->withInput();
         }
     }

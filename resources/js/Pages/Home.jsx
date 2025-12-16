@@ -15,9 +15,6 @@ import {
     CheckCircle2,
     ArrowRight,
     Zap,
-    Phone,
-    Mail,
-    MapPin,
     Menu,
     X
 } from 'lucide-react';
@@ -192,9 +189,9 @@ export default function Home() {
                                         <span>Get Started</span>
                                         <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
                                     </Link>
-                                    <a href="#contact" className="px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all duration-300 flex items-center justify-center">
+                                    <Link href="/demo-booking" className="px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all duration-300 flex items-center justify-center">
                                         Request Demo
-                                    </a>
+                                    </Link>
                                 </div>
 
                                 <div className="flex flex-wrap gap-6">
@@ -359,96 +356,15 @@ export default function Home() {
                                 <a href="#contact" className="flex-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 text-center">
                                     Buy Now
                                 </a>
-                                <a href="#contact" className="flex-1 px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all duration-300 text-center">
-                                    Contact Us
-                                </a>
+                                <Link href="/demo-booking" className="flex-1 px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all duration-300 text-center">
+                                    Request Demo
+                                </Link>
                             </div>
                         </motion.div>
                     </div>
                 </section>
 
-                <section id="contact" className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-gray-900 to-gray-800">
-                    <div className="max-w-7xl mx-auto">
-                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-12">
-                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-4">
-                                Ready to Simplify School Management?
-                            </h2>
-                            <p className="text-lg text-gray-300">
-                                Fill out the form below to Book a Live Demo Session
-                            </p>
-                        </motion.div>
 
-                        <div className="grid lg:grid-cols-2 gap-12">
-                            <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="bg-white rounded-xl p-8">
-                                <form className="space-y-6">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Name *</label>
-                                        <input type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Email Address *</label>
-                                        <input type="email" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Subject *</label>
-                                        <input type="text" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-2">Message *</label>
-                                        <textarea rows="4" className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent" required></textarea>
-                                    </div>
-                                    <button type="submit" className="w-full px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300">
-                                        Request Demo
-                                    </button>
-                                </form>
-                            </motion.div>
-
-                            <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="space-y-8">
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <Mail className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-white mb-1">Email</h3>
-                                        <a href="mailto:info@schoolms.com" className="text-gray-300 hover:text-orange-400 transition-colors">
-                                            info@schoolms.com
-                                        </a>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <Phone className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-white mb-1">Call Us On</h3>
-                                        <p className="text-gray-300">+254 700 000 000</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <MessageSquare className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-white mb-1">WhatsApp</h3>
-                                        <p className="text-gray-300">+254 700 000 000</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-start gap-4">
-                                    <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center flex-shrink-0">
-                                        <MapPin className="w-6 h-6 text-white" />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-lg font-bold text-white mb-1">Location</h3>
-                                        <p className="text-gray-300">Nairobi, Kenya</p>
-                                    </div>
-                                </div>
-                            </motion.div>
-                        </div>
-                    </div>
-                </section>
 
                 <footer className="bg-gray-900 text-white py-12 px-4 sm:px-6 lg:px-8">
                     <div className="max-w-7xl mx-auto">

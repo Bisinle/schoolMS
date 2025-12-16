@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { School, Calendar, Clock, Mail, User, Building, MessageSquare, ArrowLeft, Sparkles, CheckCircle, Smartphone } from 'lucide-react';
+import { School, Calendar, Clock, Mail, User, Building, MessageSquare, ArrowLeft, Sparkles, CheckCircle, Smartphone, Phone } from 'lucide-react';
 import InputError from '@/Components/InputError';
 
 // Import mobile screenshots
@@ -15,6 +15,7 @@ export default function DemoBooking() {
     const { data, setData, post, processing, errors } = useForm({
         name: '',
         email: '',
+        phone: '',
         school_name: '',
         date: '',
         time: '',
@@ -170,6 +171,28 @@ export default function DemoBooking() {
                                             />
                                         </div>
                                         <InputError message={errors.email} className="mt-2" />
+                                    </div>
+
+                                    {/* Phone Field */}
+                                    <div className="group">
+                                        <label htmlFor="phone" className="block text-sm font-bold text-gray-800 mb-2">
+                                            Phone Number <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                                <Phone className="h-5 w-5 text-gray-400 group-focus-within:text-orange-500 transition-colors" />
+                                            </div>
+                                            <input
+                                                id="phone"
+                                                type="tel"
+                                                value={data.phone}
+                                                onChange={(e) => setData('phone', e.target.value)}
+                                                className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all font-medium hover:border-gray-300"
+                                                placeholder="+254 700 000 000"
+                                                required
+                                            />
+                                        </div>
+                                        <InputError message={errors.phone} className="mt-2" />
                                     </div>
 
                                     {/* School Name Field */}
