@@ -47,7 +47,7 @@ export default function DemoBooking() {
                 {/* Animated Background */}
                 <div className="fixed inset-0 z-0">
                     {/* Gradient Background */}
-                    <div className="absolute inset-0 bg-gradient-to-br from-[#0b1a34] via-[#1a2f5a] to-[#0b1a34]"></div>
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#ffffff] via-[#f1f2f4] to-[#f2f2f4]"></div>
 
                     {/* Animated Mesh Gradient */}
                     <div className="absolute inset-0 opacity-30">
@@ -112,16 +112,16 @@ export default function DemoBooking() {
                             {/* Header */}
                             <div className="mb-8 sm:mb-10">
                                 <div className="inline-flex items-center px-4 py-2 bg-orange-500/20 backdrop-blur-sm border border-orange-500/30 rounded-full mb-6 animate-fade-in-down">
-                                    <Sparkles className="w-4 h-4 text-orange-400 mr-2 animate-pulse" />
-                                    <span className="text-orange-300 font-bold text-sm">FREE PERSONALIZED DEMO</span>
+                                    <Sparkles className="w-4 h-4 text-orange-600 mr-2 animate-pulse" />
+                                    <span className="text-orange-600 font-bold text-sm">FREE PERSONALIZED DEMO</span>
                                 </div>
-                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-white mb-4 leading-tight animate-fade-in">
+                                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#0b1a34] mb-4 leading-tight animate-fade-in">
                                     Book Your Free
-                                    <span className="block mt-2 bg-gradient-to-r from-orange-400 to-pink-400 bg-clip-text text-transparent">
+                                    <span className="block mt-2 bg-gradient-to-r from-orange-500 to-orange-600 bg-clip-text text-transparent">
                                         Demo Today
                                     </span>
                                 </h1>
-                                <p className="text-lg sm:text-xl text-gray-300 leading-relaxed animate-fade-in-up animation-delay-200">
+                                <p className="text-lg sm:text-xl text-gray-700 leading-relaxed animate-fade-in-up animation-delay-200">
                                     Schedule a personalized demo and discover how SchoolMS can transform your school management.
                                 </p>
                             </div>
