@@ -25,7 +25,7 @@ class DatabaseSeeder extends Seeder
             DocumentSeeder::class,          // 🔟 Create sample documents
             AcademicYearSeeder::class,      // 1️⃣1️⃣ Create academic years (2023-2026)
             AcademicTermSeeder::class,      // 1️⃣2️⃣ Create academic terms (3 per year)
-            FeeCategorySeeder::class,       // 1️⃣3️⃣ Create fee categories for all grades
+            FeePreferenceSystemSeeder::class, // 1️⃣3️⃣ Create fee system (transport, tuition, universal fees)
             SuperAdminSeeder::class,        // 1️⃣4️⃣ Create super admin (global access)
         ]);
 
