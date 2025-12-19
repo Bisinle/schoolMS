@@ -22,6 +22,8 @@ import { motion } from "framer-motion";
 import { StatCard } from "@/Components/UI";
 import StudentsByGradeChart from "./StudentsByGradeChart";
 import ExamCompletionChart from "./ExamCompletionChart";
+import FeePaymentStatusChart from "./FeePaymentStatusChart";
+import MonthlyRevenueChart from "./MonthlyRevenueChart";
 
 export default function AdminDashboardContent({
     stats,
@@ -36,6 +38,9 @@ export default function AdminDashboardContent({
     subjectsByCategory,
     quickStats,
     recentStudents,
+    feeStats,
+    invoicesByStatus,
+    monthlyCollections,
 }) {
     return (
         <div className="space-y-6">
@@ -374,7 +379,18 @@ export default function AdminDashboardContent({
                     </div>
                 )}
 
-            {/* Two Column Layout - Charts */}
+            {/* Financial Overview - Priority Section */}
+            {feeStats && (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <FeePaymentStatusChart
+                        invoicesByStatus={invoicesByStatus}
+                        feeStats={feeStats}
+                    />
+                    <MonthlyRevenueChart monthlyCollections={monthlyCollections} />
+                </div>
+            )}
+
+            {/* Academic Analytics - Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <StudentsByGradeChart studentsByGrade={studentsByGrade} />
                 <ExamCompletionChart examsWithCompletion={examsWithCompletion} />

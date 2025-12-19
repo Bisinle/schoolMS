@@ -25,6 +25,9 @@ export default function Dashboard({
     teachersByGrade,
     subjectsByCategory,
     quickStats,
+    feeStats,
+    invoicesByStatus,
+    monthlyCollections,
     // Teacher specific
     isClassTeacher,
     classTeacherGrade,
@@ -83,6 +86,9 @@ export default function Dashboard({
                     teachersByGrade={teachersByGrade}
                     subjectsByCategory={subjectsByCategory}
                     quickStats={quickStats}
+                    feeStats={feeStats}
+                    invoicesByStatus={invoicesByStatus}
+                    monthlyCollections={monthlyCollections}
                 />
             )}
 

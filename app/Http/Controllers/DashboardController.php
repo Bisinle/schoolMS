@@ -12,6 +12,9 @@ use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Document;
 use App\Models\QuranTracking;
+use App\Models\GuardianInvoice;
+use App\Models\GuardianPayment;
+use App\Models\AcademicTerm;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -158,6 +161,59 @@ class DashboardController extends Controller
             ];
         }
 
+        // Fee statistics
+        $currentTerm = AcademicTerm::where('is_active', true)->first();
+        $feeStats = [
+            'total_invoices' => 0,
+            'total_billed' => 0,
+            'total_collected' => 0,
+            'total_pending' => 0,
+        ];
+
+        $invoicesByStatus = [
+            'pending' => 0,
+            'partial' => 0,
+            'paid' => 0,
+            'overdue' => 0,
+        ];
+
+        $monthlyCollections = [];
+
+        if ($currentTerm) {
+            $invoices = GuardianInvoice::where('academic_term_id', $currentTerm->id)->get();
+            $feeStats['total_invoices'] = $invoices->count();
+            $feeStats['total_billed'] = $invoices->sum('total_amount');
+            $feeStats['total_collected'] = $invoices->sum('amount_paid');
+            $feeStats['total_pending'] = $feeStats['total_billed'] - $feeStats['total_collected'];
+
+            // Invoice status breakdown for vertical bar chart
+            $invoicesByStatus = [
+                'pending' => $invoices->where('status', 'pending')->count(),
+                'partial' => $invoices->where('status', 'partial')->count(),
+                'paid' => $invoices->where('status', 'paid')->count(),
+                'overdue' => $invoices->where('status', 'overdue')->count(),
+            ];
+
+            // Monthly collections for horizontal line chart (last 6 months)
+            $monthlyCollections = DB::table('guardian_payments')
+                ->join('guardian_invoices', 'guardian_payments.guardian_invoice_id', '=', 'guardian_invoices.id')
+                ->where('guardian_invoices.school_id', auth()->user()->school_id)
+                ->where('guardian_payments.payment_date', '>=', now()->subMonths(6))
+                ->select(
+                    DB::raw('DATE_FORMAT(guardian_payments.payment_date, "%Y-%m") as month'),
+                    DB::raw('SUM(guardian_payments.amount) as total')
+                )
+                ->groupBy('month')
+                ->orderBy('month', 'asc')
+                ->get()
+                ->map(function($item) {
+                    return [
+                        'month' => date('M Y', strtotime($item->month . '-01')),
+                        'total' => (float) $item->total,
+                    ];
+                });
+        }
+
         return [
             'stats' => [
                 'totalStudents' => $totalStudents,
@@ -182,6 +238,9 @@ class DashboardController extends Controller
             'currentYear' => $currentYear,
             'documentStats' => $documentStats,
             'quranStats' => $quranStats,
+            'feeStats' => $feeStats,
+            'invoicesByStatus' => $invoicesByStatus,
+            'monthlyCollections' => $monthlyCollections,
         ];
     }
 

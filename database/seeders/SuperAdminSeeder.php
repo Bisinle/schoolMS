@@ -29,6 +29,6 @@ class SuperAdminSeeder extends Seeder
 
         $this->command->info('Super Admin seeded successfully!');
         $this->command->info('Email: superadmin@schoolms.com');
-        $this->command->info('Password: password');
+        $this->command->info('Password: adminMS@SCHOOL');
     }
 }
