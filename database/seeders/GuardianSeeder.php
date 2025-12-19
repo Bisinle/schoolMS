@@ -13,11 +13,6 @@ class GuardianSeeder extends Seeder
 {
     public function run(): void
     {
-        // ✅ Skip this seeder if not in local environment
-        if (!app()->environment('local')) {
-            $this->command->info('GuardianSeeder skipped in non-local environment.');
-            return;
-        }
         // Get all schools to randomly assign guardians
         $schools = School::all();
 

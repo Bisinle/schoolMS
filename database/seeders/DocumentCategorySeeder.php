@@ -10,15 +10,6 @@ class DocumentCategorySeeder extends Seeder
 {
     public function run(): void
     {
-  
-
-
-            // ✅ Skip this seeder if not in local environment
-            if (!app()->environment('local')) {
-                $this->command->info('DocumentCategorySeeder skipped in non-local environment.');
-                return;
-            }
-            
         $this->command->info('🗂️  Seeding Document Categories...');
 
         // Get all schools to create document categories for each

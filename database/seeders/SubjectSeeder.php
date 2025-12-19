@@ -11,11 +11,6 @@ class SubjectSeeder extends Seeder
 {
     public function run(): void
     {
-        // ✅ Skip this seeder if not in local environment
-        if (!app()->environment('local')) {
-            $this->command->info('SubjectSeeder skipped in non-local environment.');
-            return;
-        }
         // Get all schools to create subjects for each
         $schools = School::all();
 
