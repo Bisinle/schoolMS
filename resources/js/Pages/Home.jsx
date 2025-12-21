@@ -169,7 +169,7 @@ export default function Home() {
                 </nav>
 
                 <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-orange-50 via-white to-orange-50 relative overflow-hidden">
-                    {/* Animated Mesh Gradient */}
+                    {/* Animated Mesh/blob Gradient */}
                     <div className="absolute inset-0 opacity-30">
                         <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500 rounded-full mix-blend-screen filter blur-3xl animate-blob"></div>
                         <div className="absolute top-0 right-1/4 w-96 h-96 bg-purple-500 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-2000"></div>
