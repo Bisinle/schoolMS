@@ -477,6 +477,79 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
 // Auth routes are loaded from auth.php
 require __DIR__ . '/auth.php';
 
+// One-time Google OAuth routes (for getting refresh token)
+// TODO: Remove these routes after obtaining the refresh token
+Route::get('/google/auth', function () {
+    return Laravel\Socialite\Facades\Socialite::driver('google')
+        ->stateless()
+        ->scopes([
+            'https://www.googleapis.com/auth/calendar',
+            'https://www.googleapis.com/auth/calendar.events'
+        ])
+        ->with([
+            'access_type' => 'offline',
+            'prompt' => 'consent'
+        ])
+        ->redirect();
+});
+
+Route::get('/google/callback', function () {
+    try {
+        $user = Laravel\Socialite\Facades\Socialite::driver('google')
+            ->stateless()
+            ->user();
+
+        // Prepare token data
+        $tokenData = [
+            'access_token' => $user->token,
+            'refresh_token' => $user->refreshToken,
+            'expires_in' => $user->expiresIn ?? 3600,
+            'token_type' => 'Bearer',
+            'created' => time()
+        ];
+
+        // Save to oauth-token.json
+        $tokenPath = storage_path('app/google-calendar/oauth-token.json');
+        file_put_contents($tokenPath, json_encode($tokenData, JSON_PRETTY_PRINT));
+
+        // Also update .env file with refresh token
+        $envPath = base_path('.env');
+        $envContent = file_get_contents($envPath);
+
+        if (strpos($envContent, 'GOOGLE_REFRESH_TOKEN=') !== false) {
+            $envContent = preg_replace(
+                '/GOOGLE_REFRESH_TOKEN=.*/',
+                'GOOGLE_REFRESH_TOKEN=' . $user->refreshToken,
+                $envContent
+            );
+            file_put_contents($envPath, $envContent);
+        }
+
+        return response()->json([
+            'success' => true,
+            'refresh_token' => $user->refreshToken,
+            'access_token' => substr($user->token, 0, 20) . '...',
+            'message' => '✅ SUCCESS! Token saved to both .env and oauth-token.json',
+            'next_steps' => [
+                '1. Run: php artisan config:clear',
+                '2. Test the demo booking form',
+                '3. Remove these auth routes from web.php'
+            ]
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'message' => 'Failed to authenticate. Please try again by visiting /google/auth',
+            'troubleshooting' => [
+                '1. Make sure redirect URI in Google Console matches: http://localhost:8001/google/callback',
+                '2. Run: php artisan config:clear',
+                '3. Clear browser cookies and try again'
+            ]
+        ], 500);
+    }
+});
+
 // Fallback route for 404
 Route::fallback(function () {
     return Inertia::render('Errors/404');

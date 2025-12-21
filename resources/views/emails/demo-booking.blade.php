@@ -121,12 +121,10 @@
                     </span>
                 </div>
 
-                @if(!empty($bookingData['school_name']))
                 <div class="info-row">
                     <span class="info-label">🏫 School Name:</span>
                     <span class="info-value">{{ $bookingData['school_name'] }}</span>
                 </div>
-                @endif
             </div>
 
             <div class="info-section">
@@ -144,6 +142,17 @@
                     <span class="info-label">🕐 Time:</span>
                     <span class="info-value">{{ $bookingData['time'] }}</span>
                 </div>
+
+                @if(!empty($bookingData['meet_link']))
+                <div class="info-row" style="background-color: #f0fdf4; border-left: 4px solid #22c55e;">
+                    <span class="info-label">🎥 Google Meet Link:</span>
+                    <span class="info-value">
+                        <a href="{{ $bookingData['meet_link'] }}" style="color: #15803d; text-decoration: none; font-weight: bold;">
+                            Join Meeting
+                        </a>
+                    </span>
+                </div>
+                @endif
             </div>
 
             @if(!empty($bookingData['message']))
@@ -155,7 +164,7 @@
 
             <div style="margin-top: 30px; padding: 20px; background-color: #eff6ff; border-radius: 4px; border-left: 4px solid #3b82f6;">
                 <p style="margin: 0; color: #1e40af;">
-                    <strong>⚡ Action Required:</strong> Please reach out to this prospect within 24 hours to confirm the demo schedule.
+                    <strong>⚡ Action Required:</strong> Please reach out to this prospect within 24 hours to confirm the demo schedule. The Google Meet link has been automatically created and shared with the client.
                 </p>
             </div>
         </div>

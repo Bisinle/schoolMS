@@ -34,6 +34,13 @@ export default function DemoBooking() {
         '05:00 PM',
     ];
 
+    // Calculate minimum date (2 days from today)
+    const getMinDate = () => {
+        const today = new Date();
+        today.setDate(today.getDate() + 2);
+        return today.toISOString().split('T')[0];
+    };
+
     const submit = (e) => {
         e.preventDefault();
         post(route('demo.booking.submit'));
@@ -198,7 +205,7 @@ export default function DemoBooking() {
                                     {/* School Name Field */}
                                     <div className="group">
                                         <label htmlFor="school_name" className="block text-sm font-bold text-gray-800 mb-2">
-                                            School Name <span className="text-gray-400 text-xs font-normal">(Optional)</span>
+                                            School Name <span className="text-red-500">*</span>
                                         </label>
                                         <div className="relative">
                                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -211,6 +218,7 @@ export default function DemoBooking() {
                                                 onChange={(e) => setData('school_name', e.target.value)}
                                                 className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all font-medium hover:border-gray-300"
                                                 placeholder="ABC International School"
+                                                required
                                             />
                                         </div>
                                         <InputError message={errors.school_name} className="mt-2" />
@@ -232,11 +240,12 @@ export default function DemoBooking() {
                                                     type="date"
                                                     value={data.date}
                                                     onChange={(e) => setData('date', e.target.value)}
-                                                    min={new Date().toISOString().split('T')[0]}
+                                                    min={getMinDate()}
                                                     className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all font-medium hover:border-gray-300"
                                                     required
                                                 />
                                             </div>
+                                            <p className="mt-1 text-xs text-gray-500">Minimum 2 days advance booking required</p>
                                             <InputError message={errors.date} className="mt-2" />
                                         </div>
 

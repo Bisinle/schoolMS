@@ -548,12 +548,44 @@ export default function Home() {
 
                         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-6 sm:p-8 lg:p-12 border-2 border-orange-500 shadow-2xl">
                             <div className="text-center mb-6 sm:mb-8">
-                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">SchoolMS Complete Plan</h3>
-                                <div className="flex flex-col sm:flex-row items-center sm:items-end justify-center mb-3 sm:mb-4 gap-1 sm:gap-0">
-                                    <span className="text-4xl sm:text-5xl lg:text-6xl font-bold text-orange-600">KSh 180</span>
-                                    <span className="text-base sm:text-lg text-gray-600 font-medium sm:ml-2 sm:mb-2">/student/month</span>
+                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">SCHOOL-MS</h3>
+                                <p className="text-base sm:text-lg text-gray-600 font-medium mb-4">Simple · Scalable · Affordable</p>
+
+                                {/* Monthly Pricing */}
+                                <div className="mb-6 pb-6 border-b border-gray-200">
+                                    <h4 className="text-lg font-bold text-gray-900 mb-3">Monthly Pricing</h4>
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-end justify-center mb-2 gap-1 sm:gap-0">
+                                        <span className="text-4xl sm:text-5xl lg:text-6xl font-bold text-orange-600">KES 5,000</span>
+                                        <span className="text-base sm:text-lg text-gray-600 font-medium sm:ml-2 sm:mb-2">/month</span>
+                                    </div>
+                                    <p className="text-sm sm:text-base text-gray-600 px-4">Includes up to <strong>50 active users</strong></p>
+                                    <p className="text-xs sm:text-sm text-gray-500 px-4">(Students • Teachers • Admin • Staff • Parents)</p>
                                 </div>
-                                <p className="text-sm sm:text-base lg:text-lg text-gray-600 px-4">Pay only for active students - Simple & Affordable</p>
+
+                                {/* Above 50 Users */}
+                                <div className="mb-6 pb-6 border-b border-gray-200">
+                                    <h4 className="text-lg font-bold text-gray-900 mb-3">Above 50 users</h4>
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-end justify-center mb-2 gap-1 sm:gap-2">
+                                        <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-orange-600">KES 5,000</span>
+                                        <span className="text-2xl sm:text-3xl font-bold text-gray-700">+</span>
+                                        <span className="text-3xl sm:text-4xl lg:text-5xl font-bold text-orange-600">KES 100</span>
+                                    </div>
+                                    <p className="text-sm sm:text-base text-gray-600 px-4 font-medium">Base price + KES 100 per extra user</p>
+                                    <p className="text-xs sm:text-sm text-gray-500 px-4">Only pay for users above 50</p>
+                                </div>
+
+                                {/* Annual Plan */}
+                                <div className="mb-4">
+                                    <h4 className="text-lg font-bold text-gray-900 mb-2">Annual Plan Available</h4>
+                                    <p className="text-sm sm:text-base text-green-600 font-semibold">Get 1 month free!</p>
+                                </div>
+
+                                {/* Supporting Features */}
+                                <div className="flex flex-wrap justify-center gap-3 mt-4">
+                                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">☁️ Cloud-based</span>
+                                    <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">🏫 Full school management</span>
+                                    <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">📈 Designed for growing schools</span>
+                                </div>
                             </div>
 
                             <div className="mb-8">
