@@ -525,6 +525,108 @@ export default function Home() {
                     </div>
                 </section>
 
+                {/* Mobile-Friendly & Anywhere-Access Section */}
+                <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
+                    {/* Animated Background */}
+                    <div className="absolute inset-0 opacity-20">
+                        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-400 rounded-full mix-blend-screen filter blur-3xl animate-blob"></div>
+                        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-400 rounded-full mix-blend-screen filter blur-3xl animate-blob animation-delay-2000"></div>
+                    </div>
+
+                    <div className="max-w-6xl mx-auto relative z-10">
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="text-center mb-12">
+                            <div className="inline-flex items-center px-4 py-2 bg-blue-100 rounded-full mb-4">
+                                <Smartphone className="w-4 h-4 text-blue-600 mr-2" />
+                                <span className="text-blue-600 font-semibold text-sm">MOBILE-FRIENDLY</span>
+                            </div>
+                            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6">
+                                School-MS is a Mobile-Friendly School Management System
+                            </h2>
+                            <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+                                Access your school anytime, anywhere. Monitor students, staff, attendance, and finance in real time.
+                            </p>
+                        </motion.div>
+
+                        <div className="grid md:grid-cols-2 gap-8 mb-12">
+                            {/* Key Benefits */}
+                            <motion.div initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="space-y-6">
+                                <div className="flex items-start gap-4 bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <Smartphone className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">Access Anywhere</h3>
+                                        <p className="text-gray-600">Manage your school from your phone, tablet, or computer - wherever you are.</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4 bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <BarChart3 className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">Real-Time Visibility</h3>
+                                        <p className="text-gray-600">View reports, performance metrics, and financial data instantly, updated in real time.</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-start gap-4 bg-white rounded-xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+                                    <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                                        <CheckCircle className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-lg font-bold text-gray-900 mb-2">Complete Control</h3>
+                                        <p className="text-gray-600">Monitor students, staff, attendance, fees, and academic performance from one dashboard.</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+
+                            {/* Visual/Image Side */}
+                            <motion.div initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }} className="flex items-center justify-center">
+                                <div className="relative">
+                                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600 rounded-3xl blur-2xl opacity-20"></div>
+                                    <div className="relative bg-gradient-to-br from-blue-600 to-purple-600 rounded-3xl p-8 sm:p-12 text-white shadow-2xl">
+                                        <div className="space-y-6">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                                    <School className="w-6 h-6 text-white" />
+                                                </div>
+                                                <p className="text-lg font-semibold">At School</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                                    <Users className="w-6 h-6 text-white" />
+                                                </div>
+                                                <p className="text-lg font-semibold">At Home</p>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                                                    <Smartphone className="w-6 h-6 text-white" />
+                                                </div>
+                                                <p className="text-lg font-semibold">While Traveling</p>
+                                            </div>
+                                            <div className="pt-6 border-t border-white/20">
+                                                <p className="text-2xl font-bold leading-relaxed">
+                                                    Your school is always with you.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        </div>
+
+                        {/* Closing Statement */}
+                        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="text-center">
+                            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 sm:p-10 shadow-2xl">
+                                <p className="text-2xl sm:text-3xl font-bold text-white leading-relaxed">
+                                    Whether you're at school, at home, or traveling — your school is always with you.
+                                </p>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+
                 <section id="pricing" className="py-20 px-4 sm:px-6 lg:px-8 bg-white relative overflow-hidden">
                     {/* Animated Mesh Gradient */}
                     <div className="absolute inset-0 opacity-20">
@@ -539,7 +641,7 @@ export default function Home() {
                                 <span className="text-orange-600 font-semibold text-sm">PRICING</span>
                             </div>
                             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
-                                Simple, Transparent Pricing
+                                Simple · Scalable · Affordable
                             </h2>
                             <p className="text-lg text-gray-600">
                                 Everything you need to run your school efficiently
@@ -547,30 +649,67 @@ export default function Home() {
                         </motion.div>
 
                         <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.2 }} className="bg-gradient-to-br from-orange-50 to-white rounded-2xl p-6 sm:p-8 lg:p-12 border-2 border-orange-500 shadow-2xl">
-                            <div className="text-center mb-6 sm:mb-8">
-                                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-3 sm:mb-4 px-2">SchoolMS Complete Plan</h3>
-                                <div className="flex flex-col sm:flex-row items-center sm:items-end justify-center mb-3 sm:mb-4 gap-1 sm:gap-0">
-                                    <span className="text-4xl sm:text-5xl lg:text-6xl font-bold text-orange-600">KSh 180</span>
-                                    <span className="text-base sm:text-lg text-gray-600 font-medium sm:ml-2 sm:mb-2">/student/month</span>
-                                </div>
-                                <p className="text-sm sm:text-base lg:text-lg text-gray-600 px-4">Pay only for active students - Simple & Affordable</p>
-                            </div>
+                            <div className="text-center mb-8">
+                                <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6">Monthly Pricing</h3>
 
-                            <div className="mb-8">
-                                <h4 className="font-bold text-gray-900 mb-4 text-lg">Features Included In Plan:</h4>
-                                <div className="space-y-3">
-                                    {features.map((feature, index) => (
-                                        <div key={index} className="flex items-start gap-3">
-                                            <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
-                                            <span className="text-gray-700">{feature}</span>
+                                {/* Base Price */}
+                                <div className="mb-8 pb-8 border-b border-gray-200">
+                                    <div className="flex flex-col items-center justify-center mb-4">
+                                        <span className="text-5xl sm:text-6xl font-bold text-orange-600">KES 5,000</span>
+                                        <span className="text-lg text-gray-600 font-medium mt-2">/month</span>
+                                    </div>
+                                    <div className="bg-orange-50 rounded-xl p-4 max-w-md mx-auto">
+                                        <p className="text-gray-700 font-semibold mb-2">Includes up to 50 active users</p>
+                                        <p className="text-sm text-gray-600">(Students • Teachers • Admin • Staff • Parents)</p>
+                                    </div>
+                                </div>
+
+                                {/* Additional Users */}
+                                <div className="mb-8 pb-8 border-b border-gray-200">
+                                    <h4 className="text-xl font-bold text-gray-900 mb-4">Above 50 users</h4>
+                                    <div className="bg-orange-50 rounded-xl p-5 max-w-md mx-auto">
+                                        <div className="flex items-center justify-center gap-2 mb-3">
+                                            <span className="text-2xl font-bold text-gray-700">KES 5,000</span>
+                                            <span className="text-2xl font-bold text-gray-400">+</span>
+                                            <span className="text-2xl font-bold text-orange-600">KES 100</span>
                                         </div>
-                                    ))}
+                                        <p className="text-sm text-gray-700 font-semibold text-center mb-1">Base price + KES 100 per extra user</p>
+                                        <p className="text-xs text-gray-600 text-center">Only pay for users above 50</p>
+                                    </div>
+                                </div>
+
+                                {/* Annual Plan */}
+                                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-6 mb-8 border border-green-200">
+                                    <h4 className="text-xl font-bold text-gray-900 mb-2">Annual Plan Available</h4>
+                                    <p className="text-green-700 font-semibold text-lg">Get 1 month free</p>
+                                </div>
+
+                                {/* Supporting Features */}
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2">
+                                            <Smartphone className="w-6 h-6 text-orange-600" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-700">Cloud-based</p>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2">
+                                            <School className="w-6 h-6 text-orange-600" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-700">Full school management</p>
+                                    </div>
+                                    <div className="flex flex-col items-center">
+                                        <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mb-2">
+                                            <BarChart3 className="w-6 h-6 text-orange-600" />
+                                        </div>
+                                        <p className="text-sm font-semibold text-gray-700">Designed for growing schools</p>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-4">
+                            <div className="flex flex-col sm:flex-row gap-4 mt-8">
                                 <Link href="/demo-booking" className="flex-1 px-8 py-4 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold rounded-lg hover:shadow-xl hover:shadow-orange-500/50 transition-all duration-300 text-center">
-                                    Buy Now
+                                    Get Started
                                 </Link>
                                 <Link href="/demo-booking" className="flex-1 px-8 py-4 bg-white text-gray-700 font-semibold rounded-lg border-2 border-gray-200 hover:border-orange-500 hover:text-orange-600 transition-all duration-300 text-center">
                                     Request Demo
