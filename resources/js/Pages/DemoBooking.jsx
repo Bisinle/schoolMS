@@ -34,6 +34,13 @@ export default function DemoBooking() {
         '05:00 PM',
     ];
 
+    // Calculate minimum date (2 days from today)
+    const getMinDate = () => {
+        const today = new Date();
+        today.setDate(today.getDate() + 2);
+        return today.toISOString().split('T')[0];
+    };
+
     const submit = (e) => {
         e.preventDefault();
         post(route('demo.booking.submit'));
@@ -232,11 +239,12 @@ export default function DemoBooking() {
                                                     type="date"
                                                     value={data.date}
                                                     onChange={(e) => setData('date', e.target.value)}
-                                                    min={new Date().toISOString().split('T')[0]}
+                                                    min={getMinDate()}
                                                     className="block w-full pl-12 pr-4 py-3.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all font-medium hover:border-gray-300"
                                                     required
                                                 />
                                             </div>
+                                            <p className="mt-1 text-xs text-gray-500">Minimum 2 days advance booking required</p>
                                             <InputError message={errors.date} className="mt-2" />
                                         </div>
 
