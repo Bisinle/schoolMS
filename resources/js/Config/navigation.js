@@ -61,7 +61,6 @@ export const getNavigation = (role, isMadrasah = false) => {
                 submenu: [
                     { name: "Dashboard", href: "/fees", icon: LayoutDashboard },
                     { name: "Invoices", href: "/invoices", icon: Receipt },
-                    { name: "Fee Categories", href: "/fee-categories", icon: Tag },
                     { name: "Transport Routes", href: "/transport-routes", icon: Bus },
                     { name: "Tuition Fees", href: "/tuition-fees", icon: GraduationCap },
                     { name: "Universal Fees", href: "/universal-fees", icon: BookOpen },
