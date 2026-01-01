@@ -9,6 +9,9 @@ import {
     CheckCircle,
     Trophy,
     AlertTriangle,
+    BookOpen,
+    DoorOpen,
+    Calendar,
 } from "lucide-react";
 import { StatCard, ProgressBar } from "@/Components/UI";
 
@@ -23,6 +26,8 @@ export default function TeacherDashboardContent({
     examsNeedingAttention,
     topStudents,
     recentStudents,
+    todayLessons,
+    currentDay,
 }) {
     return (
         <div className="space-y-6">
@@ -50,7 +55,7 @@ export default function TeacherDashboardContent({
             </div>
 
             {/* Stats Grid - Mobile Optimized */}
-            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 sm:gap-6">
                 <StatCard
                     icon={School}
                     label="My Grades"
@@ -81,7 +86,61 @@ export default function TeacherDashboardContent({
                     value={stats?.pendingResults || 0}
                     gradient="from-red-500 to-orange-600"
                 />
+                <StatCard
+                    icon={Calendar}
+                    label="Today's Lessons"
+                    value={stats?.todayLessons || 0}
+                    gradient="from-teal-500 to-cyan-600"
+                />
             </div>
+
+            {/* Today's Lessons Widget */}
+            {todayLessons && todayLessons.length > 0 && (
+                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                    <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-teal-50 to-cyan-50">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight flex items-center">
+                                <Clock className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-teal-600" />
+                                Today's Lessons ({currentDay})
+                            </h3>
+                            <Link
+                                href="/timetables/my-timetable"
+                                className="text-sm sm:text-base text-teal-600 hover:text-teal-700 font-bold"
+                            >
+                                View Full Schedule →
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="p-4 sm:p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {todayLessons.map((lesson, index) => (
+                                <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-gradient-to-br from-white to-gray-50">
+                                    <div className="flex items-start justify-between mb-3">
+                                        <div className="flex items-center text-sm font-semibold text-gray-900">
+                                            <BookOpen className="w-4 h-4 mr-2 text-teal-600" />
+                                            {lesson.subject}
+                                        </div>
+                                        <span className="text-xs bg-teal-100 text-teal-800 px-2 py-1 rounded font-medium">
+                                            {lesson.grade}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <Clock className="w-3 h-3 mr-2 text-gray-500" />
+                                            {lesson.start_time} - {lesson.end_time}
+                                        </div>
+                                        <div className="flex items-center text-sm text-gray-600">
+                                            <DoorOpen className="w-3 h-3 mr-2 text-gray-500" />
+                                            Room {lesson.room}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Document Stats Widget - Mobile Optimized */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">

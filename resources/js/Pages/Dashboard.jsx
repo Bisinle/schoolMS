@@ -25,11 +25,14 @@ export default function Dashboard({
     teachersByGrade,
     subjectsByCategory,
     quickStats,
+    timetableAnalytics,
     // Teacher specific
     isClassTeacher,
     classTeacherGrade,
     myGrades,
     examsNeedingAttention,
+    todayLessons,
+    currentDay,
 }) {
     const { flash } = usePage().props;
     const { auth } = usePage().props;
@@ -83,6 +86,7 @@ export default function Dashboard({
                     teachersByGrade={teachersByGrade}
                     subjectsByCategory={subjectsByCategory}
                     quickStats={quickStats}
+                    timetableAnalytics={timetableAnalytics}
                 />
             )}
 
@@ -98,6 +102,8 @@ export default function Dashboard({
                     examsNeedingAttention={examsNeedingAttention}
                     topStudents={topStudents}
                     recentStudents={recentStudents}
+                    todayLessons={todayLessons}
+                    currentDay={currentDay}
                 />
             )}
 

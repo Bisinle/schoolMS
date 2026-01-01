@@ -20,6 +20,7 @@ class TeacherController extends Controller
     {
         $this->authorize('viewAny', Teacher::class);
 
+        // Note: School scoping is handled automatically by the SchoolScope global scope
         $teachers = Teacher::with(['user', 'grades'])
             ->when($request->search, function ($query, $search) {
                 $query->whereHas('user', function ($q) use ($search) {

@@ -17,6 +17,7 @@ import {
     Tag,
     Receipt,
     Home,
+    Clock,
 } from "lucide-react";
 
 /**
@@ -43,6 +44,18 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Grades", href: "/grades", icon: BookOpen },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
+            {
+                name: "Timetables",
+                icon: Clock,
+                submenu: [
+                    { name: "Dashboard", href: "/timetables/dashboard", icon: LayoutDashboard },
+                    { name: "Blueprints", href: "/blueprints", icon: FileText },
+                    { name: "Templates", href: "/timetables/templates", icon: Calendar },
+                    { name: "Periods", href: "/timetables/periods", icon: Clock },
+                    { name: "Rooms", href: "/timetables/rooms", icon: School },
+                    { name: "Availability", href: "/timetables/availability", icon: UserCog },
+                ]
+            },
             ...(isMadrasah ? [
                 {
                     name: "Quran",
@@ -88,6 +101,14 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Attendance", href: "/attendance", icon: ClipboardCheck },
             { name: "Subjects", href: "/subjects", icon: FileText },
             { name: "Exams", href: "/exams", icon: Calendar },
+            {
+                name: "Timetables",
+                icon: Clock,
+                submenu: [
+                    { name: "My Timetable", href: "/timetables/my-timetable", icon: Calendar },
+                    { name: "My Availability", href: "/timetables/availability", icon: UserCog },
+                ]
+            },
             ...(isMadrasah ? [
                 {
                     name: "Quran",

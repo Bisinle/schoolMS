@@ -12,9 +12,12 @@ use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Document;
 use App\Models\QuranTracking;
+use App\Models\TimetableSlot;
+use App\Services\TimetableAnalyticsService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -158,6 +161,15 @@ class DashboardController extends Controller
             ];
         }
 
+        // PHASE 4: Timetable Analytics
+        $timetableAnalytics = null;
+        $analyticsService = app(TimetableAnalyticsService::class);
+        $schoolId = auth()->user()->school_id;
+
+        if ($schoolId) {
+            $timetableAnalytics = $analyticsService->getDashboardAnalytics($schoolId);
+        }
+
         return [
             'stats' => [
                 'totalStudents' => $totalStudents,
@@ -182,6 +194,7 @@ class DashboardController extends Controller
             'currentYear' => $currentYear,
             'documentStats' => $documentStats,
             'quranStats' => $quranStats,
+            'timetableAnalytics' => $timetableAnalytics,
         ];
     }
 
@@ -413,6 +426,40 @@ class DashboardController extends Controller
             ->take(5)
             ->values();
     
+        // Get today's lessons from published timetables
+        $today = strtolower(Carbon::now()->format('l')); // 'monday', 'tuesday', etc.
+        $todayLessons = TimetableSlot::query()
+            ->where('teacher_id', $teacher->id)
+            ->where('school_id', $user->school_id)
+            ->where('day_of_week', $today)
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('is_teachable', true)
+                      ->where('slot_type', 'lesson');
+                })
+                ->orWhere('slot_type', TimetableSlot::TYPE_LESSON);
+            })
+            ->whereHas('template', function ($query) {
+                $query->where('status', 'published');
+            })
+            ->with([
+                'subject:id,name',
+                'template.grade:id,name',
+                'room:id,room_number',
+            ])
+            ->orderBy('start_time')
+            ->get()
+            ->map(function ($slot) {
+                return [
+                    'id' => $slot->id,
+                    'subject' => $slot->subject ? $slot->subject->name : 'N/A',
+                    'grade' => $slot->template && $slot->template->grade ? $slot->template->grade->name : 'N/A',
+                    'start_time' => $slot->start_time ?? ($slot->period ? $slot->period->start_time : 'N/A'),
+                    'end_time' => $slot->end_time ?? ($slot->period ? $slot->period->end_time : 'N/A'),
+                    'room' => $slot->room ? $slot->room->room_number : 'N/A',
+                ];
+            });
+
         return [
             'stats' => [
                 'assignedGrades' => $assignedGrades->count(),
@@ -422,6 +469,7 @@ class DashboardController extends Controller
                 'pendingResults' => $examsNeedingAttention->count(),
                 'upcomingExams' => $upcomingExams->count(),
                 'studentsNeedingAttention' => $studentsNeedingAttention->count(),
+                'todayLessons' => $todayLessons->count(),
             ],
             'isClassTeacher' => $isClassTeacher,
             'classTeacherGrade' => $classTeacherGrade ? $classTeacherGrade->name : null,
@@ -433,6 +481,8 @@ class DashboardController extends Controller
             'recentExamActivity' => $recentExamActivity,
             'attendanceSummary' => $attendanceSummary,
             'studentsNeedingAttention' => $studentsNeedingAttention,
+            'todayLessons' => $todayLessons,
+            'currentDay' => ucfirst($today),
             'currentTerm' => $currentTerm,
             'currentYear' => $currentYear,
             'documentStats' => $documentStats,

@@ -22,12 +22,22 @@ class UserSeeder extends Seeder
         // Create Teacher Users (for TeacherSeeder to use)
         User::create([
             'school_id' => $schools->random()->id,
+            'name' => 'Lydia Teacher',
+            'email' => 'lydia.teacher@school.com',
+            'password' => Hash::make('password'),
+            'role' => 'teacher',
+            'is_active' => true,
+            'phone' => '0712345671',
+        ]);
+
+        User::create([
+            'school_id' => $schools->random()->id,
             'name' => 'Faith Teacher',
             'email' => 'faith.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
             'is_active' => true,
-            'phone' => '0712345671',
+            'phone' => '0712345672',
         ]);
 
         User::create([
@@ -37,23 +47,13 @@ class UserSeeder extends Seeder
             'password' => Hash::make('password'),
             'role' => 'teacher',
             'is_active' => true,
-            'phone' => '0712345672',
-        ]);
-
-        User::create([
-            'school_id' => $schools->random()->id,
-            'name' => 'Lydia Teacher',
-            'email' => 'lydia.teacher@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'teacher',
-            'is_active' => true,
             'phone' => '0712345673',
         ]);
 
         User::create([
             'school_id' => $schools->random()->id,
-            'name' => 'Damaris Teacher',
-            'email' => 'damaris.teacher@school.com',
+            'name' => 'Betty Teacher',
+            'email' => 'betty.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
             'is_active' => true,
@@ -62,8 +62,8 @@ class UserSeeder extends Seeder
 
         User::create([
             'school_id' => $schools->random()->id,
-            'name' => 'Petty Teacher',
-            'email' => 'petty.teacher@school.com',
+            'name' => 'Jackline Teacher',
+            'email' => 'jackline.teacher@school.com',
             'password' => Hash::make('password'),
             'role' => 'teacher',
             'is_active' => true,

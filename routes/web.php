@@ -8,6 +8,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\TeacherTimetableController;
 use App\Http\Controllers\GradeController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\SubjectController;
@@ -38,6 +39,12 @@ use App\Http\Controllers\Settings\SchoolProfileController;
 use App\Http\Controllers\Settings\AcademicYearController;
 use App\Http\Controllers\Settings\AcademicTermController;
 use App\Http\Controllers\Settings\SystemPreferencesController;
+use App\Http\Controllers\TimetableTemplateController;
+use App\Http\Controllers\TimetablePeriodController;
+use App\Http\Controllers\RoomController;
+use App\Http\Controllers\TimetableSlotController;
+use App\Http\Controllers\TeacherAvailabilityController;
+use App\Http\Controllers\LevelDayBlueprintController;
 use App\Models\Grade;
 
 /*
@@ -257,6 +264,126 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/settings/academic', [SchoolSettingController::class, 'academic'])->name('settings.academic');
         Route::post('/settings/academic', [SchoolSettingController::class, 'updateAcademic'])->name('settings.academic.update');
+    });
+
+    //^ Blueprint Routes (Admin only)
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/blueprints', [LevelDayBlueprintController::class, 'index'])->name('blueprints.index');
+        Route::get('/blueprints/create', [LevelDayBlueprintController::class, 'create'])->name('blueprints.create');
+        Route::post('/blueprints', [LevelDayBlueprintController::class, 'store'])->name('blueprints.store');
+        Route::get('/blueprints/{blueprint}', [LevelDayBlueprintController::class, 'show'])->name('blueprints.show');
+        Route::get('/blueprints/{blueprint}/edit', [LevelDayBlueprintController::class, 'edit'])->name('blueprints.edit');
+        Route::put('/blueprints/{blueprint}', [LevelDayBlueprintController::class, 'update'])->name('blueprints.update');
+        Route::delete('/blueprints/{blueprint}', [LevelDayBlueprintController::class, 'destroy'])->name('blueprints.destroy');
+        Route::post('/blueprints/{blueprint}/toggle-active', [LevelDayBlueprintController::class, 'toggleActive'])->name('blueprints.toggle-active');
+
+        // Period generation routes
+        Route::post('/blueprints/{blueprint}/generate-periods', [LevelDayBlueprintController::class, 'generatePeriods'])->name('blueprints.generate-periods');
+        Route::post('/blueprints/{blueprint}/regenerate-periods', [LevelDayBlueprintController::class, 'regeneratePeriods'])->name('blueprints.regenerate-periods');
+        Route::get('/blueprints/{blueprint}/generation-status', [LevelDayBlueprintController::class, 'generationStatus'])->name('blueprints.generation-status');
+    });
+
+    //^ Timetable Routes
+    Route::prefix('timetables')->group(function () {
+        // Teacher's Personal Timetable (Teachers only - strict data partitioning)
+        Route::middleware(['role:teacher'])->group(function () {
+            Route::get('/my-timetable', [TeacherTimetableController::class, 'index'])->name('timetables.my-timetable');
+        });
+
+        // Timetable Dashboard (Admin only)
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/dashboard', [TimetableTemplateController::class, 'dashboard'])->name('timetables.dashboard');
+        });
+
+        // Timetable Templates (Admin only - teachers should not access templates)
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/templates', [TimetableTemplateController::class, 'index'])->name('timetables.templates.index');
+            Route::get('/templates/create', [TimetableTemplateController::class, 'create'])->name('timetables.templates.create');
+            Route::post('/templates', [TimetableTemplateController::class, 'store'])->name('timetables.templates.store');
+            Route::get('/templates/{template}', [TimetableTemplateController::class, 'show'])->name('timetables.templates.show');
+            Route::get('/templates/{template}/grid', [TimetableTemplateController::class, 'grid'])->name('timetables.templates.grid');
+            Route::get('/templates/{template}/compliance', [TimetableTemplateController::class, 'complianceReport'])->name('timetables.templates.compliance');
+            Route::get('/templates/{template}/edit', [TimetableTemplateController::class, 'edit'])->name('timetables.templates.edit');
+            Route::put('/templates/{template}', [TimetableTemplateController::class, 'update'])->name('timetables.templates.update');
+            Route::delete('/templates/{template}', [TimetableTemplateController::class, 'destroy'])->name('timetables.templates.destroy');
+            Route::post('/templates/{template}/publish', [TimetableTemplateController::class, 'publish'])->name('timetables.templates.publish');
+            Route::post('/templates/{template}/archive', [TimetableTemplateController::class, 'archive'])->name('timetables.templates.archive');
+            Route::post('/templates/{template}/unarchive', [TimetableTemplateController::class, 'unarchive'])->name('timetables.templates.unarchive');
+            Route::delete('/templates/{template}/delete-archived', [TimetableTemplateController::class, 'deleteArchived'])->name('timetables.templates.delete-archived');
+            Route::post('/templates/{template}/generate', [TimetableTemplateController::class, 'generate'])->name('timetables.templates.generate');
+            Route::post('/templates/{template}/regenerate', [TimetableTemplateController::class, 'regenerate'])->name('timetables.templates.regenerate');
+        });
+
+        // Timetable Periods (Admin only for create/edit/delete, Teachers can view)
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/periods', [TimetablePeriodController::class, 'index'])->name('timetables.periods.index');
+        });
+
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/periods/create', [TimetablePeriodController::class, 'create'])->name('timetables.periods.create');
+            Route::post('/periods', [TimetablePeriodController::class, 'store'])->name('timetables.periods.store');
+        });
+
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/periods/{period}', [TimetablePeriodController::class, 'show'])->name('timetables.periods.show');
+        });
+
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/periods/{period}/edit', [TimetablePeriodController::class, 'edit'])->name('timetables.periods.edit');
+            Route::put('/periods/{period}', [TimetablePeriodController::class, 'update'])->name('timetables.periods.update');
+            Route::delete('/periods/{period}', [TimetablePeriodController::class, 'destroy'])->name('timetables.periods.destroy');
+        });
+
+        // Rooms (Admin only for create/edit/delete, Teachers can view)
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/rooms', [RoomController::class, 'index'])->name('timetables.rooms.index');
+        });
+
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/rooms/create', [RoomController::class, 'create'])->name('timetables.rooms.create');
+            Route::post('/rooms', [RoomController::class, 'store'])->name('timetables.rooms.store');
+        });
+
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('timetables.rooms.show');
+        });
+
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/rooms/{room}/edit', [RoomController::class, 'edit'])->name('timetables.rooms.edit');
+            Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('timetables.rooms.update');
+            Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('timetables.rooms.destroy');
+        });
+
+        // Timetable Slots (Admin only for create/edit/delete, Teachers can view)
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/slots', [TimetableSlotController::class, 'index'])->name('timetables.slots.index');
+        });
+
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/slots/create', [TimetableSlotController::class, 'create'])->name('timetables.slots.create');
+            Route::post('/slots', [TimetableSlotController::class, 'store'])->name('timetables.slots.store');
+        });
+
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/slots/{slot}', [TimetableSlotController::class, 'show'])->name('timetables.slots.show');
+        });
+
+        Route::middleware(['role:admin'])->group(function () {
+            Route::get('/slots/{slot}/edit', [TimetableSlotController::class, 'edit'])->name('timetables.slots.edit');
+            Route::put('/slots/{slot}', [TimetableSlotController::class, 'update'])->name('timetables.slots.update');
+            Route::delete('/slots/{slot}', [TimetableSlotController::class, 'destroy'])->name('timetables.slots.destroy');
+        });
+
+        // Teacher Availability (Teachers can manage their own, Admins can manage all)
+        Route::middleware(['role:admin,teacher'])->group(function () {
+            Route::get('/availability', [TeacherAvailabilityController::class, 'index'])->name('timetables.availability.index');
+            Route::get('/availability/create', [TeacherAvailabilityController::class, 'create'])->name('timetables.availability.create');
+            Route::post('/availability', [TeacherAvailabilityController::class, 'store'])->name('timetables.availability.store');
+            Route::get('/availability/{availability}', [TeacherAvailabilityController::class, 'show'])->name('timetables.availability.show');
+            Route::get('/availability/{availability}/edit', [TeacherAvailabilityController::class, 'edit'])->name('timetables.availability.edit');
+            Route::put('/availability/{availability}', [TeacherAvailabilityController::class, 'update'])->name('timetables.availability.update');
+            Route::delete('/availability/{availability}', [TeacherAvailabilityController::class, 'destroy'])->name('timetables.availability.destroy');
+        });
     });
 
     //^ API endpoint for subjects by grade

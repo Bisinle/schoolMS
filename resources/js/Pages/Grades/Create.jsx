@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save, UserPlus } from 'lucide-react';
 
-export default function GradesCreate({ subjects, teachers, levels }) {
+export default function GradesCreate({ subjects, teachers, rooms, levels }) {
     const { school } = usePage().props;
     const isMadrasah = school?.school_type === 'madrasah';
 
@@ -10,6 +10,7 @@ export default function GradesCreate({ subjects, teachers, levels }) {
         name: '',
         code: '',
         level: isMadrasah ? null : 'LOWER PRIMARY',
+        default_room_id: '',
         status: 'active',
         subject_ids: [],
         teacher_ids: [],
@@ -176,6 +177,34 @@ export default function GradesCreate({ subjects, teachers, levels }) {
                             </p>
                         </div>
                         )}
+
+                        {/* Default Room */}
+                        <div>
+                            <label htmlFor="default_room_id" className="block text-sm font-medium text-gray-700 mb-2">
+                                Default Classroom
+                            </label>
+                            <select
+                                id="default_room_id"
+                                value={data.default_room_id}
+                                onChange={(e) => setData('default_room_id', e.target.value)}
+                                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                    errors.default_room_id ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                            >
+                                <option value="">-- Select Default Room (Optional) --</option>
+                                {rooms.map((room) => (
+                                    <option key={room.id} value={room.id}>
+                                        {room.name} ({room.code}) - {room.room_type} - Capacity: {room.capacity}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.default_room_id && (
+                                <p className="mt-1 text-sm text-red-600">{errors.default_room_id}</p>
+                            )}
+                            <p className="mt-1 text-xs text-gray-500">
+                                The default classroom for this grade (can be overridden per timetable slot)
+                            </p>
+                        </div>
 
                         {/* Status */}
                         <div>

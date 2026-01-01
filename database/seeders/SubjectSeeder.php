@@ -21,14 +21,21 @@ class SubjectSeeder extends Seeder
 
         $subjectsData = [
             // Academic Subjects
-            ['name' => 'Mathematics', 'code' => 'MATH', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'English', 'code' => 'ENG', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Agriculture', 'code' => 'AGR', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Arabic', 'code' => 'ARB', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Creative Arts', 'code' => 'ART', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Enviromental Activities', 'code' => 'PE', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Islamic Religion Education', 'code' => 'IRE', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'SS
-            cience & Technology', 'code' => 'SCI', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'English', 'code' => 'ENG', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Environmental Activities', 'code' => 'ENV', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'French', 'code' => 'FRE', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'German', 'code' => 'GER', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Indigenous Language', 'code' => 'IND', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Integrated Science', 'code' => 'ISC', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'IRE', 'code' => 'IRE', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Kiswahili', 'code' => 'KIS', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Mandarin', 'code' => 'MAN', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Mathematics', 'code' => 'MATH', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Pre-Technical Studies', 'code' => 'PTS', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Science & Technology', 'code' => 'SCI', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Social Studies', 'code' => 'SST', 'category' => 'academic', 'status' => 'active'],
             // Islamic Subjects
             ['name' => 'القرآن', 'code' => 'QUR', 'category' => 'islamic', 'status' => 'active'],

@@ -70,9 +70,6 @@ class DemoBookingController extends Controller
             $savedEvent = $event->save();
             $meetLink = $savedEvent->hangoutLink ?? 'Will be provided via email';
 
-            // Force refresh the event to ensure it's fully synced
-            $savedEvent->refresh();
-
             // Add meet link to validated data
             $validated['meet_link'] = $meetLink;
 

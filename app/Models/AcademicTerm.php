@@ -51,6 +51,16 @@ class AcademicTerm extends Model
         return $this->hasMany(GuardianFeePreference::class);
     }
 
+    public function timetableTemplates()
+    {
+        return $this->hasMany(TimetableTemplate::class);
+    }
+
+    public function teacherAvailability()
+    {
+        return $this->hasMany(TeacherAvailability::class);
+    }
+
     // Scopes
     public function scopeActive($query)
     {

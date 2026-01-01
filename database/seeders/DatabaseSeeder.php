@@ -27,6 +27,13 @@ class DatabaseSeeder extends Seeder
             AcademicTermSeeder::class,      // 1️⃣2️⃣ Create academic terms (3 per year)
             FeePreferenceSystemSeeder::class,       // 1️⃣3️⃣ Create fee categories for all grades
             SuperAdminSeeder::class,        // 1️⃣4️⃣ Create super admin (global access)
+
+            // TIMETABLE SEEDERS - ADDED IN PHASE 5
+            TimetablePeriodSeeder::class,       // 1️⃣5️⃣ Create timetable periods for all schools
+            RoomSeeder::class,                  // 1️⃣6️⃣ Create rooms for all schools
+            TimetableTemplateSeeder::class,     // 1️⃣7️⃣ Create timetable templates for all grades
+            TimetableSlotSeeder::class,         // 1️⃣8️⃣ Create timetable slots (actual schedules)
+            TeacherAvailabilitySeeder::class,   // 1️⃣9️⃣ Create teacher availability records
         ]);
 
         $this->command->newLine();
@@ -56,6 +63,11 @@ class DatabaseSeeder extends Seeder
         $this->command->info('- Attendance records for all students');
         $this->command->info('- 4 Academic Years (2023-2026, 2025 active)');
         $this->command->info('- 12 Academic Terms (3 per year)');
+        $this->command->info('- 10 Timetable Periods (8 lessons + 2 breaks)');
+        $this->command->info('- 20 Rooms (15 classrooms + 5 special rooms)');
+        $this->command->info('- Timetable Templates (1 per grade)');
+        $this->command->info('- Timetable Slots (complete weekly schedules)');
+        $this->command->info('- Teacher Availability Records');
         $this->command->info('===========================================');
         $this->command->info('👤 Global Super Admin:');
         $this->command->info('📧 superadmin@schoolms.com / password');

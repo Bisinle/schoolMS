@@ -16,8 +16,13 @@ import {
     Award,
     Calendar,
     TrendingUp,
+    CalendarClock,
+    UserCog,
+    BarChart3,
+    PieChart,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
 
 import { StatCard } from "@/Components/UI";
 import StudentsByGradeChart from "./StudentsByGradeChart";
@@ -36,6 +41,7 @@ export default function AdminDashboardContent({
     subjectsByCategory,
     quickStats,
     recentStudents,
+    timetableAnalytics,
 }) {
     return (
         <div className="space-y-6">
@@ -135,6 +141,234 @@ export default function AdminDashboardContent({
             </div>
 
                     </motion.div>
+
+            {/* Timetable Analytics Section */}
+            {timetableAnalytics && (
+                <motion.div
+                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -50, scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.2 }}
+                >
+                    <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+                        <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-indigo-50 to-purple-50">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xl sm:text-2xl font-black text-gray-900 leading-tight flex items-center">
+                                    <CalendarClock className="w-5 h-5 sm:w-6 sm:h-6 mr-2 text-indigo-600" />
+                                    Timetable Analytics
+                                </h3>
+                                <Link
+                                    href="/timetables/dashboard"
+                                    className="text-sm sm:text-base text-indigo-600 hover:text-indigo-700 font-bold"
+                                >
+                                    View All →
+                                </Link>
+                            </div>
+                        </div>
+
+                        <div className="p-4 sm:p-6 space-y-6">
+                            {/* Quick Stats Tiles */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                                <div className="text-center p-4 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors">
+                                    <School className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-indigo-600">
+                                        {timetableAnalytics.totalGrades || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Total Grades
+                                    </p>
+                                </div>
+
+                                <div className="text-center p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
+                                    <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-purple-600">
+                                        {timetableAnalytics.totalTeachers || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Total Teachers
+                                    </p>
+                                </div>
+
+                                <div className={`text-center p-4 rounded-xl transition-colors ${
+                                    timetableAnalytics.totalConflicts > 0
+                                        ? 'bg-red-50 hover:bg-red-100'
+                                        : 'bg-green-50 hover:bg-green-100'
+                                }`}>
+                                    <AlertTriangle className={`w-8 h-8 sm:w-10 sm:h-10 mx-auto mb-2 ${
+                                        timetableAnalytics.totalConflicts > 0 ? 'text-red-600' : 'text-green-600'
+                                    }`} />
+                                    <p className={`text-2xl sm:text-3xl font-black ${
+                                        timetableAnalytics.totalConflicts > 0 ? 'text-red-600' : 'text-green-600'
+                                    }`}>
+                                        {timetableAnalytics.totalConflicts || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Conflicts
+                                    </p>
+                                </div>
+
+                                <Link
+                                    href="/timetables/dashboard"
+                                    className="text-center p-4 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors"
+                                >
+                                    <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-cyan-600 mx-auto mb-2" />
+                                    <p className="text-2xl sm:text-3xl font-black text-cyan-600">
+                                        {timetableAnalytics.totalSessions || 0}
+                                    </p>
+                                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
+                                        Total Sessions
+                                    </p>
+                                </Link>
+                            </div>
+
+                            {/* Charts Grid */}
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                                {/* Curriculum Compliance Card */}
+                                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-4 sm:p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-lg font-bold text-gray-900 flex items-center">
+                                            <CheckCircle className="w-5 h-5 mr-2 text-green-600" />
+                                            Curriculum Compliance
+                                        </h4>
+                                        <Link
+                                            href="/timetables"
+                                            className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold"
+                                        >
+                                            Details →
+                                        </Link>
+                                    </div>
+
+                                    {timetableAnalytics.curriculumCompliance && timetableAnalytics.curriculumCompliance.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {timetableAnalytics.curriculumCompliance.slice(0, 5).map((item, index) => (
+                                                <div key={index} className="flex items-center justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-1">
+                                                            <span className="text-sm font-semibold text-gray-700">
+                                                                {item.grade} - {item.subject}
+                                                            </span>
+                                                            <span className={`text-xs font-bold ${
+                                                                item.complianceRate >= 100 ? 'text-green-600' :
+                                                                item.complianceRate >= 80 ? 'text-yellow-600' : 'text-red-600'
+                                                            }`}>
+                                                                {item.complianceRate}%
+                                                            </span>
+                                                        </div>
+                                                        <div className="w-full bg-gray-200 rounded-full h-2">
+                                                            <div
+                                                                className={`h-2 rounded-full transition-all ${
+                                                                    item.complianceRate >= 100 ? 'bg-green-500' :
+                                                                    item.complianceRate >= 80 ? 'bg-yellow-500' : 'bg-red-500'
+                                                                }`}
+                                                                style={{ width: `${Math.min(item.complianceRate, 100)}%` }}
+                                                            />
+                                                        </div>
+                                                        <p className="text-xs text-gray-500 mt-1">
+                                                            {item.scheduled}/{item.required} periods
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <BookOpen className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                            <p className="text-sm">No curriculum data available</p>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Teacher Utilization Pie Chart */}
+                                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-4 sm:p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-lg font-bold text-gray-900 flex items-center">
+                                            <UserCog className="w-5 h-5 mr-2 text-purple-600" />
+                                            Teacher Utilization
+                                        </h4>
+                                        <Link
+                                            href="/teachers"
+                                            className="text-sm text-indigo-600 hover:text-indigo-700 font-semibold"
+                                        >
+                                            Details →
+                                        </Link>
+                                    </div>
+
+                                    {timetableAnalytics.teacherUtilization && timetableAnalytics.teacherUtilization.length > 0 ? (
+                                        <div className="h-64">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <RechartsPie>
+                                                    <Pie
+                                                        data={timetableAnalytics.teacherUtilization}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        labelLine={false}
+                                                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                        outerRadius={80}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                    >
+                                                        {timetableAnalytics.teacherUtilization.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color || ['#8b5cf6', '#06b6d4', '#f59e0b'][index % 3]} />
+                                                        ))}
+                                                    </Pie>
+                                                    <Tooltip />
+                                                </RechartsPie>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-8 text-gray-500">
+                                            <PieChart className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                                            <p className="text-sm">No utilization data available</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Slot Coverage Bar Chart */}
+                            {timetableAnalytics.slotCoverage && timetableAnalytics.slotCoverage.length > 0 && (
+                                <div className="bg-gradient-to-br from-gray-50 to-white rounded-xl border border-gray-200 p-4 sm:p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-lg font-bold text-gray-900 flex items-center">
+                                            <BarChart3 className="w-5 h-5 mr-2 text-cyan-600" />
+                                            Weekly Slot Coverage
+                                        </h4>
+                                    </div>
+
+                                    <div className="h-64 hidden sm:block">
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={timetableAnalytics.slotCoverage}>
+                                                <CartesianGrid strokeDasharray="3 3" />
+                                                <XAxis dataKey="day" />
+                                                <YAxis />
+                                                <Tooltip />
+                                                <Legend />
+                                                <Bar dataKey="lessons" fill="#8b5cf6" name="Lessons" />
+                                                <Bar dataKey="breaks" fill="#06b6d4" name="Breaks" />
+                                                <Bar dataKey="activities" fill="#f59e0b" name="Activities" />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    {/* Mobile: Compact View */}
+                                    <div className="sm:hidden space-y-2">
+                                        {timetableAnalytics.slotCoverage.map((day, index) => (
+                                            <div key={index} className="bg-white rounded-lg p-3 border border-gray-200">
+                                                <p className="font-bold text-gray-900 mb-2">{day.day}</p>
+                                                <div className="flex gap-4 text-sm">
+                                                    <span className="text-purple-600">📚 {day.lessons}</span>
+                                                    <span className="text-cyan-600">☕ {day.breaks}</span>
+                                                    <span className="text-orange-600">🎯 {day.activities}</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+
             {/* Document Management Widget - Mobile Optimized */}
             <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
                 <div className="p-5 sm:p-6 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">

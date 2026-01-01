@@ -19,7 +19,7 @@ class SuperAdminSeeder extends Seeder
             [
                 'school_id' => null, // Super admins don't belong to any school
                 'name' => 'Super Administrator',
-                'password' => Hash::make('adminMS@SCHOOL'), // Change this in production!
+                'password' => Hash::make('password'), // Change this in production!
                 'role' => 'super_admin',
                 'is_active' => true,
                 'email_verified_at' => now(),

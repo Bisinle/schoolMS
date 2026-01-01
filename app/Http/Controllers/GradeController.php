@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Grade;
 use App\Models\Teacher;
 use App\Models\Subject;
+use App\Models\Room;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
@@ -63,7 +64,7 @@ class GradeController extends Controller
     public function create()
     {
         $this->authorize('create', Grade::class);
-        
+
         $subjects = Subject::where('status', 'active')
             ->orderBy('category')
             ->orderBy('name')
@@ -82,9 +83,14 @@ class GradeController extends Controller
                 ];
             });
 
+        $rooms = Room::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'room_type', 'capacity']);
+
         return Inertia::render('Grades/Create', [
             'subjects' => $subjects,
             'teachers' => $teachers,
+            'rooms' => $rooms,
             'levels' => Grade::LEVELS,
         ]);
     }
@@ -112,6 +118,7 @@ class GradeController extends Controller
                 Rule::unique('grades', 'code')->where('school_id', $schoolId),
             ],
             'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
+            'default_room_id' => 'nullable|exists:rooms,id',
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
@@ -124,6 +131,7 @@ class GradeController extends Controller
             'name' => $validated['name'],
             'code' => $validated['code'] ?? null,
             'level' => $validated['level'] ?? null,
+            'default_room_id' => $validated['default_room_id'] ?? null,
             'status' => $validated['status'],
         ]);
 
@@ -182,7 +190,7 @@ class GradeController extends Controller
             ->orderBy('category')
             ->orderBy('name')
             ->get();
-        
+
         $teachers = Teacher::with('user')
             ->whereHas('user', function ($query) {
                 $query->where('role', 'teacher');
@@ -196,7 +204,11 @@ class GradeController extends Controller
                 ];
             });
 
-        $grade->load(['subjects', 'teachers']);
+        $rooms = Room::where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name', 'code', 'room_type', 'capacity']);
+
+        $grade->load(['subjects', 'teachers', 'defaultRoom']);
 
         // Get class teacher ID
         $classTeacher = $grade->teachers()->wherePivot('is_class_teacher', true)->first();
@@ -205,6 +217,7 @@ class GradeController extends Controller
             'grade' => $grade,
             'subjects' => $subjects,
             'teachers' => $teachers,
+            'rooms' => $rooms,
             'levels' => Grade::LEVELS,
             'classTeacherId' => $classTeacher ? $classTeacher->id : null,
         ]);
@@ -236,6 +249,7 @@ class GradeController extends Controller
                     ->where('school_id', $grade->school_id),
             ],
             'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
+            'default_room_id' => 'nullable|exists:rooms,id',
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
@@ -248,6 +262,7 @@ class GradeController extends Controller
             'name' => $validated['name'],
             'code' => $validated['code'] ?? null,
             'level' => $validated['level'] ?? null,
+            'default_room_id' => $validated['default_room_id'] ?? null,
             'status' => $validated['status'],
         ]);
 
