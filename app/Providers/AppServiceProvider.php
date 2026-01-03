@@ -91,21 +91,22 @@ class AppServiceProvider extends ServiceProvider
     {
         $clientId = env('GOOGLE_CLIENT_ID');
         $clientSecret = env('GOOGLE_CLIENT_SECRET');
+        $refreshToken = env('GOOGLE_REFRESH_TOKEN');
 
         // Only create if environment variables are set
         if (!$clientId || !$clientSecret) {
             return;
         }
 
-        $credentialsPath = storage_path('app/google-calendar/oauth-credentials.json');
-        $directory = dirname($credentialsPath);
+        $directory = storage_path('app/google-calendar');
 
         // Create directory if it doesn't exist
         if (!file_exists($directory)) {
             mkdir($directory, 0755, true);
         }
 
-        // Only create file if it doesn't exist or is outdated
+        // Create oauth-credentials.json
+        $credentialsPath = $directory . '/oauth-credentials.json';
         if (!file_exists($credentialsPath)) {
             $credentials = [
                 'web' => [
@@ -118,6 +119,20 @@ class AppServiceProvider extends ServiceProvider
             ];
 
             file_put_contents($credentialsPath, json_encode($credentials, JSON_PRETTY_PRINT));
+        }
+
+        // Create oauth-token.json if refresh token is available
+        $tokenPath = $directory . '/oauth-token.json';
+        if ($refreshToken && !file_exists($tokenPath)) {
+            $tokenData = [
+                'access_token' => '', // Will be refreshed automatically
+                'refresh_token' => $refreshToken,
+                'scope' => 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/calendar.events',
+                'token_type' => 'Bearer',
+                'created' => time(),
+            ];
+
+            file_put_contents($tokenPath, json_encode($tokenData, JSON_PRETTY_PRINT));
         }
     }
 }
