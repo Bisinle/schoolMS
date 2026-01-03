@@ -66,8 +66,40 @@ export default function TeachersShow({ teacher }) {
                         <h3 className="text-lg font-semibold text-navy mb-4 mt-6">Professional Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                             <InfoCard icon={Award} label="Qualification" value={teacher.qualification} />
-                            <InfoCard icon={BookOpen} label="Subject Specialization" value={teacher.subject_specialization} />
+                            <InfoCard
+                                icon={BookOpen}
+                                label="Primary Subject"
+                                value={teacher.subject ? `${teacher.subject.name} (${teacher.subject.category})` : 'N/A'}
+                            />
                         </div>
+
+                        {/* Subject Specializations Section */}
+                        <h3 className="text-lg font-semibold text-navy mb-4 mt-6 flex items-center">
+                            <BookOpen className="w-5 h-5 mr-2 text-orange" />
+                            Subject Specializations
+                        </h3>
+                        {teacher.subjects && teacher.subjects.length > 0 ? (
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mb-6">
+                                {teacher.subjects.map((subject) => (
+                                    <div
+                                        key={subject.id}
+                                        className="border border-gray-200 rounded-lg p-3 hover:shadow-sm transition-shadow hover:border-orange"
+                                    >
+                                        <div className="flex items-center space-x-2">
+                                            <div className="w-8 h-8 rounded-lg bg-orange bg-opacity-10 flex items-center justify-center flex-shrink-0">
+                                                <BookOpen className="w-4 h-4 text-orange" />
+                                            </div>
+                                            <div className="min-w-0 flex-1">
+                                                <h4 className="font-semibold text-navy text-sm truncate">{subject.name}</h4>
+                                                <p className="text-xs text-gray-500 uppercase">{subject.category}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-gray-500 text-center py-6 bg-gray-50 rounded-lg mb-6">No subject specializations assigned yet.</p>
+                        )}
 
                         {/* Assigned Grades Section */}
                         <h3 className="text-lg font-semibold text-navy mb-4 mt-6 flex items-center">

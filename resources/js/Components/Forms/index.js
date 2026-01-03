@@ -14,4 +14,5 @@ export { default as TextareaInput } from './TextareaInput';
 export { default as FormSection, FormRow, FormField } from './FormSection';
 export { default as FormActions, FormActionsGroup } from './FormActions';
 export { default as ReadOnlyField, ReadOnlyFieldGroup, ReadOnlyInfo } from './ReadOnlyField';
+export { default as MultiSelectCheckbox, MultiSelectCheckboxGrouped } from './MultiSelectCheckbox';
 

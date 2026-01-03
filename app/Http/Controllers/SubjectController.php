@@ -58,7 +58,7 @@ class SubjectController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'required|in:academic,islamic',
+            'category' => 'required|in:academic,islamic,arts',
             'code' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
             'grade_ids' => 'nullable|array',
@@ -134,7 +134,7 @@ class SubjectController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'category' => 'required|in:academic,islamic',
+            'category' => 'required|in:academic,islamic,arts',
             'code' => 'nullable|string|max:50',
             'status' => 'required|in:active,inactive',
             'grade_ids' => 'nullable|array',

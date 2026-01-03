@@ -49,7 +49,7 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
 
                             <div className="flex items-center gap-2 flex-wrap mb-2">
                                 <span className="px-2 py-0.5 text-xs font-medium rounded-md bg-blue-100 text-blue-700">
-                                    {teacher.subject_specialization || 'No Subject'}
+                                    {teacher.subject?.name || 'No Subject'}
                                 </span>
                                 {teacher.grades && teacher.grades.length > 0 && (
                                     <>
@@ -119,23 +119,18 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                             </div>
                         )}
 
-                        {teacher.grades && teacher.grades.length > 0 && (
+                        {teacher.grades && teacher.grades.filter(g => g.pivot.is_class_teacher).length > 0 && (
                             <div className="flex items-start gap-2 border-t border-gray-100 mt-2 pt-2">
                                 <GraduationCap className="w-4 h-4 text-gray-400 flex-shrink-0 mt-0.5" />
                                 <div className="flex-1">
-                                    <p className="text-xs font-semibold text-gray-500 mb-1">Assigned Classes:</p>
+                                    <p className="text-xs font-semibold text-gray-500 mb-1">Class Teacher For:</p>
                                     <div className="flex flex-wrap gap-1">
-                                        {teacher.grades.map((grade) => (
+                                        {teacher.grades.filter(g => g.pivot.is_class_teacher).map((grade) => (
                                             <span
                                                 key={grade.id}
-                                                className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                    grade.pivot.is_class_teacher
-                                                        ? 'bg-orange-600 text-white'
-                                                        : 'bg-orange-100 text-orange-700'
-                                                }`}
+                                                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-600 text-white"
                                             >
-                                                {grade.name}
-                                                {grade.pivot.is_class_teacher && ' ★'}
+                                                {grade.name} ★
                                             </span>
                                         ))}
                                     </div>
@@ -279,7 +274,7 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                                         Subject
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Assigned Grades
+                                        Class Teacher For
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Status
@@ -302,22 +297,18 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                                             {teacher.user?.email}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {teacher.subject_specialization || 'N/A'}
+                                            {teacher.subject?.name || 'N/A'}
                                         </td>
                                         <td className="px-6 py-4 text-sm text-gray-600">
-                                            {teacher.grades && teacher.grades.length > 0 ? (
+                                            {teacher.grades && teacher.grades.filter(g => g.pivot.is_class_teacher).length > 0 ? (
                                                 <div className="flex flex-wrap gap-1">
-                                                    {teacher.grades.map((grade) => (
+                                                    {teacher.grades.filter(g => g.pivot.is_class_teacher).map((grade) => (
                                                         <span
                                                             key={grade.id}
-                                                            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                                                                grade.pivot.is_class_teacher
-                                                                    ? 'bg-orange text-white'
-                                                                    : 'bg-orange bg-opacity-10 text-orange'
-                                                            }`}
+                                                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange text-white"
                                                         >
                                                             <BookOpen className="w-3 h-3 mr-1" />
-                                                            {grade.name}
+                                                            {grade.name} ★
                                                         </span>
                                                     ))}
                                                 </div>

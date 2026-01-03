@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Grade;
+use App\Models\Subject;
 use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -21,7 +22,7 @@ class TeacherController extends Controller
         $this->authorize('viewAny', Teacher::class);
 
         // Note: School scoping is handled automatically by the SchoolScope global scope
-        $teachers = Teacher::with(['user', 'grades'])
+        $teachers = Teacher::with(['user', 'grades', 'subject'])
             ->when($request->search, function ($query, $search) {
                 $query->whereHas('user', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -46,8 +47,14 @@ class TeacherController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'level']);
 
+        $subjects = Subject::where('status', 'active')
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get(['id', 'name', 'category']);
+
         return Inertia::render('Teachers/Create', [
             'grades' => $grades,
+            'subjects' => $subjects,
         ]);
     }
 
@@ -70,7 +77,9 @@ class TeacherController extends Controller
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
             'qualification' => 'nullable|string|max:255',
-            'subject_specialization' => 'nullable|string|max:255',
+            'subject_id' => 'required|exists:subjects,id',
+            'subject_ids' => 'required|array|min:1',
+            'subject_ids.*' => 'exists:subjects,id',
             'date_of_joining' => 'required|date',
             'status' => 'required|in:active,inactive',
             'grade_ids' => 'nullable|array',
@@ -96,10 +105,15 @@ class TeacherController extends Controller
             'phone_number' => $validated['phone_number'],
             'address' => $validated['address'],
             'qualification' => $validated['qualification'],
-            'subject_specialization' => $validated['subject_specialization'],
+            'subject_id' => $validated['subject_id'],
             'date_of_joining' => $validated['date_of_joining'],
             'status' => $validated['status'],
         ]);
+
+        // Attach subject specializations
+        if (!empty($validated['subject_ids'])) {
+            $teacher->subjects()->sync($validated['subject_ids']);
+        }
 
         // Attach grades
         if (!empty($validated['grade_ids'])) {
@@ -117,7 +131,7 @@ class TeacherController extends Controller
     {
         $this->authorize('view', $teacher);
 
-        $teacher->load(['user', 'grades.students']);
+        $teacher->load(['user', 'grades.students', 'subject', 'subjects']);
 
         return Inertia::render('Teachers/Show', [
             'teacher' => $teacher,
@@ -128,13 +142,19 @@ class TeacherController extends Controller
     {
         $this->authorize('update', $teacher);
 
-        $teacher->load(['user', 'grades']);
+        $teacher->load(['user', 'grades', 'subject', 'subjects']);
 
         $grades = Grade::where('status', 'active')
             ->orderBy('name')
             ->get(['id', 'name', 'level']);
 
+        $subjects = Subject::where('status', 'active')
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get(['id', 'name', 'category']);
+
         $assignedGradeIds = $teacher->grades->pluck('id')->toArray();
+        $assignedSubjectIds = $teacher->subjects->pluck('id')->toArray();
         // $classTeacherGradeId = $teacher->grades->where('pivot.is_class_teacher', true)->first()?->id;
         $classTeacherGradeId = $teacher->grades ->filter(fn($grade) => $grade->pivot && $grade->pivot->is_class_teacher)
     ->first()?->id;
@@ -142,7 +162,9 @@ class TeacherController extends Controller
         return Inertia::render('Teachers/Edit', [
             'teacher' => $teacher,
             'grades' => $grades,
+            'subjects' => $subjects,
             'assignedGradeIds' => $assignedGradeIds,
+            'assignedSubjectIds' => $assignedSubjectIds,
             'classTeacherGradeId' => $classTeacherGradeId,
         ]);
     }
@@ -165,7 +187,9 @@ class TeacherController extends Controller
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
             'qualification' => 'nullable|string|max:255',
-            'subject_specialization' => 'nullable|string|max:255',
+            'subject_id' => 'required|exists:subjects,id',
+            'subject_ids' => 'required|array|min:1',
+            'subject_ids.*' => 'exists:subjects,id',
             'date_of_joining' => 'required|date',
             'status' => 'required|in:active,inactive',
             'grade_ids' => 'nullable|array',
@@ -182,10 +206,15 @@ class TeacherController extends Controller
             'phone_number' => $validated['phone_number'],
             'address' => $validated['address'],
             'qualification' => $validated['qualification'],
-            'subject_specialization' => $validated['subject_specialization'],
+            'subject_id' => $validated['subject_id'],
             'date_of_joining' => $validated['date_of_joining'],
             'status' => $validated['status'],
         ]);
+
+        // Sync subject specializations
+        if (!empty($validated['subject_ids'])) {
+            $teacher->subjects()->sync($validated['subject_ids']);
+        }
 
         // Sync grades
         $teacher->grades()->detach();

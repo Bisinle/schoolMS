@@ -13,6 +13,9 @@ import { Badge } from '@/Components/UI';
 function MobileSubjectItem({ subject, auth, onDelete }) {
     const getCategoryColor = (category) => {
         const colors = {
+            'academic': 'from-blue-500 to-blue-600',
+            'islamic': 'from-green-500 to-green-600',
+            'arts': 'from-purple-500 to-purple-600',
             'core': 'from-blue-500 to-blue-600',
             'elective': 'from-green-500 to-green-600',
             'co-curricular': 'from-purple-500 to-purple-600',
@@ -165,7 +168,8 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                                 onChange={(e) => updateFilter('category', e.target.value)}
                                 options={[
                                     ...(showAcademicSubjects ? [{ value: 'academic', label: 'Academic' }] : []),
-                                    { value: 'islamic', label: 'Islamic' }
+                                    { value: 'islamic', label: 'Islamic' },
+                                    { value: 'arts', label: 'Arts' }
                                 ]}
                                 allLabel="All Categories"
                                 hideLabel
@@ -247,8 +251,16 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <Badge
-                                                    variant={subject.category === 'academic' ? 'info' : 'success'}
-                                                    value={subject.category === 'academic' ? 'Academic' : 'Islamic'}
+                                                    variant={
+                                                        subject.category === 'academic' ? 'info' :
+                                                        subject.category === 'islamic' ? 'success' :
+                                                        'warning'
+                                                    }
+                                                    value={
+                                                        subject.category === 'academic' ? 'Academic' :
+                                                        subject.category === 'islamic' ? 'Islamic' :
+                                                        'Arts'
+                                                    }
                                                 />
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">

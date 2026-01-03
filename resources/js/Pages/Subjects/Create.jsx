@@ -85,7 +85,7 @@ export default function SubjectsCreate({ grades }) {
                                 error={errors.category}
                                 required
                                 showPlaceholder={false}
-                                options={showAcademicSubjects ? ['academic', 'islamic'] : ['islamic']}
+                                options={showAcademicSubjects ? ['academic', 'islamic', 'arts'] : ['islamic', 'arts']}
                             />
 
                             <TextInput

@@ -122,6 +122,8 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::put('/grades/{grade}', [GradeController::class, 'update'])->name('grades.update');
         Route::delete('/grades/{grade}', [GradeController::class, 'destroy'])->name('grades.destroy');
         Route::post('/grades/{grade}/restore', [GradeController::class, 'restore'])->name('grades.restore');
+        Route::get('/grades/{grade}/curriculum', [GradeController::class, 'manageCurriculum'])->name('grades.curriculum.manage');
+        Route::post('/grades/{grade}/curriculum', [GradeController::class, 'updateCurriculum'])->name('grades.curriculum.update');
         Route::post('/grades/{grade}/assign-teacher', [GradeController::class, 'assignTeacher'])->name('grades.assign-teacher');
         Route::delete('/grades/{grade}/remove-teacher/{teacher}', [GradeController::class, 'removeTeacher'])->name('grades.remove-teacher');
         Route::patch('/grades/{grade}/update-teacher/{teacher}', [GradeController::class, 'updateTeacherAssignment'])->name('grades.update-teacher');
@@ -310,7 +312,9 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::post('/templates/{template}/archive', [TimetableTemplateController::class, 'archive'])->name('timetables.templates.archive');
             Route::post('/templates/{template}/unarchive', [TimetableTemplateController::class, 'unarchive'])->name('timetables.templates.unarchive');
             Route::delete('/templates/{template}/delete-archived', [TimetableTemplateController::class, 'deleteArchived'])->name('timetables.templates.delete-archived');
+            Route::get('/grades/{grade}/validate-generation', [TimetableTemplateController::class, 'validateGeneration'])->name('grades.validate-generation');
             Route::post('/templates/{template}/generate', [TimetableTemplateController::class, 'generate'])->name('timetables.templates.generate');
+            Route::post('/templates/{template}/bulk-update-teacher', [TimetableTemplateController::class, 'bulkUpdateTeacher'])->name('timetables.templates.bulk-update-teacher');
             Route::post('/templates/{template}/regenerate', [TimetableTemplateController::class, 'regenerate'])->name('timetables.templates.regenerate');
         });
 

@@ -36,6 +36,7 @@ class TimetableSlot extends Model
         'duration_minutes',
         'subject_id',
         'teacher_id',
+        'auto_assigned_teacher',
         'room_id',
         'slot_type',
         'priority_band',
@@ -53,6 +54,7 @@ class TimetableSlot extends Model
             'is_substitution' => 'boolean',
             'is_teachable' => 'boolean',
             'manually_created' => 'boolean',
+            'auto_assigned_teacher' => 'boolean',
         ];
     }
 

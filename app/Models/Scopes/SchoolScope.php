@@ -35,21 +35,16 @@ class SchoolScope implements Scope
      */
     protected function getSchoolId(): ?int
     {
-        static $schoolId = null;
+        $userId = Auth::id();
 
-        // Cache the school_id to avoid multiple DB queries
-        if ($schoolId === null) {
-            $userId = Auth::id();
-
-            if ($userId) {
-                // Use raw query to avoid triggering scopes
-                $schoolId = DB::table('users')
-                    ->where('id', $userId)
-                    ->value('school_id');
-            }
+        if ($userId) {
+            // Use raw query to avoid triggering scopes
+            return DB::table('users')
+                ->where('id', $userId)
+                ->value('school_id');
         }
 
-        return $schoolId;
+        return null;
     }
 }
 

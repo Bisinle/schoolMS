@@ -40,6 +40,7 @@ export const DOCUMENT_STATUS_VALUES = {
 export const CATEGORY_OPTIONS = [
     { value: 'academic', label: 'Academic' },
     { value: 'islamic', label: 'Islamic' },
+    { value: 'arts', label: 'Arts' },
 ];
 
 export const SUBJECT_CATEGORY_OPTIONS = [
@@ -51,6 +52,7 @@ export const SUBJECT_CATEGORY_OPTIONS = [
 export const CATEGORY_VALUES = {
     ACADEMIC: 'academic',
     ISLAMIC: 'islamic',
+    ARTS: 'arts',
     CORE: 'core',
     ELECTIVE: 'elective',
     CO_CURRICULAR: 'co-curricular',

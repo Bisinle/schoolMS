@@ -2,10 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PlusIcon, PencilIcon, TrashIcon, CheckCircleIcon, XCircleIcon, ClockIcon, ArrowPathIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
     const [generationStatus, setGenerationStatus] = useState({});
     const [loadingGeneration, setLoadingGeneration] = useState({});
+    const [confirmModal, setConfirmModal] = useState({
+        show: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'info',
+        confirmText: 'Confirm'
+    });
 
     // Fetch generation status for all blueprints
     useEffect(() => {
@@ -23,9 +32,17 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
     }, [blueprints]);
 
     const handleDelete = (id) => {
-        if (confirm('Are you sure you want to delete this blueprint? This action cannot be undone.')) {
-            router.delete(`/blueprints/${id}`);
-        }
+        setConfirmModal({
+            show: true,
+            title: 'Delete Blueprint',
+            message: 'Are you sure you want to delete this blueprint? This action cannot be undone.',
+            confirmText: 'Delete',
+            type: 'danger',
+            onConfirm: () => {
+                router.delete(`/blueprints/${id}`);
+                setConfirmModal(prev => ({ ...prev, show: false }));
+            }
+        });
     };
 
     const handleToggleActive = (id) => {
@@ -33,43 +50,59 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
     };
 
     const handleGeneratePeriods = (id) => {
-        if (confirm('Generate timetable periods from this blueprint? This will create period records that can be used in timetables.')) {
-            setLoadingGeneration(prev => ({ ...prev, [id]: true }));
-            router.post(`/blueprints/${id}/generate-periods`, {}, {
-                onFinish: () => {
-                    setLoadingGeneration(prev => ({ ...prev, [id]: false }));
-                    // Refresh generation status
-                    fetch(`/blueprints/${id}/generation-status`)
-                        .then(res => res.json())
-                        .then(data => {
-                            setGenerationStatus(prev => ({
-                                ...prev,
-                                [id]: data
-                            }));
-                        });
-                }
-            });
-        }
+        setConfirmModal({
+            show: true,
+            title: 'Generate Timetable Periods',
+            message: 'Generate timetable periods from this blueprint? This will create period records that can be used in timetables.',
+            confirmText: 'Generate',
+            type: 'info',
+            onConfirm: () => {
+                setLoadingGeneration(prev => ({ ...prev, [id]: true }));
+                router.post(`/blueprints/${id}/generate-periods`, {}, {
+                    onFinish: () => {
+                        setLoadingGeneration(prev => ({ ...prev, [id]: false }));
+                        // Refresh generation status
+                        fetch(`/blueprints/${id}/generation-status`)
+                            .then(res => res.json())
+                            .then(data => {
+                                setGenerationStatus(prev => ({
+                                    ...prev,
+                                    [id]: data
+                                }));
+                            });
+                    }
+                });
+                setConfirmModal(prev => ({ ...prev, show: false }));
+            }
+        });
     };
 
     const handleRegeneratePeriods = (id) => {
-        if (confirm('Regenerate timetable periods from this blueprint? This will update existing periods to match the current blueprint configuration.')) {
-            setLoadingGeneration(prev => ({ ...prev, [id]: true }));
-            router.post(`/blueprints/${id}/regenerate-periods`, {}, {
-                onFinish: () => {
-                    setLoadingGeneration(prev => ({ ...prev, [id]: false }));
-                    // Refresh generation status
-                    fetch(`/blueprints/${id}/generation-status`)
-                        .then(res => res.json())
-                        .then(data => {
-                            setGenerationStatus(prev => ({
-                                ...prev,
-                                [id]: data
-                            }));
-                        });
-                }
-            });
-        }
+        setConfirmModal({
+            show: true,
+            title: 'Regenerate Timetable Periods',
+            message: 'Regenerate timetable periods from this blueprint? This will update existing periods to match the current blueprint configuration.',
+            confirmText: 'Regenerate',
+            type: 'warning',
+            onConfirm: () => {
+                setLoadingGeneration(prev => ({ ...prev, [id]: true }));
+                router.post(`/blueprints/${id}/regenerate-periods`, {}, {
+                    onFinish: () => {
+                        setLoadingGeneration(prev => ({ ...prev, [id]: false }));
+                        // Refresh generation status
+                        fetch(`/blueprints/${id}/generation-status`)
+                            .then(res => res.json())
+                            .then(data => {
+                                setGenerationStatus(prev => ({
+                                    ...prev,
+                                    [id]: data
+                                }));
+                            });
+                    }
+                });
+                setConfirmModal(prev => ({ ...prev, show: false }));
+            }
+        });
     };
 
     const groupedBlueprints = Object.keys(levels).reduce((acc, levelKey) => {
@@ -207,9 +240,15 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
                                                                         {!generationStatus[blueprint.id].has_generated ? (
                                                                             <button
                                                                                 onClick={() => handleGeneratePeriods(blueprint.id)}
-                                                                                disabled={loadingGeneration[blueprint.id] || blueprint.periods.length === 0}
+                                                                                disabled={loadingGeneration[blueprint.id] || blueprint.periods.length === 0 || !blueprint.is_active}
                                                                                 className="inline-flex items-center justify-center px-3 py-2 border border-blue-300 rounded-lg text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                                title={blueprint.periods.length === 0 ? 'Add periods to blueprint first' : 'Generate timetable periods'}
+                                                                                title={
+                                                                                    !blueprint.is_active
+                                                                                        ? 'Blueprint must be active to generate periods'
+                                                                                        : blueprint.periods.length === 0
+                                                                                            ? 'Add periods to blueprint first'
+                                                                                            : 'Generate timetable periods'
+                                                                                }
                                                                             >
                                                                                 {loadingGeneration[blueprint.id] ? (
                                                                                     <ArrowPathIcon className="w-4 h-4 mr-1 animate-spin" />
@@ -221,9 +260,13 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
                                                                         ) : (
                                                                             <button
                                                                                 onClick={() => handleRegeneratePeriods(blueprint.id)}
-                                                                                disabled={loadingGeneration[blueprint.id]}
+                                                                                disabled={loadingGeneration[blueprint.id] || !blueprint.is_active}
                                                                                 className="inline-flex items-center justify-center px-3 py-2 border border-purple-300 rounded-lg text-sm font-medium text-purple-700 bg-purple-50 hover:bg-purple-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                                                                title={`${generationStatus[blueprint.id].generated_count} periods generated`}
+                                                                                title={
+                                                                                    !blueprint.is_active
+                                                                                        ? 'Blueprint must be active to regenerate periods'
+                                                                                        : `${generationStatus[blueprint.id].generated_count} periods generated`
+                                                                                }
                                                                             >
                                                                                 {loadingGeneration[blueprint.id] ? (
                                                                                     <ArrowPathIcon className="w-4 h-4 mr-1 animate-spin" />
@@ -301,6 +344,18 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
                     )}
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                show={confirmModal.show}
+                onClose={() => setConfirmModal(prev => ({ ...prev, show: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmText={confirmModal.confirmText}
+                type={confirmModal.type}
+                isLoading={false}
+            />
         </AuthenticatedLayout>
     );
 }

@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Edit, Users, BookOpen, Tag, GraduationCap } from 'lucide-react';
+import { ArrowLeft, Edit, Users, BookOpen, Tag, GraduationCap, Settings } from 'lucide-react';
 import { Badge } from '@/Components/UI';
 
 export default function GradesShow({ grade, availableTeachers, auth }) {
@@ -25,13 +25,22 @@ export default function GradesShow({ grade, availableTeachers, auth }) {
                         Back to List
                     </Link>
                     {auth.user.role === 'admin' && (
-                        <Link
-                            href={`/grades/${grade.id}/edit`}
-                            className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
-                        >
-                            <Edit className="w-4 h-4 mr-2" />
-                            Edit Grade
-                        </Link>
+                        <div className="flex gap-3">
+                            <Link
+                                href={route('grades.curriculum.manage', grade.id)}
+                                className="inline-flex items-center px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                                <Settings className="w-4 h-4 mr-2" />
+                                Manage Curriculum
+                            </Link>
+                            <Link
+                                href={`/grades/${grade.id}/edit`}
+                                className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
+                            >
+                                <Edit className="w-4 h-4 mr-2" />
+                                Edit Grade
+                            </Link>
+                        </div>
                     )}
                 </div>
 

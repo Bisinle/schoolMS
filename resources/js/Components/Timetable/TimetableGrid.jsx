@@ -1,7 +1,10 @@
-import { Clock, DoorOpen, User, BookOpen, CheckCircle, AlertCircle } from 'lucide-react';
+import { Clock, DoorOpen, User, BookOpen, CheckCircle, AlertCircle, AlertTriangle } from 'lucide-react';
 
 export default function TimetableGrid({ template, slots, periods, editable = false, onSlotClick }) {
     const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
+    // ✅ PHASE 4: Define specialist subjects that likely need specialist teachers
+    const specialistSubjects = ['Physical Education', 'Music', 'Art', 'Computer', 'ICT', 'Drama', 'Dance', 'PE'];
 
     // Detect if this is a blueprint-generated timetable (has sequence_order) or traditional (has period_id)
     const isBlueprintGenerated = slots.length > 0 && slots[0].sequence_order !== undefined;
@@ -48,8 +51,8 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
     const getSlotStyling = (slot) => {
         if (!slot) return 'bg-white border-gray-200 border-dashed';
 
-        // Non-teachable slots (breaks, lunch, etc.)
-        if (!slot.is_teachable || ['break', 'lunch', 'other', 'activity'].includes(slot.slot_type)) {
+        // Non-teachable slots (breaks, lunch, prayer, sports, etc.)
+        if (!slot.is_teachable || ['break', 'short_break', 'lunch', 'prayer', 'sports', 'activity', 'other'].includes(slot.slot_type)) {
             return 'bg-blue-50 border-blue-200 text-blue-800';
         }
 
@@ -91,13 +94,24 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
         const labels = {
             'lesson': 'Lesson',
             'break': 'Break',
+            'short_break': 'Short Break',
             'lunch': 'Lunch',
-            'other': 'Other',
+            'prayer': 'Prayer',
+            'sports': 'Sports',
             'activity': 'Activity',
             'assembly': 'Assembly',
             'study': 'Study',
+            'other': 'Other',
         };
-        return labels[slotType] || slotType;
+        return labels[slotType] || slotType.charAt(0).toUpperCase() + slotType.slice(1);
+    };
+
+    // ✅ PHASE 4: Check if subject needs specialist review
+    const needsSpecialistReview = (subjectName) => {
+        if (!subjectName) return false;
+        return specialistSubjects.some(specialist =>
+            subjectName.toLowerCase().includes(specialist.toLowerCase())
+        );
     };
 
     const handleSlotClick = (slot, day, period) => {
@@ -125,7 +139,7 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
                         const periodKey = isBlueprintGenerated ? period.sequence_order : period.id;
 
                         return (
-                            <div key={periodKey} className="grid grid-cols-6 gap-2">
+                            <div key={periodKey} className="grid grid-cols-8 gap-2">
                                 {/* Time Column */}
                                 <div className="bg-gray-50 border border-gray-200 rounded-lg p-2">
                                     <div className="flex items-center gap-2 mb-1">
@@ -161,6 +175,8 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
                                 {daysOfWeek.map(day => {
                                     const slot = groupedSlots[day][periodKey];
                                     const slotStyling = getSlotStyling(slot);
+                                    // ✅ PHASE 4: Check if this slot needs specialist review
+                                    const needsReview = slot && needsSpecialistReview(slot.subject?.name);
 
                                     return (
                                         <div
@@ -168,12 +184,14 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
                                             onClick={() => handleSlotClick(slot, day, period)}
                                             className={`rounded-lg p-2 min-h-[80px] transition-all ${slotStyling} ${
                                                 slot && editable ? 'cursor-pointer hover:shadow-md' : ''
-                                            } ${!slot && editable ? 'hover:bg-gray-50 cursor-pointer' : ''}`}
+                                            } ${!slot && editable ? 'hover:bg-gray-50 cursor-pointer' : ''} ${
+                                                needsReview ? 'ring-2 ring-orange-300 ring-offset-1' : ''
+                                            }`}
                                         >
                                             {slot ? (
                                                 <div className="space-y-1">
                                                     {/* Non-teachable slots */}
-                                                    {!slot.is_teachable || ['break', 'lunch', 'other', 'activity'].includes(slot.slot_type) ? (
+                                                    {!slot.is_teachable || ['break', 'short_break', 'lunch', 'prayer', 'sports', 'activity', 'other'].includes(slot.slot_type) ? (
                                                         <div className="flex items-center justify-center h-full">
                                                             <span className="text-xs font-semibold capitalize">
                                                                 {getSlotTypeLabel(slot.slot_type)}
@@ -196,9 +214,25 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
                                                             </div>
 
                                                             {slot.teacher ? (
-                                                                <div className="flex items-center text-xs text-gray-700">
-                                                                    <User className="w-3 h-3 mr-1 flex-shrink-0" />
-                                                                    <span className="line-clamp-1">{slot.teacher.user?.name || slot.teacher.name}</span>
+                                                                <div className="space-y-0.5">
+                                                                    <div className="flex items-center text-xs text-gray-700">
+                                                                        <User className="w-3 h-3 mr-1 flex-shrink-0" />
+                                                                        <span className="line-clamp-1">{slot.teacher.user?.name || slot.teacher.name}</span>
+                                                                    </div>
+                                                                    {/* ✅ PHASE 4: Auto-assigned teacher indicator */}
+                                                                    {slot.auto_assigned_teacher && (
+                                                                        <div className="flex items-center text-[10px] text-yellow-600" title="Auto-assigned to class teacher - review if specialist needed">
+                                                                            <AlertTriangle className="w-3 h-3 mr-1 flex-shrink-0" />
+                                                                            <span>Auto-assigned</span>
+                                                                        </div>
+                                                                    )}
+                                                                    {/* ✅ PHASE 4: Specialist subject warning */}
+                                                                    {needsReview && (
+                                                                        <div className="flex items-center text-[10px] text-orange-600 font-medium" title="This subject may need a specialist teacher">
+                                                                            <AlertTriangle className="w-3 h-3 mr-1 flex-shrink-0" />
+                                                                            <span>Needs specialist?</span>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             ) : (
                                                                 <div className="flex items-center text-xs text-gray-400 italic">
@@ -279,6 +313,51 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
                                 />
                             </div>
                         </div>
+
+                        {/* ✅ PHASE 4: Specialist Subjects Warning */}
+                        {(() => {
+                            const specialistSlots = slots.filter(s =>
+                                s.is_teachable &&
+                                s.slot_type === 'lesson' &&
+                                s.subject?.name &&
+                                needsSpecialistReview(s.subject.name)
+                            );
+                            const uniqueSpecialistSubjects = [...new Set(specialistSlots.map(s => s.subject.name))];
+                            const autoAssignedCount = slots.filter(s => s.auto_assigned_teacher).length;
+
+                            if (uniqueSpecialistSubjects.length > 0 || autoAssignedCount > 0) {
+                                return (
+                                    <div className="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-4">
+                                        <div className="flex items-start">
+                                            <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 mr-3 flex-shrink-0" />
+                                            <div className="flex-1">
+                                                <h4 className="text-sm font-semibold text-orange-800 mb-2">Review Needed</h4>
+                                                {autoAssignedCount > 0 && (
+                                                    <p className="text-xs text-orange-700 mb-2">
+                                                        ✓ {autoAssignedCount} slot(s) auto-assigned to class teacher
+                                                    </p>
+                                                )}
+                                                {uniqueSpecialistSubjects.length > 0 && (
+                                                    <>
+                                                        <p className="text-xs text-orange-700 mb-2">
+                                                            ⚠️ {uniqueSpecialistSubjects.length} subject(s) may need specialist teachers:
+                                                        </p>
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {uniqueSpecialistSubjects.map((subject, idx) => (
+                                                                <span key={idx} className="inline-flex items-center px-2 py-1 bg-orange-100 text-orange-800 text-xs font-medium rounded">
+                                                                    {subject}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            }
+                            return null;
+                        })()}
                     </div>
                 )}
 
@@ -326,6 +405,15 @@ export default function TimetableGrid({ template, slots, periods, editable = fal
                             <div className="flex items-center gap-2">
                                 <AlertCircle className="w-4 h-4 text-yellow-600" />
                                 <span className="text-xs text-gray-700">Needs Teacher</span>
+                            </div>
+                            {/* ✅ PHASE 4: New indicators */}
+                            <div className="flex items-center gap-2">
+                                <AlertTriangle className="w-4 h-4 text-yellow-600" />
+                                <span className="text-xs text-gray-700">Auto-assigned Teacher</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-4 h-4 border-2 border-orange-300 rounded"></div>
+                                <span className="text-xs text-gray-700">Needs Specialist Review</span>
                             </div>
                         </div>
                     </div>

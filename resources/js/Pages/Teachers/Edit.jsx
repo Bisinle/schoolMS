@@ -7,8 +7,9 @@ import TextareaInput from '@/Components/Forms/TextareaInput';
 import FormSection, { FormField } from '@/Components/Forms/FormSection';
 import FormActions from '@/Components/Forms/FormActions';
 import ReadOnlyField from '@/Components/Forms/ReadOnlyField';
+import { MultiSelectCheckboxGrouped } from '@/Components/Forms/MultiSelectCheckbox';
 
-export default function TeachersEdit({ teacher, grades, assignedGradeIds, classTeacherGradeId }) {
+export default function TeachersEdit({ teacher, grades, subjects, assignedGradeIds, assignedSubjectIds, classTeacherGradeId }) {
     const [selectedGrades, setSelectedGrades] = useState(assignedGradeIds || []);
     const [classTeacherGrade, setClassTeacherGrade] = useState(classTeacherGradeId?.toString() || '');
 
@@ -18,7 +19,8 @@ export default function TeachersEdit({ teacher, grades, assignedGradeIds, classT
         phone_number: teacher.phone_number || '',
         address: teacher.address || '',
         qualification: teacher.qualification || '',
-        subject_specialization: teacher.subject_specialization || '',
+        subject_id: teacher.subject_id?.toString() || '',
+        subject_ids: assignedSubjectIds || [],
         date_of_joining: teacher.date_of_joining || '',
         status: teacher.status || 'active',
         grade_ids: assignedGradeIds || [],
@@ -58,6 +60,16 @@ export default function TeachersEdit({ teacher, grades, assignedGradeIds, classT
         e.preventDefault();
         put(`/teachers/${teacher.id}`);
     };
+
+    // Group subjects by category
+    const groupedSubjects = subjects.reduce((acc, subject) => {
+        const category = subject.category || 'Other';
+        if (!acc[category]) {
+            acc[category] = [];
+        }
+        acc[category].push(subject);
+        return acc;
+    }, {});
 
     return (
         <AuthenticatedLayout header="Edit Teacher">
@@ -119,7 +131,7 @@ export default function TeachersEdit({ teacher, grades, assignedGradeIds, classT
                         </FormSection>
 
                         {/* Professional Information Section */}
-                        <FormSection title="Professional Information">
+                        <FormSection title="Professional Information" gridCols="1">
                             <TextInput
                                 label="Qualification"
                                 name="qualification"
@@ -129,13 +141,32 @@ export default function TeachersEdit({ teacher, grades, assignedGradeIds, classT
                                 placeholder="e.g., Masters in Education"
                             />
 
-                            <TextInput
-                                label="Subject Specialization"
-                                name="subject_specialization"
-                                value={data.subject_specialization}
-                                onChange={(e) => setData('subject_specialization', e.target.value)}
-                                error={errors.subject_specialization}
-                                placeholder="e.g., Mathematics"
+                            <SelectInput
+                                label="Primary Subject (for reference)"
+                                name="subject_id"
+                                value={data.subject_id}
+                                onChange={(e) => setData('subject_id', e.target.value)}
+                                error={errors.subject_id}
+                                required
+                                placeholder="Select primary subject"
+                                helperText="Select the main subject this teacher specializes in"
+                                optionRenderer={(subject) => (
+                                    <option key={subject.id} value={subject.id}>
+                                        {subject.name} ({subject.category})
+                                    </option>
+                                )}
+                                options={subjects}
+                            />
+
+                            <MultiSelectCheckboxGrouped
+                                label="Subject Specializations"
+                                name="subject_ids"
+                                value={data.subject_ids}
+                                onChange={(values) => setData('subject_ids', values)}
+                                groupedOptions={groupedSubjects}
+                                error={errors.subject_ids}
+                                required
+                                helperText="Select all subjects this teacher can teach"
                             />
 
                             <SelectInput

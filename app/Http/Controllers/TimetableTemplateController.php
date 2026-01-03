@@ -143,52 +143,18 @@ class TimetableTemplateController extends Controller
     }
 
     /**
-     * Display the specified timetable template.
-     *
-     * Phase 2 Update: Now includes compliance summary
-     */
-    public function show(TimetableTemplate $template, TimetableComplianceService $complianceService)
-    {
-        $this->authorize('view', $template);
-
-        $template->load(['grade', 'academicTerm', 'slots.subject', 'slots.teacher.user', 'slots.room', 'slots.period']);
-
-        // ✅ PHASE 2: Add compliance summary
-        $complianceReport = $complianceService->getTemplateComplianceReport($template);
-
-        // ✅ PHASE 3: Get unresolved conflicts
-        $conflicts = TimetableConflict::where('timetable_template_id', $template->id)
-            ->unresolved()
-            ->with(['slot', 'conflictingSlot'])
-            ->get()
-            ->map(function ($conflict) {
-                return [
-                    'id' => $conflict->id,
-                    'slot_id' => $conflict->timetable_slot_id,
-                    'conflict_type' => $conflict->conflict_type,
-                    'severity' => $conflict->severity,
-                    'message' => $conflict->message,
-                    'details' => $conflict->details,
-                ];
-            });
-
-        return Inertia::render('Timetables/Templates/Show', [
-            'template' => $template,
-            'complianceReport' => $complianceReport,
-            'conflicts' => $conflicts,
-        ]);
-    }
-
-    /**
-     * Display the timetable template in grid view.
+     * Display the specified timetable template in grid view.
      *
      * Phase 3 Update: Enhanced grid view with conflict detection
+     * Phase 4 Update: Added subjects, teachers, and class teacher for bulk operations
+     * Phase 5 Update: Made grid view the default view
+     * Phase 6 Update: Added priority-based period allocation stats
      */
-    public function grid(TimetableTemplate $template, TimetableConflictDetector $conflictDetector)
+    public function show(TimetableTemplate $template, TimetableConflictDetector $conflictDetector)
     {
         $this->authorize('view', $template);
 
-        $template->load(['grade', 'academicTerm']);
+        $template->load(['grade', 'academicTerm', 'slots.subject', 'slots.period']);
 
         // Get all slots for this template
         $slots = TimetableSlot::where('timetable_template_id', $template->id)
@@ -218,12 +184,65 @@ class TimetableTemplateController extends Controller
                 ];
             });
 
+        // Get subjects assigned to this grade for bulk operations
+        $subjects = $template->grade->subjects()
+            ->orderBy('name')
+            ->get(['subjects.id', 'subjects.name', 'subjects.code']);
+
+        // Get teachers assigned to this grade with their specializations
+        $teachers = $template->grade->teachers()
+            ->with(['user', 'subjects'])
+            ->get()
+            ->map(function ($teacher) {
+                return [
+                    'id' => $teacher->id,
+                    'name' => $teacher->user->name,
+                    'user' => $teacher->user,
+                    'subjects' => $teacher->subjects->map(function ($subject) {
+                        return ['id' => $subject->id, 'name' => $subject->name];
+                    }),
+                ];
+            });
+
+        // Get class teacher
+        $classTeacher = $template->grade->getClassTeacher();
+        if ($classTeacher) {
+            $classTeacher = [
+                'id' => $classTeacher->id,
+                'name' => $classTeacher->user->name,
+                'user' => $classTeacher->user,
+            ];
+        }
+
+        // Check if generation is possible (prerequisite validation)
+        $generationValidation = $template->grade->canGenerateTimetable();
+
+        // Get priority allocation stats and recommendations
+        $priorityAllocator = new \App\Services\Timetable\PriorityBasedPeriodAllocator();
+        $priorityStats = $priorityAllocator->getTemplateAllocationStats($template);
+        $priorityRecommendations = $priorityAllocator->getRecommendations($template);
+
         return Inertia::render('Timetables/Templates/Grid', [
             'template' => $template,
             'slots' => $slots,
             'periods' => $periods,
             'conflicts' => $conflicts,
+            'subjects' => $subjects,
+            'teachers' => $teachers,
+            'classTeacher' => $classTeacher,
+            'generationValidation' => $generationValidation,
+            'priorityStats' => $priorityStats,
+            'priorityRecommendations' => $priorityRecommendations,
         ]);
+    }
+
+    /**
+     * Redirect to show method (grid is now the default view).
+     * Kept for backward compatibility with old links.
+     */
+    public function grid(TimetableTemplate $template)
+    {
+        return redirect()->route('timetables.templates.show', $template);
     }
 
     /**
@@ -410,23 +429,84 @@ class TimetableTemplateController extends Controller
     }
 
     /**
+     * Validate if a grade can generate a timetable.
+     *
+     * Returns validation results with errors and warnings.
+     */
+    public function validateGeneration(Grade $grade)
+    {
+        $this->authorize('create', TimetableTemplate::class);
+
+        $validation = $grade->canGenerateTimetable();
+
+        return response()->json($validation);
+    }
+
+    /**
      * Generate weekly timetable slots from blueprint.
      *
      * Phase 3: Auto-generation using blueprint and curriculum rules
+     * Phase 5: Enhanced with comprehensive prerequisite validation
+     * Phase 6: Three-layer validation (Frontend → Controller → Service)
      */
     public function generate(TimetableTemplate $template)
     {
         $this->authorize('update', $template);
 
+        // ============================================
+        // LAYER 2: CONTROLLER VALIDATION
+        // ============================================
+        // Validate prerequisites before calling service
+        // This prevents unnecessary service calls and provides
+        // structured error responses
+        $validation = $template->grade->canGenerateTimetable();
+
+        if (!$validation['can_generate']) {
+            $errorMessage = $this->formatValidationErrors($validation, $template->grade->name);
+
+            return redirect()->back()
+                ->with('error', $errorMessage);
+        }
+
+        // ============================================
+        // LAYER 3: SERVICE VALIDATION (Final Safeguard)
+        // ============================================
         try {
             $service = new TimetableGenerationService();
             $result = $service->generate($template);
 
+            // Build success message with post-validation results
+            $successMessage = "Generated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks). All lesson slots assigned to class teacher.";
+
+            // Add post-validation warnings
+            if (!empty($result['post_validation']['warnings'])) {
+                $successMessage .= "\n\n⚠️ Warnings:\n" . implode("\n", $result['post_validation']['warnings']);
+            }
+
+            // Add post-validation issues (critical)
+            if (!empty($result['post_validation']['issues'])) {
+                $successMessage .= "\n\n❌ Issues:\n" . implode("\n", $result['post_validation']['issues']);
+            }
+
+            // Add day-by-day stats
+            if (!empty($result['post_validation']['day_stats'])) {
+                $successMessage .= "\n\n📊 Daily Distribution:";
+                foreach ($result['post_validation']['day_stats'] as $day => $stats) {
+                    $successMessage .= "\n• " . ucfirst($day) . ": {$stats['total_slots']} lessons";
+                }
+            }
+
             return redirect()->route('timetables.templates.grid', $template)
-                ->with('success', "Generated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks)");
+                ->with('success', $successMessage);
         } catch (\Exception $e) {
+            // Format error message for better readability
+            $errorMessage = $e->getMessage();
+
+            // Convert newlines to HTML breaks for display
+            $errorMessage = nl2br($errorMessage);
+
             return redirect()->back()
-                ->with('error', 'Generation failed: ' . $e->getMessage());
+                ->with('error', $errorMessage);
         }
     }
 
@@ -435,20 +515,146 @@ class TimetableTemplateController extends Controller
      *
      * This will delete all auto-generated slots and recreate them.
      * Manually created slots are preserved.
+     * Phase 5: Enhanced with comprehensive prerequisite validation
+     * Phase 6: Three-layer validation (Frontend → Controller → Service)
      */
     public function regenerate(TimetableTemplate $template)
     {
         $this->authorize('update', $template);
 
+        // ============================================
+        // LAYER 2: CONTROLLER VALIDATION
+        // ============================================
+        // Validate prerequisites before calling service
+        $validation = $template->grade->canGenerateTimetable();
+
+        if (!$validation['can_generate']) {
+            $errorMessage = $this->formatValidationErrors($validation, $template->grade->name);
+
+            return redirect()->back()
+                ->with('error', $errorMessage);
+        }
+
+        // ============================================
+        // LAYER 3: SERVICE VALIDATION (Final Safeguard)
+        // ============================================
         try {
             $service = new TimetableGenerationService();
             $result = $service->generate($template);
 
+            // Build success message with post-validation results
+            $successMessage = "Regenerated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks). Manual edits preserved.";
+
+            // Add post-validation warnings
+            if (!empty($result['post_validation']['warnings'])) {
+                $successMessage .= "\n\n⚠️ Warnings:\n" . implode("\n", $result['post_validation']['warnings']);
+            }
+
+            // Add post-validation issues (critical)
+            if (!empty($result['post_validation']['issues'])) {
+                $successMessage .= "\n\n❌ Issues:\n" . implode("\n", $result['post_validation']['issues']);
+            }
+
+            // Add day-by-day stats
+            if (!empty($result['post_validation']['day_stats'])) {
+                $successMessage .= "\n\n📊 Daily Distribution:";
+                foreach ($result['post_validation']['day_stats'] as $day => $stats) {
+                    $successMessage .= "\n• " . ucfirst($day) . ": {$stats['total_slots']} lessons";
+                }
+            }
+
             return redirect()->route('timetables.templates.grid', $template)
-                ->with('success', "Regenerated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks). Manual edits preserved.");
+                ->with('success', $successMessage);
         } catch (\Exception $e) {
+            // Format error message for better readability
+            $errorMessage = $e->getMessage();
+
+            // Convert newlines to HTML breaks for display
+            $errorMessage = nl2br($errorMessage);
+
             return redirect()->back()
-                ->with('error', 'Regeneration failed: ' . $e->getMessage());
+                ->with('error', $errorMessage);
         }
+    }
+
+    /**
+     * Format validation errors for display.
+     *
+     * Converts validation result into user-friendly error message.
+     * Used by controller validation layer.
+     *
+     * Follows error message design principles:
+     * - Specific: Exact details of what's missing
+     * - Actionable: Clear steps to fix
+     * - Hierarchical: All errors shown at once with status indicators
+     * - Linked: Navigation paths to fix issues
+     */
+    protected function formatValidationErrors(array $validation, string $gradeName): string
+    {
+        $message = "<strong>Cannot Generate Timetable for {$gradeName}</strong>\n\n";
+
+        // Show missing requirements
+        if (!empty($validation['errors'])) {
+            $message .= "<strong>Missing Requirements:</strong>\n";
+            foreach ($validation['errors'] as $error) {
+                if (is_array($error)) {
+                    $message .= "❌ {$error['message']}\n";
+                    $message .= "   → {$error['action']}\n\n";
+                } else {
+                    // Fallback for old string format
+                    $message .= "❌ {$error}\n\n";
+                }
+            }
+        }
+
+        // Show successes (what's already configured)
+        if (!empty($validation['successes'])) {
+            $message .= "<strong>Already Configured:</strong>\n";
+            foreach ($validation['successes'] as $success) {
+                $message .= "✅ {$success}\n";
+            }
+            $message .= "\n";
+        }
+
+        // Show warnings
+        if (!empty($validation['warnings'])) {
+            $message .= "<strong>Warnings:</strong>\n";
+            foreach ($validation['warnings'] as $warning) {
+                if (is_array($warning)) {
+                    $message .= "⚠️ {$warning['message']}\n";
+                    $message .= "   → {$warning['action']}\n\n";
+                } else {
+                    // Fallback for old string format
+                    $message .= "⚠️ {$warning}\n\n";
+                }
+            }
+        }
+
+        // Convert newlines to HTML breaks for display
+        return nl2br($message);
+    }
+
+    /**
+     * ✅ PHASE 4: Bulk update teacher for all slots of a specific subject
+     */
+    public function bulkUpdateTeacher(Request $request, TimetableTemplate $template)
+    {
+        $this->authorize('update', $template);
+
+        $validated = $request->validate([
+            'subject_id' => 'required|exists:subjects,id',
+            'teacher_id' => 'required|exists:teachers,id',
+        ]);
+
+        // Update all slots with the specified subject
+        $updated = $template->slots()
+            ->where('subject_id', $validated['subject_id'])
+            ->update([
+                'teacher_id' => $validated['teacher_id'],
+                'auto_assigned_teacher' => false, // Manual override clears auto-assigned flag
+            ]);
+
+        return redirect()->back()
+            ->with('success', "Updated {$updated} slot(s) with the selected teacher.");
     }
 }

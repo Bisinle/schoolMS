@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Traits\BelongsToSchool;
+use App\Models\Traits\HasPriorityBand;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subject extends Model
 {
-    use HasFactory, BelongsToSchool;
+    use HasFactory, BelongsToSchool, HasPriorityBand;
 
     protected $fillable = [
         'school_id',
@@ -28,10 +29,15 @@ class Subject extends Model
     }
 
     // Relationships
+    public function teachers()
+    {
+        return $this->hasMany(Teacher::class);
+    }
+
     public function grades()
     {
         return $this->belongsToMany(Grade::class, 'grade_subject')
-            ->withPivot('sessions_per_week')
+            ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
             ->withTimestamps();
     }
 
@@ -59,6 +65,11 @@ class Subject extends Model
     public function scopeIslamic($query)
     {
         return $query->where('category', 'islamic');
+    }
+
+    public function scopeArts($query)
+    {
+        return $query->where('category', 'arts');
     }
 
     // ============================================
@@ -101,5 +112,65 @@ class Subject extends Model
         ];
 
         return in_array(strtolower($this->name), $coreSubjects);
+    }
+
+    // ============================================
+    // PRIORITY BAND METHODS - ADDED FOR SMART SCHEDULING
+    // ============================================
+
+    /**
+     * Get the priority for this subject in a specific grade
+     *
+     * @param int $gradeId The grade ID
+     * @return string|null The priority (high, neutral, low) or null if not assigned
+     */
+    public function getPriorityForGrade(int $gradeId): ?string
+    {
+        $grade = $this->grades()->where('grades.id', $gradeId)->first();
+        return $grade ? $grade->pivot->priority : null;
+    }
+
+    /**
+     * Get the priority band for this subject in a specific grade
+     * Maps subject priority to period priority band
+     *
+     * @param int $gradeId The grade ID
+     * @return string|null The priority band (morning_high, neutral, afternoon_low) or null
+     */
+    public function getPriorityBandForGrade(int $gradeId): ?string
+    {
+        $priority = $this->getPriorityForGrade($gradeId);
+        return $priority ? self::mapPriorityToBand($priority) : null;
+    }
+
+    /**
+     * Check if this subject should be scheduled in a specific priority band for a grade
+     *
+     * @param int $gradeId The grade ID
+     * @param string $periodBand The period priority band
+     * @return bool True if the subject matches the period band
+     */
+    public function matchesPriorityBand(int $gradeId, string $periodBand): bool
+    {
+        $subjectPriority = $this->getPriorityForGrade($gradeId);
+        return $subjectPriority ? self::priorityMatchesBand($subjectPriority, $periodBand) : false;
+    }
+
+    /**
+     * Get recommended time of day for this subject in a grade
+     *
+     * @param int $gradeId The grade ID
+     * @return string Human-readable recommendation
+     */
+    public function getRecommendedTimeForGrade(int $gradeId): string
+    {
+        $priority = $this->getPriorityForGrade($gradeId);
+
+        return match ($priority) {
+            'high' => 'Best scheduled in the morning when students are most alert',
+            'neutral' => 'Can be scheduled at any time of day',
+            'low' => 'Best scheduled in the afternoon',
+            default => 'No scheduling preference set',
+        };
     }
 }

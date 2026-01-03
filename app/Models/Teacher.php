@@ -18,7 +18,7 @@ class Teacher extends Model
         'phone_number',
         'address',
         'qualification',
-        'subject_specialization',
+        'subject_id',
         'date_of_joining',
         'status',
     ];
@@ -35,10 +35,24 @@ class Teacher extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function subject()
+    {
+        return $this->belongsTo(Subject::class);
+    }
+
     public function grades()
     {
         return $this->belongsToMany(Grade::class, 'grade_teacher')
                     ->withPivot('is_class_teacher')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get the subjects this teacher specializes in (many-to-many).
+     */
+    public function subjects()
+    {
+        return $this->belongsToMany(Subject::class, 'teacher_subject')
                     ->withTimestamps();
     }
 

@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
+use App\Models\LevelDayBlueprint;
+use App\Models\TimetablePeriod;
 
 class Grade extends Model
 {
@@ -52,7 +54,7 @@ class Grade extends Model
     public function subjects()
     {
         return $this->belongsToMany(Subject::class, 'grade_subject')
-            ->withPivot('sessions_per_week')
+            ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
             ->withTimestamps();
     }
 
@@ -93,6 +95,214 @@ class Grade extends Model
     public function getClassTeacher()
     {
         return $this->teachers()->wherePivot('is_class_teacher', true)->first();
+    }
+
+    /**
+     * Check if this grade can generate a timetable.
+     * Returns validation results with errors, warnings, and success indicators.
+     *
+     * This method performs comprehensive prerequisite validation to ensure
+     * all required data is in place before auto-generation can proceed.
+     *
+     * Validation follows strict requirements:
+     * 1. Class teacher must be assigned
+     * 2. Default room must be assigned
+     * 3. Subjects with curriculum rules must be configured
+     * 4. Active blueprint must exist for grade level
+     * 5. Periods must be generated from blueprint
+     *
+     * Error messages follow design principles:
+     * - Specific: Exact details of what's missing
+     * - Actionable: Clear steps to fix
+     * - Hierarchical: All errors shown at once with status indicators
+     * - Linked: Navigation paths to fix issues
+     */
+    public function canGenerateTimetable(): array
+    {
+        $errors = [];
+        $warnings = [];
+        $successes = [];
+
+        // ============================================
+        // CRITICAL VALIDATIONS (Block Generation)
+        // ============================================
+
+        // Check 1: Class teacher exists
+        $classTeacher = $this->getClassTeacher();
+        if (!$classTeacher) {
+            $errors[] = [
+                'message' => 'No class teacher assigned',
+                'action' => "Go to Grades → {$this->name} → Edit → Assign a class teacher",
+                'type' => 'class_teacher'
+            ];
+        } else {
+            $successes[] = "Class teacher assigned: {$classTeacher->user->name}";
+        }
+
+        // Check 2: Default room assigned (REQUIRED)
+        if (!$this->default_room_id) {
+            $errors[] = [
+                'message' => 'No default classroom assigned',
+                'action' => "Go to Grades → {$this->name} → Edit → Assign a default room",
+                'type' => 'default_room'
+            ];
+        } else {
+            $room = $this->defaultRoom;
+            $successes[] = "Default classroom assigned: {$room->name}";
+        }
+
+        // Check 3: Has subjects assigned
+        $subjectsCount = $this->subjects()->count();
+        if ($subjectsCount === 0) {
+            $errors[] = [
+                'message' => 'No subjects assigned',
+                'action' => "Go to Grades → {$this->name} → Subjects → Assign subjects",
+                'type' => 'subjects'
+            ];
+        } else {
+            $successes[] = "{$subjectsCount} subjects assigned";
+        }
+
+        // Check 4: Has active blueprint for level
+        $blueprint = LevelDayBlueprint::where('school_id', $this->school_id)
+            ->where('level', $this->level)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$blueprint) {
+            $errors[] = [
+                'message' => "No active timetable blueprint found for {$this->level} level",
+                'action' => "Go to Blueprints → Create blueprint for {$this->level}",
+                'type' => 'blueprint'
+            ];
+        } else {
+            $successes[] = "Blueprint exists for {$this->level}: {$blueprint->name}";
+        }
+
+        // Check 5: Periods generated from blueprint
+        $periodsCount = 0;
+        if ($blueprint) {
+            $periodsCount = TimetablePeriod::where('school_id', $this->school_id)
+                ->where('grade_level', $this->level)
+                ->whereNotNull('generated_from_blueprint_id')
+                ->count();
+
+            if ($periodsCount === 0) {
+                $errors[] = [
+                    'message' => "No periods generated from blueprint for {$this->level} level",
+                    'action' => "Go to Blueprints → {$blueprint->name} → Generate Periods",
+                    'type' => 'periods'
+                ];
+            } else {
+                $successes[] = "Periods generated from blueprint ({$periodsCount} periods)";
+            }
+        }
+
+        // Check 6: Subjects have curriculum rules configured
+        if ($subjectsCount > 0) {
+            $subjectsWithRules = $this->subjects()
+                ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
+                ->get();
+
+            // Check for missing sessions_per_week OR priority
+            $subjectsWithMissingRules = $subjectsWithRules->filter(function ($subject) {
+                $sessionsInvalid = empty($subject->pivot->sessions_per_week) || $subject->pivot->sessions_per_week <= 0;
+                $priorityInvalid = empty($subject->pivot->priority);
+                return $sessionsInvalid || $priorityInvalid;
+            });
+
+            if ($subjectsWithMissingRules->count() > 0) {
+                $count = $subjectsWithMissingRules->count();
+                $subjectNames = $subjectsWithMissingRules->pluck('name')->take(3)->implode(', ');
+
+                $errors[] = [
+                    'message' => "{$count} subjects missing curriculum rules (sessions per week, priority)",
+                    'action' => "Go to Grades → {$this->name} → Subjects → Configure: {$subjectNames}",
+                    'type' => 'curriculum_rules',
+                    'details' => $subjectNames
+                ];
+            }
+        }
+
+        // ============================================
+        // BLUEPRINT IS SINGLE SOURCE OF TRUTH
+        // ============================================
+        // We do NOT validate if total sessions_per_week exceed available slots.
+        // The blueprint defines the available capacity, and the generation algorithm
+        // will fill slots based on what's available. If there are more subjects than
+        // slots, some subjects simply won't be scheduled - this is expected behavior.
+        // The sessions_per_week in grade_subject is informational only.
+
+        // ============================================
+        // WARNINGS (Allow Generation with Caution)
+        // ============================================
+
+        // Warning 1: Check if teachers have subject specializations
+        $teachers = $this->teachers()->get();
+        if ($teachers->count() > 0) {
+            $teachersWithoutSpecializations = $teachers->filter(function ($teacher) {
+                return $teacher->subjects()->count() === 0;
+            });
+
+            if ($teachersWithoutSpecializations->count() > 0) {
+                $teacherNames = $teachersWithoutSpecializations->map(function ($teacher) {
+                    return $teacher->user->name ?? 'Unknown';
+                })->take(2)->implode(', ');
+
+                $teacherIds = $teachersWithoutSpecializations->pluck('id')->take(2)->toArray();
+
+                $warnings[] = [
+                    'message' => "No subject specializations set for teachers: {$teacherNames}",
+                    'action' => "Go to Teachers → Edit → Add subject specializations for better teacher matching",
+                    'type' => 'teacher_specializations',
+                    'teacher_ids' => $teacherIds,
+                ];
+            }
+        }
+
+        return [
+            'can_generate' => empty($errors),
+            'errors' => $errors,
+            'warnings' => $warnings,
+            'successes' => $successes,
+            'summary' => $this->getGenerationSummary($blueprint),
+        ];
+    }
+
+    /**
+     * Get a summary of what will be generated
+     * Blueprint is the single source of truth for available slots
+     */
+    private function getGenerationSummary($blueprint): array
+    {
+        if (!$blueprint) {
+            return [];
+        }
+
+        // Blueprint defines how many teachable periods per day
+        $teachablePeriodsPerDay = $blueprint->periods()->where('is_teachable', true)->count();
+
+        // Calculate available slots: periods per day × working days per week
+        $workingDaysPerWeek = 5; // Default to 5 working days (Monday-Friday)
+        $totalSlots = $teachablePeriodsPerDay * $workingDaysPerWeek;
+
+        $totalRequiredSessions = $this->subjects()
+            ->withPivot('sessions_per_week')
+            ->get()
+            ->sum(function ($subject) {
+                return $subject->pivot->sessions_per_week ?? 0;
+            });
+
+        return [
+            'total_slots' => $totalSlots,
+            'lesson_slots' => $totalRequiredSessions,
+            'empty_slots' => max(0, $totalSlots - $totalRequiredSessions),
+            'subjects_count' => $this->subjects()->count(),
+            'teachers_count' => $this->teachers()->count(),
+            'blueprint_name' => $blueprint->name,
+            'periods_per_day' => $teachablePeriodsPerDay,
+            'working_days' => $workingDaysPerWeek,
+        ];
     }
 
     public function hasCapacity()

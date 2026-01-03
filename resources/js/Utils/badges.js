@@ -27,6 +27,7 @@ export const getCategoryBadge = (category) => {
     const badges = {
         academic: 'bg-blue-100 text-blue-800',
         islamic: 'bg-green-100 text-green-800',
+        arts: 'bg-purple-100 text-purple-800',
         core: 'bg-blue-100 text-blue-800',
         elective: 'bg-green-100 text-green-800',
         'co-curricular': 'bg-purple-100 text-purple-800',

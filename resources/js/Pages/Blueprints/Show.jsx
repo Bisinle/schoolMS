@@ -2,10 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { ClockIcon, CheckCircleIcon, XCircleIcon, SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
 export default function BlueprintsShow({ auth, blueprint }) {
     const [generationStatus, setGenerationStatus] = useState(null);
     const [loadingGeneration, setLoadingGeneration] = useState(false);
+    const [confirmModal, setConfirmModal] = useState({
+        show: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        type: 'info',
+        confirmText: 'Confirm'
+    });
 
     // Fetch generation status
     useEffect(() => {
@@ -16,33 +25,49 @@ export default function BlueprintsShow({ auth, blueprint }) {
     }, [blueprint.id]);
 
     const handleGeneratePeriods = () => {
-        if (confirm('Generate timetable periods from this blueprint? This will create period records that can be used in timetables.')) {
-            setLoadingGeneration(true);
-            router.post(`/blueprints/${blueprint.id}/generate-periods`, {}, {
-                onFinish: () => {
-                    setLoadingGeneration(false);
-                    // Refresh generation status
-                    fetch(`/blueprints/${blueprint.id}/generation-status`)
-                        .then(res => res.json())
-                        .then(data => setGenerationStatus(data));
-                }
-            });
-        }
+        setConfirmModal({
+            show: true,
+            title: 'Generate Timetable Periods',
+            message: 'Generate timetable periods from this blueprint? This will create period records that can be used in timetables.',
+            confirmText: 'Generate',
+            type: 'info',
+            onConfirm: () => {
+                setLoadingGeneration(true);
+                router.post(`/blueprints/${blueprint.id}/generate-periods`, {}, {
+                    onFinish: () => {
+                        setLoadingGeneration(false);
+                        // Refresh generation status
+                        fetch(`/blueprints/${blueprint.id}/generation-status`)
+                            .then(res => res.json())
+                            .then(data => setGenerationStatus(data));
+                    }
+                });
+                setConfirmModal(prev => ({ ...prev, show: false }));
+            }
+        });
     };
 
     const handleRegeneratePeriods = () => {
-        if (confirm('Regenerate timetable periods from this blueprint? This will update existing periods to match the current blueprint configuration.')) {
-            setLoadingGeneration(true);
-            router.post(`/blueprints/${blueprint.id}/regenerate-periods`, {}, {
-                onFinish: () => {
-                    setLoadingGeneration(false);
-                    // Refresh generation status
-                    fetch(`/blueprints/${blueprint.id}/generation-status`)
-                        .then(res => res.json())
-                        .then(data => setGenerationStatus(data));
-                }
-            });
-        }
+        setConfirmModal({
+            show: true,
+            title: 'Regenerate Timetable Periods',
+            message: 'Regenerate timetable periods from this blueprint? This will update existing periods to match the current blueprint configuration.',
+            confirmText: 'Regenerate',
+            type: 'warning',
+            onConfirm: () => {
+                setLoadingGeneration(true);
+                router.post(`/blueprints/${blueprint.id}/regenerate-periods`, {}, {
+                    onFinish: () => {
+                        setLoadingGeneration(false);
+                        // Refresh generation status
+                        fetch(`/blueprints/${blueprint.id}/generation-status`)
+                            .then(res => res.json())
+                            .then(data => setGenerationStatus(data));
+                    }
+                });
+                setConfirmModal(prev => ({ ...prev, show: false }));
+            }
+        });
     };
     const formatTime = (time) => {
         if (!time) return '';
@@ -115,6 +140,21 @@ export default function BlueprintsShow({ auth, blueprint }) {
                         </div>
                     </div>
 
+                    {/* Inactive Blueprint Warning */}
+                    {!blueprint.is_active && (
+                        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
+                            <div className="flex items-start">
+                                <XCircleIcon className="w-5 h-5 text-yellow-600 mt-0.5 mr-3" />
+                                <div>
+                                    <h3 className="text-sm font-semibold text-yellow-900 mb-1">Blueprint Inactive</h3>
+                                    <p className="text-sm text-yellow-800">
+                                        This blueprint is currently inactive. You must activate it before you can generate or regenerate periods.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Generation Action Card */}
                     {generationStatus && (
                         <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 rounded-xl p-6 mb-6">
@@ -142,13 +182,26 @@ export default function BlueprintsShow({ auth, blueprint }) {
                                             <span>Periods are ready to use in timetables</span>
                                         </div>
                                     )}
+                                    {!blueprint.is_active && (
+                                        <div className="flex items-center gap-2 text-xs text-yellow-700 mt-2">
+                                            <XCircleIcon className="w-4 h-4 text-yellow-600" />
+                                            <span>Activate blueprint to generate periods</span>
+                                        </div>
+                                    )}
                                 </div>
                                 <div className="ml-4">
                                     {!generationStatus.has_generated ? (
                                         <button
                                             onClick={handleGeneratePeriods}
-                                            disabled={loadingGeneration || blueprint.periods.length === 0}
+                                            disabled={loadingGeneration || blueprint.periods.length === 0 || !blueprint.is_active}
                                             className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                            title={
+                                                !blueprint.is_active
+                                                    ? 'Blueprint must be active to generate periods'
+                                                    : blueprint.periods.length === 0
+                                                        ? 'Add periods to blueprint first'
+                                                        : 'Generate timetable periods'
+                                            }
                                         >
                                             {loadingGeneration ? (
                                                 <ArrowPathIcon className="w-5 h-5 mr-2 animate-spin" />
@@ -160,8 +213,13 @@ export default function BlueprintsShow({ auth, blueprint }) {
                                     ) : (
                                         <button
                                             onClick={handleRegeneratePeriods}
-                                            disabled={loadingGeneration}
+                                            disabled={loadingGeneration || !blueprint.is_active}
                                             className="inline-flex items-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                                            title={
+                                                !blueprint.is_active
+                                                    ? 'Blueprint must be active to regenerate periods'
+                                                    : 'Regenerate timetable periods'
+                                            }
                                         >
                                             {loadingGeneration ? (
                                                 <ArrowPathIcon className="w-5 h-5 mr-2 animate-spin" />
@@ -247,6 +305,18 @@ export default function BlueprintsShow({ auth, blueprint }) {
                     </div>
                 </div>
             </div>
+
+            {/* Confirmation Modal */}
+            <ConfirmationModal
+                show={confirmModal.show}
+                onClose={() => setConfirmModal(prev => ({ ...prev, show: false }))}
+                onConfirm={confirmModal.onConfirm}
+                title={confirmModal.title}
+                message={confirmModal.message}
+                confirmText={confirmModal.confirmText}
+                type={confirmModal.type}
+                isLoading={loadingGeneration}
+            />
         </AuthenticatedLayout>
     );
 }

@@ -82,7 +82,7 @@ export default function SubjectsEdit({ subject, grades }) {
                                 error={errors.category}
                                 required
                                 showPlaceholder={false}
-                                options={['academic', 'islamic']}
+                                options={['academic', 'islamic', 'arts']}
                             />
 
                             <TextInput

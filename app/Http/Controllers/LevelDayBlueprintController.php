@@ -325,6 +325,11 @@ class LevelDayBlueprintController extends Controller
     public function generatePeriods(LevelDayBlueprint $blueprint, BlueprintPeriodGenerationService $service)
     {
         try {
+            // Check if blueprint is active
+            if (!$blueprint->is_active) {
+                return back()->withErrors(['error' => 'Cannot generate periods from an inactive blueprint. Please activate the blueprint first.']);
+            }
+
             // Check if blueprint has periods
             if ($blueprint->periods->isEmpty()) {
                 return back()->withErrors(['error' => 'Blueprint has no periods defined. Please add periods first.']);
@@ -356,6 +361,11 @@ class LevelDayBlueprintController extends Controller
     public function regeneratePeriods(LevelDayBlueprint $blueprint, BlueprintPeriodGenerationService $service)
     {
         try {
+            // Check if blueprint is active
+            if (!$blueprint->is_active) {
+                return back()->withErrors(['error' => 'Cannot regenerate periods from an inactive blueprint. Please activate the blueprint first.']);
+            }
+
             // Check if blueprint has periods
             if ($blueprint->periods->isEmpty()) {
                 return back()->withErrors(['error' => 'Blueprint has no periods defined. Please add periods first.']);

@@ -122,10 +122,17 @@ class GradeController extends Controller
             'status' => 'required|in:active,inactive',
             'subject_ids' => 'nullable|array',
             'subject_ids.*' => 'exists:subjects,id',
-            'teacher_ids' => 'nullable|array',
+            'teacher_ids' => 'required|array|min:1',
             'teacher_ids.*' => 'exists:teachers,id',
-            'class_teacher_id' => 'nullable|exists:teachers,id',
+            'class_teacher_id' => 'required|exists:teachers,id',
         ]);
+
+        // Validate that class_teacher_id is in teacher_ids
+        if (!in_array($validated['class_teacher_id'], $validated['teacher_ids'])) {
+            return back()->withErrors([
+                'class_teacher_id' => 'The class teacher must be one of the assigned teachers.'
+            ])->withInput();
+        }
 
         $grade = Grade::create([
             'name' => $validated['name'],
@@ -435,6 +442,48 @@ class GradeController extends Controller
                 'error' => "Failed to unarchive grade '{$grade->name}'. Error: " . $e->getMessage()
             ]);
         }
+    }
+
+    // Curriculum Management Methods
+    public function manageCurriculum(Grade $grade)
+    {
+        $this->authorize('update', $grade);
+
+        $subjects = $grade->subjects()
+            ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
+            ->orderBy('category')
+            ->orderBy('name')
+            ->get();
+
+        return Inertia::render('Grades/ManageCurriculum', [
+            'grade' => $grade,
+            'subjects' => $subjects,
+        ]);
+    }
+
+    public function updateCurriculum(Request $request, Grade $grade)
+    {
+        $this->authorize('update', $grade);
+
+        $validated = $request->validate([
+            'subjects' => 'required|array',
+            'subjects.*.sessions_per_week' => 'required|integer|min:0|max:10',
+            'subjects.*.priority' => 'required|in:high,neutral,low',
+            'subjects.*.must_be_daily' => 'required|boolean',
+            'subjects.*.can_repeat_same_day' => 'required|boolean',
+        ]);
+
+        // Update each subject's curriculum rules
+        foreach ($validated['subjects'] as $subjectId => $rules) {
+            $grade->subjects()->updateExistingPivot($subjectId, [
+                'sessions_per_week' => $rules['sessions_per_week'],
+                'priority' => $rules['priority'],
+                'must_be_daily' => $rules['must_be_daily'],
+                'can_repeat_same_day' => $rules['can_repeat_same_day'],
+            ]);
+        }
+
+        return redirect()->back()->with('success', 'Curriculum rules updated successfully!');
     }
 
     // Teacher Assignment Methods

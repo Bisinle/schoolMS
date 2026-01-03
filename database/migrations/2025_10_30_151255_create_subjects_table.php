@@ -11,11 +11,11 @@ return new class extends Migration
         Schema::create('subjects', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->enum('category', ['academic', 'islamic']);
+            $table->enum('category', ['academic', 'islamic', 'arts']);
             $table->string('code')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('active');
             $table->timestamps();
-            
+
             $table->unique(['name', 'category']);
         });
     }

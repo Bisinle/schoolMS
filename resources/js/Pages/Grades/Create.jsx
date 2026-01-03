@@ -232,7 +232,7 @@ export default function GradesCreate({ subjects, teachers, rooms, levels }) {
                             <div className="flex items-center justify-between mb-3">
                                 <label className="block text-sm font-medium text-gray-700">
                                     <UserPlus className="w-4 h-4 inline mr-2" />
-                                    Assign Teachers
+                                    Assign Teachers <span className="text-red-500">*</span>
                                 </label>
                                 <div className="flex gap-2">
                                     <button
@@ -307,6 +307,17 @@ export default function GradesCreate({ subjects, teachers, rooms, levels }) {
                                     </span>
                                 )}
                             </p>
+                            {errors.teacher_ids && (
+                                <p className="mt-2 text-sm text-red-600">{errors.teacher_ids}</p>
+                            )}
+                            {errors.class_teacher_id && (
+                                <p className="mt-2 text-sm text-red-600">{errors.class_teacher_id}</p>
+                            )}
+                            {!data.class_teacher_id && data.teacher_ids.length > 0 && (
+                                <p className="mt-2 text-sm text-amber-600">
+                                    ⚠️ Please select a class teacher from the assigned teachers
+                                </p>
+                            )}
                         </div>
 
                         {/* Assign Subjects */}
