@@ -26,7 +26,6 @@ class TeacherSeeder extends Seeder
             'phone_number' => '0712345671',
             'address' => 'Nairobi, Kenya',
             'qualification' => 'Bachelor of Arts in English',
-            'subject_specialization' => 'English & Literature',
             'date_of_joining' => '2020-01-15',
             'status' => 'active',
         ]);
@@ -39,7 +38,6 @@ class TeacherSeeder extends Seeder
             'phone_number' => '0712345672',
             'address' => 'Nairobi, Kenya',
             'qualification' => 'Bachelor of Education (Mathematics)',
-            'subject_specialization' => 'Mathematics',
             'date_of_joining' => '2019-08-20',
             'status' => 'active',
         ]);
@@ -52,7 +50,6 @@ class TeacherSeeder extends Seeder
             'phone_number' => '0712345673',
             'address' => 'Mombasa, Kenya',
             'qualification' => 'Master of Science',
-            'subject_specialization' => 'Science & Technology',
             'date_of_joining' => '2021-03-10',
             'status' => 'active',
         ]);
@@ -65,7 +62,6 @@ class TeacherSeeder extends Seeder
             'phone_number' => '0712345674',
             'address' => 'Kisumu, Kenya',
             'qualification' => 'Bachelor of Islamic Studies',
-            'subject_specialization' => 'Islamic Studies & Arabic',
             'date_of_joining' => '2022-01-10',
             'status' => 'active',
         ]);
@@ -78,7 +74,6 @@ class TeacherSeeder extends Seeder
             'phone_number' => '0712345675',
             'address' => 'Nakuru, Kenya',
             'qualification' => 'Bachelor of Education (Arts)',
-            'subject_specialization' => 'Social Studies & CRE',
             'date_of_joining' => '2023-05-15',
             'status' => 'active',
         ]);
