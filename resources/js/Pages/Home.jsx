@@ -51,6 +51,11 @@ export default function Home() {
             description: 'Manages academic years, terms, grades/classes, and subjects. Organize your school structure with flexible grade levels and subject assignments for comprehensive academic tracking.'
         },
         {
+            icon: ClipboardCheck,
+            title: 'Automated Timetable Generation',
+            description: 'Create weekly timetables with automated slot generation based on curriculum rules. Set sessions per week for each subject, manage day blueprints, and distribute lessons evenly across working days.'
+        },
+        {
             icon: DollarSign,
             title: 'Fee Management & Invoicing',
             description: 'Create fee structures (tuition, transport, universal fees), generate guardian invoices, track payments with multiple methods (Cash, M-Pesa, Bank Transfer, Cheque), and monitor balances.'
@@ -90,6 +95,7 @@ export default function Home() {
     const features = [
         'Student & Guardian Management with Complete Profiles',
         'Academic Structure: Years, Terms, Grades & Subjects',
+        'Automated Timetable Generation with Curriculum Management',
         'Fee Management: Invoicing, Payments & Balance Tracking',
         'Examination & Results: Scheduling, Grading & Report Cards',
         'Teacher & Staff Management with Role-Based Access',
