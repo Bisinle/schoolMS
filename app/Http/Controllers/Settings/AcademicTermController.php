@@ -57,10 +57,16 @@ class AcademicTermController extends Controller
             return redirect()->back()->with('error', 'A term with this number already exists for this academic year.');
         }
 
-        // If setting as active, deactivate all other terms for this year
+        // If setting as active, deactivate all other terms for this school
+        // Only one term should be active at a time across all years
         if ($validated['is_active'] ?? false) {
-            AcademicTerm::where('academic_year_id', $validated['academic_year_id'])
-                ->update(['is_active' => false]);
+            // Get school_id from the academic year
+            $schoolId = $academicYear->school_id;
+
+            // Deactivate all terms for this school
+            AcademicTerm::whereHas('academicYear', function ($query) use ($schoolId) {
+                $query->where('school_id', $schoolId);
+            })->update(['is_active' => false]);
         }
 
         $academicTerm = AcademicTerm::create($validated);
@@ -101,11 +107,18 @@ class AcademicTermController extends Controller
             return redirect()->back()->with('error', 'A term with this number already exists for this academic year.');
         }
 
-        // If setting as active, deactivate all other terms for this year
+        // If setting as active, deactivate all other terms for this school
+        // Only one term should be active at a time across all years
         if ($validated['is_active'] ?? false) {
-            AcademicTerm::where('academic_year_id', $validated['academic_year_id'])
-                ->where('id', '!=', $academicTerm->id)
-                ->update(['is_active' => false]);
+            // Get school_id from the academic year
+            $schoolId = $academicYear->school_id;
+
+            // Deactivate all terms for this school except the current one
+            AcademicTerm::whereHas('academicYear', function ($query) use ($schoolId) {
+                $query->where('school_id', $schoolId);
+            })
+            ->where('id', '!=', $academicTerm->id)
+            ->update(['is_active' => false]);
         }
 
         $academicTerm->update($validated);

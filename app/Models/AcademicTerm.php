@@ -66,5 +66,28 @@ class AcademicTerm extends Model
     {
         return $query->where('is_active', true);
     }
+
+    // Boot method to enforce single active term rule
+    protected static function boot()
+    {
+        parent::boot();
+
+        // When saving a term as active, deactivate all other terms for the school
+        static::saving(function ($term) {
+            if ($term->is_active && $term->isDirty('is_active')) {
+                // Get the school_id through the academic year relationship
+                $academicYear = $term->academicYear ?? AcademicYear::find($term->academic_year_id);
+
+                if ($academicYear) {
+                    // Deactivate all other terms for this school
+                    static::whereHas('academicYear', function ($query) use ($academicYear) {
+                        $query->where('school_id', $academicYear->school_id);
+                    })
+                    ->where('id', '!=', $term->id)
+                    ->update(['is_active' => false]);
+                }
+            }
+        });
+    }
 }
 
