@@ -2,82 +2,64 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\AcademicYear;
 use App\Models\School;
-use Illuminate\Database\Seeder;
-use Carbon\Carbon;
 
 class AcademicYearSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     * Creates academic year 2025 and sets it as active
      */
     public function run(): void
     {
+        $this->command->info('📅 Seeding Academic Years...');
+
         // Get all schools
         $schools = School::all();
 
         if ($schools->isEmpty()) {
-            $this->command->warn('⚠️  No schools found. Please run SchoolSeeder first.');
+            $this->command->error('No schools found. Run SchoolSeeder first.');
             return;
         }
 
         foreach ($schools as $school) {
-            $this->command->info("📅 Creating academic years for {$school->name}...");
+            // Check if 2025 academic year already exists
+            $exists = AcademicYear::where('school_id', $school->id)
+                ->where('year', '2025')
+                ->exists();
 
-            // Create academic years for 2023, 2024, 2025, and 2026
-            $years = [
-                [
-                    'year' => '2023',
-                    'start_date' => Carbon::create(2023, 1, 1),
-                    'end_date' => Carbon::create(2023, 12, 31),
-                    'is_active' => false,
-                ],
-                [
-                    'year' => '2024',
-                    'start_date' => Carbon::create(2024, 1, 1),
-                    'end_date' => Carbon::create(2024, 12, 31),
-                    'is_active' => false,
-                ],
-                [
-                    'year' => '2025',
-                    'start_date' => Carbon::create(2025, 1, 1),
-                    'end_date' => Carbon::create(2025, 12, 31),
-                    'is_active' => true, // Current year is active
-                ],
-                [
-                    'year' => '2026',
-                    'start_date' => Carbon::create(2026, 1, 1),
-                    'end_date' => Carbon::create(2026, 12, 31),
-                    'is_active' => false,
-                ],
-            ];
+            if (!$exists) {
+                // Deactivate all other academic years for this school
+                AcademicYear::where('school_id', $school->id)
+                    ->update(['is_active' => false]);
 
-            foreach ($years as $yearData) {
-                // Check if academic year already exists
-                $existingYear = AcademicYear::where('school_id', $school->id)
-                    ->where('year', $yearData['year'])
-                    ->first();
-
-                if ($existingYear) {
-                    $this->command->warn("   ⚠️  Academic Year {$yearData['year']} already exists. Skipping...");
-                    continue;
-                }
-
+                // Create 2025 academic year as active
                 AcademicYear::create([
                     'school_id' => $school->id,
-                    'year' => $yearData['year'],
-                    'start_date' => $yearData['start_date'],
-                    'end_date' => $yearData['end_date'],
-                    'is_active' => $yearData['is_active'],
+                    'year' => '2025',
+                    'start_date' => '2025-01-06', // First Monday of January 2025
+                    'end_date' => '2025-11-28',   // Last Friday of November 2025
+                    'is_active' => true,
                 ]);
 
-                $status = $yearData['is_active'] ? '✅ ACTIVE' : '  ';
-                $this->command->info("   {$status} Academic Year {$yearData['year']}");
+                $this->command->info("  ✅ {$school->name}: Academic Year 2025 created and set as active");
+            } else {
+                // Update existing 2025 to be active
+                AcademicYear::where('school_id', $school->id)
+                    ->where('year', '2025')
+                    ->update(['is_active' => true]);
+
+                // Deactivate others
+                AcademicYear::where('school_id', $school->id)
+                    ->where('year', '!=', '2025')
+                    ->update(['is_active' => false]);
+
+                $this->command->warn("  ⚠️  {$school->name}: Academic Year 2025 already exists, set as active");
             }
         }
 
-        $this->command->info('✅ Academic years seeded successfully!');
+        $this->command->info('✅ Academic Years seeded successfully!');
     }
 }
-

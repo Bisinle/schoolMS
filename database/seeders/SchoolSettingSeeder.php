@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class SchoolSettingSeeder extends Seeder
@@ -12,6 +11,6 @@ class SchoolSettingSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // Empty - ready for new seeding logic
     }
 }

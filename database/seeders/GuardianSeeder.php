@@ -11,9 +11,15 @@ use Illuminate\Support\Facades\Hash;
 
 class GuardianSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     * Creates guardian/parent users for students
+     */
     public function run(): void
     {
-        // Get all schools to randomly assign guardians
+        $this->command->info('👨‍👩‍👧‍👦 Seeding Guardians...');
+
+        // Get all schools
         $schools = School::all();
 
         if ($schools->isEmpty()) {
@@ -21,41 +27,69 @@ class GuardianSeeder extends Seeder
             return;
         }
 
+        // Guardian names (15 guardians to cover 30 students - each can have 1-3 kids)
         $guardians = [
-            ['name' => 'Bashir Isse', 'gender' => 'male'],
-            ['name' => 'Hassan Adam', 'gender' => 'male'],
-            ['name' => 'Abdullahi Dheere', 'gender' => 'male'],
-            ['name' => 'Abdirizak', 'gender' => 'male'],
-            ['name' => 'Abdinasir Abubakar', 'gender' => 'male'],
-            ['name' => 'Fatima Hassan', 'gender' => 'female'],
-            ['name' => 'Habiba Maalim', 'gender' => 'female'],
-            ['name' => 'Hodhan Mohamed', 'gender' => 'female'],
-            ['name' => 'Burhaan Bade', 'gender' => 'male'],
-            ['name' => 'Ismail Hersi', 'gender' => 'male'],
+            ['name' => 'Ali Mohamed', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'Business Owner'],
+            ['name' => 'Amina Hassan', 'gender' => 'female', 'relationship' => 'mother', 'occupation' => 'Teacher'],
+            ['name' => 'Omar Abdi', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'Engineer'],
+            ['name' => 'Fatima Ahmed', 'gender' => 'female', 'relationship' => 'mother', 'occupation' => 'Nurse'],
+            ['name' => 'Hassan Ibrahim', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'Accountant'],
+            ['name' => 'Khadija Omar', 'gender' => 'female', 'relationship' => 'mother', 'occupation' => 'Doctor'],
+            ['name' => 'Abdi Yusuf', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'Lawyer'],
+            ['name' => 'Halima Ali', 'gender' => 'female', 'relationship' => 'mother', 'occupation' => 'Pharmacist'],
+            ['name' => 'Mohamed Farah', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'Businessman'],
+            ['name' => 'Safia Hussein', 'gender' => 'female', 'relationship' => 'mother', 'occupation' => 'Lecturer'],
+            ['name' => 'Ibrahim Aden', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'Civil Servant'],
+            ['name' => 'Maryam Osman', 'gender' => 'female', 'relationship' => 'mother', 'occupation' => 'Banker'],
+            ['name' => 'Abdullahi Nur', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'Contractor'],
+            ['name' => 'Zainab Issa', 'gender' => 'female', 'relationship' => 'mother', 'occupation' => 'Entrepreneur'],
+            ['name' => 'Yusuf Salah', 'gender' => 'male', 'relationship' => 'father', 'occupation' => 'IT Specialist'],
         ];
 
-        foreach ($guardians as $index => $g) {
-            $schoolId = $schools->random()->id;
+        foreach ($schools as $school) {
+            $guardianCount = 0;
 
-            $user = User::create([
-                'school_id' => $schoolId,
-                'name' => $g['name'],
-                'email' => strtolower(str_replace(' ', '', $g['name'])) . '@example.com',
-                'password' => Hash::make('password'),
-                'role' => 'guardian',
-            ]);
+            foreach ($guardians as $index => $g) {
+                $email = strtolower(str_replace(' ', '.', $g['name'])) . '@' . $school->slug . '.com';
 
-            Guardian::create([
-                'school_id' => $schoolId,
-                'user_id' => $user->id,
-                'guardian_number' => UniqueIdentifierService::generateGuardianNumber($schoolId),
-                'phone_number' => '0712' . str_pad($index + 100000, 6, '0', STR_PAD_LEFT),
-                'address' => 'Nairobi, Kenya',
-                'occupation' => $g['gender'] === 'male' ? 'Business Owner' : 'Teacher',
-                'relationship' => $g['gender'] === 'male' ? 'father' : 'mother',
-            ]);
+                // Check if user already exists
+                $exists = User::where('school_id', $school->id)
+                    ->where('email', $email)
+                    ->exists();
+
+                if (!$exists) {
+                    $user = User::create([
+                        'school_id' => $school->id,
+                        'name' => $g['name'],
+                        'email' => $email,
+                        'password' => Hash::make('password'),
+                        'role' => 'guardian',
+                        'is_active' => true,
+                        'phone' => '07' . str_pad(20000000 + $index, 8, '0', STR_PAD_LEFT),
+                        'email_verified_at' => now(),
+                    ]);
+
+                    Guardian::create([
+                        'school_id' => $school->id,
+                        'user_id' => $user->id,
+                        'guardian_number' => UniqueIdentifierService::generateGuardianNumber($school->id),
+                        'phone_number' => $user->phone,
+                        'address' => 'Nairobi, Kenya',
+                        'occupation' => $g['occupation'],
+                        'relationship' => $g['relationship'],
+                    ]);
+
+                    $guardianCount++;
+                }
+            }
+
+            if ($guardianCount > 0) {
+                $this->command->info("  ✅ {$school->name}: {$guardianCount} guardians created");
+            } else {
+                $this->command->warn("  ⚠️  {$school->name}: Guardians already exist, skipped");
+            }
         }
 
-        $this->command->info('✅ 10 Guardians (and their Users) seeded successfully with random school assignments!');
+        $this->command->info('✅ Guardians seeded successfully!');
     }
 }

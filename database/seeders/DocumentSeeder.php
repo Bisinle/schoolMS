@@ -2,183 +2,170 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\Document;
 use App\Models\DocumentCategory;
-use App\Models\Teacher;
 use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\Guardian;
 use App\Models\User;
-use Illuminate\Database\Seeder;
+use App\Models\School;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class DocumentSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     * Creates sample documents for students, teachers, and guardians
+     */
     public function run(): void
     {
         $this->command->info('📄 Seeding Documents...');
 
-        // Ensure storage directories exist
-        Storage::makeDirectory('documents/teachers');
-        Storage::makeDirectory('documents/students');
-        Storage::makeDirectory('documents/guardians');
-        Storage::makeDirectory('documents/users');
+        // Get all schools
+        $schools = School::all();
 
-        $admin = User::where('role', 'admin')->first();
-
-        if (!$admin) {
-            $this->command->error('No admin user found. Run UserSeeder first.');
+        if ($schools->isEmpty()) {
+            $this->command->error('No schools found. Run SchoolSeeder first.');
             return;
         }
 
-        $documentCount = 0;
+        foreach ($schools as $school) {
+            $documentCount = 0;
 
-        // Seed Teacher Documents
-        $teachers = Teacher::with('user')->get();
-        foreach ($teachers as $teacher) {
-            $documentCount += $this->seedTeacherDocuments($teacher, $admin);
-        }
+            // Get admin user for uploaded_by
+            $adminUser = User::where('school_id', $school->id)
+                ->where('role', 'admin')
+                ->first();
 
-        // Seed Student Documents
-        $students = Student::limit(20)->get(); // Seed for first 20 students
-        foreach ($students as $student) {
-            $documentCount += $this->seedStudentDocuments($student, $admin);
-        }
-
-        // Seed Guardian Documents
-        $guardians = Guardian::with('user')->limit(10)->get();
-        foreach ($guardians as $guardian) {
-            $documentCount += $this->seedGuardianDocuments($guardian, $admin);
-        }
-
-        $this->command->info("✅ {$documentCount} documents seeded successfully!");
-    }
-
-    private function seedTeacherDocuments(Teacher $teacher, User $admin): int
-    {
-        $count = 0;
-        $categories = DocumentCategory::where('entity_type', 'Teacher')
-            ->where('school_id', $teacher->school_id)
-            ->get();
-
-        foreach ($categories as $category) {
-            // 80% chance to upload required docs, 50% chance for optional
-            if ($category->is_required || rand(1, 100) <= 50) {
-                $count++;
-                $this->createDocument(
-                    $category,
-                    'App\Models\Teacher',
-                    $teacher->id,
-                    $teacher->school_id,
-                    $teacher->user,
-                    $admin
-                );
+            if (!$adminUser) {
+                $this->command->warn("  ⚠️  {$school->name}: No admin user found, skipping...");
+                continue;
             }
-        }
 
-        return $count;
-    }
+            // Seed Teacher Documents
+            $teachers = Teacher::where('school_id', $school->id)->get();
+            $teacherCategories = DocumentCategory::where('school_id', $school->id)
+                ->where('entity_type', 'Teacher')
+                ->get();
 
-    private function seedStudentDocuments(Student $student, User $admin): int
-    {
-        $count = 0;
-        $categories = DocumentCategory::where('entity_type', 'Student')
-            ->where('school_id', $student->school_id)
-            ->get();
-
-        foreach ($categories as $category) {
-            // 90% chance for required docs, 40% chance for optional
-            if ($category->is_required || rand(1, 100) <= 40) {
-                $count++;
-                $this->createDocument(
-                    $category,
-                    'App\Models\Student',
-                    $student->id,
-                    $student->school_id,
-                    $student->guardian->user,
-                    $admin
-                );
+            foreach ($teachers as $teacher) {
+                foreach ($teacherCategories as $category) {
+                    // Create 1 document per required category, 50% chance for optional
+                    if ($category->is_required || rand(0, 1)) {
+                        $created = $this->createDocument(
+                            $school->id,
+                            $category,
+                            'App\Models\Teacher',
+                            $teacher->id,
+                            $adminUser
+                        );
+                        if ($created) $documentCount++;
+                    }
+                }
             }
-        }
 
-        return $count;
-    }
+            // Seed Student Documents
+            $students = Student::where('school_id', $school->id)->get();
+            $studentCategories = DocumentCategory::where('school_id', $school->id)
+                ->where('entity_type', 'Student')
+                ->get();
 
-    private function seedGuardianDocuments(Guardian $guardian, User $admin): int
-    {
-        $count = 0;
-        $categories = DocumentCategory::where('entity_type', 'Guardian')
-            ->where('school_id', $guardian->school_id)
-            ->get();
-
-        foreach ($categories as $category) {
-            if ($category->is_required || rand(1, 100) <= 60) {
-                $count++;
-                $this->createDocument(
-                    $category,
-                    'App\Models\Guardian',
-                    $guardian->id,
-                    $guardian->school_id,
-                    $guardian->user,
-                    $admin
-                );
+            foreach ($students as $student) {
+                foreach ($studentCategories as $category) {
+                    // Create 1 document per required category, 60% chance for optional
+                    if ($category->is_required || rand(0, 10) > 4) {
+                        $created = $this->createDocument(
+                            $school->id,
+                            $category,
+                            'App\Models\Student',
+                            $student->id,
+                            $adminUser
+                        );
+                        if ($created) $documentCount++;
+                    }
+                }
             }
+
+            // Seed Guardian Documents
+            $guardians = Guardian::where('school_id', $school->id)->get();
+            $guardianCategories = DocumentCategory::where('school_id', $school->id)
+                ->where('entity_type', 'Guardian')
+                ->get();
+
+            foreach ($guardians as $guardian) {
+                foreach ($guardianCategories as $category) {
+                    // Create 1 document per required category, 70% chance for optional
+                    if ($category->is_required || rand(0, 10) > 3) {
+                        $created = $this->createDocument(
+                            $school->id,
+                            $category,
+                            'App\Models\Guardian',
+                            $guardian->id,
+                            $adminUser
+                        );
+                        if ($created) $documentCount++;
+                    }
+                }
+            }
+
+            $this->command->info("  ✅ {$school->name}: {$documentCount} documents created");
         }
 
-        return $count;
+        $this->command->info('✅ Documents seeded successfully!');
     }
 
+    /**
+     * Create a document record
+     */
     private function createDocument(
+        int $schoolId,
         DocumentCategory $category,
         string $entityType,
         int $entityId,
-        int $schoolId,
-        User $uploader,
-        User $admin
-    ): void {
-        // Generate fake PDF content
-        $pdfContent = $this->generateFakePDF($category->name);
+        User $uploader
+    ): bool {
+        // Check if document already exists
+        $exists = Document::where('school_id', $schoolId)
+            ->where('document_category_id', $category->id)
+            ->where('documentable_type', $entityType)
+            ->where('documentable_id', $entityId)
+            ->exists();
 
-        // Generate UUID filename
+        if ($exists) {
+            return false;
+        }
+
+        // Generate filename
         $extension = $category->allowed_extensions[0] ?? 'pdf';
         $storedFilename = Str::uuid() . '.' . $extension;
-
-        // Determine folder
         $entityFolder = strtolower(class_basename($entityType)) . 's';
         $filePath = "documents/{$entityFolder}/{$storedFilename}";
 
-        // Store fake file
-        Storage::put($filePath, $pdfContent);
+        // Create dummy file content
+        $this->createDummyFile($filePath, $category->name, $extension);
 
-        // Random status (80% verified, 10% pending, 10% rejected)
+        // Random status (80% verified, 15% pending, 5% rejected)
         $rand = rand(1, 100);
         if ($rand <= 80) {
             $status = 'verified';
-            $verifiedBy = $admin->id;
+            $verifiedBy = $uploader->id;
             $verifiedAt = now()->subDays(rand(1, 30));
-        } elseif ($rand <= 90) {
+        } elseif ($rand <= 95) {
             $status = 'pending';
             $verifiedBy = null;
             $verifiedAt = null;
         } else {
             $status = 'rejected';
-            $verifiedBy = $admin->id;
+            $verifiedBy = $uploader->id;
             $verifiedAt = now()->subDays(rand(1, 10));
         }
 
-        // Create expiry date if applicable
+        // Expiry date for documents that expire
         $expiryDate = null;
         if ($category->expires) {
-            // Random expiry: 50% future (valid), 30% expiring soon, 20% expired
-            $daysOffset = rand(1, 100);
-            if ($daysOffset <= 50) {
-                $expiryDate = now()->addDays(rand(90, 730)); // 3 months to 2 years
-            } elseif ($daysOffset <= 80) {
-                $expiryDate = now()->addDays(rand(1, 29)); // Expiring within 30 days
-            } else {
-                $expiryDate = now()->subDays(rand(1, 180)); // Already expired
-                $status = 'expired';
-            }
+            $expiryDate = now()->addYears(rand(1, 5))->format('Y-m-d');
         }
 
         Document::create([
@@ -190,7 +177,7 @@ class DocumentSeeder extends Seeder
             'stored_filename' => $storedFilename,
             'file_path' => $filePath,
             'mime_type' => $this->getMimeType($extension),
-            'file_size' => strlen($pdfContent),
+            'file_size' => rand(50000, 500000), // 50KB to 500KB
             'status' => $status,
             'rejection_reason' => $status === 'rejected' ? 'Document quality is poor. Please upload a clearer scan.' : null,
             'expiry_date' => $expiryDate,
@@ -198,78 +185,35 @@ class DocumentSeeder extends Seeder
             'verified_by' => $verifiedBy,
             'verified_at' => $verifiedAt,
         ]);
+
+        return true;
     }
 
-    private function generateFakePDF(string $categoryName): string
+    /**
+     * Create a dummy file
+     */
+    private function createDummyFile(string $filePath, string $categoryName, string $extension): void
     {
-        // Generate fake PDF-like content (simplified)
-        return "%PDF-1.4
-1 0 obj
-<<
-/Type /Catalog
-/Pages 2 0 R
->>
-endobj
-2 0 obj
-<<
-/Type /Pages
-/Kids [3 0 R]
-/Count 1
->>
-endobj
-3 0 obj
-<<
-/Type /Page
-/Parent 2 0 R
-/MediaBox [0 0 612 792]
-/Contents 4 0 R
-/Resources <<
-/Font <<
-/F1 <<
-/Type /Font
-/Subtype /Type1
-/BaseFont /Helvetica
->>
->>
->>
->>
-endobj
-4 0 obj
-<<
-/Length 100
->>
-stream
-BT
-/F1 12 Tf
-50 700 Td
-({$categoryName} - Sample Document) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f 
-0000000009 00000 n 
-0000000058 00000 n 
-0000000115 00000 n 
-0000000315 00000 n 
-trailer
-<<
-/Size 5
-/Root 1 0 R
->>
-startxref
-420
-%%EOF";
+        $content = "This is a sample {$categoryName} document.\n";
+        $content .= "Generated on: " . now()->toDateTimeString() . "\n";
+        $content .= "File type: {$extension}\n";
+
+        Storage::put($filePath, $content);
     }
 
+    /**
+     * Generate a realistic filename
+     */
     private function generateFilename(string $categoryName, string $extension): string
     {
         $slug = Str::slug($categoryName);
-        $timestamp = now()->format('Y-m-d');
+        $timestamp = now()->format('Ymd');
         return "{$slug}_{$timestamp}.{$extension}";
     }
 
+    /**
+     * Get MIME type for extension
+     */
     private function getMimeType(string $extension): string
     {
         $mimeTypes = [
@@ -279,6 +223,8 @@ startxref
             'jpg' => 'image/jpeg',
             'jpeg' => 'image/jpeg',
             'png' => 'image/png',
+            'gif' => 'image/gif',
+            'zip' => 'application/zip',
         ];
 
         return $mimeTypes[$extension] ?? 'application/octet-stream';

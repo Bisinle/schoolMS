@@ -2,7 +2,6 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class ImpersonationLogSeeder extends Seeder
@@ -12,7 +11,6 @@ class ImpersonationLogSeeder extends Seeder
      */
     public function run(): void
     {
-
-        //
+        // Empty - ready for new seeding logic
     }
 }

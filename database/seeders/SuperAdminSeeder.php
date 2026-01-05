@@ -10,25 +10,53 @@ class SuperAdminSeeder extends Seeder
 {
     /**
      * Run the database seeds.
+     *
+     * Creates the super admin user with full system access.
+     * Super admin is not tied to any specific school (school_id = null).
      */
     public function run(): void
     {
-        // ✅ Use updateOrCreate to avoid duplicate entries
-        User::updateOrCreate(
-            ['email' => 'superadmin@schoolms.com'], // Search criteria
-            [
-                'school_id' => null, // Super admins don't belong to any school
-                'name' => 'Super Administrator',
-                'password' => Hash::make('password'), // Change this in production!
-                'role' => 'super_admin',
-                'is_active' => true,
-                'email_verified_at' => now(),
-                'must_change_password' => false,
-            ]
-        );
+        $this->command->info('🔐 Creating Super Admin user...');
 
-        $this->command->info('Super Admin seeded successfully!');
-        $this->command->info('Email: superadmin@schoolms.com');
-        $this->command->info('Password: password');
+        // Check if super admin already exists
+        $existingSuperAdmin = User::where('email', 'superadmin@schoolms.com')->first();
+
+        if ($existingSuperAdmin) {
+            $this->command->warn('⚠️  Super Admin already exists!');
+            $this->command->info("   Email: {$existingSuperAdmin->email}");
+            $this->command->info("   Name: {$existingSuperAdmin->name}");
+            return;
+        }
+
+        // Create super admin user
+        $superAdmin = User::create([
+            'school_id' => null, // Super admin is not tied to any school
+            'name' => 'Super Administrator',
+            'email' => 'superadmin@schoolms.com',
+            'password' => Hash::make('Luna141312schoolms'),
+            'role' => 'super_admin',
+            'employee_number' => null, // Super admin doesn't need employee number
+            'phone' => null,
+            'is_active' => true,
+            'must_change_password' => false,
+            'email_verified_at' => now(),
+            'created_by' => null, // Self-created
+            'last_login_at' => null,
+        ]);
+
+        $this->command->info('✅ Super Admin created successfully!');
+        $this->command->newLine();
+        $this->command->info('📋 Super Admin Details:');
+        $this->command->info("   ID: {$superAdmin->id}");
+        $this->command->info("   Name: {$superAdmin->name}");
+        $this->command->info("   Email: {$superAdmin->email}");
+        $this->command->info("   Role: {$superAdmin->role}");
+        $this->command->info("   Password: Luna141312schoolms");
+        $this->command->newLine();
+        $this->command->info('🔑 Login Credentials:');
+        $this->command->info('   Email: superadmin@schoolms.com');
+        $this->command->info('   Password: Luna141312schoolms');
+        $this->command->newLine();
+        $this->command->warn('⚠️  IMPORTANT: Change the password after first login!');
     }
 }

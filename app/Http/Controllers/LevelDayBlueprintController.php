@@ -5,10 +5,15 @@ namespace App\Http\Controllers;
 use App\Models\LevelDayBlueprint;
 use App\Models\BlueprintPeriod;
 use App\Models\Grade;
+use App\Models\TimetablePeriod;
+use App\Models\TimetableTemplate;
+use App\Models\TimetableSlot;
 use App\Services\BlueprintPeriodGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -392,5 +397,121 @@ class LevelDayBlueprintController extends Controller
             'generated_count' => $service->getGeneratedPeriodsCount($blueprint),
             'blueprint_periods_count' => $blueprint->periods->count(),
         ]);
+    }
+
+    /**
+     * Get preview of what will be deleted for a specific level.
+     */
+    public function bulkDeletePreview(Request $request)
+    {
+        $validated = $request->validate([
+            'level' => 'required|in:' . implode(',', array_keys(Grade::LEVELS)),
+        ]);
+
+        $level = $validated['level'];
+        $schoolId = auth()->user()->school_id;
+
+        // Count periods for this level
+        $periodsCount = TimetablePeriod::where('school_id', $schoolId)
+            ->where('grade_level', $level)
+            ->count();
+
+        // Get templates that use this level (through grades)
+        $templates = TimetableTemplate::where('school_id', $schoolId)
+            ->whereHas('grade', function ($query) use ($level) {
+                $query->where('level', $level);
+            })
+            ->with('grade', 'academicTerm')
+            ->get();
+
+        $templatesCount = $templates->count();
+
+        // Count slots in those templates
+        $slotsCount = TimetableSlot::where('school_id', $schoolId)
+            ->whereIn('timetable_template_id', $templates->pluck('id'))
+            ->count();
+
+        return response()->json([
+            'level' => $level,
+            'periods_count' => $periodsCount,
+            'templates_count' => $templatesCount,
+            'slots_count' => $slotsCount,
+            'templates' => $templates->map(function ($template) {
+                return [
+                    'id' => $template->id,
+                    'name' => $template->name,
+                    'grade_name' => $template->grade->name,
+                    'term_name' => $template->academicTerm->name,
+                ];
+            }),
+        ]);
+    }
+
+    /**
+     * Bulk delete periods by level with password confirmation.
+     */
+    public function bulkDeleteByLevel(Request $request)
+    {
+        $validated = $request->validate([
+            'level' => 'required|in:' . implode(',', array_keys(Grade::LEVELS)),
+            'password' => 'required|string',
+        ]);
+
+        // Verify admin password
+        if (!Hash::check($validated['password'], auth()->user()->password)) {
+            return back()->withErrors(['password' => 'Incorrect password. Please try again.']);
+        }
+
+        $level = $validated['level'];
+        $schoolId = auth()->user()->school_id;
+
+        DB::beginTransaction();
+        try {
+            // Step 1: Get templates for this level
+            $templates = TimetableTemplate::where('school_id', $schoolId)
+                ->whereHas('grade', function ($query) use ($level) {
+                    $query->where('level', $level);
+                })
+                ->get();
+
+            $templateIds = $templates->pluck('id');
+
+            // Step 2: Delete slots in those templates
+            $slotsDeleted = TimetableSlot::where('school_id', $schoolId)
+                ->whereIn('timetable_template_id', $templateIds)
+                ->delete();
+
+            // Step 3: Delete templates
+            $templatesDeleted = TimetableTemplate::where('school_id', $schoolId)
+                ->whereIn('id', $templateIds)
+                ->delete();
+
+            // Step 4: Delete periods for this level
+            $periodsDeleted = TimetablePeriod::where('school_id', $schoolId)
+                ->where('grade_level', $level)
+                ->delete();
+
+            DB::commit();
+
+            // Log the action
+            Log::info('Bulk delete periods by level', [
+                'user_id' => auth()->id(),
+                'school_id' => $schoolId,
+                'level' => $level,
+                'periods_deleted' => $periodsDeleted,
+                'templates_deleted' => $templatesDeleted,
+                'slots_deleted' => $slotsDeleted,
+            ]);
+
+            return back()->with('success', "Successfully deleted: {$periodsDeleted} periods, {$templatesDeleted} templates, and {$slotsDeleted} slots for {$level} level.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Bulk delete periods failed', [
+                'user_id' => auth()->id(),
+                'level' => $level,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->withErrors(['error' => 'Failed to delete periods: ' . $e->getMessage()]);
+        }
     }
 }

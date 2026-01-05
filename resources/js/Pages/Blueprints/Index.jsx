@@ -3,10 +3,12 @@ import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { PlusIcon, PencilIcon, TrashIcon, CheckCircleIcon, XCircleIcon, ClockIcon, ArrowPathIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import BulkDeletePeriodsModal from '@/Components/Blueprints/BulkDeletePeriodsModal';
 
 export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
     const [generationStatus, setGenerationStatus] = useState({});
     const [loadingGeneration, setLoadingGeneration] = useState({});
+    const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
     const [confirmModal, setConfirmModal] = useState({
         show: false,
         title: '',
@@ -136,13 +138,22 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
                                     Define the daily structure for each school level
                                 </p>
                             </div>
-                            <Link
-                                href="/blueprints/create"
-                                className="inline-flex items-center justify-center px-4 py-2 bg-orange hover:bg-orange-dark text-white font-medium rounded-lg transition-colors duration-200 shadow-sm"
-                            >
-                                <PlusIcon className="w-5 h-5 mr-2" />
-                                Create Blueprint
-                            </Link>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowBulkDeleteModal(true)}
+                                    className="inline-flex items-center justify-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors duration-200 shadow-sm"
+                                >
+                                    <TrashIcon className="w-5 h-5 mr-2" />
+                                    Bulk Delete Periods
+                                </button>
+                                <Link
+                                    href="/blueprints/create"
+                                    className="inline-flex items-center justify-center px-4 py-2 bg-orange hover:bg-orange-dark text-white font-medium rounded-lg transition-colors duration-200 shadow-sm"
+                                >
+                                    <PlusIcon className="w-5 h-5 mr-2" />
+                                    Create Blueprint
+                                </Link>
+                            </div>
                         </div>
                     </div>
 
@@ -355,6 +366,13 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
                 confirmText={confirmModal.confirmText}
                 type={confirmModal.type}
                 isLoading={false}
+            />
+
+            {/* Bulk Delete Modal */}
+            <BulkDeletePeriodsModal
+                show={showBulkDeleteModal}
+                onClose={() => setShowBulkDeleteModal(false)}
+                levels={levels}
             />
         </AuthenticatedLayout>
     );

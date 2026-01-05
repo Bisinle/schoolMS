@@ -2,16 +2,22 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
 use App\Models\User;
 use App\Models\School;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
 class UserSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     * Creates teacher users for each school
+     */
     public function run(): void
     {
-        // Get all schools to randomly assign users
+        $this->command->info('👥 Seeding Teacher Users...');
+
+        // Get all schools
         $schools = School::all();
 
         if ($schools->isEmpty()) {
@@ -19,59 +25,56 @@ class UserSeeder extends Seeder
             return;
         }
 
-        // Create Teacher Users (for TeacherSeeder to use)
-        User::create([
-            'school_id' => $schools->random()->id,
-            'name' => 'Lydia Teacher',
-            'email' => 'lydia.teacher@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'teacher',
-            'is_active' => true,
-            'phone' => '0712345671',
-        ]);
+        // Teacher names (12 teachers)
+        $teacherNames = [
+            'Ahmed Hassan',
+            'Fatima Mohamed',
+            'Omar Ali',
+            'Amina Abdi',
+            'Hassan Ibrahim',
+            'Khadija Ahmed',
+            'Abdi Rahman',
+            'Halima Yusuf',
+            'Mohamed Farah',
+            'Safia Omar',
+            'Ibrahim Aden',
+            'Maryam Hassan',
+        ];
 
-        User::create([
-            'school_id' => $schools->random()->id,
-            'name' => 'Faith Teacher',
-            'email' => 'faith.teacher@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'teacher',
-            'is_active' => true,
-            'phone' => '0712345672',
-        ]);
+        // Create teacher users for each school
+        foreach ($schools as $school) {
+            $userCount = 0;
 
-        User::create([
-            'school_id' => $schools->random()->id,
-            'name' => 'Margaret Teacher',
-            'email' => 'margaret.teacher@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'teacher',
-            'is_active' => true,
-            'phone' => '0712345673',
-        ]);
+            foreach ($teacherNames as $index => $name) {
+                $email = strtolower(str_replace(' ', '.', $name)) . '@' . $school->slug . '.com';
 
-        User::create([
-            'school_id' => $schools->random()->id,
-            'name' => 'Betty Teacher',
-            'email' => 'betty.teacher@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'teacher',
-            'is_active' => true,
-            'phone' => '0712345674',
-        ]);
+                // Check if user already exists
+                $exists = User::where('school_id', $school->id)
+                    ->where('email', $email)
+                    ->exists();
 
-        User::create([
-            'school_id' => $schools->random()->id,
-            'name' => 'Jackline Teacher',
-            'email' => 'jackline.teacher@school.com',
-            'password' => Hash::make('password'),
-            'role' => 'teacher',
-            'is_active' => true,
-            'phone' => '0712345675',
-        ]);
+                if (!$exists) {
+                    User::create([
+                        'school_id' => $school->id,
+                        'name' => $name,
+                        'email' => $email,
+                        'password' => Hash::make('password'),
+                        'role' => 'teacher',
+                        'is_active' => true,
+                        'phone' => '07' . str_pad(10000000 + $index, 8, '0', STR_PAD_LEFT),
+                        'email_verified_at' => now(),
+                    ]);
+                    $userCount++;
+                }
+            }
+
+            if ($userCount > 0) {
+                $this->command->info("  ✅ {$school->name}: {$userCount} teacher users created");
+            } else {
+                $this->command->warn("  ⚠️  {$school->name}: Teacher users already exist, skipped");
+            }
+        }
 
         $this->command->info('✅ Teacher users seeded successfully!');
-        $this->command->info('ℹ️  Admin users are created by SchoolSeeder');
-        $this->command->info('ℹ️  Guardian users are created by GuardianSeeder');
     }
 }

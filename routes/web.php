@@ -283,6 +283,10 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::post('/blueprints/{blueprint}/generate-periods', [LevelDayBlueprintController::class, 'generatePeriods'])->name('blueprints.generate-periods');
         Route::post('/blueprints/{blueprint}/regenerate-periods', [LevelDayBlueprintController::class, 'regeneratePeriods'])->name('blueprints.regenerate-periods');
         Route::get('/blueprints/{blueprint}/generation-status', [LevelDayBlueprintController::class, 'generationStatus'])->name('blueprints.generation-status');
+
+        // Bulk delete periods by level
+        Route::post('/blueprints/bulk-delete-preview', [LevelDayBlueprintController::class, 'bulkDeletePreview'])->name('blueprints.bulk-delete-preview');
+        Route::post('/blueprints/bulk-delete-by-level', [LevelDayBlueprintController::class, 'bulkDeleteByLevel'])->name('blueprints.bulk-delete-by-level');
     });
 
     //^ Timetable Routes

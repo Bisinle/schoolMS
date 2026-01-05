@@ -9,9 +9,15 @@ use Illuminate\Database\Seeder;
 
 class SubjectSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     * Creates subjects for each school and assigns them to grades
+     */
     public function run(): void
     {
-        // Get all schools to create subjects for each
+        $this->command->info('📖 Seeding Subjects...');
+
+        // Get all schools
         $schools = School::all();
 
         if ($schools->isEmpty()) {
@@ -19,6 +25,7 @@ class SubjectSeeder extends Seeder
             return;
         }
 
+        // Define subjects (Academic + Islamic)
         $subjectsData = [
             // Academic Subjects
             ['name' => 'Agriculture', 'code' => 'AGR', 'category' => 'academic', 'status' => 'active'],
@@ -26,49 +33,70 @@ class SubjectSeeder extends Seeder
             ['name' => 'Creative Arts', 'code' => 'ART', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'English', 'code' => 'ENG', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Environmental Activities', 'code' => 'ENV', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'French', 'code' => 'FRE', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'German', 'code' => 'GER', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Indigenous Language', 'code' => 'IND', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Integrated Science', 'code' => 'ISC', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'IRE', 'code' => 'IRE', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Kiswahili', 'code' => 'KIS', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Mandarin', 'code' => 'MAN', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Mathematics', 'code' => 'MATH', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Pre-Technical Studies', 'code' => 'PTS', 'category' => 'academic', 'status' => 'active'],
-            ['name' => 'Science & Technology', 'code' => 'SCI', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Mathematics', 'code' => 'MAT', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Physical Education', 'code' => 'PHE', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Science', 'code' => 'SCI', 'category' => 'academic', 'status' => 'active'],
             ['name' => 'Social Studies', 'code' => 'SST', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Home Science', 'code' => 'HMS', 'category' => 'academic', 'status' => 'active'],
+            ['name' => 'Computer Studies', 'code' => 'COM', 'category' => 'academic', 'status' => 'active'],
+
             // Islamic Subjects
             ['name' => 'القرآن', 'code' => 'QUR', 'category' => 'islamic', 'status' => 'active'],
             ['name' => 'أحكام التجويد', 'code' => 'TAJWID', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'تحفة المريد', 'code' => 'TUHFAT_M', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'تحفة الأطفال', 'code' => 'TUHFAT_A', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'الجزريّة', 'code' => 'JAZARIYA', 'category' => 'islamic', 'status' => 'active'],
             ['name' => 'التفسير', 'code' => 'TAFSIR', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'عمدة الأحكام', 'code' => 'UMDAH', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'سفينة النجاة – فقه ١', 'code' => 'SAFIINA', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'العقيدة', 'code' => 'AQIDA', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'خذ عقيدتك', 'code' => 'KHUD_AQID', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'الأصول الثلاثة مع القواعد الأربع', 'code' => 'USUL_QAWAID', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'الأذكار', 'code' => 'ADHKAR', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'الأربعون النووية', 'code' => 'ARBAEEN', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'السيرة', 'code' => 'SEERAH', 'category' => 'islamic', 'status' => 'active'],
-            ['name' => 'القراءة والكتابة', 'code' => 'QIRAHA_KITABAH', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'الحديث', 'code' => 'HADITH', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'الفقه', 'code' => 'FIQH', 'category' => 'islamic', 'status' => 'active'],
+            ['name' => 'السيرة النبوية', 'code' => 'SIRAH', 'category' => 'islamic', 'status' => 'active'],
         ];
 
         // Create subjects for each school
         foreach ($schools as $school) {
+            $subjectCount = 0;
             $createdSubjects = [];
+
             foreach ($subjectsData as $subjectData) {
-                $createdSubjects[] = Subject::create(array_merge($subjectData, ['school_id' => $school->id]));
+                // Check if subject already exists
+                $exists = Subject::where('school_id', $school->id)
+                    ->where('code', $subjectData['code'])
+                    ->exists();
+
+                if (!$exists) {
+                    $subject = Subject::create(array_merge($subjectData, ['school_id' => $school->id]));
+                    $createdSubjects[] = $subject;
+                    $subjectCount++;
+                } else {
+                    // Get existing subject for grade assignment
+                    $subject = Subject::where('school_id', $school->id)
+                        ->where('code', $subjectData['code'])
+                        ->first();
+                    if ($subject) {
+                        $createdSubjects[] = $subject;
+                    }
+                }
             }
 
             // Assign all subjects to all grades for this school
             $schoolGrades = Grade::where('school_id', $school->id)->get();
             foreach ($schoolGrades as $grade) {
-                $grade->subjects()->attach(collect($createdSubjects)->pluck('id'));
+                $subjectIds = collect($createdSubjects)->pluck('id')->toArray();
+
+                // Only attach subjects that aren't already attached
+                $existingSubjectIds = $grade->subjects()->pluck('subjects.id')->toArray();
+                $newSubjectIds = array_diff($subjectIds, $existingSubjectIds);
+
+                if (!empty($newSubjectIds)) {
+                    $grade->subjects()->attach($newSubjectIds);
+                }
+            }
+
+            if ($subjectCount > 0) {
+                $this->command->info("  ✅ {$school->name}: {$subjectCount} subjects created and assigned to grades");
+            } else {
+                $this->command->warn("  ⚠️  {$school->name}: Subjects already exist, skipped");
             }
         }
 
-        $this->command->info('✅ Subjects seeded successfully for all schools!');
+        $this->command->info('✅ Subjects seeded successfully!');
     }
 }

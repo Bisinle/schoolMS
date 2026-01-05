@@ -8,15 +8,21 @@ use App\Models\Guardian;
 use App\Models\Grade;
 use App\Models\School;
 use App\Services\UniqueIdentifierService;
-use Illuminate\Support\Str;
 use Faker\Factory as Faker;
 
 class StudentSeeder extends Seeder
 {
+    /**
+     * Run the database seeds.
+     * Creates 30 students per school distributed across grades
+     */
     public function run(): void
     {
+        $this->command->info('👶 Seeding Students...');
+
         $faker = Faker::create();
 
+        // Get all schools
         $schools = School::all();
 
         if ($schools->isEmpty()) {
@@ -24,46 +30,57 @@ class StudentSeeder extends Seeder
             return;
         }
 
-        $firstNamesMale = ['Sabir', 'Muad', 'Marwaan', 'Yusuf', 'Mohamed', 'Adnaan', 'Hassan', 'Abdi', 'Bilal', 'Khalid', 'Nasser', 'Jama', 'Salim'];
-        $firstNamesFemale = ['Ayaan', 'Asma', 'Nimco', 'Zahra', 'Maryam', 'Rahma', 'Layla', 'Ruqayya', 'Nasteha', 'Fadumo', 'Hafsa', 'Sumaya'];
-        $lastNames = ['Hassan', 'Ali', 'Abdullahi', 'Isse', 'Mohamed', 'Abubakar', 'Dheere', 'Maalim', 'Bade', 'Hersi', 'Adam', 'Ahmed', 'Warsame'];
+        // Somali/Muslim first names
+        $firstNamesMale = [
+            'Ahmed', 'Mohamed', 'Hassan', 'Ali', 'Omar', 'Abdi', 'Ibrahim', 'Yusuf',
+            'Abdullahi', 'Ismail', 'Hamza', 'Bilal', 'Khalid', 'Salah', 'Aden'
+        ];
 
-        $totalStudentCount = 0;
+        $firstNamesFemale = [
+            'Amina', 'Fatima', 'Khadija', 'Halima', 'Safia', 'Maryam', 'Zainab',
+            'Aisha', 'Hawa', 'Ayan', 'Sumaya', 'Rahma', 'Nura', 'Habiba', 'Yasmin'
+        ];
 
-        // Create students for each school
+        $lastNames = [
+            'Mohamed', 'Hassan', 'Ali', 'Ahmed', 'Abdi', 'Omar', 'Ibrahim', 'Yusuf',
+            'Hussein', 'Farah', 'Aden', 'Osman', 'Nur', 'Issa', 'Salah'
+        ];
+
         foreach ($schools as $school) {
             $guardians = Guardian::where('school_id', $school->id)->get();
             $grades = Grade::where('school_id', $school->id)->get();
 
             if ($guardians->isEmpty()) {
-                $this->command->warn("No guardians found for school {$school->name}. Skipping...");
+                $this->command->warn("  ⚠️  {$school->name}: No guardians found, skipping...");
                 continue;
             }
 
             if ($grades->isEmpty()) {
-                $this->command->warn("No grades found for school {$school->name}. Skipping...");
+                $this->command->warn("  ⚠️  {$school->name}: No grades found, skipping...");
                 continue;
             }
 
             $studentCount = 0;
+            $targetStudents = 30;
 
+            // Distribute students among guardians (each guardian gets 1-3 kids)
             foreach ($guardians as $guardian) {
-                if ($studentCount >= 30) break;
+                if ($studentCount >= $targetStudents) break;
 
-                $kidsCount = rand(1, 4);
-                for ($i = 0; $i < $kidsCount && $studentCount < 30; $i++) {
+                // Each guardian has 1-3 children
+                $kidsCount = rand(1, 3);
 
+                for ($i = 0; $i < $kidsCount && $studentCount < $targetStudents; $i++) {
                     $isMale = rand(0, 1) === 1;
                     $firstName = $isMale
                         ? $firstNamesMale[array_rand($firstNamesMale)]
                         : $firstNamesFemale[array_rand($firstNamesFemale)];
                     $lastName = $lastNames[array_rand($lastNames)];
 
+                    // Assign to random grade
                     $grade = $grades->random();
-                    $studentCount++;
-                    $totalStudentCount++;
 
-                    // Generate unique admission number using UniqueIdentifierService
+                    // Generate unique admission number
                     $admissionNumber = UniqueIdentifierService::generateAdmissionNumber($school->id);
 
                     Student::create([
@@ -71,20 +88,22 @@ class StudentSeeder extends Seeder
                         'admission_number' => $admissionNumber,
                         'first_name' => $firstName,
                         'last_name' => $lastName,
-                        'date_of_birth' => $faker->dateTimeBetween('2012-01-01', '2018-12-31')->format('Y-m-d'),
+                        'date_of_birth' => $faker->dateTimeBetween('2012-01-01', '2020-12-31')->format('Y-m-d'),
                         'gender' => $isMale ? 'male' : 'female',
                         'grade_id' => $grade->id,
                         'guardian_id' => $guardian->id,
                         'class_name' => $grade->name,
-                        'enrollment_date' => '2024-01-08',
+                        'enrollment_date' => now()->subMonths(rand(1, 12))->format('Y-m-d'),
                         'status' => 'active',
                     ]);
+
+                    $studentCount++;
                 }
             }
 
             $this->command->info("  ✅ {$school->name}: {$studentCount} students created");
         }
 
-        $this->command->info("✅ Successfully seeded {$totalStudentCount} students across all schools!");
+        $this->command->info('✅ Students seeded successfully!');
     }
 }

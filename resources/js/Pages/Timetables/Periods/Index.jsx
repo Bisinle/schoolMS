@@ -3,6 +3,7 @@ import { Head, Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import { Plus, Eye, Edit, Trash2, Clock, Coffee, AlertCircle, Sparkles, User } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import BulkDeletePeriodsModal from '@/Components/Blueprints/BulkDeletePeriodsModal';
 import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { Badge } from '@/Components/UI';
@@ -23,6 +24,7 @@ export default function TimetablePeriodsIndex({ periods, filters: initialFilters
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedPeriod, setSelectedPeriod] = useState(null);
+    const [showBulkDeleteModal, setShowBulkDeleteModal] = useState(false);
 
     const confirmDelete = (period) => {
         setSelectedPeriod(period);

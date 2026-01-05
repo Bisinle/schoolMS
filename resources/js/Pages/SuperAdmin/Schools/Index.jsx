@@ -4,6 +4,7 @@ import { Plus, Search, Eye, Edit, Trash2, School, Users, TrendingUp, RefreshCw, 
 import { useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
 import SwipeActionButton from '@/Components/SwipeActionButton';
+import ConfirmationModal from '@/Components/ConfirmationModal';
 
 // Mobile List Item Component - Redesigned
 function MobileSchoolItem({ school, onDelete, onImpersonate }) {
@@ -237,6 +238,7 @@ function MobileSchoolItem({ school, onDelete, onImpersonate }) {
 export default function Index({ schools, filters }) {
     const [search, setSearch] = useState(filters.search || '');
     const [impersonateSchool, setImpersonateSchool] = useState(null);
+    const [deleteSchool, setDeleteSchool] = useState(null);
 
     const handleSearch = (e) => {
         e.preventDefault();
@@ -244,10 +246,14 @@ export default function Index({ schools, filters }) {
     };
 
     const handleDelete = (school) => {
-        if (confirm(`Are you sure you want to delete ${school.name}? This action cannot be undone.`)) {
-            if (confirm(`This will permanently delete all students, teachers, grades, and other data for ${school.name}. Type the school name to confirm.`)) {
-                router.delete(route('super-admin.schools.destroy', school.id));
-            }
+        setDeleteSchool(school);
+    };
+
+    const confirmDelete = () => {
+        if (deleteSchool) {
+            router.delete(route('super-admin.schools.destroy', deleteSchool.id), {
+                onSuccess: () => setDeleteSchool(null),
+            });
         }
     };
 
@@ -511,6 +517,17 @@ export default function Index({ schools, filters }) {
                     </div>
                 </div>
             )}
+
+            {/* Delete Confirmation Modal */}
+            <ConfirmationModal
+                show={deleteSchool !== null}
+                onClose={() => setDeleteSchool(null)}
+                onConfirm={confirmDelete}
+                title="Delete School"
+                message={deleteSchool ? `Are you sure you want to delete ${deleteSchool.name}? This action cannot be undone and will permanently delete all students, teachers, grades, and other data associated with this school.` : ''}
+                confirmText="Delete School"
+                type="danger"
+            />
         </AuthenticatedLayout>
     );
 }
