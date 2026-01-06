@@ -63,9 +63,9 @@ class TeacherTimetableController extends Controller
             ->with([
                 'subject:id,name,code,category,school_id',
                 'period:id,name,start_time,end_time,order,school_id',
-                'room:id,room_number,capacity,school_id',
+                'room:id,name,code,capacity,school_id',
                 'template.grade:id,name,school_id',
-                'template.term:id,name,school_id',
+                'template.academicTerm:id,name,school_id',
                 'teacher.user:id,name',
             ])
             ->get()
@@ -171,7 +171,7 @@ class TeacherTimetableController extends Controller
                 ],
                 'room' => $slot->room ? [
                     'id' => $slot->room->id,
-                    'room_number' => $slot->room->room_number,
+                    'room_number' => $slot->room->name, // Using 'name' column from rooms table
                     'capacity' => $slot->room->capacity,
                 ] : null,
             ];

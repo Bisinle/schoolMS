@@ -445,7 +445,7 @@ class DashboardController extends Controller
             ->with([
                 'subject:id,name',
                 'template.grade:id,name',
-                'room:id,room_number',
+                'room:id,name',
             ])
             ->orderBy('start_time')
             ->get()
@@ -456,7 +456,7 @@ class DashboardController extends Controller
                     'grade' => $slot->template && $slot->template->grade ? $slot->template->grade->name : 'N/A',
                     'start_time' => $slot->start_time ?? ($slot->period ? $slot->period->start_time : 'N/A'),
                     'end_time' => $slot->end_time ?? ($slot->period ? $slot->period->end_time : 'N/A'),
-                    'room' => $slot->room ? $slot->room->room_number : 'N/A',
+                    'room' => $slot->room ? $slot->room->name : 'N/A',
                 ];
             });
 
@@ -517,6 +517,19 @@ class DashboardController extends Controller
             'rejected' => $guardianDocs->where('status', 'rejected')->count(),
             'my_docs' => $guardianDocs->where('documentable_type', 'App\\Models\\Guardian')->count(),
             'children_docs' => $guardianDocs->where('documentable_type', 'App\\Models\\Student')->count(),
+        ];
+
+        // Invoice stats
+        $invoices = \App\Models\GuardianInvoice::where('guardian_id', $guardian->id)->get();
+        $invoiceStats = [
+            'total' => $invoices->count(),
+            'pending' => $invoices->where('status', 'pending')->count(),
+            'paid' => $invoices->where('status', 'paid')->count(),
+            'overdue' => $invoices->where('status', 'overdue')->count(),
+            'partially_paid' => $invoices->where('status', 'partially_paid')->count(),
+            'total_amount' => $invoices->sum('total_amount'),
+            'total_paid' => $invoices->sum('amount_paid'),
+            'total_balance' => $invoices->sum('balance_due'),
         ];
 
         // Quran tracking data (only for madrasah schools)

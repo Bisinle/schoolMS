@@ -32,10 +32,17 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
+        // Authorize: Check if user can view any invoices
+        $this->authorize('viewAny', GuardianInvoice::class);
+
         $user = $request->user();
 
         // Build query based on user role
         if ($user->isGuardian()) {
+            // Ensure guardian relationship exists
+            if (!$user->guardian) {
+                abort(403, 'Guardian profile not found. Please contact the administrator.');
+            }
             $query = GuardianInvoice::where('guardian_id', $user->guardian->id);
         } else {
             $query = GuardianInvoice::query();

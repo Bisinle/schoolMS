@@ -25,11 +25,13 @@ import useFilters from "@/Hooks/useFilters";
 
 // Mobile Invoice Item Component
 function MobileInvoiceItem({ invoice, auth, onDelete }) {
+    const invoiceBaseUrl = auth.user.role === 'guardian' ? '/guardian/invoices' : '/invoices';
+
     const primaryActions = [
         {
             icon: Eye,
             label: "View",
-            href: `/invoices/${invoice.id}`,
+            href: `${invoiceBaseUrl}/${invoice.id}`,
             color: "indigo",
         },
     ];
@@ -138,6 +140,8 @@ export default function InvoicesIndex({
     terms,
     filters: initialFilters,
 }) {
+    const invoiceBaseUrl = auth.user.role === 'guardian' ? '/guardian/invoices' : '/invoices';
+
     const [deleteModal, setDeleteModal] = useState({
         show: false,
         invoice: null,
@@ -145,7 +149,7 @@ export default function InvoicesIndex({
 
     // Use the useFilters hook for consistent filter management
     const { filters, updateFilter, applyFilters, clearFilters } = useFilters({
-        route: "/invoices",
+        route: invoiceBaseUrl,
         initialFilters: {
             search: initialFilters?.search || "",
             term_id: initialFilters?.term_id || "",
@@ -159,7 +163,7 @@ export default function InvoicesIndex({
 
     const confirmDelete = () => {
         if (deleteModal.invoice) {
-            router.delete(`/invoices/${deleteModal.invoice.id}`, {
+            router.delete(`${invoiceBaseUrl}/${deleteModal.invoice.id}`, {
                 onSuccess: () => setDeleteModal({ show: false, invoice: null }),
             });
         }
@@ -399,7 +403,7 @@ export default function InvoicesIndex({
                                             <td className="px-6 py-4 whitespace-nowrap text-right">
                                                 <div className="flex justify-end gap-2">
                                                     <Link
-                                                        href={`/invoices/${invoice.id}`}
+                                                        href={`${invoiceBaseUrl}/${invoice.id}`}
                                                         className="p-2 text-indigo-600 hover:text-indigo-900 hover:bg-indigo-50 rounded-lg transition-colors duration-150"
                                                         title="View Invoice"
                                                     >

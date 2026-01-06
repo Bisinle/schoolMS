@@ -17,6 +17,13 @@ class DatabaseSeeder extends Seeder
         $this->command->info('🌱 Starting Database Seeding...');
         $this->command->newLine();
 
+        // 0. Super Admin (System Level)
+        $this->command->info('🔐 STEP 0: System Administrator');
+        $this->call([
+            SuperAdminSeeder::class,
+        ]);
+        $this->command->newLine();
+
         // 1. Core Setup
         $this->command->info('📚 STEP 1: Core Setup');
         $this->call([
