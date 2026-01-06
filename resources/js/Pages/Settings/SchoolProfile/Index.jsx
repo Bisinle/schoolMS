@@ -12,7 +12,6 @@ export default function SchoolProfileIndex({ school }) {
         motto: school.motto || '',
         vision: school.vision || '',
         mission: school.mission || '',
-        email: school.email || '',
         phone_primary: school.phone_primary || '',
         phone_secondary: school.phone_secondary || '',
         physical_address: school.physical_address || '',
@@ -120,17 +119,6 @@ export default function SchoolProfileIndex({ school }) {
                                     placeholder="e.g., Excellence in Islamic Education"
                                 />
                                 {errors.tagline && <p className="text-sm text-red-600 mt-1">{errors.tagline}</p>}
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input
-                                    type="email"
-                                    value={data.email}
-                                    onChange={(e) => setData('email', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                />
-                                {errors.email && <p className="text-sm text-red-600 mt-1">{errors.email}</p>}
                             </div>
 
                             <div>

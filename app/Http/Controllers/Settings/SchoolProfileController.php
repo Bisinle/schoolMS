@@ -35,7 +35,6 @@ class SchoolProfileController extends Controller
             'motto' => 'nullable|string|max:1000',
             'vision' => 'nullable|string|max:2000',
             'mission' => 'nullable|string|max:2000',
-            'email' => 'nullable|email|max:255',
             'phone_primary' => 'nullable|string|max:20',
             'phone_secondary' => 'nullable|string|max:20',
             'physical_address' => 'nullable|string|max:500',
