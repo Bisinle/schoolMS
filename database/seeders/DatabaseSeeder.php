@@ -17,12 +17,12 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // Environment check - only run in local environment
-        if (!app()->environment('local')) {
-            $this->command->error('❌ Database seeding is only allowed in local environment!');
-            $this->command->warn('   Current environment: ' . app()->environment());
-            $this->command->warn('   Seeding aborted for safety.');
-            return;
-        }
+        // if (!app()->environment('local')) {
+        //     $this->command->error('❌ Database seeding is only allowed in local environment!');
+        //     $this->command->warn('   Current environment: ' . app()->environment());
+        //     $this->command->warn('   Seeding aborted for safety.');
+        //     return;
+        // }
 
         $this->command->info('🌱 Starting Database Seeding...');
         $this->command->info('   Environment: ' . app()->environment());
