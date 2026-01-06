@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 
 class SuperAdminSeeder extends Seeder
 {
@@ -28,21 +29,38 @@ class SuperAdminSeeder extends Seeder
             return;
         }
 
-        // Create super admin user
-        $superAdmin = User::create([
+        // Prepare super admin data with base fields
+        $userData = [
             'school_id' => null, // Super admin is not tied to any school
             'name' => 'Super Administrator',
             'email' => 'superadmin@schoolms.com',
             'password' => Hash::make('Luna141312schoolms'),
             'role' => 'super_admin',
-            'employee_number' => null, // Super admin doesn't need employee number
-            'phone' => null,
-            'is_active' => true,
-            'must_change_password' => false,
             'email_verified_at' => now(),
-            'created_by' => null, // Self-created
-            'last_login_at' => null,
-        ]);
+        ];
+
+        // Add optional fields if columns exist
+        if (Schema::hasColumn('users', 'employee_number')) {
+            $userData['employee_number'] = null; // Super admin doesn't need employee number
+        }
+        if (Schema::hasColumn('users', 'phone')) {
+            $userData['phone'] = null;
+        }
+        if (Schema::hasColumn('users', 'is_active')) {
+            $userData['is_active'] = true;
+        }
+        if (Schema::hasColumn('users', 'must_change_password')) {
+            $userData['must_change_password'] = false;
+        }
+        if (Schema::hasColumn('users', 'created_by')) {
+            $userData['created_by'] = null; // Self-created
+        }
+        if (Schema::hasColumn('users', 'last_login_at')) {
+            $userData['last_login_at'] = null;
+        }
+
+        // Create super admin user
+        $superAdmin = User::create($userData);
 
         $this->command->info('✅ Super Admin created successfully!');
         $this->command->newLine();

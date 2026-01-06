@@ -372,8 +372,16 @@ export default function Index({ schools, filters }) {
                                             <tr key={school.id} className="hover:bg-gray-50 transition-colors">
                                                 <td className="px-4 sm:px-6 py-4">
                                                     <div className="flex items-center gap-3">
-                                                        <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white font-bold shadow-lg">
-                                                            {school.name.charAt(0).toUpperCase()}
+                                                        <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white font-bold shadow-lg overflow-hidden">
+                                                            {school.logo_path ? (
+                                                                <img
+                                                                    src={`/storage/${school.logo_path}`}
+                                                                    alt={`${school.name} logo`}
+                                                                    className="w-full h-full object-cover"
+                                                                />
+                                                            ) : (
+                                                                school.name.charAt(0).toUpperCase()
+                                                            )}
                                                         </div>
                                                         <div className="min-w-0">
                                                             <div className="text-sm font-bold text-gray-900 truncate">{school.name}</div>

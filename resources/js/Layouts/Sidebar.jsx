@@ -1,5 +1,5 @@
 import { Link } from "@inertiajs/react";
-import { X, ChevronDown, ChevronRight } from "lucide-react";
+import { X, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
 import { useState, useEffect } from "react";
 
 /**
@@ -26,7 +26,18 @@ export default function Sidebar({
 }) {
     const renderBrandHeader = () => {
         if (brandLogo) {
-            return <img src={brandLogo} alt={brandName} className="h-10" />;
+            return (
+                <div className="flex flex-col items-center gap-3 w-full">
+                    <img
+                        src={brandLogo}
+                        alt={brandName}
+                        className="w-20 h-20 rounded-full object-cover border-3 border-white shadow-lg"
+                    />
+                    <h2 className="text-base font-bold text-white text-center leading-tight">
+                        {brandName}
+                    </h2>
+                </div>
+            );
         }
 
         return (
@@ -162,11 +173,11 @@ export default function Sidebar({
             >
                 <div className="flex flex-col h-full">
                     {/* Mobile header */}
-                    <div className="flex items-center justify-between h-16 px-4 border-b border-navy-light">
+                    <div className="relative flex items-center justify-center py-6 px-4 border-b border-navy-light">
                         {renderBrandHeader()}
                         <button
                             onClick={() => setSidebarOpen(false)}
-                            className="text-white hover:text-orange transition-colors"
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-white hover:text-orange transition-colors"
                         >
                             <X className="w-6 h-6" />
                         </button>
@@ -174,6 +185,19 @@ export default function Sidebar({
 
                     {/* Mobile navigation */}
                     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                        {/* Website Link */}
+                        <a
+                            href="https://al-elmischool.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center justify-between px-3 py-2.5 md:py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-300 hover:bg-orange hover:text-white"
+                        >
+                            <div className="flex items-center">
+                                <ExternalLink className="w-5 h-5 mr-3" />
+                                Website
+                            </div>
+                        </a>
+
                         {renderNavigationItems(() => setSidebarOpen(false))}
                     </nav>
                 </div>
@@ -187,12 +211,25 @@ export default function Sidebar({
             >
                 <div className="flex flex-col flex-grow bg-navy">
                     {/* Logo */}
-                    <div className="flex items-center h-16 px-6 border-b border-navy-light">
+                    <div className="flex items-center justify-center py-6 px-6 border-b border-navy-light">
                         {renderBrandHeader()}
                     </div>
 
                     {/* Navigation */}
                     <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+                        {/* Website Link */}
+                        <a
+                            href="https://al-elmischool.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex items-center justify-between px-3 py-2.5 md:py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-300 hover:bg-orange hover:text-white"
+                        >
+                            <div className="flex items-center">
+                                <ExternalLink className="w-5 h-5 mr-3" />
+                                Website
+                            </div>
+                        </a>
+
                         {renderNavigationItems()}
                     </nav>
 

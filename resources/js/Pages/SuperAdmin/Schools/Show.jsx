@@ -64,10 +64,18 @@ export default function Show({ school }) {
                                 </div>
 
                                 <div className="relative flex flex-col sm:flex-row items-center sm:items-start gap-4">
-                                    <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center">
-                                        <span className="text-3xl sm:text-4xl font-black bg-gradient-to-br from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                                            {school.name.charAt(0).toUpperCase()}
-                                        </span>
+                                    <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden">
+                                        {school.logo_path ? (
+                                            <img
+                                                src={`/storage/${school.logo_path}`}
+                                                alt={`${school.name} logo`}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <span className="text-3xl sm:text-4xl font-black bg-gradient-to-br from-blue-600 to-cyan-600 bg-clip-text text-transparent">
+                                                {school.name.charAt(0).toUpperCase()}
+                                            </span>
+                                        )}
                                     </div>
                                     <div className="flex-1 text-center sm:text-left">
                                         <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">{school.name}</h2>

@@ -1,13 +1,14 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save, School, User, Mail, Phone, MapPin, Calendar, Shield } from 'lucide-react';
+import { ArrowLeft, Save, School, User, Mail, Phone, MapPin, Calendar, Shield, Upload, X } from 'lucide-react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import PrimaryButton from '@/Components/PrimaryButton';
+import { useState } from 'react';
 
 export default function Edit({ school }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         name: school.name || '',
         slug: school.slug || '',
         domain: school.domain || '',
@@ -19,11 +20,42 @@ export default function Edit({ school }) {
         school_type: school.school_type || 'islamic_school',
         is_active: school.is_active || false,
         trial_ends_at: school.trial_ends_at ? school.trial_ends_at.split('T')[0] : '',
+        logo: null,
+        _method: 'PUT',
     });
+
+    const [previewLogo, setPreviewLogo] = useState(
+        school.logo_path ? `/storage/${school.logo_path}` : null
+    );
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData('logo', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewLogo(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveLogo = () => {
+        setData('logo', null);
+        setPreviewLogo(school.logo_path ? `/storage/${school.logo_path}` : null);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('super-admin.schools.update', school.id));
+        post(route('super-admin.schools.update', school.id), {
+            forceFormData: true,
+            onError: (errors) => {
+                console.error('Validation errors:', errors);
+            },
+            onSuccess: () => {
+                console.log('School updated successfully');
+            },
+        });
     };
 
     return (
@@ -66,6 +98,18 @@ export default function Edit({ school }) {
                             </div>
 
                             <form onSubmit={handleSubmit} className="p-4 sm:p-6 lg:p-8">
+                                {/* Error Display */}
+                                {Object.keys(errors).length > 0 && (
+                                    <div className="mb-6 bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                                        <h4 className="text-red-800 font-bold mb-2">Please fix the following errors:</h4>
+                                        <ul className="list-disc list-inside text-red-700 text-sm">
+                                            {Object.entries(errors).map(([key, value]) => (
+                                                <li key={key}>{value}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+
                                 {/* School Information Section */}
                                 <div className="mb-8">
                                     <h4 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-2">
@@ -111,6 +155,45 @@ export default function Edit({ school }) {
                                                 className="block w-full mt-2 rounded-xl border-gray-300 focus:border-blue-500 focus:ring-blue-500"
                                             />
                                             <InputError message={errors.domain} className="mt-2" />
+                                        </div>
+
+                                        {/* School Logo */}
+                                        <div className="md:col-span-2">
+                                            <InputLabel htmlFor="logo" value="School Logo (optional)" className="font-bold" />
+                                            <div className="mt-2 flex items-start gap-4">
+                                                {previewLogo ? (
+                                                    <div className="relative">
+                                                        <img src={previewLogo} alt="Logo preview" className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300" />
+                                                        {data.logo && (
+                                                            <button
+                                                                type="button"
+                                                                onClick={handleRemoveLogo}
+                                                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                                            >
+                                                                <X className="w-4 h-4" />
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-32 h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                                        <Upload className="w-8 h-8 text-gray-400" />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                                                        <Upload className="w-4 h-4 mr-2" />
+                                                        {previewLogo ? 'Change Logo' : 'Upload Logo'}
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleLogoChange}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                    <p className="text-sm text-gray-500 mt-2">PNG, JPG, GIF up to 2MB</p>
+                                                    {errors.logo && <p className="text-sm text-red-600 mt-1">{errors.logo}</p>}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

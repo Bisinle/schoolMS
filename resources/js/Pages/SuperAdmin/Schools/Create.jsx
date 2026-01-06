@@ -1,9 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { ArrowLeft, Save, School, User, Mail, Phone, MapPin, Calendar, Shield, Lock, Send } from 'lucide-react';
+import { ArrowLeft, Save, School, User, Mail, Phone, MapPin, Calendar, Shield, Lock, Send, Upload, X } from 'lucide-react';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
+import { useState } from 'react';
 
 export default function Create() {
     const { data, setData, post, processing, errors } = useForm({
@@ -20,11 +21,33 @@ export default function Create() {
         password_option: 'auto',
         admin_password: '',
         send_email: true,
+        logo: null,
     });
+
+    const [previewLogo, setPreviewLogo] = useState(null);
+
+    const handleLogoChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            setData('logo', file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setPreviewLogo(reader.result);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleRemoveLogo = () => {
+        setData('logo', null);
+        setPreviewLogo(null);
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('super-admin.schools.store'));
+        post(route('super-admin.schools.store'), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -113,6 +136,43 @@ export default function Create() {
                                                 placeholder="auto-generated if empty"
                                             />
                                             <InputError message={errors.domain} className="mt-2" />
+                                        </div>
+
+                                        {/* School Logo */}
+                                        <div className="md:col-span-2">
+                                            <InputLabel htmlFor="logo" value="School Logo (optional)" className="font-bold" />
+                                            <div className="mt-2 flex items-start gap-4">
+                                                {previewLogo ? (
+                                                    <div className="relative">
+                                                        <img src={previewLogo} alt="Logo preview" className="w-32 h-32 object-cover rounded-lg border-2 border-gray-300" />
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleRemoveLogo}
+                                                            className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+                                                        >
+                                                            <X className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-32 h-32 bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center">
+                                                        <Upload className="w-8 h-8 text-gray-400" />
+                                                    </div>
+                                                )}
+                                                <div>
+                                                    <label className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 cursor-pointer transition-colors">
+                                                        <Upload className="w-4 h-4 mr-2" />
+                                                        Upload Logo
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleLogoChange}
+                                                            className="hidden"
+                                                        />
+                                                    </label>
+                                                    <p className="text-sm text-gray-500 mt-2">PNG, JPG, GIF up to 2MB</p>
+                                                    {errors.logo && <p className="text-sm text-red-600 mt-1">{errors.logo}</p>}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>

@@ -21,7 +21,7 @@ export default function AuthenticatedLayout({ header, children }) {
     const isSuperAdmin = auth.user.role === "super_admin";
     const brandName = isSuperAdmin ? "SchoolMS" : school?.name || "SchoolMS";
     const brandLogo =
-        !isSuperAdmin && school?.logo_path ? school.logo_path : null;
+        !isSuperAdmin && school?.logo_path ? `/storage/${school.logo_path}` : null;
 
     // Get navigation items based on role and school type
     const isMadrasah = school?.school_type === "madrasah";

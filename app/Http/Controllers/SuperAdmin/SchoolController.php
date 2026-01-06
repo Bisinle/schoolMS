@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Mail\SchoolAdminWelcomeMail;
 use Illuminate\Validation\Rule;
 
@@ -75,6 +76,7 @@ class SchoolController extends Controller
             'password_option' => 'required|in:auto,manual',
             'admin_password' => 'required_if:password_option,manual|nullable|string|min:8',
             'send_email' => 'boolean',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
         // Generate slug if not provided
@@ -85,6 +87,12 @@ class SchoolController extends Controller
         // Generate domain if not provided
         if (empty($validated['domain'])) {
             $validated['domain'] = $validated['slug'] . '.localhost';
+        }
+
+        // Handle logo upload
+        $logoPath = null;
+        if ($request->hasFile('logo')) {
+            $logoPath = $request->file('logo')->store('logos', 'public');
         }
 
         DB::beginTransaction();
@@ -103,6 +111,7 @@ class SchoolController extends Controller
                 'is_active' => true,
                 'trial_ends_at' => $validated['trial_ends_at'] ?? now()->addDays(30),
                 'current_student_count' => 0,
+                'logo_path' => $logoPath,
             ]);
 
             // Determine password based on option
@@ -199,9 +208,27 @@ class SchoolController extends Controller
             'address' => 'nullable|string',
             'status' => 'required|in:trial,active,suspended,cancelled',
             'school_type' => 'required|in:islamic_school,madrasah',
-            'is_active' => 'required|boolean',
+            'is_active' => 'required|in:0,1,true,false',
             'trial_ends_at' => 'nullable|date',
+            'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
+
+        // Convert is_active to boolean
+        $validated['is_active'] = filter_var($validated['is_active'], FILTER_VALIDATE_BOOLEAN);
+
+        // Handle logo upload
+        if ($request->hasFile('logo')) {
+            // Delete old logo if exists
+            if ($school->logo_path && Storage::disk('public')->exists($school->logo_path)) {
+                Storage::disk('public')->delete($school->logo_path);
+            }
+
+            // Store new logo
+            $validated['logo_path'] = $request->file('logo')->store('logos', 'public');
+        }
+
+        // Remove logo from validated data if not uploaded
+        unset($validated['logo']);
 
         DB::beginTransaction();
         try {

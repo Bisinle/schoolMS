@@ -11,10 +11,21 @@ class DatabaseSeeder extends Seeder
      *
      * This seeder runs all seeders in the correct order to populate
      * the database with sample data for development and testing.
+     *
+     * ⚠️ ONLY runs in local environment for safety.
      */
     public function run(): void
     {
+        // Environment check - only run in local environment
+        if (!app()->environment('local')) {
+            $this->command->error('❌ Database seeding is only allowed in local environment!');
+            $this->command->warn('   Current environment: ' . app()->environment());
+            $this->command->warn('   Seeding aborted for safety.');
+            return;
+        }
+
         $this->command->info('🌱 Starting Database Seeding...');
+        $this->command->info('   Environment: ' . app()->environment());
         $this->command->newLine();
 
         // 0. Super Admin (System Level)

@@ -8,13 +8,23 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('document_categories', function (Blueprint $table) {
-            // Drop the old unique constraint on slug only
-            $table->dropUnique('document_categories_slug_unique');
-            
-            // Add composite unique constraint on slug + school_id
-            $table->unique(['slug', 'school_id'], 'document_categories_slug_school_unique');
-        });
+        // Check if the unique constraint exists
+        $indexes = \DB::select("SHOW INDEX FROM document_categories WHERE Key_name = 'document_categories_slug_unique'");
+
+        if (!empty($indexes)) {
+            Schema::table('document_categories', function (Blueprint $table) {
+                $table->dropUnique('document_categories_slug_unique');
+            });
+        }
+
+        // Check if the composite unique constraint already exists
+        $compositeIndexes = \DB::select("SHOW INDEX FROM document_categories WHERE Key_name = 'document_categories_slug_school_unique'");
+
+        if (empty($compositeIndexes)) {
+            Schema::table('document_categories', function (Blueprint $table) {
+                $table->unique(['slug', 'school_id'], 'document_categories_slug_school_unique');
+            });
+        }
     }
 
     public function down(): void

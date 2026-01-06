@@ -15,6 +15,7 @@ use App\Models\ActivityLog;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class DashboardController extends Controller
 {
@@ -48,19 +49,27 @@ class DashboardController extends Controller
         $totalSubjects = Subject::withoutGlobalScopes()->count();
         
         // Recently active schools (schools with recent activity)
-        $recentlyActiveSchools = School::select('schools.*')
-            ->join('activity_logs', 'schools.id', '=', 'activity_logs.school_id')
-            ->where('activity_logs.created_at', '>=', now()->subDays(7))
-            ->groupBy('schools.id')
-            ->orderByRaw('MAX(activity_logs.created_at) DESC')
-            ->limit(5)
-            ->get();
-        
+        // Only query if activity_logs has school_id column
+        $recentlyActiveSchools = collect([]);
+        if (Schema::hasColumn('activity_logs', 'school_id')) {
+            $recentlyActiveSchools = School::select('schools.*')
+                ->join('activity_logs', 'schools.id', '=', 'activity_logs.school_id')
+                ->where('activity_logs.created_at', '>=', now()->subDays(7))
+                ->groupBy('schools.id')
+                ->orderByRaw('MAX(activity_logs.created_at) DESC')
+                ->limit(5)
+                ->get();
+        }
+
         // Latest activities across all schools
-        $latestActivities = ActivityLog::with(['user:id,name,email,school_id', 'school:id,name'])
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get();
+        // Only query if activity_logs has school_id column
+        $latestActivities = collect([]);
+        if (Schema::hasColumn('activity_logs', 'school_id')) {
+            $latestActivities = ActivityLog::with(['user:id,name,email,school_id', 'school:id,name'])
+                ->orderBy('created_at', 'desc')
+                ->limit(10)
+                ->get();
+        }
         
         // Schools by status
         $schoolsByStatus = School::select('status', DB::raw('count(*) as count'))
