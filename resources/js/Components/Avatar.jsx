@@ -1,9 +1,13 @@
-export default function Avatar({ 
-    name, 
-    imagePath = null, 
+import { useState } from 'react';
+
+export default function Avatar({
+    name,
+    imagePath = null,
     size = 'md',
     className = ''
 }) {
+    const [imageError, setImageError] = useState(false);
+
     const sizes = {
         xs: 'w-6 h-6 text-xs',
         sm: 'w-8 h-8 text-sm',
@@ -16,19 +20,19 @@ export default function Avatar({
     // Generate initials from name
     const getInitials = (fullName) => {
         if (!fullName) return '?';
-        
+
         const names = fullName.trim().split(' ');
         if (names.length === 1) {
             return names[0].charAt(0).toUpperCase();
         }
-        
+
         return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
     };
 
     // Generate consistent color based on name
     const getColorClass = (fullName) => {
         if (!fullName) return 'bg-gray-500';
-        
+
         const colors = [
             'bg-blue-500',
             'bg-green-500',
@@ -39,7 +43,7 @@ export default function Avatar({
             'bg-indigo-500',
             'bg-teal-500',
         ];
-        
+
         const charCode = fullName.charCodeAt(0);
         return colors[charCode % colors.length];
     };
@@ -48,23 +52,25 @@ export default function Avatar({
     const colorClass = getColorClass(name);
     const sizeClass = sizes[size] || sizes.md;
 
-    return imagePath ? (
-        <img 
-            src={`/storage/${imagePath}`} 
+    // Show initials if no image path or if image failed to load
+    if (!imagePath || imageError) {
+        return (
+            <div
+                className={`${sizeClass} ${colorClass} rounded-full flex items-center justify-center text-white font-bold ${className}`}
+            >
+                {initials}
+            </div>
+        );
+    }
+
+    // Show image with error handling
+    return (
+        <img
+            src={`/storage/${imagePath}`}
             alt={name || 'User'}
             className={`${sizeClass} rounded-full object-cover border-2 border-gray-200 ${className}`}
-            onError={(e) => {
-                // Fallback to initials if image fails to load
-                e.target.style.display = 'none';
-                e.target.nextSibling.style.display = 'flex';
-            }}
+            onError={() => setImageError(true)}
         />
-    ) : (
-        <div 
-            className={`${sizeClass} ${colorClass} rounded-full flex items-center justify-center text-white font-bold ${className}`}
-        >
-            {initials}
-        </div>
     );
 }
 
