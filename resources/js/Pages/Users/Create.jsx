@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputError from '@/Components/InputError';
 import { ArrowLeft, UserPlus, Mail, User, Phone, Shield, Lock, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import ImageUpload from '@/Components/Forms/ImageUpload';
 
 export default function Create({ auth, roles }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -14,6 +15,7 @@ export default function Create({ auth, roles }) {
         password: '',
         password_confirmation: '',
         must_change_password: false,
+        profile_picture: null,
     });
 
     const [showPassword, setShowPassword] = useState(false);
@@ -21,7 +23,9 @@ export default function Create({ auth, roles }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('users.store'));
+        post(route('users.store'), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -124,6 +128,18 @@ export default function Create({ auth, roles }) {
                                         />
                                     </div>
                                     <InputError message={errors.phone} className="mt-2" />
+                                </div>
+
+                                {/* Profile Picture */}
+                                <div className="md:col-span-2">
+                                    <ImageUpload
+                                        label="Profile Picture"
+                                        name="profile_picture"
+                                        value={data.profile_picture}
+                                        onChange={(file) => setData('profile_picture', file)}
+                                        error={errors.profile_picture}
+                                        required={false}
+                                    />
                                 </div>
                             </div>
                         </div>

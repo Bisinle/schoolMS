@@ -9,6 +9,7 @@ use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class StudentController extends Controller
@@ -113,7 +114,14 @@ class StudentController extends Controller
             'guardian_id' => 'required|exists:guardians,id',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            $validated['profile_picture'] = $request->file('profile_picture')
+                ->store('students/profiles', 'public');
+        }
 
         // Auto-generate admission number
         $validated['admission_number'] = UniqueIdentifierService::generateAdmissionNumber(
@@ -194,7 +202,19 @@ class StudentController extends Controller
             'guardian_id' => 'required|exists:guardians,id',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
+            'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
         ]);
+
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if exists
+            if ($student->profile_picture && Storage::disk('public')->exists($student->profile_picture)) {
+                Storage::disk('public')->delete($student->profile_picture);
+            }
+
+            $validated['profile_picture'] = $request->file('profile_picture')
+                ->store('students/profiles', 'public');
+        }
 
         // Update grade name for class_name field
         $grade = Grade::find($validated['grade_id']);

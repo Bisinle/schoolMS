@@ -2,19 +2,24 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import InputError from '@/Components/InputError';
 import { ArrowLeft, Save, Mail, User, Phone, Shield, Power } from 'lucide-react';
+import ImageUpload from '@/Components/Forms/ImageUpload';
 
 export default function Edit({ auth, user, roles }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
         role: user.role || 'teacher',
         is_active: user.is_active ?? true,
+        profile_picture: null,
+        _method: 'PUT',
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(route('users.update', user.id));
+        post(route('users.update', user.id), {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -116,6 +121,19 @@ export default function Edit({ auth, user, roles }) {
                                         />
                                     </div>
                                     <InputError message={errors.phone} className="mt-2" />
+                                </div>
+
+                                {/* Profile Picture */}
+                                <div className="md:col-span-2">
+                                    <ImageUpload
+                                        label="Profile Picture"
+                                        name="profile_picture"
+                                        value={data.profile_picture}
+                                        onChange={(file) => setData('profile_picture', file)}
+                                        error={errors.profile_picture}
+                                        currentImage={user.profile_picture}
+                                        required={false}
+                                    />
                                 </div>
                             </div>
                         </div>

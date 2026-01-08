@@ -18,7 +18,9 @@ import {
     Activity,
     CheckCircle,
     XCircle,
+    Camera,
 } from 'lucide-react';
+import Avatar from '@/Components/Avatar';
 
 export default function Show({ auth, user, recentActivity, roles, flash }) {
     const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -122,8 +124,18 @@ export default function Show({ auth, user, recentActivity, roles, flash }) {
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                             {/* Avatar */}
                             <div className="flex justify-center mb-4">
-                                <div className="w-24 h-24 bg-orange rounded-full flex items-center justify-center text-white font-bold text-3xl">
-                                    {user.name.charAt(0).toUpperCase()}
+                                <div className="relative">
+                                    <Avatar
+                                        name={user.name}
+                                        imagePath={user.profile_picture}
+                                        size="2xl"
+                                        className="border-4 border-gray-100 shadow-lg"
+                                    />
+                                    {!user.profile_picture && (
+                                        <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 shadow-md">
+                                            <Camera className="w-4 h-4 text-gray-400" />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -135,6 +147,12 @@ export default function Show({ auth, user, recentActivity, roles, flash }) {
                                 <span className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${getRoleBadgeColor(user.role)}`}>
                                     {roles.find(r => r.value === user.role)?.label || user.role}
                                 </span>
+                                {!user.profile_picture && (
+                                    <p className="text-gray-500 text-xs mt-2 flex items-center justify-center gap-1">
+                                        <Camera className="w-3 h-3" />
+                                        No profile picture yet
+                                    </p>
+                                )}
                             </div>
 
                             {/* Status */}

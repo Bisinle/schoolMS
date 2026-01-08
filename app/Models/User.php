@@ -31,6 +31,7 @@ class User extends Authenticatable
         'created_by',
         'last_login_at',
         'must_change_password',
+        'profile_picture',
     ];
 
     protected $hidden = [

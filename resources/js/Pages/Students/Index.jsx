@@ -8,6 +8,7 @@ import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
+import Avatar from '@/Components/Avatar';
 
 // Mobile List Item Component - Refactored with new components
 function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
@@ -34,26 +35,35 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
         >
             <ExpandableCard
                 header={
-                    <div className="flex-1 min-w-0">
-                        {/* Top Row: Admission Number & Status */}
-                        <div className="flex items-center justify-between gap-2 mb-2">
-                            <Badge variant="primary" value={student.admission_number} size="sm" />
-                            <Badge variant="status" value={student.status} size="sm" />
-                        </div>
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* Avatar */}
+                        <Avatar
+                            name={`${student.first_name} ${student.last_name}`}
+                            imagePath={student.profile_picture}
+                            size="md"
+                        />
 
-                        {/* Student Name */}
-                        <h3 className="text-base font-bold text-gray-900 truncate mb-2">
-                            {student.first_name} {student.last_name}
-                        </h3>
-
-                        {/* Grade & Gender */}
-                        <div className="flex items-center gap-2 flex-wrap">
-                            <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                                <GraduationCap className="w-3.5 h-3.5 text-gray-400" />
-                                <span className="font-medium">{student.grade?.name || 'No Grade'}</span>
+                        <div className="flex-1 min-w-0">
+                            {/* Top Row: Admission Number & Status */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                                <Badge variant="primary" value={student.admission_number} size="sm" />
+                                <Badge variant="status" value={student.status} size="sm" />
                             </div>
-                            <span className="text-gray-300">•</span>
-                            <span className="text-xs text-gray-600 capitalize">{student.gender}</span>
+
+                            {/* Student Name */}
+                            <h3 className="text-base font-bold text-gray-900 truncate mb-2">
+                                {student.first_name} {student.last_name}
+                            </h3>
+
+                            {/* Grade & Gender */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                    <GraduationCap className="w-3.5 h-3.5 text-gray-400" />
+                                    <span className="font-medium">{student.grade?.name || 'No Grade'}</span>
+                                </div>
+                                <span className="text-gray-300">•</span>
+                                <span className="text-xs text-gray-600 capitalize">{student.gender}</span>
+                            </div>
                         </div>
                     </div>
                 }
@@ -308,7 +318,14 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                                 {student.admission_number}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {student.first_name} {student.last_name}
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar
+                                                        name={`${student.first_name} ${student.last_name}`}
+                                                        imagePath={student.profile_picture}
+                                                        size="sm"
+                                                    />
+                                                    <span>{student.first_name} {student.last_name}</span>
+                                                </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {student.grade?.name || 'No Grade'}

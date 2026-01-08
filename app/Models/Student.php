@@ -22,6 +22,7 @@ class Student extends Model
         'class_name', // Deprecated, use grade relationship
         'enrollment_date',
         'status',
+        'profile_picture',
     ];
 
     protected function casts(): array

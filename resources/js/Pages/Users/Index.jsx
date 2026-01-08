@@ -28,6 +28,7 @@ import {
     MobileListContainer,
 } from "@/Components/Mobile";
 import { Badge } from "@/Components/UI";
+import Avatar from "@/Components/Avatar";
 
 // Helper to get role badge variant
 function getRoleBadgeVariant(role) {
@@ -131,7 +132,13 @@ function MobileUserItem({
     const header = (
         <div className="flex gap-3">
             {/* Left: Avatar with Role Color */}
-            <div className="flex-shrink-0"></div>
+            {/* Avatar */}
+            <Avatar
+                name={user.name}
+                imagePath={user.profile_picture}
+                size="md"
+                className="flex-shrink-0"
+            />
 
             {/* Right: User Info */}
             <div className="flex-1 min-w-0">
@@ -659,11 +666,11 @@ export default function Index({
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
-                                                    <div className="w-10 h-10 rounded-full bg-orange flex items-center justify-center text-white font-semibold flex-shrink-0">
-                                                        {user.name
-                                                            .charAt(0)
-                                                            .toUpperCase()}
-                                                    </div>
+                                                    <Avatar
+                                                        name={user.name}
+                                                        imagePath={user.profile_picture}
+                                                        size="md"
+                                                    />
                                                     <div className="ml-3">
                                                         <p className="text-sm font-semibold text-navy">
                                                             {user.name}

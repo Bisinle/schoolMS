@@ -9,8 +9,10 @@ import {
     MapPin,
     Phone,
     ClipboardCheck,
-    TrendingUp
+    TrendingUp,
+    Camera
 } from 'lucide-react';
+import Avatar from '@/Components/Avatar';
 
 export default function StudentsShow({ student, attendanceStats, currentMonth }) {
     const InfoCard = ({ icon: Icon, label, value }) => (
@@ -43,11 +45,20 @@ console.log(student);
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="bg-gradient-to-r from-orange to-orange-dark px-6 py-8">
                         <div className="flex items-center space-x-4">
-                            <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center text-3xl font-bold text-orange">
-                                {student.first_name.charAt(0).toUpperCase()}
-                                {student.last_name.charAt(0).toUpperCase()}
+                            <div className="relative">
+                                <Avatar
+                                    name={`${student.first_name} ${student.last_name}`}
+                                    imagePath={student.profile_picture}
+                                    size="2xl"
+                                    className="border-4 border-white shadow-lg"
+                                />
+                                {!student.profile_picture && (
+                                    <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-1.5 shadow-md">
+                                        <Camera className="w-4 h-4 text-gray-400" />
+                                    </div>
+                                )}
                             </div>
-                            <div>
+                            <div className="flex-1">
                                 <div className="mb-2">
                                     <span className="inline-block px-3 py-1.5 text-sm font-bold rounded-md bg-white text-orange">
                                         {student.admission_number}
@@ -65,6 +76,12 @@ console.log(student);
                                 >
                                     {student.status.toUpperCase()}
                                 </span>
+                                {!student.profile_picture && (
+                                    <p className="text-white text-xs mt-2 opacity-80 flex items-center gap-1">
+                                        <Camera className="w-3 h-3" />
+                                        No profile picture yet
+                                    </p>
+                                )}
                             </div>
                         </div>
                     </div>

@@ -6,6 +6,7 @@ import SelectInput from '@/Components/Forms/SelectInput';
 import FormSection, { FormField } from '@/Components/Forms/FormSection';
 import FormActions from '@/Components/Forms/FormActions';
 import ReadOnlyField from '@/Components/Forms/ReadOnlyField';
+import ImageUpload from '@/Components/Forms/ImageUpload';
 
 export default function StudentsCreate({ guardians, grades }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -17,11 +18,14 @@ export default function StudentsCreate({ guardians, grades }) {
         guardian_id: '',
         enrollment_date: new Date().toISOString().split('T')[0],
         status: 'active',
+        profile_picture: null,
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post('/students');
+        post('/students', {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -100,6 +104,17 @@ export default function StudentsCreate({ guardians, grades }) {
                                 error={errors.date_of_birth}
                                 required
                             />
+
+                            <FormField span="full">
+                                <ImageUpload
+                                    label="Profile Picture"
+                                    name="profile_picture"
+                                    value={data.profile_picture}
+                                    onChange={(file) => setData('profile_picture', file)}
+                                    error={errors.profile_picture}
+                                    required={false}
+                                />
+                            </FormField>
                         </FormSection>
 
                         {/* Academic Information Section */}

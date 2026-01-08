@@ -6,9 +6,10 @@ import SelectInput from '@/Components/Forms/SelectInput';
 import FormSection, { FormField } from '@/Components/Forms/FormSection';
 import FormActions from '@/Components/Forms/FormActions';
 import ReadOnlyField from '@/Components/Forms/ReadOnlyField';
+import ImageUpload from '@/Components/Forms/ImageUpload';
 
 export default function StudentsEdit({ student, guardians, grades }) {
-    const { data, setData, put, processing, errors } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         first_name: student.first_name || '',
         last_name: student.last_name || '',
         gender: student.gender || 'male',
@@ -17,11 +18,15 @@ export default function StudentsEdit({ student, guardians, grades }) {
         guardian_id: student.guardian_id || '',
         enrollment_date: student.enrollment_date || '',
         status: student.status || 'active',
+        profile_picture: null,
+        _method: 'PUT',
     });
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        put(`/students/${student.id}`);
+        post(`/students/${student.id}`, {
+            forceFormData: true,
+        });
     };
 
     return (
@@ -102,6 +107,18 @@ export default function StudentsEdit({ student, guardians, grades }) {
                                 error={errors.date_of_birth}
                                 required
                             />
+
+                            <FormField span="full">
+                                <ImageUpload
+                                    label="Profile Picture"
+                                    name="profile_picture"
+                                    value={data.profile_picture}
+                                    onChange={(file) => setData('profile_picture', file)}
+                                    error={errors.profile_picture}
+                                    currentImage={student.profile_picture}
+                                    required={false}
+                                />
+                            </FormField>
                         </FormSection>
 
                         {/* Academic Information Section */}

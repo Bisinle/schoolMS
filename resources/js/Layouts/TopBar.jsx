@@ -1,5 +1,6 @@
 import { Link } from "@inertiajs/react";
 import { Menu, LogOut } from "lucide-react";
+import Avatar from "@/Components/Avatar";
 
 /**
  * Top navigation bar component
@@ -31,12 +32,19 @@ export default function TopBar({ header, auth, setSidebarOpen }) {
                 <div className="ml-4 flex items-center md:ml-6 space-x-4">
                     {/* Desktop user menu */}
                     <div className="hidden md:flex items-center space-x-3">
-                        <span className="text-sm font-medium text-navy">
-                            {auth.user.name}
-                        </span>
-                        <span className="px-2.5 py-1 text-xs font-semibold rounded-full bg-orange text-white">
-                            {auth.user.role.toUpperCase()}
-                        </span>
+                        <Avatar
+                            name={auth.user.name}
+                            imagePath={auth.user.profile_picture}
+                            size="sm"
+                        />
+                        <div className="flex flex-col">
+                            <span className="text-sm font-medium text-navy">
+                                {auth.user.name}
+                            </span>
+                            <span className="text-xs text-gray-500 capitalize">
+                                {auth.user.role.replace('_', ' ')}
+                            </span>
+                        </div>
                     </div>
 
                     <Link

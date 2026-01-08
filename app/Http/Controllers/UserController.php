@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Support\Arr;
@@ -139,7 +140,14 @@ class UserController extends Controller
                     ->symbols()],
                 'password_confirmation' => ['required_if:password_setup_method,custom', 'nullable', 'same:password'],
                 'must_change_password' => ['boolean'],
+                'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
             ]);
+
+            // Handle profile picture upload
+            if ($request->hasFile('profile_picture')) {
+                $validated['profile_picture'] = $request->file('profile_picture')
+                    ->store('users/profiles', 'public');
+            }
 
             \Log::info('Validation passed successfully', [
                 'validated_data' => Arr::except($validated, ['password', 'password_confirmation']),
@@ -258,7 +266,19 @@ class UserController extends Controller
             'phone' => ['nullable', 'string', 'max:20'],
             'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
             'is_active' => ['required', 'boolean'],
+            'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
+
+        // Handle profile picture upload
+        if ($request->hasFile('profile_picture')) {
+            // Delete old profile picture if exists
+            if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+
+            $validated['profile_picture'] = $request->file('profile_picture')
+                ->store('users/profiles', 'public');
+        }
 
         $result = $this->userService->updateUser($user, $validated, Auth::user());
 
