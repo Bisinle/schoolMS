@@ -7,9 +7,10 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 import SecondaryButton from '@/Components/SecondaryButton';
 
-export default function CreateTimetableTemplate({ grades, academicTerms, auth }) {
+export default function CreateTimetableTemplate({ grade, stream, academicTerms, auth }) {
     const { data, setData, post, processing, errors } = useForm({
-        grade_id: '',
+        grade_id: grade?.id || '',
+        stream_id: stream?.id || '',
         academic_term_id: '',
         name: '',
         effective_from: '',
@@ -32,12 +33,17 @@ export default function CreateTimetableTemplate({ grades, academicTerms, auth })
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">Create Timetable Template</h2>
                             <p className="text-sm text-gray-600">
-                                Create a new timetable template for a grade
+                                {grade && stream
+                                    ? `Creating template for ${grade.name} ${stream.name}`
+                                    : grade
+                                    ? `Creating template for ${grade.name}`
+                                    : 'Create a new timetable template for a grade'
+                                }
                             </p>
                         </div>
                     </div>
                     <Link
-                        href={route('timetables.templates.index')}
+                        href={grade ? route('timetables.templates.select-stream', grade.id) : route('timetables.templates.create')}
                         className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
@@ -48,24 +54,21 @@ export default function CreateTimetableTemplate({ grades, academicTerms, auth })
                 {/* Form */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                     <form onSubmit={handleSubmit} className="p-6 space-y-6">
-                        {/* Grade Selection */}
-                        <div>
-                            <InputLabel htmlFor="grade_id" value="Grade *" />
-                            <select
-                                id="grade_id"
-                                value={data.grade_id}
-                                onChange={(e) => setData('grade_id', e.target.value)}
-                                className="mt-1 block w-full border-gray-300 rounded-lg shadow-sm focus:border-orange focus:ring focus:ring-orange focus:ring-opacity-50"
-                            >
-                                <option value="">Select a grade</option>
-                                {grades.map((grade) => (
-                                    <option key={grade.id} value={grade.id}>
-                                        {grade.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <InputError message={errors.grade_id} className="mt-2" />
-                        </div>
+                        {/* Grade Display (Read-only) */}
+                        {grade && (
+                            <div>
+                                <InputLabel value="Grade" />
+                                <div className="mt-1 block w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg text-gray-700">
+                                    {grade.name} {stream && stream.name}
+                                </div>
+                                <p className="mt-1 text-sm text-gray-500">
+                                    {stream
+                                        ? `This template will be created for ${grade.name} ${stream.name}`
+                                        : `This template will be created for ${grade.name} (no stream)`
+                                    }
+                                </p>
+                            </div>
+                        )}
 
                         {/* Academic Term Selection */}
                         <div>

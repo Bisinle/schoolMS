@@ -13,6 +13,7 @@ class TimetableTemplate extends Model
     protected $fillable = [
         'school_id',
         'grade_id',
+        'stream_id',
         'academic_term_id',
         'name',
         'description',
@@ -39,6 +40,11 @@ class TimetableTemplate extends Model
     public function grade()
     {
         return $this->belongsTo(Grade::class);
+    }
+
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
     }
 
     public function academicTerm()
@@ -92,6 +98,16 @@ class TimetableTemplate extends Model
         return $query->where('academic_term_id', $termId);
     }
 
+    public function scopeForStream($query, $streamId)
+    {
+        return $query->where('stream_id', $streamId);
+    }
+
+    public function scopeWithoutStream($query)
+    {
+        return $query->whereNull('stream_id');
+    }
+
     // Helper methods
     public function isDraft(): bool
     {
@@ -116,6 +132,30 @@ class TimetableTemplate extends Model
     public function getActiveDaysArray(): array
     {
         return $this->active_days ?? ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+    }
+
+    /**
+     * Get display name with stream (e.g., "Grade 1 North - Term 1 2025")
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        $gradeName = $this->grade->name ?? 'Unknown Grade';
+
+        if ($this->stream_id && $this->stream) {
+            $gradeName .= ' ' . $this->stream->name;
+        }
+
+        $termName = $this->academicTerm->name ?? 'Unknown Term';
+
+        return "{$gradeName} - {$termName}";
+    }
+
+    /**
+     * Check if template has a stream
+     */
+    public function hasStream(): bool
+    {
+        return !is_null($this->stream_id);
     }
 
 

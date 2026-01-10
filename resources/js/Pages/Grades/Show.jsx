@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, Edit, Users, BookOpen, Tag, GraduationCap, Settings } from 'lucide-react';
+import { ArrowLeft, Edit, Users, BookOpen, Tag, GraduationCap, Settings, Layers } from 'lucide-react';
 import { Badge } from '@/Components/UI';
 
 export default function GradesShow({ grade, availableTeachers, auth }) {
@@ -106,6 +106,38 @@ export default function GradesShow({ grade, availableTeachers, auth }) {
                         </div>
                     </div>
                 </div>
+
+                {/* Stream Card - Only show if grade has a stream */}
+                {grade.stream && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
+                            <div className="flex items-center">
+                                <Layers className="w-6 h-6 text-orange mr-3" />
+                                <h2 className="text-lg font-semibold text-gray-900">Stream</h2>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="p-4 border-2 border-orange-200 bg-orange-50 rounded-lg">
+                                <div className="flex items-start justify-between mb-2">
+                                    <h3 className="text-lg font-semibold text-gray-900">{grade.stream.name}</h3>
+                                    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange text-white">
+                                        Assigned
+                                    </span>
+                                </div>
+                                {grade.stream.code && (
+                                    <p className="text-sm text-gray-700 mb-2">
+                                        <span className="font-medium">Code:</span> {grade.stream.code}
+                                    </p>
+                                )}
+                                <p className="text-xs text-gray-600 mt-3">
+                                    This grade is assigned to the <strong>{grade.stream.name}</strong> stream.
+                                    Students in this grade will be part of this stream for timetabling and class organization.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Assigned Subjects Card */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">

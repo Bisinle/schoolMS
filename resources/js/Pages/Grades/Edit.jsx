@@ -2,13 +2,14 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ArrowLeft, Save, UserPlus } from 'lucide-react';
 
-export default function GradesEdit({ grade, subjects, teachers, rooms, levels, classTeacherId }) {
+export default function GradesEdit({ grade, subjects, teachers, rooms, streams, levels, classTeacherId }) {
     const { school } = usePage().props;
     const isMadrasah = school?.school_type === 'madrasah';
 
     const { data, setData, put, processing, errors } = useForm({
         name: grade.name || '',
         code: grade.code || '',
+        stream_id: grade.stream_id || '',
         level: grade.level || (isMadrasah ? null : 'LOWER PRIMARY'),
         default_room_id: grade.default_room_id || '',
         status: grade.status || 'active',
@@ -146,6 +147,34 @@ export default function GradesEdit({ grade, subjects, teachers, rooms, levels, c
                             )}
                             <p className="mt-1 text-xs text-gray-500">
                                 Optional short code for the grade (e.g., G1 for Grade 1, PP1 for Pre-Primary 1)
+                            </p>
+                        </div>
+
+                        {/* Stream */}
+                        <div>
+                            <label htmlFor="stream_id" className="block text-sm font-medium text-gray-700 mb-2">
+                                Stream
+                            </label>
+                            <select
+                                id="stream_id"
+                                value={data.stream_id}
+                                onChange={(e) => setData('stream_id', e.target.value)}
+                                className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                    errors.stream_id ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                            >
+                                <option value="">No Stream</option>
+                                {streams && streams.map((stream) => (
+                                    <option key={stream.id} value={stream.id}>
+                                        {stream.name} {stream.code && `(${stream.code})`}
+                                    </option>
+                                ))}
+                            </select>
+                            {errors.stream_id && (
+                                <p className="mt-1 text-sm text-red-600">{errors.stream_id}</p>
+                            )}
+                            <p className="mt-1 text-xs text-gray-500">
+                                Optional stream classification (e.g., North, South, East)
                             </p>
                         </div>
 

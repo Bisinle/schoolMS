@@ -8,13 +8,14 @@ import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { Badge } from '@/Components/UI';
 
-export default function TimetableTemplatesIndex({ templates, grades, academicTerms, filters: initialFilters = {}, auth }) {
+export default function TimetableTemplatesIndex({ templates, grades, streams, filters: initialFilters = {}, auth }) {
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/timetables/templates',
         initialFilters: {
             search: initialFilters.search || '',
             grade_id: initialFilters.grade_id || '',
+            stream_id: initialFilters.stream_id || '',
             status: initialFilters.status || '',
         },
     });
@@ -151,7 +152,7 @@ export default function TimetableTemplatesIndex({ templates, grades, academicTer
                 </div>
 
                 {/* Filters */}
-                <FilterBar onClear={clearFilters} gridCols="3">
+                <FilterBar onClear={clearFilters} gridCols="4">
                     <SearchInput
                         value={filters.search}
                         onChange={(e) => updateFilter('search', e.target.value)}
@@ -162,6 +163,13 @@ export default function TimetableTemplatesIndex({ templates, grades, academicTer
                         onChange={(e) => updateFilter('grade_id', e.target.value)}
                         options={grades.map(grade => ({ value: grade.id, label: grade.name }))}
                         allLabel="All Grades"
+                        hideLabel
+                    />
+                    <FilterSelect
+                        value={filters.stream_id}
+                        onChange={(e) => updateFilter('stream_id', e.target.value)}
+                        options={streams?.map(stream => ({ value: stream.id, label: stream.name })) || []}
+                        allLabel="All Streams"
                         hideLabel
                     />
                     <FilterSelect
@@ -204,6 +212,7 @@ export default function TimetableTemplatesIndex({ templates, grades, academicTer
                                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100/80 text-blue-600 border border-blue-200/50">
                                                     <Calendar className="w-3 h-3 mr-1" />
                                                     {template.grade?.name}
+                                                    {template.stream && ` ${template.stream.name}`}
                                                 </span>
                                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-100/80 text-purple-600 border border-purple-200/50">
                                                     {template.academic_term?.name}

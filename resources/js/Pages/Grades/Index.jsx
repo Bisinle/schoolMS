@@ -170,12 +170,22 @@ export default function GradesIndex({ grades, filters: initialFilters = {}, auth
                                         <div className="flex-1 min-w-0">
                                             <h3 className="text-base md:text-lg font-semibold text-gray-900 mb-1.5 truncate">
                                                 {grade.name}
+                                                {grade.stream && (
+                                                    <span className="text-blue-600 ml-1.5">
+                                                        {grade.stream.name}
+                                                    </span>
+                                                )}
                                             </h3>
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 {grade.code && (
                                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100/80 text-gray-600 border border-gray-200/50">
                                                         <Tag className="w-3 h-3 mr-1" />
                                                         {grade.code}
+                                                    </span>
+                                                )}
+                                                {grade.stream && (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100/80 text-blue-600 border border-blue-200/50">
+                                                        Stream: {grade.stream.name}
                                                     </span>
                                                 )}
                                                 {!isMadrasah && grade.level && (

@@ -17,6 +17,7 @@ class Grade extends Model
 
     protected $fillable = [
         'school_id',
+        'stream_id',
         'name',
         'code',
         'level',
@@ -76,6 +77,11 @@ class Grade extends Model
     public function defaultRoom()
     {
         return $this->belongsTo(Room::class, 'default_room_id');
+    }
+
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
     }
 
     /**
@@ -498,6 +504,19 @@ class Grade extends Model
     }
 
     /**
+     * Get display name with stream (e.g., "Grade 1 North")
+     *
+     * @return string
+     */
+    public function getDisplayNameAttribute()
+    {
+        if ($this->stream_id && $this->stream) {
+            return "{$this->name} {$this->stream->name}";
+        }
+        return $this->name;
+    }
+
+    /**
      * Get all allowed teachers for this grade (for dropdowns)
      * Only returns teachers with active user accounts
      *
@@ -508,5 +527,59 @@ class Grade extends Model
         return $this->teachers()->whereHas('user', function ($query) {
             $query->where('is_active', true);
         })->get();
+    }
+
+    /**
+     * Check if this grade has a stream assigned
+     *
+     * @return bool
+     */
+    public function hasStream(): bool
+    {
+        return !is_null($this->stream_id);
+    }
+
+    /**
+     * Get all streams available for this grade's school
+     * Used when creating timetable templates
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getAvailableStreams()
+    {
+        return Stream::where('school_id', $this->school_id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Get timetable templates for a specific stream
+     *
+     * @param int|null $streamId
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getTemplatesForStream($streamId = null)
+    {
+        return $this->timetableTemplates()
+            ->where('stream_id', $streamId)
+            ->with(['stream', 'academicTerm'])
+            ->orderBy('created_at', 'desc')
+            ->get();
+    }
+
+    /**
+     * Get all unique streams that have timetable templates for this grade
+     *
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    public function getStreamsWithTemplates()
+    {
+        $streamIds = $this->timetableTemplates()
+            ->whereNotNull('stream_id')
+            ->distinct()
+            ->pluck('stream_id');
+
+        return Stream::whereIn('id', $streamIds)->get();
     }
 }

@@ -6,6 +6,7 @@ use App\Models\Grade;
 use App\Models\Teacher;
 use App\Models\Subject;
 use App\Models\Room;
+use App\Models\Stream;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\DB;
@@ -49,7 +50,8 @@ class GradeController extends Controller
             $query->where('level', $request->level);
         }
 
-        $grades = $query->withCount('students', 'subjects', 'exams')
+        $grades = $query->with('stream')
+            ->withCount('students', 'subjects', 'exams')
             ->orderBy('level')
             ->orderBy('name')
             ->get();
@@ -57,7 +59,6 @@ class GradeController extends Controller
         return Inertia::render('Grades/Index', [
             'grades' => $grades,
             'filters' => $request->only(['search', 'level', 'show_archived']),
-            'filters' => $request->only(['search', 'level']),
         ]);
     }
 
@@ -87,10 +88,16 @@ class GradeController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'room_type', 'capacity']);
 
+        $streams = Stream::where('school_id', auth()->user()->school_id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
         return Inertia::render('Grades/Create', [
             'subjects' => $subjects,
             'teachers' => $teachers,
             'rooms' => $rooms,
+            'streams' => $streams,
             'levels' => Grade::LEVELS,
         ]);
     }
@@ -109,7 +116,6 @@ class GradeController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('grades', 'name')->where('school_id', $schoolId),
             ],
             'code' => [
                 'nullable',
@@ -117,6 +123,7 @@ class GradeController extends Controller
                 'max:50',
                 Rule::unique('grades', 'code')->where('school_id', $schoolId),
             ],
+            'stream_id' => 'nullable|exists:streams,id',
             'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'default_room_id' => 'nullable|exists:rooms,id',
             'status' => 'required|in:active,inactive',
@@ -126,6 +133,18 @@ class GradeController extends Controller
             'teacher_ids.*' => 'exists:teachers,id',
             'class_teacher_id' => 'required|exists:teachers,id',
         ]);
+
+        // Validate unique constraint: (school_id, name, stream_id)
+        $existingGrade = Grade::where('school_id', $schoolId)
+            ->where('name', $validated['name'])
+            ->where('stream_id', $validated['stream_id'] ?? null)
+            ->exists();
+
+        if ($existingGrade) {
+            return back()->withErrors([
+                'name' => 'A grade with this name and stream combination already exists.'
+            ])->withInput();
+        }
 
         // Validate that class_teacher_id is in teacher_ids
         if (!in_array($validated['class_teacher_id'], $validated['teacher_ids'])) {
@@ -137,6 +156,7 @@ class GradeController extends Controller
         $grade = Grade::create([
             'name' => $validated['name'],
             'code' => $validated['code'] ?? null,
+            'stream_id' => $validated['stream_id'] ?? null,
             'level' => $validated['level'] ?? null,
             'default_room_id' => $validated['default_room_id'] ?? null,
             'status' => $validated['status'],
@@ -176,7 +196,8 @@ class GradeController extends Controller
             'subjects' => function ($query) {
                 $query->orderBy('category')
                     ->orderBy('name');
-            }
+            },
+            'stream' // Load the stream relationship if this grade has one
         ]);
 
         $availableTeachers = Teacher::whereDoesntHave('grades', function ($query) use ($grade) {
@@ -215,7 +236,12 @@ class GradeController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'code', 'room_type', 'capacity']);
 
-        $grade->load(['subjects', 'teachers', 'defaultRoom']);
+        $streams = Stream::where('school_id', auth()->user()->school_id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get(['id', 'name', 'code']);
+
+        $grade->load(['subjects', 'teachers', 'defaultRoom', 'stream']);
 
         // Get class teacher ID
         $classTeacher = $grade->teachers()->wherePivot('is_class_teacher', true)->first();
@@ -225,6 +251,7 @@ class GradeController extends Controller
             'subjects' => $subjects,
             'teachers' => $teachers,
             'rooms' => $rooms,
+            'streams' => $streams,
             'levels' => Grade::LEVELS,
             'classTeacherId' => $classTeacher ? $classTeacher->id : null,
         ]);
@@ -243,9 +270,6 @@ class GradeController extends Controller
                 'required',
                 'string',
                 'max:255',
-                Rule::unique('grades', 'name')
-                    ->ignore($grade->id)
-                    ->where('school_id', $grade->school_id),
             ],
             'code' => [
                 'nullable',
@@ -255,6 +279,7 @@ class GradeController extends Controller
                     ->ignore($grade->id)
                     ->where('school_id', $grade->school_id),
             ],
+            'stream_id' => 'nullable|exists:streams,id',
             'level' => $isMadrasah ? 'nullable|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY' : 'required|in:ECD,LOWER PRIMARY,UPPER PRIMARY,JUNIOR SECONDARY',
             'default_room_id' => 'nullable|exists:rooms,id',
             'status' => 'required|in:active,inactive',
@@ -265,9 +290,23 @@ class GradeController extends Controller
             'class_teacher_id' => 'nullable|exists:teachers,id',
         ]);
 
+        // Validate unique constraint: (school_id, name, stream_id)
+        $existingGrade = Grade::where('school_id', $grade->school_id)
+            ->where('name', $validated['name'])
+            ->where('stream_id', $validated['stream_id'] ?? null)
+            ->where('id', '!=', $grade->id)
+            ->exists();
+
+        if ($existingGrade) {
+            return back()->withErrors([
+                'name' => 'A grade with this name and stream combination already exists.'
+            ])->withInput();
+        }
+
         $grade->update([
             'name' => $validated['name'],
             'code' => $validated['code'] ?? null,
+            'stream_id' => $validated['stream_id'] ?? null,
             'level' => $validated['level'] ?? null,
             'default_room_id' => $validated['default_room_id'] ?? null,
             'status' => $validated['status'],

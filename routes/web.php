@@ -10,6 +10,7 @@ use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherTimetableController;
 use App\Http\Controllers\GradeController;
+use App\Http\Controllers\StreamController;
 use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\ExamController;
@@ -230,6 +231,18 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
     });
 
+    //^ Stream Routes
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/streams', [StreamController::class, 'index'])->name('streams.index');
+        Route::get('/streams/create', [StreamController::class, 'create'])->name('streams.create');
+        Route::post('/streams', [StreamController::class, 'store'])->name('streams.store');
+        Route::get('/streams/{stream}', [StreamController::class, 'show'])->name('streams.show');
+        Route::get('/streams/{stream}/edit', [StreamController::class, 'edit'])->name('streams.edit');
+        Route::put('/streams/{stream}', [StreamController::class, 'update'])->name('streams.update');
+        Route::delete('/streams/{stream}', [StreamController::class, 'destroy'])->name('streams.destroy');
+        Route::post('/streams/{stream}/unlink', [StreamController::class, 'unlink'])->name('streams.unlink');
+    });
+
     //^ Exams Routes
     Route::middleware(['role:admin,teacher'])->group(function () {
         Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
@@ -305,6 +318,8 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::middleware(['role:admin'])->group(function () {
             Route::get('/templates', [TimetableTemplateController::class, 'index'])->name('timetables.templates.index');
             Route::get('/templates/create', [TimetableTemplateController::class, 'create'])->name('timetables.templates.create');
+            Route::get('/templates/grade/{grade}/select-stream', [TimetableTemplateController::class, 'selectStream'])->name('timetables.templates.select-stream');
+            Route::get('/templates/grade/{grade}/create', [TimetableTemplateController::class, 'createWithStream'])->name('timetables.templates.create-with-stream');
             Route::post('/templates', [TimetableTemplateController::class, 'store'])->name('timetables.templates.store');
             Route::get('/templates/{template}', [TimetableTemplateController::class, 'show'])->name('timetables.templates.show');
             Route::get('/templates/{template}/grid', [TimetableTemplateController::class, 'grid'])->name('timetables.templates.grid');

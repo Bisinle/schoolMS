@@ -90,6 +90,7 @@ export const getNavigation = (role, isMadrasah = false) => {
                     { name: "Academic Years", href: "/admin/settings/academic-years" },
                     { name: "Academic Terms", href: "/admin/settings/academic-terms" },
                     { name: "Preferences", href: "/admin/settings/preferences" },
+                    { name: "Streams", href: "/streams" },
                 ]
             },
         ],

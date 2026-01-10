@@ -9,6 +9,7 @@ use App\Models\TimetableSlot;
 use App\Models\TimetableConflict;
 use App\Models\Grade;
 use App\Models\AcademicTerm;
+use App\Models\Stream;
 use App\Services\TimetableComplianceService;
 use App\Services\TimetableConflictDetector;
 use App\Services\TimetableGenerationService;
@@ -65,9 +66,11 @@ class TimetableTemplateController extends Controller
     {
         $this->authorize('viewAny', TimetableTemplate::class);
 
-        $templates = TimetableTemplate::with(['grade', 'academicTerm'])
+        $templates = TimetableTemplate::with(['grade', 'stream', 'academicTerm'])
             ->when($request->search, function ($query, $search) {
                 $query->whereHas('grade', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%");
+                })->orWhereHas('stream', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%");
                 });
             })
@@ -77,6 +80,9 @@ class TimetableTemplateController extends Controller
             ->when($request->grade_id, function ($query, $gradeId) {
                 $query->where('grade_id', $gradeId);
             })
+            ->when($request->stream_id, function ($query, $streamId) {
+                $query->where('stream_id', $streamId);
+            })
             ->latest()
             ->paginate(15)
             ->withQueryString();
@@ -85,15 +91,21 @@ class TimetableTemplateController extends Controller
             ->orderBy('name')
             ->get();
 
+        $streams = Stream::where('school_id', auth()->user()->school_id)
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Timetables/Templates/Index', [
             'templates' => $templates,
             'grades' => $grades,
-            'filters' => $request->only(['search', 'status', 'grade_id']),
+            'streams' => $streams,
+            'filters' => $request->only(['search', 'status', 'grade_id', 'stream_id']),
         ]);
     }
 
     /**
-     * Show the form for creating a new timetable template.
+     * Show grade selection page for creating a new timetable template.
      */
     public function create()
     {
@@ -101,8 +113,59 @@ class TimetableTemplateController extends Controller
 
         $grades = Grade::where('school_id', auth()->user()->school_id)
             ->where('status', 'active')
+            ->with('stream')
             ->orderBy('name')
             ->get();
+
+        return Inertia::render('Timetables/Templates/SelectGrade', [
+            'grades' => $grades,
+        ]);
+    }
+
+    /**
+     * Show stream selection page for a specific grade.
+     */
+    public function selectStream(Grade $grade)
+    {
+        $this->authorize('create', TimetableTemplate::class);
+
+        // Get all available streams for this school
+        $streams = Stream::where('school_id', auth()->user()->school_id)
+            ->where('status', 'active')
+            ->withCount('grades')
+            ->orderBy('name')
+            ->get();
+
+        // Get existing templates for this grade (grouped by stream)
+        $existingTemplates = TimetableTemplate::where('grade_id', $grade->id)
+            ->with(['stream', 'academicTerm'])
+            ->get()
+            ->groupBy('stream_id');
+
+        return Inertia::render('Timetables/Templates/SelectStream', [
+            'grade' => $grade->load('stream'),
+            'streams' => $streams,
+            'existingTemplates' => $existingTemplates,
+        ]);
+    }
+
+    /**
+     * Show the form for creating a new timetable template with grade and stream.
+     */
+    public function createWithStream(Grade $grade, Request $request)
+    {
+        $this->authorize('create', TimetableTemplate::class);
+
+        $streamId = $request->query('stream_id');
+
+        // Validate stream if provided
+        $stream = null;
+        if ($streamId) {
+            $stream = Stream::where('id', $streamId)
+                ->where('school_id', auth()->user()->school_id)
+                ->where('status', 'active')
+                ->firstOrFail();
+        }
 
         $academicTerms = AcademicTerm::where('school_id', auth()->user()->school_id)
             ->where('is_active', true)
@@ -110,7 +173,8 @@ class TimetableTemplateController extends Controller
             ->get();
 
         return Inertia::render('Timetables/Templates/Create', [
-            'grades' => $grades,
+            'grade' => $grade->load('stream'),
+            'stream' => $stream,
             'academicTerms' => $academicTerms,
         ]);
     }
@@ -124,6 +188,7 @@ class TimetableTemplateController extends Controller
 
         $validated = $request->validate([
             'grade_id' => 'required|exists:grades,id',
+            'stream_id' => 'nullable|exists:streams,id',
             'academic_term_id' => 'required|exists:academic_terms,id',
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -138,8 +203,11 @@ class TimetableTemplateController extends Controller
 
         $template = TimetableTemplate::create($validated);
 
+        $streamName = $template->stream ? ' ' . $template->stream->name : '';
+        $gradeName = $template->grade->name ?? 'Unknown';
+
         return redirect()->route('timetables.templates.show', $template)
-            ->with('success', 'Timetable template created successfully.');
+            ->with('success', "Timetable template for {$gradeName}{$streamName} created successfully.");
     }
 
     /**
