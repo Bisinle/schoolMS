@@ -50,7 +50,7 @@ class GradeController extends Controller
             $query->where('level', $request->level);
         }
 
-        $grades = $query->with('stream')
+        $grades = $query->with('streams')
             ->withCount('students', 'subjects', 'exams')
             ->orderBy('level')
             ->orderBy('name')
@@ -197,7 +197,7 @@ class GradeController extends Controller
                 $query->orderBy('category')
                     ->orderBy('name');
             },
-            'stream' // Load the stream relationship if this grade has one
+            'streams' // Load the streams relationship (a grade can have multiple streams)
         ]);
 
         $availableTeachers = Teacher::whereDoesntHave('grades', function ($query) use ($grade) {
@@ -241,7 +241,7 @@ class GradeController extends Controller
             ->orderBy('name')
             ->get(['id', 'name', 'code']);
 
-        $grade->load(['subjects', 'teachers', 'defaultRoom', 'stream']);
+        $grade->load(['subjects', 'teachers', 'defaultRoom', 'streams']);
 
         // Get class teacher ID
         $classTeacher = $grade->teachers()->wherePivot('is_class_teacher', true)->first();

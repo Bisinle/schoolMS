@@ -34,6 +34,13 @@ class Subject extends Model
         return $this->hasMany(Teacher::class);
     }
 
+    public function streams()
+    {
+        return $this->belongsToMany(Stream::class, 'stream_subject')
+            ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
+            ->withTimestamps();
+    }
+
     public function grades()
     {
         return $this->belongsToMany(Grade::class, 'grade_subject')

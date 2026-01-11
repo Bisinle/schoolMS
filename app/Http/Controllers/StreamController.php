@@ -15,7 +15,8 @@ class StreamController extends Controller
         $schoolId = auth()->user()->school_id;
 
         $streams = Stream::where('school_id', $schoolId)
-            ->withCount('grades')
+            ->with('grade')
+            ->withCount('students')
             ->orderBy('name')
             ->get();
 
@@ -56,13 +57,10 @@ class StreamController extends Controller
     {
         $this->authorize('view', $stream);
 
-        $stream->load(['grades' => function ($query) {
-            $query->with('stream')->orderBy('name');
-        }]);
+        $stream->load(['grade', 'students', 'teachers', 'subjects', 'room']);
 
         return Inertia::render('Settings/Streams/Show', [
             'stream' => $stream,
-            'grades' => $stream->grades,
         ]);
     }
 

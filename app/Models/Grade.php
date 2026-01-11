@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use App\Models\LevelDayBlueprint;
 use App\Models\TimetablePeriod;
-use Illuminate\Support\Facades\DB;
 
 class Grade extends Model
 {
@@ -74,11 +73,10 @@ class Grade extends Model
 
     public function subjects()
     {
-        // Get subjects through streams
-        return $this->hasManyThrough(Subject::class, Stream::class, 'grade_id', 'id', 'id', 'subject_id')
-            ->join('stream_subject', 'subjects.id', '=', 'stream_subject.subject_id')
-            ->where('stream_subject.stream_id', '=', DB::raw('streams.id'))
-            ->distinct();
+        // Subjects are assigned to grades via grade_subject pivot table
+        return $this->belongsToMany(Subject::class, 'grade_subject')
+            ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
+            ->withTimestamps();
     }
 
     public function exams()
