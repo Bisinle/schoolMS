@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { filterSubjectsBySchoolType } from '@/Utils/subjectFilters';
 
-export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
+export default function ExamsEdit({ exam, grades, streams, subjects: initialSubjects }) {
     const { school } = usePage().props;
     const { data, setData, put, processing, errors } = useForm({
         name: exam.name || '',
@@ -12,7 +12,7 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
         term: exam.term?.toString() || '1',
         academic_year: exam.academic_year || new Date().getFullYear(),
         exam_date: exam.exam_date || '',
-        grade_id: exam.grade_id || '',
+        stream_id: exam.stream_id || '',
         subject_id: exam.subject_id || '',
     });
 
@@ -22,11 +22,11 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
     });
     const [loadingSubjects, setLoadingSubjects] = useState(false);
 
-    // Fetch subjects when grade changes
+    // Fetch subjects when stream changes
     useEffect(() => {
-        if (data.grade_id && data.grade_id != exam.grade_id) {
+        if (data.stream_id && data.stream_id != exam.stream_id) {
             setLoadingSubjects(true);
-            fetch(`/api/grades/${data.grade_id}/subjects`)
+            fetch(`/api/streams/${data.stream_id}/subjects`)
                 .then(res => res.json())
                 .then(fetchedSubjects => {
                     // Filter subjects based on school type
@@ -38,7 +38,7 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
                     setLoadingSubjects(false);
                 });
         }
-    }, [data.grade_id, school?.school_type]);
+    }, [data.stream_id, school?.school_type]);
 
     // Restrict exam_type for Term 3
     useEffect(() => {
@@ -164,28 +164,28 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
                             )}
                         </div>
 
-                        {/* Grade */}
+                        {/* Stream */}
                         <div>
-                            <label htmlFor="grade_id" className="block text-sm font-medium text-gray-700 mb-2">
-                                Grade <span className="text-red-500">*</span>
+                            <label htmlFor="stream_id" className="block text-sm font-medium text-gray-700 mb-2">
+                                Stream <span className="text-red-500">*</span>
                             </label>
                             <select
-                                id="grade_id"
-                                value={data.grade_id}
-                                onChange={(e) => setData('grade_id', e.target.value)}
+                                id="stream_id"
+                                value={data.stream_id}
+                                onChange={(e) => setData('stream_id', e.target.value)}
                                 className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
-                                    errors.grade_id ? 'border-red-500' : 'border-gray-300'
+                                    errors.stream_id ? 'border-red-500' : 'border-gray-300'
                                 }`}
                             >
-                                <option value="">Select Grade</option>
-                                {grades.map((grade) => (
-                                    <option key={grade.id} value={grade.id}>
-                                        {grade.name}
+                                <option value="">Select Stream</option>
+                                {streams.map((stream) => (
+                                    <option key={stream.id} value={stream.id}>
+                                        {stream.grade?.name} {stream.name}
                                     </option>
                                 ))}
                             </select>
-                            {errors.grade_id && (
-                                <p className="mt-1 text-sm text-red-600">{errors.grade_id}</p>
+                            {errors.stream_id && (
+                                <p className="mt-1 text-sm text-red-600">{errors.stream_id}</p>
                             )}
                         </div>
 
@@ -198,13 +198,13 @@ export default function ExamsEdit({ exam, grades, subjects: initialSubjects }) {
                                 id="subject_id"
                                 value={data.subject_id}
                                 onChange={(e) => setData('subject_id', e.target.value)}
-                                disabled={!data.grade_id || loadingSubjects}
+                                disabled={!data.stream_id || loadingSubjects}
                                 className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
                                     errors.subject_id ? 'border-red-500' : 'border-gray-300'
-                                } ${!data.grade_id || loadingSubjects ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                } ${!data.stream_id || loadingSubjects ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                             >
                                 <option value="">
-                                    {loadingSubjects ? 'Loading subjects...' : data.grade_id ? 'Select Subject' : 'Select grade first'}
+                                    {loadingSubjects ? 'Loading subjects...' : data.stream_id ? 'Select Subject' : 'Select stream first'}
                                 </option>
                                 {subjects.map((subject) => (
                                     <option key={subject.id} value={subject.id}>

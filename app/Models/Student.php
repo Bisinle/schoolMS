@@ -18,8 +18,8 @@ class Student extends Model
         'gender',
         'date_of_birth',
         'guardian_id',
-        'grade_id',
-        'class_name', // Deprecated, use grade relationship
+        'stream_id',
+        'class_name', // Deprecated, use stream relationship
         'enrollment_date',
         'status',
         'profile_picture',
@@ -38,9 +38,14 @@ class Student extends Model
         return $this->belongsTo(Guardian::class);
     }
 
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
+    }
+
     public function grade()
     {
-        return $this->belongsTo(Grade::class);
+        return $this->hasOneThrough(Grade::class, Stream::class, 'id', 'id', 'stream_id', 'grade_id');
     }
 
     public function attendances()
@@ -137,7 +142,15 @@ class Student extends Model
 
     public function getGradeNameAttribute(): string
     {
-        return $this->grade ? $this->grade->name : ($this->class_name ?? 'N/A');
+        if ($this->stream && $this->stream->grade) {
+            return $this->stream->grade->name;
+        }
+        return $this->class_name ?? 'N/A';
+    }
+
+    public function getStreamNameAttribute(): string
+    {
+        return $this->stream ? $this->stream->display_name : 'N/A';
     }
 
     public function getAttendanceStats($startDate = null, $endDate = null)

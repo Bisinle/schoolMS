@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Teacher;
 use App\Models\User;
 use App\Models\Grade;
+use App\Models\Stream;
 use App\Models\Subject;
 use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class TeacherController extends Controller
         $this->authorize('viewAny', Teacher::class);
 
         // Note: School scoping is handled automatically by the SchoolScope global scope
-        $teachers = Teacher::with(['user', 'grades', 'subject'])
+        $teachers = Teacher::with(['user', 'streams.grade', 'subject'])
             ->when($request->search, function ($query, $search) {
                 $query->whereHas('user', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -43,9 +44,12 @@ class TeacherController extends Controller
     {
         $this->authorize('create', Teacher::class);
 
-        $grades = Grade::where('status', 'active')
+        $streams = Stream::with('grade')
+            ->whereHas('grade', function ($q) {
+                $q->where('status', 'active');
+            })
             ->orderBy('name')
-            ->get(['id', 'name', 'level']);
+            ->get(['id', 'name', 'grade_id']);
 
         $subjects = Subject::where('status', 'active')
             ->orderBy('category')
@@ -53,7 +57,7 @@ class TeacherController extends Controller
             ->get(['id', 'name', 'category']);
 
         return Inertia::render('Teachers/Create', [
-            'grades' => $grades,
+            'streams' => $streams,
             'subjects' => $subjects,
         ]);
     }
@@ -82,9 +86,9 @@ class TeacherController extends Controller
             'subject_ids.*' => 'exists:subjects,id',
             'date_of_joining' => 'required|date',
             'status' => 'required|in:active,inactive',
-            'grade_ids' => 'nullable|array',
-            'grade_ids.*' => 'exists:grades,id',
-            'class_teacher_grade_id' => 'nullable|exists:grades,id',
+            'stream_ids' => 'nullable|array',
+            'stream_ids.*' => 'exists:streams,id',
+            'class_teacher_stream_id' => 'nullable|exists:streams,id',
         ]);
 
         $user = User::create([
@@ -115,11 +119,11 @@ class TeacherController extends Controller
             $teacher->subjects()->sync($validated['subject_ids']);
         }
 
-        // Attach grades
-        if (!empty($validated['grade_ids'])) {
-            foreach ($validated['grade_ids'] as $gradeId) {
-                $isClassTeacher = $gradeId == $validated['class_teacher_grade_id'];
-                $teacher->grades()->attach($gradeId, ['is_class_teacher' => $isClassTeacher]);
+        // Attach streams
+        if (!empty($validated['stream_ids'])) {
+            foreach ($validated['stream_ids'] as $streamId) {
+                $isClassTeacher = $streamId == $validated['class_teacher_stream_id'];
+                $teacher->streams()->attach($streamId, ['is_class_teacher' => $isClassTeacher]);
             }
         }
 
@@ -131,7 +135,7 @@ class TeacherController extends Controller
     {
         $this->authorize('view', $teacher);
 
-        $teacher->load(['user', 'grades.students', 'subject', 'subjects']);
+        $teacher->load(['user', 'streams.grade', 'streams.students', 'subject', 'subjects']);
 
         return Inertia::render('Teachers/Show', [
             'teacher' => $teacher,
@@ -142,30 +146,32 @@ class TeacherController extends Controller
     {
         $this->authorize('update', $teacher);
 
-        $teacher->load(['user', 'grades', 'subject', 'subjects']);
+        $teacher->load(['user', 'streams.grade', 'subject', 'subjects']);
 
-        $grades = Grade::where('status', 'active')
+        $streams = Stream::with('grade')
+            ->whereHas('grade', function ($q) {
+                $q->where('status', 'active');
+            })
             ->orderBy('name')
-            ->get(['id', 'name', 'level']);
+            ->get(['id', 'name', 'grade_id']);
 
         $subjects = Subject::where('status', 'active')
             ->orderBy('category')
             ->orderBy('name')
             ->get(['id', 'name', 'category']);
 
-        $assignedGradeIds = $teacher->grades->pluck('id')->toArray();
+        $assignedStreamIds = $teacher->streams->pluck('id')->toArray();
         $assignedSubjectIds = $teacher->subjects->pluck('id')->toArray();
-        // $classTeacherGradeId = $teacher->grades->where('pivot.is_class_teacher', true)->first()?->id;
-        $classTeacherGradeId = $teacher->grades ->filter(fn($grade) => $grade->pivot && $grade->pivot->is_class_teacher)
-    ->first()?->id;
+        $classTeacherStreamId = $teacher->streams->filter(fn($stream) => $stream->pivot && $stream->pivot->is_class_teacher)
+            ->first()?->id;
 
         return Inertia::render('Teachers/Edit', [
             'teacher' => $teacher,
-            'grades' => $grades,
+            'streams' => $streams,
             'subjects' => $subjects,
-            'assignedGradeIds' => $assignedGradeIds,
+            'assignedStreamIds' => $assignedStreamIds,
             'assignedSubjectIds' => $assignedSubjectIds,
-            'classTeacherGradeId' => $classTeacherGradeId,
+            'classTeacherStreamId' => $classTeacherStreamId,
         ]);
     }
 
@@ -192,9 +198,9 @@ class TeacherController extends Controller
             'subject_ids.*' => 'exists:subjects,id',
             'date_of_joining' => 'required|date',
             'status' => 'required|in:active,inactive',
-            'grade_ids' => 'nullable|array',
-            'grade_ids.*' => 'exists:grades,id',
-            'class_teacher_grade_id' => 'nullable|exists:grades,id',
+            'stream_ids' => 'nullable|array',
+            'stream_ids.*' => 'exists:streams,id',
+            'class_teacher_stream_id' => 'nullable|exists:streams,id',
         ]);
 
         $teacher->user->update([
@@ -216,12 +222,12 @@ class TeacherController extends Controller
             $teacher->subjects()->sync($validated['subject_ids']);
         }
 
-        // Sync grades
-        $teacher->grades()->detach();
-        if (!empty($validated['grade_ids'])) {
-            foreach ($validated['grade_ids'] as $gradeId) {
-                $isClassTeacher = $gradeId == $validated['class_teacher_grade_id'];
-                $teacher->grades()->attach($gradeId, ['is_class_teacher' => $isClassTeacher]);
+        // Sync streams
+        $teacher->streams()->detach();
+        if (!empty($validated['stream_ids'])) {
+            foreach ($validated['stream_ids'] as $streamId) {
+                $isClassTeacher = $streamId == $validated['class_teacher_stream_id'];
+                $teacher->streams()->attach($streamId, ['is_class_teacher' => $isClassTeacher]);
             }
         }
 

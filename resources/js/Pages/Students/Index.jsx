@@ -55,11 +55,13 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
                                 {student.first_name} {student.last_name}
                             </h3>
 
-                            {/* Grade & Gender */}
+                            {/* Stream & Gender */}
                             <div className="flex items-center gap-2 flex-wrap">
                                 <div className="flex items-center gap-1.5 text-xs text-gray-600">
                                     <GraduationCap className="w-3.5 h-3.5 text-gray-400" />
-                                    <span className="font-medium">{student.grade?.name || 'No Grade'}</span>
+                                    <span className="font-medium">
+                                        {student.stream ? `${student.stream.grade?.name} ${student.stream.name}` : 'No Stream'}
+                                    </span>
                                 </div>
                                 <span className="text-gray-300">•</span>
                                 <span className="text-xs text-gray-600 capitalize">{student.gender}</span>
@@ -159,13 +161,14 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
     );
 }
 
-export default function StudentsIndex({ students, grades, filters: initialFilters = {}, auth }) {
+export default function StudentsIndex({ students, grades, streams, filters: initialFilters = {}, auth }) {
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/students',
         initialFilters: {
             search: initialFilters.search || '',
             grade_id: initialFilters.grade_id || '',
+            stream_id: initialFilters.stream_id || '',
             gender: initialFilters.gender || '',
             status: initialFilters.status || '',
         },
@@ -180,6 +183,14 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
     const gradeOptions = useMemo(() =>
         grades.map(g => ({ value: g.id, label: g.name })),
         [grades]
+    );
+
+    const streamOptions = useMemo(() =>
+        streams.map(s => ({
+            value: s.id,
+            label: `${s.grade?.name} ${s.name}`
+        })),
+        [streams]
     );
 
     const genderOptions = useMemo(() => [
@@ -241,7 +252,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                 </div>
 
                 {/* Filters - Refactored with new components */}
-                <FilterBar onClear={clearFilters} gridCols="4">
+                <FilterBar onClear={clearFilters} gridCols="5">
                     <SearchInput
                         value={filters.search}
                         onChange={(e) => updateFilter('search', e.target.value)}
@@ -253,6 +264,14 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                         onChange={(e) => updateFilter('grade_id', e.target.value)}
                         options={gradeOptions}
                         allLabel="All Grades"
+                        hideLabel
+                    />
+
+                    <FilterSelect
+                        value={filters.stream_id}
+                        onChange={(e) => updateFilter('stream_id', e.target.value)}
+                        options={streamOptions}
+                        allLabel="All Streams"
                         hideLabel
                     />
 
@@ -305,7 +324,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                     <tr>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Admission No</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
-                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Grade</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Stream</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Gender</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
                                         <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
@@ -328,7 +347,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {student.grade?.name || 'No Grade'}
+                                                {student.stream ? `${student.stream.grade?.name} ${student.stream.name}` : 'No Stream'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
                                                 {student.gender}

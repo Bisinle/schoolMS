@@ -68,16 +68,19 @@ class DashboardController extends Controller
             
         ];
 
-        $studentsByGrade = Grade::withCount('students')
-            ->where('status', 'active')
+        $studentsByGrade = Grade::where('status', 'active')
             ->orderBy('name')
             ->get()
             ->map(function ($grade) {
+                $studentsCount = $grade->students()->count();
+                // Calculate total capacity from all streams in this grade
+                $totalCapacity = $grade->streams()->sum('capacity');
+
                 return [
                     'name' => $grade->name,
-                    'count' => $grade->students_count,
-                    'capacity' => $grade->capacity,
-                    'percentage' => $grade->capacity > 0 ? round(($grade->students_count / $grade->capacity) * 100, 1) : 0
+                    'count' => $studentsCount,
+                    'capacity' => $totalCapacity,
+                    'percentage' => $totalCapacity > 0 ? round(($studentsCount / $totalCapacity) * 100, 1) : 0
                 ];
             });
 
@@ -98,33 +101,39 @@ class DashboardController extends Controller
             ->count();
 
         $examsWithCompletion = Exam::where('academic_year', $currentYear)
-            ->with(['grade', 'subject'])
+            ->with(['stream.grade', 'subject'])
             ->withCount('results')
             ->get()
             ->map(function ($exam) {
-                $studentsInGrade = $exam->grade->students()->count();
+                $studentsInStream = $exam->stream->students()->where('status', 'active')->count();
                 return [
                     'id' => $exam->id,
                     'name' => $exam->name,
-                    'grade' => $exam->grade->name,
+                    'grade' => $exam->stream && $exam->stream->grade ? $exam->stream->grade->name : 'N/A',
+                    'stream' => $exam->stream ? $exam->stream->name : 'N/A',
                     'subject' => $exam->subject->name,
-                    'completion_rate' => $studentsInGrade > 0 ? round(($exam->results_count / $studentsInGrade) * 100, 1) : 0,
+                    'completion_rate' => $studentsInStream > 0 ? round(($exam->results_count / $studentsInStream) * 100, 1) : 0,
                     'students_marked' => $exam->results_count,
-                    'total_students' => $studentsInGrade
+                    'total_students' => $studentsInStream
                 ];
             });
 
         $topStudents = $this->getTopPerformingStudents(5);
-        $recentStudents = Student::with(['guardian.user', 'grade'])->latest()->take(8)->get();
+        $recentStudents = Student::with(['guardian.user', 'stream.grade'])->latest()->take(8)->get();
 
-        $teachersByGrade = Grade::withCount('teachers')
-            ->where('status', 'active')
+        $teachersByGrade = Grade::where('status', 'active')
             ->get()
             ->map(function ($grade) {
-                $classTeacher = $grade->teachers()->wherePivot('is_class_teacher', true)->first();
+                // Get class teacher from the first stream (if any)
+                $classTeacher = null;
+                $firstStream = $grade->streams()->first();
+                if ($firstStream) {
+                    $classTeacher = $firstStream->teachers()->wherePivot('is_class_teacher', true)->first();
+                }
+
                 return [
                     'grade' => $grade->name,
-                    'teachers_count' => $grade->teachers_count,
+                    'teachers_count' => $grade->getTeachersCount(),
                     'class_teacher' => $classTeacher ? $classTeacher->user->name : 'Not Assigned'
                 ];
             });
@@ -139,10 +148,10 @@ class DashboardController extends Controller
 
         $quickStats = [
             'students_without_guardian' => Student::whereNull('guardian_id')->count(),
-            'students_without_grade' => Student::whereNull('grade_id')->count(),
-            'grades_without_class_teacher' => Grade::whereDoesntHave('teachers', function ($query) {
-                $query->where('grade_teacher.is_class_teacher', true);
-            })->count(),
+            'students_without_stream' => Student::whereNull('stream_id')->count(),
+            'streams_without_class_teacher' => \App\Models\Stream::whereDoesntHave('teachers', function ($query) {
+                $query->where('stream_teacher.is_class_teacher', true);
+            })->where('status', 'active')->count(),
             'pending_exam_results' => $examsWithCompletion->where('completion_rate', '<', 100)->count(),
         ];
 
@@ -220,38 +229,39 @@ class DashboardController extends Controller
     
         $currentYear = now()->year;
         $currentTerm = $this->getCurrentTerm();
-        $assignedGrades = $teacher->grades()->with(['students' => function($query) {
+        $assignedStreams = $teacher->streams()->with(['students' => function($query) {
             $query->where('status', 'active');
-        }])->get();
-        
-        $isClassTeacher = $teacher->grades()->wherePivot('is_class_teacher', true)->exists();
-        $classTeacherGrade = $teacher->grades()->wherePivot('is_class_teacher', true)->first();
-    
-        // Total students across all assigned grades
-        $studentsInAssignedGrades = $assignedGrades->sum(function ($grade) {
-            return $grade->students->count();
+        }, 'grade'])->get();
+
+        $isClassTeacher = $teacher->streams()->wherePivot('is_class_teacher', true)->exists();
+        $classTeacherStream = $teacher->streams()->wherePivot('is_class_teacher', true)->first();
+
+        // Total students across all assigned streams
+        $studentsInAssignedStreams = $assignedStreams->sum(function ($stream) {
+            return $stream->students->count();
         });
     
         // Get all exams created by this teacher
         $myExams = Exam::where('created_by', $user->id)
             ->where('academic_year', $currentYear)
-            ->with(['grade.students', 'subject'])
+            ->with(['stream.grade', 'subject'])
             ->withCount('results')
             ->get();
-    
+
         $examsThisTerm = $myExams->where('term', $currentTerm)->count();
-    
+
         // Exams needing attention (incomplete marking)
         $examsNeedingAttention = $myExams->filter(function ($exam) {
-            $studentsInGrade = $exam->grade->students()->where('status', 'active')->count();
-            return $studentsInGrade > 0 && $exam->results_count < $studentsInGrade;
+            $studentsInStream = $exam->stream->students()->where('status', 'active')->count();
+            return $studentsInStream > 0 && $exam->results_count < $studentsInStream;
         })->map(function ($exam) {
             $stats = $exam->getCompletionStats();
             return [
                 'id' => $exam->id,
                 'name' => $exam->name,
                 'subject' => $exam->subject,
-                'grade' => $exam->grade,
+                'stream' => $exam->stream,
+                'grade' => $exam->stream && $exam->stream->grade ? $exam->stream->grade->name : 'N/A',
                 'term' => $exam->term,
                 'exam_type' => $exam->exam_type,
                 'exam_date' => $exam->exam_date->format('M d, Y'),
@@ -262,24 +272,24 @@ class DashboardController extends Controller
             ];
         })->sortByDesc('days_since_exam')->take(6)->values();
     
-        // Recent students from assigned grades
-        $recentStudents = Student::whereIn('grade_id', $assignedGrades->pluck('id'))
-            ->with(['guardian.user', 'grade'])
+        // Recent students from assigned streams
+        $recentStudents = Student::whereIn('stream_id', $assignedStreams->pluck('id'))
+            ->with(['guardian.user', 'stream.grade'])
             ->where('status', 'active')
             ->latest()
             ->take(10)
             ->get();
+
+        // Top performing students in assigned streams
+        $topStudents = $this->getTopPerformingStudents(10, $assignedStreams->pluck('id')->toArray());
     
-        // Top performing students in assigned grades
-        $topStudents = $this->getTopPerformingStudents(10, $assignedGrades->pluck('id')->toArray());
-    
-        // Grade breakdown with detailed stats
-        $myGrades = $assignedGrades->map(function ($grade) use ($teacher, $currentTerm, $currentYear) {
-            $isClassTeacher = $grade->pivot->is_class_teacher ?? false;
-            $activeStudents = $grade->students->where('status', 'active');
+        // Stream breakdown with detailed stats
+        $myStreams = $assignedStreams->map(function ($stream) use ($currentTerm, $currentYear) {
+            $isClassTeacher = $stream->pivot->is_class_teacher ?? false;
+            $activeStudents = $stream->students->where('status', 'active');
             $studentsCount = $activeStudents->count();
-            
-            // Get attendance rate for this grade (last 30 days)
+
+            // Get attendance rate for this stream (last 30 days)
             $attendanceRate = 0;
             if ($studentsCount > 0) {
                 $totalRate = 0;
@@ -292,25 +302,26 @@ class DashboardController extends Controller
                 }
                 $attendanceRate = round($totalRate / $studentsCount, 1);
             }
-    
-            // Get average performance for this grade
-            $gradeAverage = ExamResult::whereHas('exam', function($query) use ($grade, $currentYear, $currentTerm) {
-                $query->where('grade_id', $grade->id)
+
+            // Get average performance for this stream
+            $streamAverage = ExamResult::whereHas('exam', function($query) use ($stream, $currentYear, $currentTerm) {
+                $query->where('stream_id', $stream->id)
                       ->where('academic_year', $currentYear)
                       ->where('term', $currentTerm);
             })->avg('marks');
-    
+
             return [
-                'id' => $grade->id,
-                'name' => $grade->name,
-                'level' => $grade->level,
+                'id' => $stream->id,
+                'name' => $stream->display_name,
+                'grade_name' => $stream->grade ? $stream->grade->name : 'N/A',
+                'level' => $stream->grade ? $stream->grade->level : null,
                 'students_count' => $studentsCount,
-                'capacity' => $grade->capacity,
+                'capacity' => $stream->capacity,
                 'is_class_teacher' => $isClassTeacher,
-                'percentage' => $grade->capacity > 0 ? round(($studentsCount / $grade->capacity) * 100, 1) : 0,
+                'percentage' => $stream->capacity > 0 ? round(($studentsCount / $stream->capacity) * 100, 1) : 0,
                 'attendance_rate' => $attendanceRate,
-                'average_performance' => $gradeAverage ? round($gradeAverage, 1) : null,
-                'performance_grade' => $gradeAverage ? $this->calculateGrade($gradeAverage) : null,
+                'average_performance' => $streamAverage ? round($streamAverage, 1) : null,
+                'performance_grade' => $streamAverage ? $this->calculateGrade($streamAverage) : null,
             ];
         });
     
@@ -318,7 +329,7 @@ class DashboardController extends Controller
         $upcomingExams = Exam::where('created_by', $user->id)
             ->where('exam_date', '>=', now())
             ->where('exam_date', '<=', now()->addDays(14))
-            ->with(['grade', 'subject'])
+            ->with(['stream.grade', 'subject'])
             ->orderBy('exam_date')
             ->take(5)
             ->get()
@@ -327,7 +338,8 @@ class DashboardController extends Controller
                     'id' => $exam->id,
                     'name' => $exam->name,
                     'subject' => $exam->subject->name,
-                    'grade' => $exam->grade->name,
+                    'stream' => $exam->stream ? $exam->stream->display_name : 'N/A',
+                    'grade' => $exam->stream && $exam->stream->grade ? $exam->stream->grade->name : 'N/A',
                     'exam_type' => $exam->exam_type,
                     'exam_date' => $exam->exam_date->format('M d, Y'),
                     'days_until' => now()->diffInDays($exam->exam_date, false),
@@ -354,10 +366,10 @@ class DashboardController extends Controller
             ];
         });
     
-        // Attendance summary for assigned grades (last 7 days)
+        // Attendance summary for assigned streams (last 7 days)
         $recentAttendance = DB::table('attendances')
             ->join('students', 'attendances.student_id', '=', 'students.id')
-            ->whereIn('students.grade_id', $assignedGrades->pluck('id'))
+            ->whereIn('students.stream_id', $assignedStreams->pluck('id'))
             ->where('attendances.attendance_date', '>=', now()->subDays(7))
             ->select('attendances.status', DB::raw('count(*) as count'))
             ->groupBy('attendances.status')
@@ -377,9 +389,9 @@ class DashboardController extends Controller
         ];
     
         // Students needing attention (low performers or poor attendance)
-        $studentsNeedingAttention = Student::whereIn('grade_id', $assignedGrades->pluck('id'))
+        $studentsNeedingAttention = Student::whereIn('stream_id', $assignedStreams->pluck('id'))
             ->where('status', 'active')
-            ->with('grade')
+            ->with('stream.grade')
             ->get()
             ->map(function($student) use ($currentYear, $currentTerm) {
                 // Get attendance stats (last 30 days)
@@ -387,7 +399,7 @@ class DashboardController extends Controller
                     now()->subDays(30)->toDateString(),
                     now()->toDateString()
                 );
-                
+
                 // Get term average
                 $termAverage = ExamResult::where('student_id', $student->id)
                     ->whereHas('exam', function($query) use ($currentYear, $currentTerm) {
@@ -395,26 +407,27 @@ class DashboardController extends Controller
                               ->where('term', $currentTerm);
                     })
                     ->avg('marks');
-    
+
                 $needsAttention = false;
                 $reasons = [];
-    
+
                 if ($attendanceStats['attendance_rate'] < 75) {
                     $needsAttention = true;
                     $reasons[] = 'Low attendance (' . $attendanceStats['attendance_rate'] . '%)';
                 }
-    
+
                 if ($termAverage && $termAverage < 50) {
                     $needsAttention = true;
                     $reasons[] = 'Low performance (' . round($termAverage, 1) . '%)';
                 }
-    
+
                 if ($needsAttention) {
                     return [
                         'id' => $student->id,
                         'name' => $student->full_name,
                         'admission_number' => $student->admission_number,
-                        'grade' => $student->grade->name,
+                        'stream' => $student->stream ? $student->stream->display_name : 'N/A',
+                        'grade' => $student->stream && $student->stream->grade ? $student->stream->grade->name : 'N/A',
                         'attendance_rate' => $attendanceStats['attendance_rate'],
                         'term_average' => $termAverage ? round($termAverage, 1) : null,
                         'reasons' => $reasons,
@@ -462,8 +475,8 @@ class DashboardController extends Controller
 
         return [
             'stats' => [
-                'assignedGrades' => $assignedGrades->count(),
-                'totalStudents' => $studentsInAssignedGrades,
+                'assignedStreams' => $assignedStreams->count(),
+                'totalStudents' => $studentsInAssignedStreams,
                 'myExams' => $myExams->count(),
                 'examsThisTerm' => $examsThisTerm,
                 'pendingResults' => $examsNeedingAttention->count(),
@@ -472,8 +485,8 @@ class DashboardController extends Controller
                 'todayLessons' => $todayLessons->count(),
             ],
             'isClassTeacher' => $isClassTeacher,
-            'classTeacherGrade' => $classTeacherGrade ? $classTeacherGrade->name : null,
-            'myGrades' => $myGrades,
+            'classTeacherStream' => $classTeacherStream ? $classTeacherStream->display_name : null,
+            'myStreams' => $myStreams,
             'recentStudents' => $recentStudents,
             'topStudents' => $topStudents,
             'examsNeedingAttention' => $examsNeedingAttention,
@@ -659,13 +672,14 @@ class DashboardController extends Controller
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
                 'admission_number' => $student->admission_number,
-                'class_name' => $student->grade->name ?? 'N/A',
+                'class_name' => $student->stream ? $student->stream->display_name : 'N/A',
+                'stream_name' => $student->stream ? $student->stream->display_name : 'N/A',
                 'gender' => $student->gender,
                 'date_of_birth' => $student->date_of_birth->format('Y-m-d'),
                 'age' => $student->date_of_birth->age,
                 'status' => $student->status,
-                'grade_id' => $student->grade_id,
-                'grade_code' => $student->grade->code ?? null,
+                'stream_id' => $student->stream_id,
+                'grade_code' => $student->stream && $student->stream->grade ? $student->stream->grade->code : null,
                 'attendance_stats' => $attendanceStats,
                 'recent_exams' => $recentExams,
                 'overall_average' => $overallAverage,
@@ -704,22 +718,22 @@ class DashboardController extends Controller
         ];
     }
 
-    private function getTopPerformingStudents($limit = 5, $gradeIds = null)
+    private function getTopPerformingStudents($limit = 5, $streamIds = null)
     {
         $currentYear = now()->year;
-        
+
         $query = Student::select('students.*')
             ->join('exam_results', 'students.id', '=', 'exam_results.student_id')
             ->join('exams', 'exam_results.exam_id', '=', 'exams.id')
             ->where('exams.academic_year', $currentYear)
-            ->with(['grade'])
+            ->with(['stream.grade'])
             ->groupBy('students.id')
             ->selectRaw('AVG(exam_results.marks) as average_marks')
             ->orderByDesc('average_marks')
             ->take($limit);
 
-        if ($gradeIds) {
-            $query->whereIn('students.grade_id', $gradeIds);
+        if ($streamIds) {
+            $query->whereIn('students.stream_id', $streamIds);
         }
 
         return $query->get()->map(function ($student) {
@@ -727,7 +741,8 @@ class DashboardController extends Controller
                 'id' => $student->id,
                 'name' => $student->first_name . ' ' . $student->last_name,
                 'admission_number' => $student->admission_number,
-                'grade' => $student->grade->name ?? 'N/A',
+                'stream' => $student->stream ? $student->stream->display_name : 'N/A',
+                'grade' => $student->stream && $student->stream->grade ? $student->stream->grade->name : 'N/A',
                 'average' => round($student->average_marks, 2),
                 'grade_rubric' => $this->calculateGrade($student->average_marks),
             ];

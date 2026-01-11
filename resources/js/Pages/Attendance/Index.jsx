@@ -128,11 +128,14 @@ function MobileAttendanceItem({ student, index, attendance, updateStudentStatus,
 
 export default function AttendanceIndex({
     grades,
+    streams,
+    selectedStreamId,
     selectedGradeId,
     selectedDate,
     attendanceData,
     canMarkAttendance,
 }) {
+    const [localStreamId, setLocalStreamId] = useState(selectedStreamId || "");
     const [localGradeId, setLocalGradeId] = useState(selectedGradeId || "");
     const [localDate, setLocalDate] = useState(
         selectedDate || new Date().toISOString().split("T")[0]
@@ -140,7 +143,7 @@ export default function AttendanceIndex({
     const [showQuickActions, setShowQuickActions] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm({
-        grade_id: selectedGradeId || "",
+        stream_id: selectedStreamId || "",
         attendance_date: selectedDate || new Date().toISOString().split("T")[0],
         attendances: [],
     });
@@ -156,21 +159,22 @@ export default function AttendanceIndex({
                 })
             );
             setData("attendances", initialAttendances);
-            setData("grade_id", selectedGradeId);
+            setData("stream_id", selectedStreamId);
             setData("attendance_date", selectedDate);
         }
     }, [attendanceData]);
 
     // Handle filter changes - Load students
     const handleLoadStudents = () => {
-        if (!localGradeId) {
-            alert("Please select a grade first");
+        if (!localStreamId) {
+            alert("Please select a stream first");
             return;
         }
 
         router.get(
             "/attendance",
             {
+                stream_id: localStreamId,
                 grade_id: localGradeId,
                 date: localDate,
             },
@@ -207,6 +211,7 @@ export default function AttendanceIndex({
                 router.get(
                     "/attendance",
                     {
+                        stream_id: localStreamId,
                         grade_id: localGradeId,
                         date: localDate,
                     },
@@ -245,11 +250,10 @@ export default function AttendanceIndex({
                     <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                         {/* Filters */}
                         <div className="flex flex-col sm:flex-row gap-4 flex-1">
-                            {/* Grade Selection */}
+                            {/* Grade Filter (Optional) */}
                             <div className="flex-1">
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Select Grade{" "}
-                                    <span className="text-red-500">*</span>
+                                    Filter by Grade
                                 </label>
                                 <select
                                     value={localGradeId}
@@ -258,12 +262,36 @@ export default function AttendanceIndex({
                                     }
                                     className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                                 >
-                                    <option value="">-- Select Grade --</option>
+                                    <option value="">All Grades</option>
                                     {grades.map((grade) => (
                                         <option key={grade.id} value={grade.id}>
                                             {grade.name} ({grade.level})
                                         </option>
                                     ))}
+                                </select>
+                            </div>
+
+                            {/* Stream Selection */}
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    Select Stream{" "}
+                                    <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    value={localStreamId}
+                                    onChange={(e) =>
+                                        setLocalStreamId(e.target.value)
+                                    }
+                                    className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
+                                >
+                                    <option value="">-- Select Stream --</option>
+                                    {streams
+                                        .filter(stream => !localGradeId || stream.grade?.id == localGradeId)
+                                        .map((stream) => (
+                                            <option key={stream.id} value={stream.id}>
+                                                {stream.grade?.name} {stream.name}
+                                            </option>
+                                        ))}
                                 </select>
                             </div>
 

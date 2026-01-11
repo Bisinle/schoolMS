@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Student;
 use App\Models\Guardian;
 use App\Models\Grade;
+use App\Models\Stream;
 use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -26,14 +27,14 @@ class StudentController extends Controller
         if ($user->isGuardian()) {
             $query = $user->guardian->students();
         } elseif ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $query = Student::whereIn('grade_id', $teacherGradeIds);
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $query = Student::whereIn('stream_id', $teacherStreamIds);
         } else {
             $query = Student::query();
         }
 
         // Apply filters
-        $query->with(['grade', 'guardian.user'])
+        $query->with(['stream.grade', 'guardian.user'])
             ->when($request->search, function ($q, $search) {
                 $q->where(function($query) use ($search) {
                     $query->where('first_name', 'like', "%{$search}%")
@@ -41,8 +42,13 @@ class StudentController extends Controller
                         ->orWhere('admission_number', 'like', "%{$search}%");
                 });
             })
+            ->when($request->stream_id, function ($q, $streamId) {
+                $q->where('stream_id', $streamId);
+            })
             ->when($request->grade_id, function ($q, $gradeId) {
-                $q->where('grade_id', $gradeId);
+                $q->whereHas('stream', function ($query) use ($gradeId) {
+                    $query->where('grade_id', $gradeId);
+                });
             })
             ->when($request->gender, function ($q, $gender) {
                 $q->where('gender', $gender);
@@ -56,19 +62,27 @@ class StudentController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        // Get grades for filter dropdown (including Unassigned)
-        $grades = $user->isTeacher()
-            ? $user->teacher->grades
-            : Grade::where('status', 'active')
-                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
-                ->orderBy('level')
+        // Get grades and streams for filter dropdowns
+        $grades = Grade::where('status', 'active')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        $streams = $user->isTeacher()
+            ? $user->teacher->streams
+            : Stream::with('grade')
+                ->whereHas('grade', function ($q) {
+                    $q->where('status', 'active');
+                })
                 ->orderBy('name')
                 ->get();
 
         return Inertia::render('Students/Index', [
             'students' => $students,
             'grades' => $grades,
-            'filters' => $request->only(['search', 'grade_id', 'gender', 'status']),
+            'streams' => $streams,
+            'filters' => $request->only(['search', 'grade_id', 'stream_id', 'gender', 'status']),
         ]);
     }
 
@@ -88,16 +102,26 @@ class StudentController extends Controller
                 ];
             });
 
-        // Get all active grades (including Unassigned)
+        // Get all active grades with their streams
         $grades = Grade::where('status', 'active')
+            ->with('streams')
             ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
             ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        // Get all active streams
+        $streams = Stream::with('grade')
+            ->whereHas('grade', function ($q) {
+                $q->where('status', 'active');
+            })
             ->orderBy('name')
             ->get();
 
         return Inertia::render('Students/Create', [
             'guardians' => $guardians,
             'grades' => $grades,
+            'streams' => $streams,
         ]);
     }
 
@@ -110,7 +134,7 @@ class StudentController extends Controller
             'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'required|date|before:today',
-            'grade_id' => 'required|exists:grades,id',
+            'stream_id' => 'required|exists:streams,id',
             'guardian_id' => 'required|exists:guardians,id',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
@@ -125,12 +149,12 @@ class StudentController extends Controller
 
         // Auto-generate admission number
         $validated['admission_number'] = UniqueIdentifierService::generateAdmissionNumber(
-            auth()->user()->school_id
+            $request->user()->school_id
         );
 
-        // Get grade name for class_name field
-        $grade = Grade::find($validated['grade_id']);
-        $validated['class_name'] = $grade->name;
+        // Get stream and grade name for class_name field
+        $stream = Stream::with('grade')->find($validated['stream_id']);
+        $validated['class_name'] = $stream->grade->name . ' - ' . $stream->name;
 
         Student::create($validated);
 
@@ -142,7 +166,7 @@ class StudentController extends Controller
     {
         $this->authorize('view', $student);
 
-        $student->load(['grade', 'guardian.user', 'attendances' => function($query) {
+        $student->load(['stream.grade', 'guardian.user', 'attendances' => function($query) {
             $query->latest()->limit(10);
         }]);
 
@@ -156,7 +180,7 @@ class StudentController extends Controller
     {
         $this->authorize('update', $student);
 
-        $student->load(['grade', 'guardian.user']);
+        $student->load(['stream.grade', 'guardian.user']);
 
         $guardians = Guardian::with('user')
             ->get()
@@ -170,10 +194,19 @@ class StudentController extends Controller
                 ];
             });
 
-        // Get all active grades (including Unassigned)
+        // Get all active grades with their streams
         $grades = Grade::where('status', 'active')
+            ->with('streams')
             ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
             ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        // Get all active streams
+        $streams = Stream::with('grade')
+            ->whereHas('grade', function ($q) {
+                $q->where('status', 'active');
+            })
             ->orderBy('name')
             ->get();
 
@@ -181,6 +214,7 @@ class StudentController extends Controller
             'student' => $student,
             'guardians' => $guardians,
             'grades' => $grades,
+            'streams' => $streams,
         ]);
     }
 
@@ -198,7 +232,7 @@ class StudentController extends Controller
             'last_name' => 'required|string|max:255',
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'required|date|before:today',
-            'grade_id' => 'required|exists:grades,id',
+            'stream_id' => 'required|exists:streams,id',
             'guardian_id' => 'required|exists:guardians,id',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
@@ -216,9 +250,9 @@ class StudentController extends Controller
                 ->store('students/profiles', 'public');
         }
 
-        // Update grade name for class_name field
-        $grade = Grade::find($validated['grade_id']);
-        $validated['class_name'] = $grade->name;
+        // Update stream and grade name for class_name field
+        $stream = Stream::with('grade')->find($validated['stream_id']);
+        $validated['class_name'] = $stream->grade->name . ' - ' . $stream->name;
 
         $student->update($validated);
 

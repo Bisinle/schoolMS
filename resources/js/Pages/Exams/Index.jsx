@@ -76,8 +76,10 @@ function MobileExamItem({ exam, auth, onDelete }) {
                 <div className="flex items-start gap-3">
                     <GraduationCap className="w-5 h-5 text-gray-400 flex-shrink-0 mt-0.5" />
                     <div className="flex-1">
-                        <span className="text-xs text-gray-500 block">Grade</span>
-                        <span className="font-semibold text-gray-900">{exam.grade?.name}</span>
+                        <span className="text-xs text-gray-500 block">Stream</span>
+                        <span className="font-semibold text-gray-900">
+                            {exam.stream ? `${exam.stream.grade?.name} ${exam.stream.name}` : 'N/A'}
+                        </span>
                     </div>
                 </div>
                 <div className="flex items-start gap-3">
@@ -148,13 +150,14 @@ function MobileExamItem({ exam, auth, onDelete }) {
     );
 }
 
-export default function ExamsIndex({ exams, grades, filters: initialFilters = {}, auth }) {
+export default function ExamsIndex({ exams, grades, streams, filters: initialFilters = {}, auth }) {
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/exams',
         initialFilters: {
             search: initialFilters.search || '',
             grade_id: initialFilters.grade_id || '',
+            stream_id: initialFilters.stream_id || '',
             term: initialFilters.term || '',
             academic_year: initialFilters.academic_year || '',
         },
@@ -206,7 +209,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                 </div>
 
                 {/* Filters - Refactored with FilterBar */}
-                <FilterBar onClear={clearFilters} gridCols="4">
+                <FilterBar onClear={clearFilters} gridCols="5">
                     <SearchInput
                         value={filters.search}
                         onChange={(e) => updateFilter('search', e.target.value)}
@@ -218,6 +221,16 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                         onChange={(e) => updateFilter('grade_id', e.target.value)}
                         options={grades.map(grade => ({ value: grade.id, label: grade.name }))}
                         allLabel="All Grades"
+                        hideLabel
+                    />
+                    <FilterSelect
+                        value={filters.stream_id}
+                        onChange={(e) => updateFilter('stream_id', e.target.value)}
+                        options={streams.map(stream => ({
+                            value: stream.id,
+                            label: `${stream.grade?.name} ${stream.name}`
+                        }))}
+                        allLabel="All Streams"
                         hideLabel
                     />
                     <FilterSelect
@@ -277,7 +290,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                         Exam Details
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Grade
+                                        Stream
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                                         Subject
@@ -309,7 +322,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                {exam.grade?.name}
+                                                {exam.stream ? `${exam.stream.grade?.name} ${exam.stream.name}` : 'N/A'}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                                                 {exam.subject?.name}

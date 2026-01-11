@@ -27,14 +27,14 @@ class QuranTrackingController extends Controller
 
         // Build student query based on user role
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $studentsQuery = Student::whereIn('grade_id', $teacherGradeIds);
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $studentsQuery = Student::whereIn('stream_id', $teacherStreamIds);
         } else {
             $studentsQuery = Student::query();
         }
 
         // Apply filters to students
-        $studentsQuery->with(['grade', 'quranTracking' => function ($query) {
+        $studentsQuery->with(['stream.grade', 'quranTracking' => function ($query) {
                 $query->latest('date')->limit(1);
             }])
             ->where('status', 'active')
@@ -45,8 +45,8 @@ class QuranTrackingController extends Controller
                         ->orWhere('admission_number', 'like', '%' . $request->search . '%');
                 });
             })
-            ->when($request->filled('grade_id'), function ($q) use ($request) {
-                $q->where('grade_id', $request->grade_id);
+            ->when($request->filled('stream_id'), function ($q) use ($request) {
+                $q->where('stream_id', $request->stream_id);
             })
             ->when($request->filled('reading_type'), function ($q) use ($request) {
                 $q->whereHas('quranTracking', function ($query) use ($request) {
@@ -106,7 +106,7 @@ class QuranTrackingController extends Controller
         return Inertia::render('Quran/Tracking/Index', [
             'students' => $students,
             'grades' => $grades,
-            'filters' => $request->only(['search', 'grade_id', 'reading_type']),
+            'filters' => $request->only(['search', 'stream_id', 'reading_type']),
         ]);
     }
 
@@ -119,14 +119,14 @@ class QuranTrackingController extends Controller
 
         // Build student query based on user role
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $studentsQuery = Student::whereIn('grade_id', $teacherGradeIds);
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $studentsQuery = Student::whereIn('stream_id', $teacherStreamIds);
         } else {
             $studentsQuery = Student::query();
         }
 
         $students = $studentsQuery->where('status', 'active')
-            ->with('grade')
+            ->with('stream.grade')
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get()
@@ -291,14 +291,14 @@ class QuranTrackingController extends Controller
 
         // Build student query based on user role
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $studentsQuery = Student::whereIn('grade_id', $teacherGradeIds);
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $studentsQuery = Student::whereIn('stream_id', $teacherStreamIds);
         } else {
             $studentsQuery = Student::query();
         }
 
         $students = $studentsQuery->where('status', 'active')
-            ->with('grade')
+            ->with('stream.grade')
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get()

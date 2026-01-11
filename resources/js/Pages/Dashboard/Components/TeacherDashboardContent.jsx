@@ -20,9 +20,9 @@ export default function TeacherDashboardContent({
     currentYear,
     currentTerm,
     isClassTeacher,
-    classTeacherGrade,
+    classTeacherStream,
     documentStats,
-    myGrades,
+    myStreams,
     examsNeedingAttention,
     topStudents,
     recentStudents,
@@ -38,9 +38,9 @@ export default function TeacherDashboardContent({
                 </h1>
                 <p className="text-purple-100 text-base sm:text-lg font-medium">
                     Academic Year {currentYear} • Term {currentTerm}
-                    {isClassTeacher && classTeacherGrade && (
+                    {isClassTeacher && classTeacherStream && (
                         <span className="block sm:inline sm:ml-4 mt-2 sm:mt-0 bg-white bg-opacity-20 px-3 py-1 rounded-full text-sm font-semibold">
-                            ⭐ Class Teacher - {classTeacherGrade}
+                            ⭐ Class Teacher - {classTeacherStream}
                         </span>
                     )}
                 </p>
@@ -214,39 +214,39 @@ export default function TeacherDashboardContent({
                     <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
                         <h3 className="text-lg font-semibold text-navy flex items-center">
                             <School className="w-5 h-5 mr-2 text-orange" />
-                            My Assigned Grades
+                            My Assigned Streams
                         </h3>
                     </div>
                     <div className="p-6 space-y-4 max-h-96 overflow-y-auto">
-                        {myGrades && myGrades.length > 0 ? (
-                            myGrades.map((grade) => (
-                                <div key={grade.id} className="p-4 bg-gray-50 rounded-lg">
+                        {myStreams && myStreams.length > 0 ? (
+                            myStreams.map((stream) => (
+                                <div key={stream.id} className="p-4 bg-gray-50 rounded-lg">
                                     <div className="flex items-center justify-between mb-3">
                                         <div>
                                             <h4 className="font-semibold text-navy">
-                                                {grade.name}
+                                                {stream.name}
                                             </h4>
                                             <p className="text-xs text-gray-600 mt-1">
-                                                {grade.level}
+                                                {stream.level}
                                             </p>
                                         </div>
                                         <div className="text-right">
-                                            {grade.is_class_teacher && (
+                                            {stream.is_class_teacher && (
                                                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-orange bg-opacity-10 text-orange mb-1">
                                                     Class Teacher
                                                 </span>
                                             )}
                                             <p className="text-sm font-bold text-navy">
-                                                {grade.students_count}/{grade.capacity}
+                                                {stream.students_count}/{stream.capacity}
                                             </p>
                                         </div>
                                     </div>
                                     <ProgressBar
-                                        percentage={grade.percentage}
+                                        percentage={stream.percentage}
                                         color={
-                                            grade.percentage > 90
+                                            stream.percentage > 90
                                                 ? "red-500"
-                                                : grade.percentage > 70
+                                                : stream.percentage > 70
                                                 ? "yellow-500"
                                                 : "green-500"
                                         }
@@ -255,7 +255,7 @@ export default function TeacherDashboardContent({
                             ))
                         ) : (
                             <p className="text-gray-500 text-center py-8">
-                                No grades assigned yet
+                                No streams assigned yet
                             </p>
                         )}
                     </div>

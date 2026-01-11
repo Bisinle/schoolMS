@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Exam;
 use App\Models\Grade;
+use App\Models\Stream;
 use App\Models\Subject;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -18,20 +19,25 @@ class ExamController extends Controller
         $this->authorize('viewAny', Exam::class);
 
         $user = $request->user();
-        $query = Exam::with(['grade', 'subject', 'creator']);
+        $query = Exam::with(['stream.grade', 'subject', 'creator']);
 
-        // Filter by teacher's assigned grades
+        // Filter by teacher's assigned streams
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $query->whereIn('grade_id', $teacherGradeIds);
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $query->whereIn('stream_id', $teacherStreamIds);
         }
 
         $exams = $query
             ->when($request->search, function ($q, $search) {
                 $q->where('name', 'like', "%{$search}%");
             })
+            ->when($request->stream_id, function ($q, $streamId) {
+                $q->where('stream_id', $streamId);
+            })
             ->when($request->grade_id, function ($q, $gradeId) {
-                $q->where('grade_id', $gradeId);
+                $q->whereHas('stream', function ($query) use ($gradeId) {
+                    $query->where('grade_id', $gradeId);
+                });
             })
             ->when($request->term, function ($q, $term) {
                 $q->where('term', $term);
@@ -45,19 +51,27 @@ class ExamController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        // Get available grades for filter (including Unassigned)
-        $grades = $user->isTeacher()
-            ? $user->teacher->grades
-            : Grade::where('status', 'active')
-                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
-                ->orderBy('level')
+        // Get available grades and streams for filters
+        $grades = Grade::where('status', 'active')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        $streams = $user->isTeacher()
+            ? $user->teacher->streams
+            : Stream::with('grade')
+                ->whereHas('grade', function ($q) {
+                    $q->where('status', 'active');
+                })
                 ->orderBy('name')
                 ->get();
 
         return Inertia::render('Exams/Index', [
             'exams' => $exams,
             'grades' => $grades,
-            'filters' => $request->only(['search', 'grade_id', 'term', 'academic_year']),
+            'streams' => $streams,
+            'filters' => $request->only(['search', 'grade_id', 'stream_id', 'term', 'academic_year']),
         ]);
     }
 
@@ -67,17 +81,27 @@ class ExamController extends Controller
 
         $user = $request->user();
 
-        // Get available grades (including Unassigned)
-        $grades = $user->isTeacher()
-            ? $user->teacher->grades
-            : Grade::where('status', 'active')
-                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
-                ->orderBy('level')
+        // Get available grades with streams
+        $grades = Grade::where('status', 'active')
+            ->with('streams')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        // Get available streams
+        $streams = $user->isTeacher()
+            ? $user->teacher->streams
+            : Stream::with('grade')
+                ->whereHas('grade', function ($q) {
+                    $q->where('status', 'active');
+                })
                 ->orderBy('name')
                 ->get();
 
         return Inertia::render('Exams/Create', [
             'grades' => $grades,
+            'streams' => $streams,
             'currentYear' => now()->year,
         ]);
     }
@@ -92,7 +116,7 @@ class ExamController extends Controller
             'term' => 'required|in:1,2,3',
             'academic_year' => 'required|integer|min:2020|max:2100',
             'exam_date' => 'required|date',
-            'grade_id' => 'required|exists:grades,id',
+            'stream_id' => 'required|exists:streams,id',
             'subject_id' => 'required|exists:subjects,id',
         ]);
 
@@ -104,7 +128,7 @@ class ExamController extends Controller
         }
 
         // Check for duplicate exam
-        $exists = Exam::where('grade_id', $validated['grade_id'])
+        $exists = Exam::where('stream_id', $validated['stream_id'])
             ->where('subject_id', $validated['subject_id'])
             ->where('term', $validated['term'])
             ->where('exam_type', $validated['exam_type'])
@@ -113,7 +137,7 @@ class ExamController extends Controller
 
         if ($exists) {
             return back()->withErrors([
-                'exam_type' => 'This exam already exists for this grade, subject, term, and year.'
+                'exam_type' => 'This exam already exists for this stream, subject, term, and year.'
             ]);
         }
 
@@ -130,7 +154,7 @@ class ExamController extends Controller
         $this->authorize('view', $exam);
 
         $exam->load([
-            'grade',
+            'stream.grade',
             'subject',
             'creator',
             'results.student'
@@ -139,7 +163,7 @@ class ExamController extends Controller
         return Inertia::render('Exams/Show', [
             'exam' => $exam,
             'resultsCount' => $exam->results()->count(),
-            'totalStudents' => $exam->grade->students()->count(),
+            'totalStudents' => $exam->stream->students()->count(),
         ]);
     }
 
@@ -149,25 +173,35 @@ class ExamController extends Controller
 
         $user = request()->user();
 
-        // Get available grades (including Unassigned)
-        $grades = $user->isTeacher()
-            ? $user->teacher->grades
-            : Grade::where('status', 'active')
-                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
-                ->orderBy('level')
+        // Get available grades with streams
+        $grades = Grade::where('status', 'active')
+            ->with('streams')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        // Get available streams
+        $streams = $user->isTeacher()
+            ? $user->teacher->streams
+            : Stream::with('grade')
+                ->whereHas('grade', function ($q) {
+                    $q->where('status', 'active');
+                })
                 ->orderBy('name')
                 ->get();
 
-        // Get subjects for selected grade
+        // Get subjects for selected stream
         $subjects = Subject::where('status', 'active')
-            ->whereHas('grades', function ($query) use ($exam) {
-                $query->where('grades.id', $exam->grade_id);
+            ->whereHas('streams', function ($query) use ($exam) {
+                $query->where('streams.id', $exam->stream_id);
             })
             ->get();
 
         return Inertia::render('Exams/Edit', [
             'exam' => $exam,
             'grades' => $grades,
+            'streams' => $streams,
             'subjects' => $subjects,
         ]);
     }
@@ -182,7 +216,7 @@ class ExamController extends Controller
             'term' => 'required|in:1,2,3',
             'academic_year' => 'required|integer|min:2020|max:2100',
             'exam_date' => 'required|date',
-            'grade_id' => 'required|exists:grades,id',
+            'stream_id' => 'required|exists:streams,id',
             'subject_id' => 'required|exists:subjects,id',
         ]);
 
@@ -194,7 +228,7 @@ class ExamController extends Controller
         }
 
         // Check for duplicate exam (excluding current exam)
-        $exists = Exam::where('grade_id', $validated['grade_id'])
+        $exists = Exam::where('stream_id', $validated['stream_id'])
             ->where('subject_id', $validated['subject_id'])
             ->where('term', $validated['term'])
             ->where('exam_type', $validated['exam_type'])
@@ -204,7 +238,7 @@ class ExamController extends Controller
 
         if ($exists) {
             return back()->withErrors([
-                'exam_type' => 'This exam already exists for this grade, subject, term, and year.'
+                'exam_type' => 'This exam already exists for this stream, subject, term, and year.'
             ]);
         }
 

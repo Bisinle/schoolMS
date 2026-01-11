@@ -18,7 +18,7 @@ class Exam extends Model
         'term',
         'academic_year',
         'exam_date',
-        'grade_id',
+        'stream_id',
         'subject_id',
         'created_by',
     ];
@@ -32,9 +32,14 @@ class Exam extends Model
     }
 
     // Relationships
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
+    }
+
     public function grade()
     {
-        return $this->belongsTo(Grade::class);
+        return $this->hasOneThrough(Grade::class, Stream::class, 'id', 'id', 'stream_id', 'grade_id');
     }
 
     public function subject()
@@ -59,41 +64,48 @@ class Exam extends Model
             ->where('academic_year', $academicYear);
     }
 
+    public function scopeForStream($query, $streamId)
+    {
+        return $query->where('stream_id', $streamId);
+    }
+
     public function scopeForGrade($query, $gradeId)
     {
-        return $query->where('grade_id', $gradeId);
+        return $query->whereHas('stream', function ($q) use ($gradeId) {
+            $q->where('grade_id', $gradeId);
+        });
     }
 
     // NEW: Scope for marking status
     public function scopeMarked($query)
     {
-        return $query->whereHas('grade', function ($q) {
+        return $query->whereHas('stream', function ($q) {
             $q->whereHas('students');
         })->whereHas('results', function ($q) {
             $q->selectRaw('exam_id, COUNT(*) as results_count')
               ->groupBy('exam_id')
-              ->havingRaw('results_count >= (SELECT COUNT(*) FROM students WHERE students.grade_id = exams.grade_id AND students.status = "active")');
+              ->havingRaw('results_count >= (SELECT COUNT(*) FROM students WHERE students.stream_id = exams.stream_id AND students.status = "active")');
         });
     }
 
     public function scopeUnmarked($query)
     {
         return $query->whereDoesntHave('results')
-            ->orWhereHas('grade', function ($q) {
+            ->orWhereHas('stream', function ($q) {
                 $q->whereHas('students', function ($sq) {
                     $sq->where('status', 'active');
                 });
             })->whereHas('results', function ($q) {
                 $q->selectRaw('exam_id, COUNT(*) as results_count')
                   ->groupBy('exam_id')
-                  ->havingRaw('results_count < (SELECT COUNT(*) FROM students WHERE students.grade_id = exams.grade_id AND students.status = "active")');
+                  ->havingRaw('results_count < (SELECT COUNT(*) FROM students WHERE students.stream_id = exams.stream_id AND students.status = "active")');
             });
     }
 
     public function scopePartiallyMarked($query)
     {
         return $query->whereHas('results')
-            ->whereHas('grade', function ($q) {
+            ->whereHas('stream', function ($q) {
                 $q->whereHas('students', function ($sq) {
                     $sq->where('status', 'active');
                 });
@@ -101,7 +113,7 @@ class Exam extends Model
                 $q->selectRaw('exam_id, COUNT(*) as results_count')
                   ->groupBy('exam_id')
                   ->havingRaw('results_count > 0')
-                  ->havingRaw('results_count < (SELECT COUNT(*) FROM students WHERE students.grade_id = exams.grade_id AND students.status = "active")');
+                  ->havingRaw('results_count < (SELECT COUNT(*) FROM students WHERE students.stream_id = exams.stream_id AND students.status = "active")');
             });
     }
 
@@ -119,7 +131,7 @@ class Exam extends Model
     // NEW: Get completion statistics
     public function getCompletionStats()
     {
-        $totalStudents = $this->grade->students()->where('status', 'active')->count();
+        $totalStudents = $this->stream->students()->where('status', 'active')->count();
         $markedStudents = $this->results()->count();
         $completionRate = $totalStudents > 0 ? round(($markedStudents / $totalStudents) * 100, 1) : 0;
 

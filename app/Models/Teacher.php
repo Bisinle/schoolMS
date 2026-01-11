@@ -40,11 +40,18 @@ class Teacher extends Model
         return $this->belongsTo(Subject::class);
     }
 
-    public function grades()
+    public function streams()
     {
-        return $this->belongsToMany(Grade::class, 'grade_teacher')
+        return $this->belongsToMany(Stream::class, 'stream_teacher')
                     ->withPivot('is_class_teacher')
                     ->withTimestamps();
+    }
+
+    public function grades()
+    {
+        return $this->hasManyThrough(Grade::class, Stream::class, 'id', 'id', 'id', 'grade_id')
+                    ->join('stream_teacher', 'streams.id', '=', 'stream_teacher.stream_id')
+                    ->where('stream_teacher.teacher_id', $this->id);
     }
 
     /**
@@ -56,14 +63,14 @@ class Teacher extends Model
                     ->withTimestamps();
     }
 
-    public function assignedGrades()
+    public function assignedStreams()
     {
-        return $this->grades()->wherePivot('is_class_teacher', false);
+        return $this->streams()->wherePivot('is_class_teacher', false);
     }
 
-    public function classTeacherGrades()
+    public function classTeacherStreams()
     {
-        return $this->grades()->wherePivot('is_class_teacher', true);
+        return $this->streams()->wherePivot('is_class_teacher', true);
     }
 
     public function timetableSlots()

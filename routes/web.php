@@ -47,6 +47,7 @@ use App\Http\Controllers\TimetableSlotController;
 use App\Http\Controllers\TeacherAvailabilityController;
 use App\Http\Controllers\LevelDayBlueprintController;
 use App\Models\Grade;
+use App\Models\Stream;
 
 /*
 |--------------------------------------------------------------------------
@@ -412,6 +413,11 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     //^ API endpoint for subjects by grade
     Route::get('/api/grades/{grade}/subjects', function (Grade $grade) {
         return $grade->subjects()->where('status', 'active')->get();
+    });
+
+    //^ API endpoint for subjects by stream
+    Route::get('/api/streams/{stream}/subjects', function (Stream $stream) {
+        return $stream->grade->subjects()->where('status', 'active')->get();
     });
 
     //^ Quran Module Routes (Madrasah schools only)

@@ -13,7 +13,7 @@ class Attendance extends Model
     protected $fillable = [
         'school_id',
         'student_id',
-        'grade_id',
+        'stream_id',
         'marked_by',
         'attendance_date',
         'status',
@@ -30,9 +30,14 @@ class Attendance extends Model
         return $this->belongsTo(Student::class);
     }
 
+    public function stream()
+    {
+        return $this->belongsTo(Stream::class);
+    }
+
     public function grade()
     {
-        return $this->belongsTo(Grade::class);
+        return $this->hasOneThrough(Grade::class, Stream::class, 'id', 'id', 'stream_id', 'grade_id');
     }
 
     public function markedBy()
@@ -46,9 +51,16 @@ class Attendance extends Model
         return $query->where('attendance_date', $date);
     }
 
+    public function scopeForStream($query, $streamId)
+    {
+        return $query->where('stream_id', $streamId);
+    }
+
     public function scopeForGrade($query, $gradeId)
     {
-        return $query->where('grade_id', $gradeId);
+        return $query->whereHas('stream', function ($q) use ($gradeId) {
+            $q->where('grade_id', $gradeId);
+        });
     }
 
     public function scopeForStudent($query, $studentId)

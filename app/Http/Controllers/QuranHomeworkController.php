@@ -57,8 +57,8 @@ class QuranHomeworkController extends Controller
 
         // Get students for filter dropdown
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $students = Student::whereIn('grade_id', $teacherGradeIds)
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $students = Student::whereIn('stream_id', $teacherStreamIds)
                 ->where('status', 'active')
                 ->orderBy('first_name')
                 ->get(['id', 'first_name', 'last_name', 'admission_number']);
@@ -85,10 +85,10 @@ class QuranHomeworkController extends Controller
 
         // Get students
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $students = Student::whereIn('grade_id', $teacherGradeIds)
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $students = Student::whereIn('stream_id', $teacherStreamIds)
                 ->where('status', 'active')
-                ->with('grade')
+                ->with('stream.grade')
                 ->orderBy('first_name')
                 ->get();
         } else {
@@ -178,10 +178,10 @@ class QuranHomeworkController extends Controller
 
         // Get students
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $students = Student::whereIn('grade_id', $teacherGradeIds)
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $students = Student::whereIn('stream_id', $teacherStreamIds)
                 ->where('status', 'active')
-                ->with('grade')
+                ->with('stream.grade')
                 ->orderBy('first_name')
                 ->get();
         } else {

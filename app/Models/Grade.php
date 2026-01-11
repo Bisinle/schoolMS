@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use App\Models\LevelDayBlueprint;
 use App\Models\TimetablePeriod;
+use Illuminate\Support\Facades\DB;
 
 class Grade extends Model
 {
@@ -17,7 +18,6 @@ class Grade extends Model
 
     protected $fillable = [
         'school_id',
-        'stream_id',
         'name',
         'code',
         'level',
@@ -40,28 +40,55 @@ class Grade extends Model
     ];
 
     // Relationships
-    public function students()
+    public function streams()
     {
-        return $this->hasMany(Student::class);
+        return $this->hasMany(Stream::class);
     }
 
+    public function students()
+    {
+        return $this->hasManyThrough(Student::class, Stream::class);
+    }
+
+    /**
+     * Get all teachers assigned to any stream in this grade
+     * Note: This returns a collection, not a relationship query builder
+     * Use getTeachersCount() for counting
+     */
     public function teachers()
     {
-        return $this->belongsToMany(Teacher::class, 'grade_teacher')
-            ->withPivot('is_class_teacher')
-            ->withTimestamps();
+        return Teacher::whereHas('streams', function ($query) {
+            $query->where('grade_id', $this->id);
+        })->where('school_id', $this->school_id)->get();
+    }
+
+    /**
+     * Get count of teachers assigned to this grade
+     */
+    public function getTeachersCount()
+    {
+        return Teacher::whereHas('streams', function ($query) {
+            $query->where('grade_id', $this->id);
+        })->where('school_id', $this->school_id)->count();
     }
 
     public function subjects()
     {
-        return $this->belongsToMany(Subject::class, 'grade_subject')
-            ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
-            ->withTimestamps();
+        // Get subjects through streams
+        return $this->hasManyThrough(Subject::class, Stream::class, 'grade_id', 'id', 'id', 'subject_id')
+            ->join('stream_subject', 'subjects.id', '=', 'stream_subject.subject_id')
+            ->where('stream_subject.stream_id', '=', DB::raw('streams.id'))
+            ->distinct();
     }
 
     public function exams()
     {
-        return $this->hasMany(Exam::class);
+        return $this->hasManyThrough(Exam::class, Stream::class, 'grade_id', 'stream_id');
+    }
+
+    public function attendances()
+    {
+        return $this->hasManyThrough(Attendance::class, Stream::class, 'grade_id', 'stream_id');
     }
 
     public function tuitionFees()
@@ -77,11 +104,6 @@ class Grade extends Model
     public function defaultRoom()
     {
         return $this->belongsTo(Room::class, 'default_room_id');
-    }
-
-    public function stream()
-    {
-        return $this->belongsTo(Stream::class);
     }
 
     /**
@@ -100,7 +122,15 @@ class Grade extends Model
     // Helper methods
     public function getClassTeacher()
     {
-        return $this->teachers()->wherePivot('is_class_teacher', true)->first();
+        // Get class teachers from all streams in this grade
+        $streams = $this->streams;
+        foreach ($streams as $stream) {
+            $classTeacher = $stream->getClassTeacher();
+            if ($classTeacher) {
+                return $classTeacher;
+            }
+        }
+        return null;
     }
 
     /**
@@ -504,19 +534,6 @@ class Grade extends Model
     }
 
     /**
-     * Get display name with stream (e.g., "Grade 1 North")
-     *
-     * @return string
-     */
-    public function getDisplayNameAttribute()
-    {
-        if ($this->stream_id && $this->stream) {
-            return "{$this->name} {$this->stream->name}";
-        }
-        return $this->name;
-    }
-
-    /**
      * Get all allowed teachers for this grade (for dropdowns)
      * Only returns teachers with active user accounts
      *
@@ -530,24 +547,14 @@ class Grade extends Model
     }
 
     /**
-     * Check if this grade has a stream assigned
-     *
-     * @return bool
-     */
-    public function hasStream(): bool
-    {
-        return !is_null($this->stream_id);
-    }
-
-    /**
-     * Get all streams available for this grade's school
+     * Get all streams for this grade
      * Used when creating timetable templates
      *
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getAvailableStreams()
     {
-        return Stream::where('school_id', $this->school_id)
+        return $this->streams()
             ->where('status', 'active')
             ->orderBy('name')
             ->get();

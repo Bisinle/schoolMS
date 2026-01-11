@@ -17,10 +17,10 @@ class ExamResultController extends Controller
     {
         $this->authorize('view', $exam);
 
-        $exam->load(['grade', 'subject']);
+        $exam->load(['stream.grade', 'subject']);
 
-        // Get all students in the grade
-        $students = Student::where('grade_id', $exam->grade_id)
+        // Get all students in the stream
+        $students = Student::where('stream_id', $exam->stream_id)
             ->where('status', 'active')
             ->orderBy('first_name')
             ->orderBy('last_name')

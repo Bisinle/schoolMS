@@ -8,13 +8,13 @@ import FormActions from '@/Components/Forms/FormActions';
 import ReadOnlyField from '@/Components/Forms/ReadOnlyField';
 import ImageUpload from '@/Components/Forms/ImageUpload';
 
-export default function StudentsEdit({ student, guardians, grades }) {
+export default function StudentsEdit({ student, guardians, grades, streams }) {
     const { data, setData, post, processing, errors } = useForm({
         first_name: student.first_name || '',
         last_name: student.last_name || '',
         gender: student.gender || 'male',
         date_of_birth: student.date_of_birth || '',
-        grade_id: student.grade_id || '',
+        stream_id: student.stream_id || '',
         guardian_id: student.guardian_id || '',
         enrollment_date: student.enrollment_date || '',
         status: student.status || 'active',
@@ -124,19 +124,19 @@ export default function StudentsEdit({ student, guardians, grades }) {
                         {/* Academic Information Section */}
                         <FormSection title="Academic Information">
                             <SelectInput
-                                label="Grade"
-                                name="grade_id"
-                                value={data.grade_id}
-                                onChange={(e) => setData('grade_id', e.target.value)}
-                                error={errors.grade_id}
+                                label="Stream"
+                                name="stream_id"
+                                value={data.stream_id}
+                                onChange={(e) => setData('stream_id', e.target.value)}
+                                error={errors.stream_id}
                                 required
-                                placeholder="Select Grade"
-                                optionRenderer={(grade) => (
-                                    <option key={grade.id} value={grade.id}>
-                                        {grade.name} ({grade.level})
+                                placeholder="Select Stream"
+                                optionRenderer={(stream) => (
+                                    <option key={stream.id} value={stream.id}>
+                                        {stream.grade?.name} {stream.name}
                                     </option>
                                 )}
-                                options={grades}
+                                options={streams}
                             />
 
                             <TextInput

@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Student;
-use App\Models\Grade;
+use App\Models\Stream;
 use App\Models\Exam;
 use App\Models\ReportComment;
 use Illuminate\Http\Request;
@@ -44,11 +44,11 @@ class ReportController extends Controller
         }
 
         // For admin and teachers, show all or assigned students
-        $query = Student::with('grade', 'guardian.user');
+        $query = Student::with('stream.grade', 'guardian.user');
 
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            $query->whereIn('grade_id', $teacherGradeIds);
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            $query->whereIn('stream_id', $teacherStreamIds);
         }
 
         $students = $query
@@ -60,8 +60,8 @@ class ReportController extends Controller
                         ->orWhere('admission_number', 'like', "%{$search}%");
                 });
             })
-            ->when($request->grade_id, function ($q, $gradeId) {
-                $q->where('grade_id', $gradeId);
+            ->when($request->stream_id, function ($q, $streamId) {
+                $q->where('stream_id', $streamId);
             })
             ->when($request->gender, function ($q, $gender) {
                 $q->where('gender', $gender);
@@ -71,19 +71,18 @@ class ReportController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        // Get grades for filter dropdown (including Unassigned)
-        $grades = $user->isTeacher()
-            ? $user->teacher->grades
-            : Grade::where('status', 'active')
-                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
-                ->orderBy('level')
+        // Get streams for filter dropdown
+        $streams = $user->isTeacher()
+            ? $user->teacher->streams()->with('grade')->get()
+            : Stream::with('grade')
+                ->where('school_id', $user->school_id)
                 ->orderBy('name')
                 ->get();
 
         return Inertia::render('Reports/Index', [
             'students' => $students,
-            'grades' => $grades,
-            'filters' => $request->only(['search', 'grade_id', 'gender']),
+            'streams' => $streams,
+            'filters' => $request->only(['search', 'stream_id', 'gender']),
             'isGuardian' => false,
             'currentYear' => now()->year,
         ]);
@@ -116,9 +115,9 @@ class ReportController extends Controller
 
         // Check if user can edit comments
         $isClassTeacher = false;
-        if ($user->isTeacher()) {
-            $isClassTeacher = $user->teacher->grades()
-                ->where('grades.id', $student->grade_id)
+        if ($user->isTeacher() && $student->stream_id) {
+            $isClassTeacher = $user->teacher->streams()
+                ->where('streams.id', $student->stream_id)
                 ->wherePivot('is_class_teacher', true)
                 ->exists();
         }
@@ -152,7 +151,7 @@ class ReportController extends Controller
                 // Term 3: Show Term 1 Average, Term 2 Average, Term 3 End Result
                 
                 // Get Term 1 exams and calculate average
-                $term1Exams = Exam::where('grade_id', $student->grade_id)
+                $term1Exams = Exam::where('stream_id', $student->stream_id)
                     ->where('subject_id', $subject->id)
                     ->where('term', '1')
                     ->where('academic_year', $academicYear)
@@ -170,7 +169,7 @@ class ReportController extends Controller
                 $term1Average = count($term1Marks) > 0 ? round(array_sum($term1Marks) / count($term1Marks), 2) : null;
 
                 // Get Term 2 exams and calculate average
-                $term2Exams = Exam::where('grade_id', $student->grade_id)
+                $term2Exams = Exam::where('stream_id', $student->stream_id)
                     ->where('subject_id', $subject->id)
                     ->where('term', '2')
                     ->where('academic_year', $academicYear)
@@ -188,7 +187,7 @@ class ReportController extends Controller
                 $term2Average = count($term2Marks) > 0 ? round(array_sum($term2Marks) / count($term2Marks), 2) : null;
 
                 // Get Term 3 End-Term exam result
-                $term3Exam = Exam::where('grade_id', $student->grade_id)
+                $term3Exam = Exam::where('stream_id', $student->stream_id)
                     ->where('subject_id', $subject->id)
                     ->where('term', '3')
                     ->where('academic_year', $academicYear)
@@ -222,7 +221,7 @@ class ReportController extends Controller
             } else {
                 // Term 1 & 2: Show Opening, Midterm, End-Term
                 
-                $openingExam = Exam::where('grade_id', $student->grade_id)
+                $openingExam = Exam::where('stream_id', $student->stream_id)
                     ->where('subject_id', $subject->id)
                     ->where('term', $term)
                     ->where('academic_year', $academicYear)
@@ -232,7 +231,7 @@ class ReportController extends Controller
                     }])
                     ->first();
 
-                $midtermExam = Exam::where('grade_id', $student->grade_id)
+                $midtermExam = Exam::where('stream_id', $student->stream_id)
                     ->where('subject_id', $subject->id)
                     ->where('term', $term)
                     ->where('academic_year', $academicYear)
@@ -242,7 +241,7 @@ class ReportController extends Controller
                     }])
                     ->first();
 
-                $endTermExam = Exam::where('grade_id', $student->grade_id)
+                $endTermExam = Exam::where('stream_id', $student->stream_id)
                     ->where('subject_id', $subject->id)
                     ->where('term', $term)
                     ->where('academic_year', $academicYear)
@@ -359,8 +358,8 @@ class ReportController extends Controller
         // Check permissions
         if ($validated['comment_type'] === 'teacher') {
             if (!$user->isAdmin()) {
-                $isClassTeacher = $user->teacher->grades()
-                    ->where('grades.id', $student->grade_id)
+                $isClassTeacher = $student->stream_id && $user->teacher->streams()
+                    ->where('streams.id', $student->stream_id)
                     ->wherePivot('is_class_teacher', true)
                     ->exists();
 
@@ -406,8 +405,8 @@ class ReportController extends Controller
         // Check permissions
         if ($validated['comment_type'] === 'teacher') {
             if (!$user->isAdmin()) {
-                $isClassTeacher = $user->teacher->grades()
-                    ->where('grades.id', $student->grade_id)
+                $isClassTeacher = $student->stream_id && $user->teacher->streams()
+                    ->where('streams.id', $student->stream_id)
                     ->wherePivot('is_class_teacher', true)
                     ->exists();
 

@@ -131,7 +131,7 @@ class TimetableAnalyticsService
             ->with(['timetableSlots' => function ($query) {
                 $query->whereHas('timetableTemplate', fn($q) => $q->where('is_active', true))
                     ->where('slot_type', TimetableSlot::TYPE_LESSON);
-            }, 'grades'])
+            }, 'streams'])
             ->get();
 
         $totalTeachers = $teachers->count();
@@ -140,8 +140,8 @@ class TimetableAnalyticsService
 
         $utilizationData = $teachers->map(function ($teacher) {
             $lessonsCount = $teacher->timetableSlots->count();
-            $gradesCount = $teacher->grades->count();
-            $isClassTeacher = $teacher->grades()->wherePivot('is_class_teacher', true)->exists();
+            $streamsCount = $teacher->streams->count();
+            $isClassTeacher = $teacher->streams()->wherePivot('is_class_teacher', true)->exists();
 
             // Calculate utilization level
             $utilizationLevel = 'idle';
@@ -159,7 +159,7 @@ class TimetableAnalyticsService
                 'teacher_id' => $teacher->id,
                 'teacher_name' => $teacher->user->name,
                 'total_lessons' => $lessonsCount,
-                'grades_assigned' => $gradesCount,
+                'streams_assigned' => $streamsCount,
                 'is_class_teacher' => $isClassTeacher,
                 'utilization_level' => $utilizationLevel,
             ];
@@ -190,7 +190,7 @@ class TimetableAnalyticsService
     {
         $unresolvedConflicts = TimetableConflict::where('school_id', $schoolId)
             ->unresolved()
-            ->with(['timetableTemplate.grade'])
+            ->with(['timetableTemplate.stream.grade'])
             ->get();
 
         $conflictsByType = $unresolvedConflicts->groupBy('conflict_type')->map->count();
@@ -206,7 +206,9 @@ class TimetableAnalyticsService
 
         // Get conflicts by grade
         $conflictsByGrade = $unresolvedConflicts->groupBy(function ($conflict) {
-            return $conflict->timetableTemplate->grade->name ?? 'Unknown';
+            return $conflict->timetableTemplate && $conflict->timetableTemplate->stream && $conflict->timetableTemplate->stream->grade
+                ? $conflict->timetableTemplate->stream->grade->name
+                : 'Unknown';
         })->map->count();
 
         return [
@@ -327,9 +329,9 @@ class TimetableAnalyticsService
             ->with([
                 'timetableSlots' => function ($query) {
                     $query->whereHas('timetableTemplate', fn($q) => $q->where('is_active', true))
-                        ->with(['subject', 'period', 'timetableTemplate.grade']);
+                        ->with(['subject', 'period', 'timetableTemplate.stream.grade']);
                 },
-                'grades',
+                'streams.grade',
                 'availability'
             ]);
 
@@ -342,17 +344,19 @@ class TimetableAnalyticsService
         return $teachers->map(function ($teacher) {
             $slots = $teacher->timetableSlots;
             $slotsByDay = $slots->groupBy('day_of_week');
-            $slotsByGrade = $slots->groupBy(fn($s) => $s->timetableTemplate->grade->name ?? 'Unknown');
+            $slotsByGrade = $slots->groupBy(fn($s) => $s->timetableTemplate && $s->timetableTemplate->stream && $s->timetableTemplate->stream->grade ? $s->timetableTemplate->stream->grade->name : 'Unknown');
             $slotsBySubject = $slots->groupBy(fn($s) => $s->subject->name ?? 'Unknown');
+
+            $classTeacherStream = $teacher->streams()->wherePivot('is_class_teacher', true)->first();
 
             return [
                 'teacher_id' => $teacher->id,
                 'teacher_name' => $teacher->user->name,
                 'employee_number' => $teacher->employee_number,
                 'total_lessons' => $slots->count(),
-                'grades_assigned' => $teacher->grades->count(),
-                'is_class_teacher' => $teacher->grades()->wherePivot('is_class_teacher', true)->exists(),
-                'class_teacher_for' => $teacher->grades()->wherePivot('is_class_teacher', true)->first()?->name,
+                'streams_assigned' => $teacher->streams->count(),
+                'is_class_teacher' => $teacher->streams()->wherePivot('is_class_teacher', true)->exists(),
+                'class_teacher_for' => $classTeacherStream ? $classTeacherStream->display_name : null,
                 'lessons_by_day' => $slotsByDay->map->count()->toArray(),
                 'lessons_by_grade' => $slotsByGrade->map->count()->toArray(),
                 'lessons_by_subject' => $slotsBySubject->map->count()->toArray(),

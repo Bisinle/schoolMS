@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Grade;
+use App\Models\Stream;
 use App\Models\Student;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -23,32 +24,43 @@ class AttendanceController extends Controller
 
         $user = $request->user();
         $selectedDate = $request->input('date', now()->toDateString());
+        $selectedStreamId = $request->input('stream_id');
         $selectedGradeId = $request->input('grade_id');
 
-        // Get grades based on user role (including Unassigned)
+        // Get grades for filter
+        $grades = Grade::where('status', 'active')
+            ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
+            ->orderBy('level')
+            ->orderBy('name')
+            ->get();
+
+        // Get streams based on user role
         if ($user->isTeacher()) {
-            $grades = $user->teacher->grades;
+            $streams = $user->teacher->streams;
         } else {
-            $grades = Grade::where('status', 'active')
-                ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
-                ->orderBy('level')
+            $streams = Stream::with('grade')
+                ->whereHas('grade', function ($q) {
+                    $q->where('status', 'active');
+                })
                 ->orderBy('name')
                 ->get();
         }
 
-        // If no grade selected, select first available grade
-        if (!$selectedGradeId && $grades->isNotEmpty()) {
-            $selectedGradeId = $grades->first()->id;
+        // If no stream selected, select first available stream
+        if (!$selectedStreamId && $streams->isNotEmpty()) {
+            $selectedStreamId = $streams->first()->id;
         }
 
-        // Get attendance data if grade is selected
+        // Get attendance data if stream is selected
         $attendanceData = null;
-        if ($selectedGradeId) {
-            $attendanceData = $this->getAttendanceData($selectedGradeId, $selectedDate);
+        if ($selectedStreamId) {
+            $attendanceData = $this->getAttendanceDataForStream($selectedStreamId, $selectedDate);
         }
 
         return Inertia::render('Attendance/Index', [
             'grades' => $grades,
+            'streams' => $streams,
+            'selectedStreamId' => $selectedStreamId,
             'selectedGradeId' => $selectedGradeId,
             'selectedDate' => $selectedDate,
             'attendanceData' => $attendanceData,
@@ -57,14 +69,14 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Mark attendance for a grade
+     * Mark attendance for a stream
      */
     public function mark(Request $request)
     {
         $this->authorize('create', Attendance::class);
 
         $validated = $request->validate([
-            'grade_id' => 'required|exists:grades,id',
+            'stream_id' => 'required|exists:streams,id',
             'attendance_date' => 'required|date',
             'attendances' => 'required|array',
             'attendances.*.student_id' => 'required|exists:students,id',
@@ -74,11 +86,11 @@ class AttendanceController extends Controller
 
         $user = $request->user();
 
-        // Verify teacher can mark attendance for this grade
+        // Verify teacher can mark attendance for this stream
         if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            if (!in_array($validated['grade_id'], $teacherGradeIds)) {
-                return back()->withErrors(['error' => 'You are not authorized to mark attendance for this grade.']);
+            $teacherStreamIds = $user->teacher->streams->pluck('id')->toArray();
+            if (!in_array($validated['stream_id'], $teacherStreamIds)) {
+                return back()->withErrors(['error' => 'You are not authorized to mark attendance for this stream.']);
             }
         }
 
@@ -90,7 +102,7 @@ class AttendanceController extends Controller
                     'attendance_date' => $validated['attendance_date'],
                 ],
                 [
-                    'grade_id' => $validated['grade_id'],
+                    'stream_id' => $validated['stream_id'],
                     'marked_by' => $user->id,
                     'status' => $attendanceData['status'],
                     'remarks' => $attendanceData['remarks'] ?? null,
@@ -181,20 +193,20 @@ class AttendanceController extends Controller
     }
 
     /**
-     * Helper: Get attendance data for a specific grade and date
+     * Helper: Get attendance data for a specific stream and date
      */
-    private function getAttendanceData($gradeId, $date)
+    private function getAttendanceDataForStream($streamId, $date)
     {
-        $grade = Grade::with(['students' => function ($query) {
+        $stream = Stream::with(['students' => function ($query) {
             $query->where('status', 'active')
                   ->orderBy('first_name')
                   ->orderBy('last_name');
-        }])->findOrFail($gradeId);
+        }, 'grade'])->findOrFail($streamId);
 
-        $students = $grade->students;
+        $students = $stream->students;
 
         // Get existing attendance records for this date
-        $existingAttendance = Attendance::forGrade($gradeId)
+        $existingAttendance = Attendance::forStream($streamId)
             ->forDate($date)
             ->get()
             ->keyBy('student_id');
@@ -202,7 +214,7 @@ class AttendanceController extends Controller
         // Build attendance data
         $attendanceRecords = $students->map(function ($student) use ($existingAttendance) {
             $attendance = $existingAttendance->get($student->id);
-            
+
             return [
                 'student_id' => $student->id,
                 'student_name' => $student->first_name . ' ' . $student->last_name,
@@ -214,10 +226,10 @@ class AttendanceController extends Controller
         });
 
         return [
-            'grade' => [
-                'id' => $grade->id,
-                'name' => $grade->name,
-                'level' => $grade->level,
+            'stream' => [
+                'id' => $stream->id,
+                'name' => $stream->name,
+                'grade_name' => $stream->grade->name,
             ],
             'students' => $attendanceRecords,
             'total_students' => $students->count(),

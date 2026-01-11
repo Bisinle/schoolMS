@@ -8,13 +8,13 @@ import FormActions from '@/Components/Forms/FormActions';
 import ReadOnlyField from '@/Components/Forms/ReadOnlyField';
 import ImageUpload from '@/Components/Forms/ImageUpload';
 
-export default function StudentsCreate({ guardians, grades }) {
+export default function StudentsCreate({ guardians, grades, streams }) {
     const { data, setData, post, processing, errors } = useForm({
         first_name: '',
         last_name: '',
         gender: 'male',
         date_of_birth: '',
-        grade_id: '',
+        stream_id: '',
         guardian_id: '',
         enrollment_date: new Date().toISOString().split('T')[0],
         status: 'active',
@@ -120,19 +120,19 @@ export default function StudentsCreate({ guardians, grades }) {
                         {/* Academic Information Section */}
                         <FormSection title="Academic Information">
                             <SelectInput
-                                label="Grade"
-                                name="grade_id"
-                                value={data.grade_id}
-                                onChange={(e) => setData('grade_id', e.target.value)}
-                                error={errors.grade_id}
+                                label="Stream"
+                                name="stream_id"
+                                value={data.stream_id}
+                                onChange={(e) => setData('stream_id', e.target.value)}
+                                error={errors.stream_id}
                                 required
-                                placeholder="Select Grade"
-                                optionRenderer={(grade) => (
-                                    <option key={grade.id} value={grade.id}>
-                                        {grade.name} ({grade.level})
+                                placeholder="Select Stream"
+                                optionRenderer={(stream) => (
+                                    <option key={stream.id} value={stream.id}>
+                                        {stream.grade?.name} {stream.name}
                                     </option>
                                 )}
-                                options={grades}
+                                options={streams}
                             />
 
                             <TextInput

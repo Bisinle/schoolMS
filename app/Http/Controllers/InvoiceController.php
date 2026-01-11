@@ -178,7 +178,7 @@ class InvoiceController extends Controller
         ]);
 
         $guardian = Guardian::with(['students' => function($q) {
-            $q->where('status', 'active')->with('grade');
+            $q->where('status', 'active')->with('stream.grade');
         }])->findOrFail($validated['guardian_id']);
 
         $term = AcademicTerm::with('academicYear')->findOrFail($validated['academic_term_id']);
@@ -203,11 +203,12 @@ class InvoiceController extends Controller
             $total = 0;
 
             if ($preference) {
-                // Get tuition fee
-                $tuitionFee = TuitionFee::where('grade_id', $student->grade_id)
+                // Get tuition fee based on student's grade (through stream)
+                $gradeId = $student->stream && $student->stream->grade ? $student->stream->grade->id : null;
+                $tuitionFee = $gradeId ? TuitionFee::where('grade_id', $gradeId)
                     ->where('academic_year_id', $term->academic_year_id)
                     ->where('is_active', true)
-                    ->first();
+                    ->first() : null;
 
                 if ($tuitionFee) {
                     $tuitionAmount = $preference->tuition_type === 'full_day'
