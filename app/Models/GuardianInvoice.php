@@ -120,25 +120,20 @@ class GuardianInvoice extends Model
     {
         // Recalculate subtotal from line items
         $this->subtotal_amount = $this->lineItems()->sum('total_amount');
-        
-        // Calculate discount
-        if ($this->payment_plan === 'full') {
-            $this->discount_percentage = 5;
-            $this->discount_amount = $this->subtotal_amount * 0.05;
-        } else {
-            $this->discount_percentage = 0;
-            $this->discount_amount = 0;
-        }
-        
-        // Calculate total
-        $this->total_amount = $this->subtotal_amount - $this->discount_amount;
-        
+
+        // No discount applied
+        $this->discount_percentage = 0;
+        $this->discount_amount = 0;
+
+        // Calculate total (same as subtotal since no discount)
+        $this->total_amount = $this->subtotal_amount;
+
         // Recalculate amount paid from payments
         $this->amount_paid = $this->payments()->sum('amount');
-        
+
         // Calculate balance
         $this->balance_due = $this->total_amount - $this->amount_paid;
-        
+
         $this->save();
         $this->updateStatus();
     }
