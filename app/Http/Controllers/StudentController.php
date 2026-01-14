@@ -111,7 +111,13 @@ class StudentController extends Controller
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'required|date|before:today',
             'grade_id' => 'required|exists:grades,id',
-            'guardian_id' => 'required|exists:guardians,id',
+            'guardians' => 'required|array|min:1',
+            'guardians.*.guardian_id' => 'required|exists:guardians,id',
+            'guardians.*.relationship' => 'required|string|max:255',
+            'guardians.*.is_primary' => 'boolean',
+            'guardians.*.can_receive_invoices' => 'boolean',
+            'guardians.*.can_pickup' => 'boolean',
+            'guardians.*.emergency_contact' => 'boolean',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -132,7 +138,27 @@ class StudentController extends Controller
         $grade = Grade::find($validated['grade_id']);
         $validated['class_name'] = $grade->name;
 
-        Student::create($validated);
+        // Set first guardian as legacy guardian_id for backward compatibility
+        $validated['guardian_id'] = $validated['guardians'][0]['guardian_id'];
+
+        // Extract guardians data before creating student
+        $guardiansData = $validated['guardians'];
+        unset($validated['guardians']); // Remove from validated array
+
+        $student = Student::create($validated);
+
+        // Attach guardians with pivot data
+        $guardianData = [];
+        foreach ($guardiansData as $guardianInfo) {
+            $guardianData[$guardianInfo['guardian_id']] = [
+                'relationship' => $guardianInfo['relationship'],
+                'is_primary' => $guardianInfo['is_primary'] ?? false,
+                'can_receive_invoices' => $guardianInfo['can_receive_invoices'] ?? true,
+                'can_pickup' => $guardianInfo['can_pickup'] ?? true,
+                'emergency_contact' => $guardianInfo['emergency_contact'] ?? false,
+            ];
+        }
+        $student->guardians()->sync($guardianData);
 
         return redirect()->route('students.index')
             ->with('success', 'Student registered successfully.');
@@ -156,9 +182,10 @@ class StudentController extends Controller
     {
         $this->authorize('update', $student);
 
-        $student->load(['grade', 'guardian.user']);
+        $student->load(['grade', 'guardians.user']);
 
-        $guardians = Guardian::with('user')
+        // Get all guardians for selection
+        $allGuardians = Guardian::with('user')
             ->get()
             ->map(function ($guardian) {
                 return [
@@ -170,6 +197,20 @@ class StudentController extends Controller
                 ];
             });
 
+        // Get student's current guardians with pivot data
+        $studentGuardians = $student->guardians->map(function ($guardian) {
+            return [
+                'guardian_id' => $guardian->id,
+                'guardian_number' => $guardian->guardian_number ?? 'N/A',
+                'name' => $guardian->user->name ?? 'Unknown',
+                'relationship' => $guardian->pivot->relationship ?? '',
+                'is_primary' => (bool) $guardian->pivot->is_primary,
+                'can_receive_invoices' => (bool) $guardian->pivot->can_receive_invoices,
+                'can_pickup' => (bool) $guardian->pivot->can_pickup,
+                'emergency_contact' => (bool) $guardian->pivot->emergency_contact,
+            ];
+        });
+
         // Get all active grades (including Unassigned)
         $grades = Grade::where('status', 'active')
             ->orderByRaw("CASE WHEN code = 'UNASSIGNED' THEN 1 ELSE 0 END")
@@ -179,7 +220,8 @@ class StudentController extends Controller
 
         return Inertia::render('Students/Edit', [
             'student' => $student,
-            'guardians' => $guardians,
+            'guardians' => $allGuardians,
+            'studentGuardians' => $studentGuardians,
             'grades' => $grades,
         ]);
     }
@@ -199,7 +241,13 @@ class StudentController extends Controller
             'gender' => 'required|in:male,female',
             'date_of_birth' => 'required|date|before:today',
             'grade_id' => 'required|exists:grades,id',
-            'guardian_id' => 'required|exists:guardians,id',
+            'guardians' => 'required|array|min:1',
+            'guardians.*.guardian_id' => 'required|exists:guardians,id',
+            'guardians.*.relationship' => 'required|string|max:255',
+            'guardians.*.is_primary' => 'boolean',
+            'guardians.*.can_receive_invoices' => 'boolean',
+            'guardians.*.can_pickup' => 'boolean',
+            'guardians.*.emergency_contact' => 'boolean',
             'enrollment_date' => 'required|date',
             'status' => 'required|in:active,inactive',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
@@ -220,7 +268,27 @@ class StudentController extends Controller
         $grade = Grade::find($validated['grade_id']);
         $validated['class_name'] = $grade->name;
 
+        // Set first guardian as legacy guardian_id for backward compatibility
+        $validated['guardian_id'] = $validated['guardians'][0]['guardian_id'];
+
+        // Extract guardians data before updating student
+        $guardiansData = $validated['guardians'];
+        unset($validated['guardians']); // Remove from validated array
+
         $student->update($validated);
+
+        // Sync guardians with pivot data
+        $guardianData = [];
+        foreach ($guardiansData as $guardianInfo) {
+            $guardianData[$guardianInfo['guardian_id']] = [
+                'relationship' => $guardianInfo['relationship'],
+                'is_primary' => $guardianInfo['is_primary'] ?? false,
+                'can_receive_invoices' => $guardianInfo['can_receive_invoices'] ?? true,
+                'can_pickup' => $guardianInfo['can_pickup'] ?? true,
+                'emergency_contact' => $guardianInfo['emergency_contact'] ?? false,
+            ];
+        }
+        $student->guardians()->sync($guardianData);
 
         return redirect()->route('students.index')
             ->with('success', 'Student information updated successfully.');

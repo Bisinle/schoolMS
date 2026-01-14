@@ -33,9 +33,31 @@ class Student extends Model
         ];
     }
 
+    // Legacy relationship - kept for backward compatibility
+    // Use guardians() for new code
     public function guardian()
     {
         return $this->belongsTo(Guardian::class);
+    }
+
+    // Many-to-many relationship with guardians
+    public function guardians()
+    {
+        return $this->belongsToMany(Guardian::class, 'guardian_student')
+            ->withPivot(['relationship', 'is_primary', 'can_receive_invoices', 'can_pickup', 'emergency_contact'])
+            ->withTimestamps();
+    }
+
+    // Get primary guardian
+    public function primaryGuardian()
+    {
+        return $this->guardians()->wherePivot('is_primary', true)->first();
+    }
+
+    // Get guardians who can receive invoices
+    public function invoiceGuardians()
+    {
+        return $this->guardians()->wherePivot('can_receive_invoices', true);
     }
 
     public function grade()

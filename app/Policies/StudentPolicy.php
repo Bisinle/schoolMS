@@ -19,7 +19,8 @@ class StudentPolicy
         }
 
         if ($user->isGuardian()) {
-            return $user->guardian && $user->guardian->id === $student->guardian_id;
+            // Check if user's guardian is linked to this student (many-to-many)
+            return $user->guardian && $student->guardians()->where('guardian_id', $user->guardian->id)->exists();
         }
 
         return false;

@@ -129,7 +129,13 @@ class GuardianFeePreference extends Model
     public static function getOrCreateForStudentTerm(int $studentId, int $termId): self
     {
         $student = Student::findOrFail($studentId);
-        
+
+        // Get primary guardian or first guardian
+        $primaryGuardian = $student->primaryGuardian();
+        if (!$primaryGuardian) {
+            $primaryGuardian = $student->guardians()->first();
+        }
+
         return self::firstOrCreate(
             [
                 'student_id' => $studentId,
@@ -137,7 +143,7 @@ class GuardianFeePreference extends Model
             ],
             [
                 'school_id' => $student->school_id,
-                'guardian_id' => $student->guardian_id,
+                'guardian_id' => $primaryGuardian ? $primaryGuardian->id : $student->guardian_id, // Fallback to legacy
                 'tuition_type' => self::TUITION_FULL_DAY,
                 'include_food' => true,
                 'include_sports' => true,

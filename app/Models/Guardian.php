@@ -25,9 +25,25 @@ class Guardian extends Model
         return $this->belongsTo(User::class);
     }
 
+    // Legacy relationship - kept for backward compatibility
+    // Use studentsMany() for new code
     public function students()
     {
         return $this->hasMany(Student::class);
+    }
+
+    // Many-to-many relationship with students
+    public function studentsMany()
+    {
+        return $this->belongsToMany(Student::class, 'guardian_student')
+            ->withPivot(['relationship', 'is_primary', 'can_receive_invoices', 'can_pickup', 'emergency_contact'])
+            ->withTimestamps();
+    }
+
+    // Get students where this guardian is primary
+    public function primaryStudents()
+    {
+        return $this->studentsMany()->wherePivot('is_primary', true);
     }
 
     // Fee preferences relationship

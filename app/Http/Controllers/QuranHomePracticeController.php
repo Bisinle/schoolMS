@@ -95,14 +95,20 @@ class QuranHomePracticeController extends Controller
         // Ensure guardian can only log for their children
         if ($user->role === 'guardian') {
             $student = Student::findOrFail($validated['student_id']);
-            if ($student->guardian_id !== $user->guardian->id) {
+            // Check if guardian is linked to this student
+            if (!$student->guardians()->where('guardian_id', $user->guardian->id)->exists()) {
                 abort(403, 'You can only log practice for your own children.');
             }
             $validated['guardian_id'] = $user->guardian->id;
         } else {
             // Admin/Teacher logging on behalf of a guardian
             $student = Student::findOrFail($validated['student_id']);
-            $validated['guardian_id'] = $student->guardian_id;
+            // Use primary guardian or first guardian
+            $primaryGuardian = $student->primaryGuardian();
+            if (!$primaryGuardian) {
+                $primaryGuardian = $student->guardians()->first();
+            }
+            $validated['guardian_id'] = $primaryGuardian ? $primaryGuardian->id : $student->guardian_id; // Fallback to legacy
         }
 
         $validated['school_id'] = $user->school_id;
@@ -174,7 +180,8 @@ class QuranHomePracticeController extends Controller
         // Ensure guardian can only update for their children
         if ($user->role === 'guardian') {
             $student = Student::findOrFail($validated['student_id']);
-            if ($student->guardian_id !== $user->guardian->id) {
+            // Check if guardian is linked to this student
+            if (!$student->guardians()->where('guardian_id', $user->guardian->id)->exists()) {
                 abort(403, 'You can only update practice for your own children.');
             }
         }
@@ -212,8 +219,11 @@ class QuranHomePracticeController extends Controller
         $student = Student::findOrFail($studentId);
 
         // Authorization check
-        if ($user->role === 'guardian' && $student->guardian_id !== $user->guardian->id) {
-            abort(403, 'Unauthorized access.');
+        if ($user->role === 'guardian') {
+            // Check if guardian is linked to this student
+            if (!$student->guardians()->where('guardian_id', $user->guardian->id)->exists()) {
+                abort(403, 'Unauthorized access.');
+            }
         }
 
         $period = $request->get('period', 'week'); // week, month, year
