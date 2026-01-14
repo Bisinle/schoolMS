@@ -16,6 +16,7 @@ class GuardianPayment extends Model
         'payment_date',
         'amount',
         'payment_method',
+        'paid_by_name',
         'reference_number',
         'notes',
         'recorded_by',

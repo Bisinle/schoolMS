@@ -516,8 +516,9 @@
                     <thead>
                         <tr>
                             <th>Date</th>
+                            <th>Paid By</th>
                             <th>Method</th>
-                            <th>Reference</th>
+                            <th>Reference/M-Pesa</th>
                             <th class="text-right">Amount</th>
                             <th>Recorded By</th>
                         </tr>
@@ -526,6 +527,7 @@
                         @foreach($invoice->payments as $payment)
                             <tr>
                                 <td>{{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}</td>
+                                <td>{{ $payment->paid_by_name ?? '-' }}</td>
                                 <td style="text-transform: capitalize;">{{ str_replace('_', ' ', $payment->payment_method) }}</td>
                                 <td>{{ $payment->reference_number ?? '-' }}</td>
                                 <td class="amount" style="color: #16a34a; font-weight: bold;">

@@ -7,6 +7,7 @@ export default function CreatePayment({ auth, invoice }) {
         amount: invoice.balance_due,
         payment_date: new Date().toISOString().split('T')[0],
         payment_method: 'cash',
+        paid_by_name: invoice.guardian?.user?.name || '',
         reference_number: '',
         notes: '',
     });
@@ -177,10 +178,31 @@ export default function CreatePayment({ auth, invoice }) {
                                 )}
                             </div>
 
+                            {/* Paid By Name */}
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Paid By (Name) <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.paid_by_name}
+                                    onChange={(e) => setData('paid_by_name', e.target.value)}
+                                    placeholder="Enter the name of the person who made the payment"
+                                    className="w-full border-gray-300 rounded-md shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                                    required
+                                />
+                                {errors.paid_by_name && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.paid_by_name}</p>
+                                )}
+                                <p className="mt-1 text-sm text-gray-500">
+                                    Name of the guardian or person who made this payment
+                                </p>
+                            </div>
+
                             {/* Reference Number */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Reference Number
+                                    Reference Number / M-Pesa Code
                                     {data.payment_method !== 'cash' && <span className="text-red-500"> *</span>}
                                 </label>
                                 <input

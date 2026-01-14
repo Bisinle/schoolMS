@@ -467,13 +467,19 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                                     Date
                                                 </th>
                                                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                    Paid By
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                                     Method
                                                 </th>
                                                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                    Reference
+                                                    Reference/M-Pesa Code
                                                 </th>
                                                 <th className="px-4 py-3 text-right text-xs font-bold text-gray-700 uppercase tracking-wider">
                                                     Amount
+                                                </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                    Recorded By
                                                 </th>
                                             </tr>
                                         </thead>
@@ -483,14 +489,20 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                                     <td className="px-4 py-3 text-sm font-semibold text-gray-900">
                                                         {new Date(payment.payment_date).toLocaleDateString()}
                                                     </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-900 font-medium">
+                                                        {payment.paid_by_name || '-'}
+                                                    </td>
                                                     <td className="px-4 py-3 text-sm text-gray-700 capitalize">
                                                         {payment.payment_method.replace('_', ' ')}
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-gray-700 font-mono">
-                                                        {payment.transaction_reference || '-'}
+                                                        {payment.reference_number || '-'}
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-right font-mono font-bold text-green-600">
                                                         KSh {Number(payment.amount).toLocaleString()}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-600">
+                                                        {payment.recorded_by?.name || 'System'}
                                                     </td>
                                                 </tr>
                                             ))}
@@ -517,17 +529,33 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                                 </div>
                                             </div>
                                             <div className="space-y-2 text-sm">
+                                                {payment.paid_by_name && (
+                                                    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded border border-gray-200">
+                                                        <span className="text-gray-600 font-semibold">Paid By:</span>
+                                                        <span className="font-semibold text-gray-900">
+                                                            {payment.paid_by_name}
+                                                        </span>
+                                                    </div>
+                                                )}
                                                 <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded border border-gray-200">
                                                     <span className="text-gray-600 font-semibold">Method:</span>
                                                     <span className="font-semibold text-gray-900 capitalize">
                                                         {payment.payment_method.replace('_', ' ')}
                                                     </span>
                                                 </div>
-                                                {payment.transaction_reference && (
+                                                {payment.reference_number && (
                                                     <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded border border-gray-200">
-                                                        <span className="text-gray-600 font-semibold">Reference:</span>
+                                                        <span className="text-gray-600 font-semibold">Reference/M-Pesa:</span>
                                                         <span className="font-mono text-gray-900 font-semibold text-xs break-all">
-                                                            {payment.transaction_reference}
+                                                            {payment.reference_number}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {payment.recorded_by && (
+                                                    <div className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded border border-gray-200">
+                                                        <span className="text-gray-600 font-semibold">Recorded By:</span>
+                                                        <span className="text-gray-900 font-semibold text-xs">
+                                                            {payment.recorded_by.name}
                                                         </span>
                                                     </div>
                                                 )}

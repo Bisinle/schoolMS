@@ -49,6 +49,7 @@ class PaymentController extends Controller
             ],
             'payment_date' => 'required|date|before_or_equal:today',
             'payment_method' => 'required|in:cash,mpesa,bank_transfer,cheque',
+            'paid_by_name' => 'required|string|max:255',
             'reference_number' => 'nullable|string|max:255',
             'notes' => 'nullable|string|max:1000',
         ], [
@@ -65,6 +66,7 @@ class PaymentController extends Controller
                 'amount' => $validated['amount'],
                 'payment_date' => $validated['payment_date'],
                 'payment_method' => $validated['payment_method'],
+                'paid_by_name' => $validated['paid_by_name'],
                 'reference_number' => $validated['reference_number'] ?? null,
                 'notes' => $validated['notes'] ?? null,
                 'recorded_by' => auth()->id(),
