@@ -104,6 +104,7 @@ export default function TeachersCreate({ grades, subjects }) {
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 error={errors.email}
+                                autoComplete="off"
                                 required
                             />
 
@@ -114,6 +115,7 @@ export default function TeachersCreate({ grades, subjects }) {
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                                 error={errors.password}
+                                autoComplete="new-password"
                                 required
                             />
 

@@ -104,6 +104,7 @@ export default function Create({ auth, roles }) {
                                             onChange={(e) => setData('email', e.target.value)}
                                             className="block w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                                             placeholder="john@example.com"
+                                            autoComplete="off"
                                         />
                                     </div>
                                     <InputError message={errors.email} className="mt-2" />
@@ -267,6 +268,7 @@ export default function Create({ auth, roles }) {
                                                         onChange={(e) => setData('password', e.target.value)}
                                                         className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                                                         placeholder="Enter password"
+                                                        autoComplete="new-password"
                                                     />
                                                     <button
                                                         type="button"
@@ -299,6 +301,7 @@ export default function Create({ auth, roles }) {
                                                         onChange={(e) => setData('password_confirmation', e.target.value)}
                                                         className="block w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
                                                         placeholder="Confirm password"
+                                                        autoComplete="new-password"
                                                     />
                                                     <button
                                                         type="button"

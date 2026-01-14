@@ -56,6 +56,7 @@ export default function GuardiansCreate() {
                                 value={data.email}
                                 onChange={(e) => setData('email', e.target.value)}
                                 error={errors.email}
+                                autoComplete="off"
                                 required
                             />
 
@@ -66,6 +67,7 @@ export default function GuardiansCreate() {
                                 value={data.password}
                                 onChange={(e) => setData('password', e.target.value)}
                                 error={errors.password}
+                                autoComplete="new-password"
                                 required
                             />
 
