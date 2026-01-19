@@ -196,6 +196,24 @@ class TimetableTemplateController extends Controller
             'effective_to' => 'nullable|date|after:effective_from',
         ]);
 
+        // Check if an active template already exists for this grade/stream/term combination
+        // This is a safety check since templates are created as drafts by default
+        $existingActive = TimetableTemplate::where('grade_id', $validated['grade_id'])
+            ->where('academic_term_id', $validated['academic_term_id'])
+            ->where('is_active', true);
+
+        if (isset($validated['stream_id'])) {
+            $existingActive->where('stream_id', $validated['stream_id']);
+        } else {
+            $existingActive->whereNull('stream_id');
+        }
+
+        if ($existingActive->exists()) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['grade_id' => 'An active timetable template already exists for this grade/stream and term combination.']);
+        }
+
         $validated['school_id'] = auth()->user()->school_id;
         $validated['status'] = 'draft';
         $validated['is_active'] = false;
@@ -407,10 +425,20 @@ class TimetableTemplateController extends Controller
     {
         $this->authorize('publish', $template);
 
-        // Deactivate other active templates for this grade
-        TimetableTemplate::where('grade_id', $template->grade_id)
-            ->where('is_active', true)
-            ->update(['is_active' => false, 'status' => 'archived']);
+        // Deactivate other active templates for this grade/stream/term combination
+        $query = TimetableTemplate::where('grade_id', $template->grade_id)
+            ->where('academic_term_id', $template->academic_term_id)
+            ->where('id', '!=', $template->id)
+            ->where('is_active', true);
+
+        // Handle stream-specific templates
+        if ($template->stream_id) {
+            $query->where('stream_id', $template->stream_id);
+        } else {
+            $query->whereNull('stream_id');
+        }
+
+        $query->update(['is_active' => false, 'status' => 'archived']);
 
         $template->update([
             'status' => 'published',
