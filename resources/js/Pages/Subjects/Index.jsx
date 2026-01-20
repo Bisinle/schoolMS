@@ -23,15 +23,17 @@ function MobileSubjectItem({ subject, auth, onDelete }) {
         return colors[category] || 'from-gray-500 to-gray-600';
     };
 
-    // Build swipe actions
+    const isAdmin = auth.user.role === 'admin';
+
+    // Build swipe actions - only show edit/delete for admins
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/subjects/${subject.id}` },
-        { icon: Edit, label: 'Edit', href: `/subjects/${subject.id}/edit` },
+        ...(isAdmin ? [{ icon: Edit, label: 'Edit', href: `/subjects/${subject.id}/edit` }] : []),
     ];
 
-    const secondaryActions = [
+    const secondaryActions = isAdmin ? [
         { icon: Trash2, label: 'Delete', onClick: () => onDelete(subject) },
-    ];
+    ] : [];
 
     return (
         <SwipeableListItem
