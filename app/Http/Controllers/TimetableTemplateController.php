@@ -572,7 +572,10 @@ class TimetableTemplateController extends Controller
             $result = $service->generate($template);
 
             // Build success message with post-validation results
-            $successMessage = "Generated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks). All lesson slots assigned to class teacher.";
+            $studyHallsInfo = isset($result['study_halls']) && $result['study_halls'] > 0
+                ? ", {$result['study_halls']} study halls"
+                : "";
+            $successMessage = "Generated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks{$studyHallsInfo}). All lesson slots assigned to class teacher.";
 
             // Add post-validation warnings
             if (!empty($result['post_validation']['warnings'])) {

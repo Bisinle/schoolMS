@@ -18,6 +18,7 @@ import {
     Receipt,
     Home,
     Clock,
+    Shield,
 } from "lucide-react";
 
 /**
@@ -82,6 +83,7 @@ export const getNavigation = (role, isMadrasah = false) => {
             },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
+            { name: "Policies", href: "/policies", icon: Shield },
             {
                 name: "Settings",
                 icon: Settings,
@@ -124,6 +126,7 @@ export const getNavigation = (role, isMadrasah = false) => {
             ] : []),
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "My Documents", href: "/documents", icon: FolderOpen },
+            { name: "Policies", href: "/policies", icon: Shield },
         ],
         guardian: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -141,6 +144,31 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Invoices", href: "/guardian/invoices", icon: DollarSign },
             { name: "Reports", href: "/reports", icon: FileText },
             { name: "Documents", href: "/documents", icon: FolderOpen },
+            { name: "Policies", href: "/policies", icon: Shield },
+        ],
+        accountant: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Policies", href: "/policies", icon: Shield },
+        ],
+        receptionist: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Policies", href: "/policies", icon: Shield },
+        ],
+        nurse: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Policies", href: "/policies", icon: Shield },
+        ],
+        it_staff: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Policies", href: "/policies", icon: Shield },
+        ],
+        maid: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Policies", href: "/policies", icon: Shield },
+        ],
+        cook: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Policies", href: "/policies", icon: Shield },
         ],
     };
 

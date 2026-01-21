@@ -185,7 +185,7 @@ export default function Sidebar({
                     </div>
 
                     {/* Mobile navigation */}
-                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-navy">
                         {/* Website Link */}
                         <a
                             href="https://al-elmischool.com"
@@ -210,14 +210,14 @@ export default function Sidebar({
                     impersonating ? "md:top-14 lg:top-[4.5rem]" : ""
                 }`}
             >
-                <div className="flex flex-col flex-grow bg-navy">
+                <div className="flex flex-col h-full bg-navy">
                     {/* Logo */}
-                    <div className="flex items-center justify-center py-6 px-6 border-b border-navy-light">
+                    <div className="flex items-center justify-center py-6 px-6 border-b border-navy-light flex-shrink-0">
                         {renderBrandHeader()}
                     </div>
 
                     {/* Navigation */}
-                    <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto">
+                    <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-navy">
                         {/* Website Link */}
                         <a
                             href="https://al-elmischool.com"
@@ -235,7 +235,7 @@ export default function Sidebar({
                     </nav>
 
                     {/* User info at bottom */}
-                    <div className="p-4 border-t border-navy-light">
+                    <div className="p-4 border-t border-navy-light flex-shrink-0">
                         <div className="flex items-center">
                             <Avatar
                                 name={auth.user.name}

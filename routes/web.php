@@ -46,6 +46,7 @@ use App\Http\Controllers\RoomController;
 use App\Http\Controllers\TimetableSlotController;
 use App\Http\Controllers\TeacherAvailabilityController;
 use App\Http\Controllers\LevelDayBlueprintController;
+use App\Http\Controllers\PolicyController;
 use App\Models\Grade;
 
 /*
@@ -698,6 +699,26 @@ Route::get('/google/callback', function () {
             ]
         ], 500);
     }
+});
+
+//^ Policies & Regulations Routes
+Route::middleware(['auth'])->prefix('policies')->name('policies.')->group(function () {
+    Route::get('/', [PolicyController::class, 'index'])->name('index');
+
+    // Admin-only routes
+    Route::middleware(['role:admin'])->group(function () {
+        Route::get('/create', [PolicyController::class, 'create'])->name('create');
+        Route::post('/', [PolicyController::class, 'store'])->name('store');
+        Route::get('/{policy}/edit', [PolicyController::class, 'edit'])->name('edit');
+        Route::put('/{policy}', [PolicyController::class, 'update'])->name('update');
+        Route::delete('/{policy}', [PolicyController::class, 'destroy'])->name('destroy');
+        Route::post('/{policy}/publish', [PolicyController::class, 'publish'])->name('publish');
+        Route::get('/{policy}/revisions', [PolicyController::class, 'revisions'])->name('revisions');
+    });
+
+    // Public routes (all authenticated users)
+    Route::get('/{policy}', [PolicyController::class, 'show'])->name('show');
+    Route::post('/{policy}/acknowledge', [PolicyController::class, 'acknowledge'])->name('acknowledge');
 });
 
 // Fallback route for 404

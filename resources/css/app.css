@@ -1,6 +1,36 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom Scrollbar Styles */
+@layer utilities {
+    /* Webkit browsers (Chrome, Safari, Edge) */
+    .scrollbar-navy::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+
+    .scrollbar-navy::-webkit-scrollbar-track {
+        background: #0b1a34; /* navy */
+        border-radius: 4px;
+    }
+
+    .scrollbar-navy::-webkit-scrollbar-thumb {
+        background: #0f2247; /* navy-light */
+        border-radius: 4px;
+        transition: background 0.2s;
+    }
+
+    .scrollbar-navy::-webkit-scrollbar-thumb:hover {
+        background: #1a3a5f; /* slightly lighter on hover */
+    }
+
+    /* Firefox */
+    .scrollbar-navy {
+        scrollbar-width: thin;
+        scrollbar-color: #0f2247 #0b1a34; /* thumb track */
+    }
+}
 @media print {
     @page {
         size: A4;

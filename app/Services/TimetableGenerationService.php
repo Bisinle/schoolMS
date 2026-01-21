@@ -94,9 +94,10 @@ class TimetableGenerationService
         $postValidation = $this->validateGeneratedTimetable($createdSlots, $curriculumRules);
 
         return [
-            'generated' => $slots->count(),
-            'lessons' => $slots->where('slot_type', 'lesson')->count(),
-            'breaks' => $slots->whereIn('slot_type', ['short_break', 'lunch', 'prayer', 'sports', 'activity'])->count(),
+            'generated' => $createdSlots->count(),
+            'lessons' => $createdSlots->where('slot_type', 'lesson')->count(),
+            'breaks' => $createdSlots->whereIn('slot_type', ['short_break', 'lunch', 'prayer', 'sports', 'activity'])->count(),
+            'study_halls' => $createdSlots->where('slot_type', 'study')->count(),
             'validation' => $validation, // Include validation results for display
             'post_validation' => $postValidation, // Post-generation checks
         ];
@@ -198,8 +199,13 @@ class TimetableGenerationService
         // Build subject allocation map
         $subjectAllocations = $this->buildSubjectAllocationMap($lessonPlaceholders, $curriculumRules);
 
-        // Create lesson slots with subjects already assigned
+        // Create ALL lesson slots (both with and without subjects)
         $createdSlots = collect();
+
+        // Track which placeholders have been allocated
+        $allocatedPlaceholders = collect();
+
+        // First, create slots with subjects assigned
         foreach ($subjectAllocations as $allocation) {
             $slot = TimetableSlot::create([
                 'timetable_template_id' => $this->template->id,
@@ -220,10 +226,48 @@ class TimetableGenerationService
             ]);
 
             $createdSlots->push($slot);
+
+            // Mark this placeholder as allocated
+            $allocatedPlaceholders->push([
+                'day' => $allocation['day_of_week'],
+                'sequence' => $allocation['blueprint_period']->sequence_order,
+            ]);
         }
 
-        // Step 3: Assign teachers to created lesson slots
-        $this->assignTeachers($createdSlots);
+        // Second, create empty slots for remaining unallocated placeholders
+        foreach ($lessonPlaceholders as $placeholder) {
+            // Check if this placeholder was already allocated
+            $isAllocated = $allocatedPlaceholders->contains(function ($allocated) use ($placeholder) {
+                return $allocated['day'] === $placeholder->day_of_week
+                    && $allocated['sequence'] === $placeholder->blueprint_period->sequence_order;
+            });
+
+            if (!$isAllocated) {
+                // Create an empty slot (study hall / free period)
+                $slot = TimetableSlot::create([
+                    'timetable_template_id' => $this->template->id,
+                    'school_id' => $this->template->school_id,
+                    'day_of_week' => $placeholder->day_of_week,
+                    'timetable_period_id' => null,
+                    'sequence_order' => $placeholder->blueprint_period->sequence_order,
+                    'start_time' => $placeholder->blueprint_period->start_time,
+                    'end_time' => $placeholder->blueprint_period->end_time,
+                    'duration_minutes' => $placeholder->blueprint_period->duration_minutes,
+                    'slot_type' => 'study', // Mark as study hall / free period
+                    'priority_band' => $placeholder->blueprint_period->priority_band,
+                    'is_teachable' => false, // Not a lesson, so no subject required
+                    'manually_created' => false,
+                    'subject_id' => null,
+                    'teacher_id' => null,
+                    'room_id' => $this->grade->default_room_id,
+                ]);
+
+                $createdSlots->push($slot);
+            }
+        }
+
+        // Step 3: Assign teachers to created lesson slots (only those with subjects)
+        $this->assignTeachers($createdSlots->where('is_teachable', true));
 
         return $createdSlots;
     }
