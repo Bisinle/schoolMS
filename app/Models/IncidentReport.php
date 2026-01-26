@@ -14,6 +14,7 @@ class IncidentReport extends Model
     protected $fillable = [
         'school_id',
         'report_number',
+        'title',
         'incident_date',
         'incident_time',
         'location',

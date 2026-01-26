@@ -18,6 +18,9 @@ use App\Models\TimetableTemplate;
 use App\Models\TimetablePeriod;
 use App\Models\Room;
 use App\Models\TimetableSlot;
+use App\Models\AccidentReport;
+use App\Models\IncidentReport;
+use App\Models\Policy;
 use App\Observers\QuranTrackingObserver;
 use App\Policies\AttendancePolicy;
 use App\Policies\ExamPolicy;
@@ -33,6 +36,9 @@ use App\Policies\TimetableTemplatePolicy;
 use App\Policies\TimetablePeriodPolicy;
 use App\Policies\RoomPolicy;
 use App\Policies\TimetableSlotPolicy;
+use App\Policies\AccidentReportPolicy;
+use App\Policies\IncidentReportPolicy;
+use App\Policies\PolicyPolicy;
 use App\External\QuranApiClient;
 use App\External\QuranComApiClient;
 use Illuminate\Support\Facades\Vite;
@@ -79,6 +85,11 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(TimetablePeriod::class, TimetablePeriodPolicy::class);
         Gate::policy(Room::class, RoomPolicy::class);
         Gate::policy(TimetableSlot::class, TimetableSlotPolicy::class);
+
+        // Reports & Policies - Added in Phase 2 & 3
+        Gate::policy(AccidentReport::class, AccidentReportPolicy::class);
+        Gate::policy(IncidentReport::class, IncidentReportPolicy::class);
+        Gate::policy(Policy::class, PolicyPolicy::class);
 
         Vite::prefetch(concurrency: 3);
     }

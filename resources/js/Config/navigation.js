@@ -19,6 +19,8 @@ import {
     Home,
     Clock,
     Shield,
+    AlertTriangle,
+    AlertOctagon,
 } from "lucide-react";
 
 /**
@@ -82,8 +84,16 @@ export const getNavigation = (role, isMadrasah = false) => {
                 ]
             },
             { name: "Reports", href: "/reports", icon: FileText },
-            { name: "Documents", href: "/documents", icon: FolderOpen },
-            { name: "Policies", href: "/policies", icon: Shield },
+            {
+                name: "Documents",
+                icon: FolderOpen,
+                submenu: [
+                    { name: "All Documents", href: "/documents", icon: FolderOpen },
+                    { name: "Policies & Regulations", href: "/policies", icon: Shield },
+                    { name: "Accident Reports", href: "/accident-reports", icon: AlertTriangle },
+                    { name: "Incident Reports", href: "/incident-reports", icon: AlertOctagon },
+                ]
+            },
             {
                 name: "Settings",
                 icon: Settings,
@@ -125,8 +135,16 @@ export const getNavigation = (role, isMadrasah = false) => {
                 },
             ] : []),
             { name: "Reports", href: "/reports", icon: FileText },
-            { name: "My Documents", href: "/documents", icon: FolderOpen },
-            { name: "Policies", href: "/policies", icon: Shield },
+            {
+                name: "Documents",
+                icon: FolderOpen,
+                submenu: [
+                    { name: "My Documents", href: "/documents", icon: FolderOpen },
+                    { name: "Policies & Regulations", href: "/policies", icon: Shield },
+                    { name: "Accident Reports", href: "/accident-reports", icon: AlertTriangle },
+                    { name: "Incident Reports", href: "/incident-reports", icon: AlertOctagon },
+                ]
+            },
         ],
         guardian: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -153,10 +171,14 @@ export const getNavigation = (role, isMadrasah = false) => {
         receptionist: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             { name: "Policies", href: "/policies", icon: Shield },
+            { name: "Accident Reports", href: "/accident-reports", icon: AlertTriangle },
+            { name: "Incident Reports", href: "/incident-reports", icon: AlertOctagon },
         ],
         nurse: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             { name: "Policies", href: "/policies", icon: Shield },
+            { name: "Accident Reports", href: "/accident-reports", icon: AlertTriangle },
+            { name: "Incident Reports", href: "/incident-reports", icon: AlertOctagon },
         ],
         it_staff: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },

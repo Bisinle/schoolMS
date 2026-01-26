@@ -47,6 +47,8 @@ use App\Http\Controllers\TimetableSlotController;
 use App\Http\Controllers\TeacherAvailabilityController;
 use App\Http\Controllers\LevelDayBlueprintController;
 use App\Http\Controllers\PolicyController;
+use App\Http\Controllers\AccidentReportController;
+use App\Http\Controllers\IncidentReportController;
 use App\Models\Grade;
 
 /*
@@ -719,6 +721,30 @@ Route::middleware(['auth'])->prefix('policies')->name('policies.')->group(functi
     // Public routes (all authenticated users)
     Route::get('/{policy}', [PolicyController::class, 'show'])->name('show');
     Route::post('/{policy}/acknowledge', [PolicyController::class, 'acknowledge'])->name('acknowledge');
+});
+
+//^ Accident Reports Routes
+Route::middleware(['auth'])->prefix('accident-reports')->name('accident-reports.')->group(function () {
+    Route::get('/', [AccidentReportController::class, 'index'])->name('index');
+    Route::get('/create', [AccidentReportController::class, 'create'])->name('create');
+    Route::post('/', [AccidentReportController::class, 'store'])->name('store');
+    Route::get('/{accidentReport}', [AccidentReportController::class, 'show'])->name('show');
+    Route::get('/{accidentReport}/edit', [AccidentReportController::class, 'edit'])->name('edit');
+    Route::put('/{accidentReport}', [AccidentReportController::class, 'update'])->name('update');
+    Route::post('/{accidentReport}/review', [AccidentReportController::class, 'review'])->name('review');
+    Route::delete('/{accidentReport}', [AccidentReportController::class, 'destroy'])->name('destroy');
+});
+
+//^ Incident Reports Routes
+Route::middleware(['auth'])->prefix('incident-reports')->name('incident-reports.')->group(function () {
+    Route::get('/', [IncidentReportController::class, 'index'])->name('index');
+    Route::get('/create', [IncidentReportController::class, 'create'])->name('create');
+    Route::post('/', [IncidentReportController::class, 'store'])->name('store');
+    Route::get('/{incidentReport}', [IncidentReportController::class, 'show'])->name('show');
+    Route::get('/{incidentReport}/edit', [IncidentReportController::class, 'edit'])->name('edit');
+    Route::put('/{incidentReport}', [IncidentReportController::class, 'update'])->name('update');
+    Route::post('/{incidentReport}/status', [IncidentReportController::class, 'updateStatus'])->name('updateStatus');
+    Route::delete('/{incidentReport}', [IncidentReportController::class, 'destroy'])->name('destroy');
 });
 
 // Fallback route for 404
