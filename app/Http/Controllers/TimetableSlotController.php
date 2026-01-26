@@ -219,6 +219,10 @@ class TimetableSlotController extends Controller
             $validated['subject_id'] = null;
             $validated['teacher_id'] = null;
             $validated['topic'] = null;
+            $validated['is_teachable'] = false;
+        } else {
+            // If slot_type is 'lesson', set is_teachable to true
+            $validated['is_teachable'] = ($validated['slot_type'] === TimetableSlot::TYPE_LESSON);
         }
 
         // ✅ PHASE 3: Detect conflicts before creating
@@ -413,6 +417,10 @@ class TimetableSlotController extends Controller
             $validated['subject_id'] = null;
             $validated['teacher_id'] = null;
             $validated['topic'] = null;
+            $validated['is_teachable'] = false;
+        } else {
+            // If slot_type is 'lesson', set is_teachable to true
+            $validated['is_teachable'] = ($validated['slot_type'] === TimetableSlot::TYPE_LESSON);
         }
 
         // ✅ PHASE 3: Detect conflicts before updating (exclude current slot)
