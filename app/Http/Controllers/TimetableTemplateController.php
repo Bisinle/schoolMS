@@ -245,9 +245,52 @@ class TimetableTemplateController extends Controller
         // Get all slots for this template
         $slots = TimetableSlot::where('timetable_template_id', $template->id)
             ->with(['subject', 'teacher.user', 'room', 'period'])
+            ->orderBy('sequence_order')
             ->orderBy('day_of_week')
-            ->orderBy('timetable_period_id')
-            ->get();
+            ->get()
+            ->map(function ($slot) {
+                return [
+                    'id' => $slot->id,
+                    'timetable_template_id' => $slot->timetable_template_id,
+                    'timetable_period_id' => $slot->timetable_period_id,
+                    'day_of_week' => $slot->day_of_week,
+                    'sequence_order' => $slot->sequence_order,
+                    'start_time' => $slot->start_time,
+                    'end_time' => $slot->end_time,
+                    'duration_minutes' => $slot->duration_minutes,
+                    'slot_type' => $slot->slot_type,
+                    'is_teachable' => $slot->is_teachable,
+                    'manually_created' => $slot->manually_created,
+                    'priority_band' => $slot->priority_band,
+                    'subject_id' => $slot->subject_id,
+                    'teacher_id' => $slot->teacher_id,
+                    'room_id' => $slot->room_id,
+                    'auto_assigned_teacher' => $slot->auto_assigned_teacher,
+                    'topic' => $slot->topic,
+                    'notes' => $slot->notes,
+                    'subject' => $slot->subject ? [
+                        'id' => $slot->subject->id,
+                        'name' => $slot->subject->name,
+                    ] : null,
+                    'teacher' => $slot->teacher ? [
+                        'id' => $slot->teacher->id,
+                        'name' => $slot->teacher->user->name ?? null,
+                        'user' => $slot->teacher->user ? [
+                            'id' => $slot->teacher->user->id,
+                            'name' => $slot->teacher->user->name,
+                        ] : null,
+                    ] : null,
+                    'room' => $slot->room ? [
+                        'id' => $slot->room->id,
+                        'code' => $slot->room->code,
+                        'name' => $slot->room->name,
+                    ] : null,
+                    'period' => $slot->period ? [
+                        'id' => $slot->period->id,
+                        'name' => $slot->period->name,
+                    ] : null,
+                ];
+            });
 
         // Get all periods for the school
         $periods = TimetablePeriod::where('school_id', $template->school_id)
