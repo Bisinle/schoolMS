@@ -45,8 +45,17 @@ class TimetableSlotPolicy
      */
     public function update(User $user, TimetableSlot $timetableSlot): bool
     {
-        // Only admins can update, and only if the template is in draft status
-        return $user->isAdmin() && $timetableSlot->timetableTemplate->isDraft();
+        // Admins can update slots even when published
+        // Teachers can only update slots in draft templates
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        if ($user->isTeacher()) {
+            return $timetableSlot->timetableTemplate->isDraft();
+        }
+
+        return false;
     }
 
     /**
@@ -54,8 +63,13 @@ class TimetableSlotPolicy
      */
     public function delete(User $user, TimetableSlot $timetableSlot): bool
     {
-        // Only admins can delete, and only if the template is in draft status
-        return $user->isAdmin() && $timetableSlot->timetableTemplate->isDraft();
+        // Admins can delete slots even when published
+        // Teachers cannot delete slots
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return false;
     }
 
     /**
