@@ -177,9 +177,56 @@ class SubjectController extends Controller
         $this->authorize('delete', $subject);
 
         // Check if subject has exams
-        if ($subject->exams()->exists()) {
-            return back()->withErrors([
-                'error' => 'Cannot delete subject with existing exams.'
+        $exams = $subject->exams()->with(['grade'])->get();
+
+        if ($exams->isNotEmpty()) {
+            $examsUsing = $exams->map(function ($exam) {
+                return [
+                    'id' => $exam->id,
+                    'name' => $exam->name,
+                    'grade' => $exam->grade->name ?? 'N/A',
+                    'date' => $exam->exam_date ? $exam->exam_date->format('M d, Y') : 'Not scheduled',
+                    'academic_year' => $exam->academic_year,
+                    'term' => $exam->term,
+                    'url' => route('exams.show', $exam->id),
+                ];
+            });
+
+            return back()->with('error', [
+                'message' => 'This subject cannot be deleted because it is being used in exams.',
+                'type' => 'exams',
+                'exams_using_subject' => $examsUsing,
+                'subject_name' => $subject->name,
+            ]);
+        }
+
+        // Check if subject is used in any timetable slots
+        $timetableSlots = $subject->timetableSlots()
+            ->with(['template.grade', 'template.academicTerm'])
+            ->get();
+
+        if ($timetableSlots->isNotEmpty()) {
+            // Group slots by template
+            $templatesUsing = $timetableSlots->groupBy('timetable_template_id')
+                ->map(function ($slots) {
+                    $template = $slots->first()->template;
+                    return [
+                        'id' => $template->id,
+                        'name' => $template->name,
+                        'grade' => $template->grade->name,
+                        'term' => $template->academicTerm->name ?? 'N/A',
+                        'status' => $template->status,
+                        'slots_count' => $slots->count(),
+                        'url' => route('timetables.templates.show', $template->id),
+                    ];
+                })
+                ->values();
+
+            return back()->with('error', [
+                'message' => 'This subject cannot be deleted because it is being used in timetable schedules.',
+                'type' => 'timetable_slots',
+                'templates_using_subject' => $templatesUsing,
+                'subject_name' => $subject->name,
             ]);
         }
 

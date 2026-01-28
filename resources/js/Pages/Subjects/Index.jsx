@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
-import { Plus, Eye, Edit, Trash2, BookOpen, Tag } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Plus, Eye, Edit, Trash2, BookOpen, Tag, AlertCircle, X } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 import useFilters from '@/Hooks/useFilters';
@@ -120,8 +120,25 @@ function MobileSubjectItem({ subject, auth, onDelete }) {
 }
 
 export default function SubjectsIndex({ subjects, filters: initialFilters = {}, auth }) {
-    const { school } = usePage().props;
+    const { school, flash } = usePage().props;
+    const error = flash?.error;
     const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
+
+    // Show error modal when error exists
+    const [showErrorModal, setShowErrorModal] = useState(false);
+    const errorShownRef = useRef(null);
+
+    useEffect(() => {
+        // Only show modal if we have a new error (different from the last one we showed)
+        if (error && JSON.stringify(error) !== errorShownRef.current) {
+            setShowErrorModal(true);
+            errorShownRef.current = JSON.stringify(error);
+        }
+    }, [error]);
+
+    const handleCloseErrorModal = () => {
+        setShowErrorModal(false);
+    };
 
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
@@ -143,7 +160,7 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
     const handleDelete = () => {
         if (selectedSubject) {
             router.delete(`/subjects/${selectedSubject.id}`, {
-                onSuccess: () => {
+                onFinish: () => {
                     setShowDeleteModal(false);
                     setSelectedSubject(null);
                 },
@@ -189,6 +206,8 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                         </Link>
                     )}
                 </div>
+
+
 
                 {/* Mobile List View - Refactored with MobileListContainer */}
                 <div className="block md:hidden">
@@ -357,6 +376,139 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                 confirmText="Delete"
                 type="danger"
             />
+
+            {/* Error Modal - Subject Cannot Be Deleted */}
+            {showErrorModal && error && (error.type === 'exams' || error.type === 'timetable_slots') && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+                        {/* Header */}
+                        <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-red-50">
+                            <div className="flex items-center space-x-3">
+                                <div className="flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100">
+                                    <AlertCircle className="h-6 w-6 text-red-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">Cannot Delete Subject</h3>
+                                    <p className="text-sm text-red-800 mt-1">
+                                        The subject <strong>"{error.subject_name}"</strong> is currently being used
+                                    </p>
+                                </div>
+                            </div>
+                            <button
+                                onClick={handleCloseErrorModal}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+
+                        {/* Content - Scrollable */}
+                        <div className="flex-1 overflow-y-auto p-6">
+                            {/* Exams Error */}
+                            {error.type === 'exams' && error.exams_using_subject && (
+                                <div>
+                                    <p className="text-sm text-gray-700 mb-4">
+                                        This subject is currently being used in <strong>{error.exams_using_subject.length} exam{error.exams_using_subject.length !== 1 ? 's' : ''}</strong> and cannot be deleted.
+                                    </p>
+
+                                    <div className="mb-4">
+                                        <p className="text-sm font-semibold text-gray-900 mb-3">Exams using this subject:</p>
+                                        <div className="space-y-2">
+                                            {error.exams_using_subject.map((exam) => (
+                                                <Link
+                                                    key={exam.id}
+                                                    href={exam.url}
+                                                    className="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors border border-gray-200 hover:border-red-300 shadow-sm"
+                                                    onClick={handleCloseErrorModal}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div>
+                                                            <p className="font-semibold text-gray-900">{exam.name}</p>
+                                                            <p className="text-sm text-gray-600 mt-0.5">
+                                                                {exam.grade} • {exam.date}
+                                                            </p>
+                                                            <p className="text-xs text-gray-500 mt-0.5">
+                                                                {exam.academic_year} • Term {exam.term}
+                                                            </p>
+                                                        </div>
+                                                        <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                        </svg>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-sm font-semibold text-blue-900 mb-1">📝 What you need to do:</p>
+                                        <p className="text-sm text-blue-800">
+                                            Click on each exam above and either delete the exam or assign it to a different subject. Once all exams are removed or reassigned, you'll be able to delete this subject.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Timetable Slots Error */}
+                            {error.type === 'timetable_slots' && error.templates_using_subject && (
+                                <div>
+                                    <p className="text-sm text-gray-700 mb-4">
+                                        This subject is currently being used in <strong>{error.templates_using_subject.length} timetable schedule{error.templates_using_subject.length !== 1 ? 's' : ''}</strong> and cannot be deleted.
+                                    </p>
+
+                                    <div className="mb-4">
+                                        <p className="text-sm font-semibold text-gray-900 mb-3">Timetables using this subject:</p>
+                                        <div className="space-y-2">
+                                            {error.templates_using_subject.map((template) => (
+                                                <Link
+                                                    key={template.id}
+                                                    href={template.url}
+                                                    className="block p-4 bg-gray-50 rounded-lg hover:bg-red-50 transition-colors border border-gray-200 hover:border-red-300 shadow-sm"
+                                                    onClick={handleCloseErrorModal}
+                                                >
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex-1">
+                                                            <p className="font-semibold text-gray-900">{template.name}</p>
+                                                            <p className="text-sm text-gray-600 mt-0.5">
+                                                                {template.grade} • {template.term} • <span className="capitalize">{template.status}</span>
+                                                            </p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="text-sm font-medium text-gray-500">
+                                                                {template.slots_count} slot{template.slots_count !== 1 ? 's' : ''}
+                                                            </span>
+                                                            <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                                            </svg>
+                                                        </div>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                                        <p className="text-sm font-semibold text-blue-900 mb-1">📝 What you need to do:</p>
+                                        <p className="text-sm text-blue-800">
+                                            Click on each timetable above and remove or replace this subject from all time slots. Once the subject is no longer used in any timetable, you'll be able to delete it.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer */}
+                        <div className="flex justify-end p-6 border-t border-gray-200 bg-gray-50">
+                            <button
+                                onClick={handleCloseErrorModal}
+                                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors font-medium"
+                            >
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
