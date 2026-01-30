@@ -57,6 +57,7 @@ class LevelDayBlueprintController extends Controller
                 'prayer' => 'Prayer Break',
                 'sports' => 'Sports Block',
                 'activity' => 'Activity',
+                'homework' => 'Homework',
             ],
             'priorityBands' => [
                 'morning_high' => 'Morning (Fresh Mind)',
@@ -78,7 +79,7 @@ class LevelDayBlueprintController extends Controller
             'end_time' => 'required|date_format:H:i|after:start_time',
             'description' => 'nullable|string',
             'periods' => 'required|array|min:1',
-            'periods.*.period_type' => 'required|in:lesson,short_break,breakfast,lunch,prayer,sports,activity',
+            'periods.*.period_type' => 'required|in:lesson,short_break,breakfast,lunch,prayer,sports,activity,homework',
             'periods.*.duration_minutes' => 'required|integer|min:5|max:120',
             'periods.*.priority_band' => 'nullable|in:morning_high,neutral,afternoon_low',
         ]);
@@ -180,6 +181,7 @@ class LevelDayBlueprintController extends Controller
                 'prayer' => 'Prayer Break',
                 'sports' => 'Sports Block',
                 'activity' => 'Activity',
+                'homework' => 'Homework',
             ],
             'priorityBands' => [
                 'morning_high' => 'Morning (Fresh Mind)',
@@ -202,7 +204,7 @@ class LevelDayBlueprintController extends Controller
             'description' => 'nullable|string',
             'is_active' => 'boolean',
             'periods' => 'required|array|min:1',
-            'periods.*.period_type' => 'required|in:lesson,short_break,breakfast,lunch,prayer,sports,activity',
+            'periods.*.period_type' => 'required|in:lesson,short_break,breakfast,lunch,prayer,sports,activity,homework',
             'periods.*.duration_minutes' => 'required|integer|min:5|max:120',
             'periods.*.priority_band' => 'nullable|in:morning_high,neutral,afternoon_low',
         ]);

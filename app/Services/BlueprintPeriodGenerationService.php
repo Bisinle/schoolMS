@@ -151,14 +151,16 @@ class BlueprintPeriodGenerationService
      */
     private function mapPeriodType(string $blueprintType): string
     {
+        // Now we map 1:1 since slot types match period types
         $typeMap = [
             'lesson' => 'lesson',
-            'short_break' => 'break',
-            'breakfast' => 'break',
+            'short_break' => 'short_break',
+            'breakfast' => 'breakfast',
             'lunch' => 'lunch',
-            'prayer' => 'activity',
-            'sports' => 'activity',
+            'prayer' => 'prayer',
+            'sports' => 'sports',
             'activity' => 'activity',
+            'homework' => 'homework',
         ];
 
         return $typeMap[$blueprintType] ?? 'other';

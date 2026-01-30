@@ -83,6 +83,7 @@ export default function BlueprintsShow({ auth, blueprint }) {
             'prayer': 'Prayer Break',
             'sports': 'Sports Block',
             'activity': 'Activity',
+            'homework': 'Homework',
         };
         return labels[type] || type;
     };
@@ -104,6 +105,7 @@ export default function BlueprintsShow({ auth, blueprint }) {
             'prayer': 'bg-purple-100 text-purple-800',
             'sports': 'bg-yellow-100 text-yellow-800',
             'activity': 'bg-pink-100 text-pink-800',
+            'homework': 'bg-teal-100 text-teal-800',
         };
         return colors[type] || 'bg-gray-100 text-gray-800';
     };
