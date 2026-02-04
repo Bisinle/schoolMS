@@ -8,17 +8,21 @@ import Avatar from "@/Components/Avatar";
  * @param {string} props.header - Page header title
  * @param {Object} props.auth - Authentication object with user data
  * @param {Function} props.setSidebarOpen - Function to toggle mobile sidebar
+ * @param {boolean} props.showHamburger - Whether to show hamburger menu (default: true)
  */
-export default function TopBar({ header, auth, setSidebarOpen }) {
+export default function TopBar({ header, auth, setSidebarOpen, showHamburger = true }) {
     return (
         <div className="sticky top-0 z-[45] flex-shrink-0 flex h-16 bg-white shadow-sm">
-            <button
-                type="button"
-                className="px-4 text-gray-500 focus:outline-none md:hidden"
-                onClick={() => setSidebarOpen(true)}
-            >
-                <Menu className="h-6 w-6 " />
-            </button>
+            {/* Hamburger menu - Hidden for teachers (they use bottom nav), shown for other roles */}
+            {showHamburger && (
+                <button
+                    type="button"
+                    className="px-4 text-gray-500 focus:outline-none md:hidden"
+                    onClick={() => setSidebarOpen(true)}
+                >
+                    <Menu className="h-6 w-6 " />
+                </button>
+            )}
 
             <div className="flex-1 px-4 flex justify-between items-center">
                 <div className="flex-1">

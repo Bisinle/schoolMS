@@ -8,10 +8,13 @@ import Sidebar from "@/Layouts/Sidebar";
 import TopBar from "@/Layouts/TopBar";
 import { getNavigation } from "@/Config/navigation";
 import { useImpersonationBanner } from "@/Hooks/useImpersonationBanner";
+import { BottomNavigation, BottomSheet } from "@/Components/Navigation";
+import TeacherMoreMenu from "@/Components/Navigation/TeacherMoreMenu";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, school, impersonation } = usePage().props;
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
 
     // Impersonation banner state management
     const { visible: bannerVisible, toggle: toggleBanner } =
@@ -21,11 +24,16 @@ export default function AuthenticatedLayout({ header, children }) {
     const isSuperAdmin = auth.user.role === "super_admin";
     const brandName = isSuperAdmin ? "SchoolMS" : school?.name || "SchoolMS";
     const brandLogo =
-        !isSuperAdmin && school?.logo_path ? `/storage/${school.logo_path}` : null;
+        !isSuperAdmin && school?.logo_path
+            ? `/storage/${school.logo_path}`
+            : null;
 
     // Get navigation items based on role and school type
     const isMadrasah = school?.school_type === "madrasah";
     const navigation = getNavigation(auth.user.role, isMadrasah);
+
+    // Determine if bottom nav should be shown (mobile only, ONLY for teachers)
+    const showBottomNav = auth.user.role === 'teacher';
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -67,6 +75,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     header={header}
                     auth={auth}
                     setSidebarOpen={setSidebarOpen}
+                    showHamburger={!showBottomNav}
                 />
 
                 <motion.div
@@ -77,7 +86,11 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     {/* Page content */}
                     <main className="flex-1">
-                        <div className="py-6">
+                        <div
+                            className={`py-6 ${
+                                showBottomNav ? "pb-20 md:pb-6" : ""
+                            }`}
+                        >
                             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                                 {children}
                             </div>
@@ -85,6 +98,38 @@ export default function AuthenticatedLayout({ header, children }) {
                     </main>
                 </motion.div>
             </div>
+
+            {/* Bottom Navigation (Mobile Only) */}
+            {showBottomNav && (
+                <BottomNavigation
+                    role={auth.user.role}
+                    isMadrasah={isMadrasah}
+                    onMoreClick={() => setShowMoreMenu(true)}
+                    badges={
+                        {
+                            // TODO: Add badge counts from backend
+                        }
+                    }
+                />
+            )}
+
+            {/* More Menu Bottom Sheet */}
+            {showBottomNav && auth.user.role === "teacher" && (
+                <BottomSheet
+                    show={showMoreMenu}
+                    onClose={() => setShowMoreMenu(false)}
+                    title="More"
+                >
+                    <TeacherMoreMenu
+                        isMadrasah={isMadrasah}
+                        badges={
+                            {
+                                // TODO: Add badge counts from backend
+                            }
+                        }
+                    />
+                </BottomSheet>
+            )}
 
             {/* PWA Install Prompt */}
             <PWAInstallPrompt />

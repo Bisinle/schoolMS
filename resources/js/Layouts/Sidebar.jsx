@@ -172,9 +172,9 @@ export default function Sidebar({
                     sidebarOpen ? "translate-x-0" : "-translate-x-full"
                 }`}
             >
-                <div className="flex flex-col h-full">
+                <div className="flex flex-col h-full overflow-hidden">
                     {/* Mobile header */}
-                    <div className="relative flex items-center justify-center py-6 px-4 border-b border-navy-light">
+                    <div className="relative flex items-center justify-center py-6 px-4 border-b border-navy-light flex-shrink-0">
                         {renderBrandHeader()}
                         <button
                             onClick={() => setSidebarOpen(false)}
@@ -185,7 +185,7 @@ export default function Sidebar({
                     </div>
 
                     {/* Mobile navigation */}
-                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-navy">
+                    <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-navy min-h-0">
                         {/* Website Link */}
                         <a
                             href="https://al-elmischool.com"
