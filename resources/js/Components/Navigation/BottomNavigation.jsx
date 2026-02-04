@@ -6,6 +6,8 @@ import {
     BookOpen,
     MoreHorizontal,
     Book,
+    Users,
+    Clock,
 } from 'lucide-react';
 
 /**
@@ -76,12 +78,57 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
         return baseItems;
     };
 
+    // Navigation configuration for admins
+    const getAdminNavItems = () => {
+        const items = [
+            {
+                name: 'Dashboard',
+                href: '/dashboard',
+                icon: LayoutDashboard,
+                label: 'Home',
+                badge: badges.dashboard,
+            },
+            {
+                name: 'Attendance',
+                href: '/attendance',
+                icon: ClipboardCheck,
+                label: 'Attendance',
+                badge: badges.attendance,
+            },
+            {
+                name: 'Students',
+                href: '/students',
+                icon: Users,
+                label: 'Students',
+                badge: badges.students,
+            },
+            {
+                name: 'Timetable',
+                href: '/timetables/dashboard',
+                icon: Clock,
+                label: 'Timetable',
+                badge: badges.timetable,
+            },
+            {
+                name: 'More',
+                href: null,
+                icon: MoreHorizontal,
+                label: 'More',
+                isMore: true,
+            },
+        ];
+
+        return items;
+    };
+
     // Get navigation items based on role
     const getNavItems = () => {
         switch (role) {
             case 'teacher':
                 return getTeacherNavItems();
-            // TODO: Add admin and guardian configurations
+            case 'admin':
+                return getAdminNavItems();
+            // TODO: Add guardian configuration
             default:
                 return getTeacherNavItems();
         }

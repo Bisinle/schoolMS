@@ -8,8 +8,7 @@ import Sidebar from "@/Layouts/Sidebar";
 import TopBar from "@/Layouts/TopBar";
 import { getNavigation } from "@/Config/navigation";
 import { useImpersonationBanner } from "@/Hooks/useImpersonationBanner";
-import { BottomNavigation, BottomSheet } from "@/Components/Navigation";
-import TeacherMoreMenu from "@/Components/Navigation/TeacherMoreMenu";
+import { BottomNavigation, BottomSheet, TeacherMoreMenu, AdminMoreMenu } from "@/Components/Navigation";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, school, impersonation } = usePage().props;
@@ -32,8 +31,8 @@ export default function AuthenticatedLayout({ header, children }) {
     const isMadrasah = school?.school_type === "madrasah";
     const navigation = getNavigation(auth.user.role, isMadrasah);
 
-    // Determine if bottom nav should be shown (mobile only, ONLY for teachers)
-    const showBottomNav = auth.user.role === 'teacher';
+    // Determine if bottom nav should be shown (mobile only, for teachers and admins)
+    const showBottomNav = auth.user.role === 'teacher' || auth.user.role === 'admin';
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -113,7 +112,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 />
             )}
 
-            {/* More Menu Bottom Sheet */}
+            {/* More Menu Bottom Sheet - Teacher */}
             {showBottomNav && auth.user.role === "teacher" && (
                 <BottomSheet
                     show={showMoreMenu}
@@ -121,6 +120,24 @@ export default function AuthenticatedLayout({ header, children }) {
                     title="More"
                 >
                     <TeacherMoreMenu
+                        isMadrasah={isMadrasah}
+                        badges={
+                            {
+                                // TODO: Add badge counts from backend
+                            }
+                        }
+                    />
+                </BottomSheet>
+            )}
+
+            {/* More Menu Bottom Sheet - Admin */}
+            {showBottomNav && auth.user.role === "admin" && (
+                <BottomSheet
+                    show={showMoreMenu}
+                    onClose={() => setShowMoreMenu(false)}
+                    title="More"
+                >
+                    <AdminMoreMenu
                         isMadrasah={isMadrasah}
                         badges={
                             {
