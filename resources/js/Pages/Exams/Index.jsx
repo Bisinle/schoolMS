@@ -52,11 +52,11 @@ function MobileExamItem({ exam, auth, onDelete }) {
             </div>
 
             <div className="flex-1 min-w-0">
-                <h3 className="text-lg font-black text-gray-900 truncate leading-tight">
-                    {exam.title}
+                <h3 className="text-base font-bold text-gray-900 leading-tight mb-1">
+                    {exam.grade?.name}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">{exam.subject?.name}</p>
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <p className="text-sm text-gray-600 mb-2">{exam.subject?.name}</p>
+                <div className="flex items-center gap-2 flex-wrap">
                     <Badge
                         variant={getExamTypeBadgeVariant(exam.exam_type)}
                         value={getExamTypeLabel(exam.exam_type)}
