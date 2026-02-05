@@ -1,9 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ArrowLeft, Save, CheckCircle, AlertCircle, Users, User } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Users, User, Award, TrendingUp, Hash } from 'lucide-react';
 import { ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
+import Avatar from '@/Components/Avatar';
 
 export default function ExamResultsIndex({ exam, students }) {
     const [marks, setMarks] = useState(() => {
@@ -91,50 +92,112 @@ export default function ExamResultsIndex({ exam, students }) {
     function MobileStudentItem({ student, index }) {
         const rubric = getRubric(marks[student.id]);
         const isSaved = savedStudents.has(student.id);
+        const currentMark = marks[student.id];
+        const hasMark = currentMark !== '' && currentMark !== null;
 
         return (
             <ExpandableCard
+                className="border-b border-gray-200 last:border-b-0"
                 header={
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                        {/* Student Avatar */}
-                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-orange to-orange-dark flex items-center justify-center text-white font-bold shadow-md">
-                            {student.first_name.charAt(0)}{student.last_name.charAt(0)}
-                        </div>
+                        {/* Avatar */}
+                        <Avatar
+                            name={`${student.first_name} ${student.last_name}`}
+                            imagePath={student.profile_picture}
+                            size="md"
+                        />
 
                         <div className="flex-1 min-w-0">
-                            {/* Top Row: Number & Status */}
-                            <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <span className="text-xs font-semibold text-gray-500">#{index + 1}</span>
+                            {/* Top Row: Admission Number & Saved Status */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                                <Badge variant="primary" value={student.admission_number} size="sm" />
                                 {isSaved && (
-                                    <span className="inline-flex items-center text-green-600">
-                                        <CheckCircle className="w-4 h-4" />
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                        <CheckCircle className="w-3 h-3" />
+                                        Saved
                                     </span>
                                 )}
                             </div>
 
                             {/* Student Name */}
-                            <h3 className="text-base font-bold text-gray-900 mb-1">
+                            <h3 className="text-base font-bold text-gray-900 truncate mb-2">
                                 {student.first_name} {student.last_name}
                             </h3>
 
-                            {/* Admission Number */}
-                            <div className="flex items-center gap-2">
-                                <Badge variant="primary" value={student.admission_number} size="sm" />
-                                {rubric && (
-                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${rubric.color}`}>
-                                        {rubric.text}
-                                    </span>
+                            {/* Current Mark & Rubric */}
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {hasMark ? (
+                                    <>
+                                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                            <TrendingUp className="w-3.5 h-3.5 text-orange" />
+                                            <span className="font-bold text-orange">{currentMark}%</span>
+                                        </div>
+                                        {rubric && (
+                                            <>
+                                                <span className="text-gray-300">•</span>
+                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${rubric.color}`}>
+                                                    {rubric.text}
+                                                </span>
+                                            </>
+                                        )}
+                                    </>
+                                ) : (
+                                    <span className="text-xs text-gray-400 italic">No marks entered</span>
                                 )}
                             </div>
                         </div>
                     </div>
                 }
             >
-                {/* Expanded Content - Mark Entry */}
-                <div className="px-4 pb-4 pt-3 space-y-4">
-                    {/* Mark Input */}
-                    <div className="space-y-2">
-                        <label className="block text-sm font-semibold text-gray-700">
+                {/* Expanded Details */}
+                <div className="px-4 pb-4 pt-3 space-y-3">
+                    {/* Info Grid */}
+                    <div className="grid grid-cols-1 gap-2">
+                        {/* Student Number */}
+                        <div className="flex items-center gap-2.5 text-sm">
+                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                <Hash className="w-4 h-4 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-500 mb-0.5">Student Number</p>
+                                <p className="text-sm font-medium text-gray-900">
+                                    #{index + 1}
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Current Mark */}
+                        {hasMark && (
+                            <div className="flex items-center gap-2.5 text-sm">
+                                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
+                                    <TrendingUp className="w-4 h-4 text-orange-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-500 mb-0.5">Current Mark</p>
+                                    <p className="text-sm font-bold text-orange-700">{currentMark}%</p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Performance Level */}
+                        {rubric && (
+                            <div className="flex items-center gap-2.5 text-sm">
+                                <div className={`w-8 h-8 rounded-full ${rubric.color.replace('text-', 'bg-').replace('-800', '-50')} flex items-center justify-center flex-shrink-0`}>
+                                    <Award className={`w-4 h-4 ${rubric.color.replace('bg-', 'text-').replace('-100', '-600')}`} />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-gray-500 mb-0.5">Performance Level</p>
+                                    <p className={`text-sm font-semibold ${rubric.color.replace('bg-', 'text-').replace('-100', '-700')}`}>
+                                        {rubric.text}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Mark Input Section */}
+                    <div className="pt-2 border-t border-gray-100">
+                        <label className="block text-xs font-semibold text-gray-700 mb-2">
                             Enter Marks (0-100)
                         </label>
                         <input
@@ -144,27 +207,25 @@ export default function ExamResultsIndex({ exam, students }) {
                             step="0.01"
                             value={marks[student.id]}
                             onChange={(e) => handleMarkChange(student.id, e.target.value)}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange focus:border-orange transition-all text-center text-lg font-bold"
-                            placeholder="Enter marks"
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange focus:border-orange transition-all text-center text-2xl font-bold text-gray-900 placeholder-gray-400"
+                            placeholder="0"
                         />
+                        <p className="text-xs text-gray-500 text-center mt-1.5">
+                            Tap to enter or update marks
+                        </p>
                     </div>
-
-                    {/* Rubric Display */}
-                    {rubric && (
-                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
-                            <p className="text-xs text-gray-600 mb-1">Performance Level</p>
-                            <p className={`text-sm font-semibold ${rubric.color.replace('bg-', 'text-').replace('-100', '-700')}`}>
-                                {rubric.text}
-                            </p>
-                        </div>
-                    )}
                 </div>
             </ExpandableCard>
         );
     }
 
     return (
-        <AuthenticatedLayout header={`Enter Marks: ${exam.name}`}>
+        <AuthenticatedLayout header={
+            <span className="block truncate">
+                <span className="hidden md:inline">Enter Marks: {exam.name}</span>
+                <span className="md:hidden">Enter Marks</span>
+            </span>
+        }>
             <Head title={`Enter Marks - ${exam.name}`} />
 
             <div className="max-w-7xl mx-auto space-y-4 md:space-y-6 px-4 md:px-0">
@@ -182,33 +243,52 @@ export default function ExamResultsIndex({ exam, students }) {
 
                 {/* Exam Info Card */}
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 bg-gradient-to-r from-orange to-orange-dark">
-                        <h2 className="text-xl font-bold text-white mb-2">{exam.name}</h2>
-                        <div className="flex flex-wrap gap-3 text-sm">
-                            <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
-                                {exam.grade?.name}
-                            </span>
-                            <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
-                                {exam.subject?.name}
-                            </span>
-                            <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
-                                Term {exam.term} - {exam.academic_year}
-                            </span>
-                            <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
-                                {badge.label}
-                            </span>
+                    <div className="px-4 py-3 md:px-6 md:py-4 bg-gradient-to-r from-orange to-orange-dark">
+                        {/* Mobile: Compact Layout */}
+                        <div className="md:hidden">
+                            <h2 className="text-base font-bold text-white mb-2 line-clamp-1">{exam.subject?.name}</h2>
+                            <div className="flex flex-wrap gap-1.5 text-xs">
+                                <span className="inline-flex items-center px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
+                                    {exam.grade?.name}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
+                                    {badge.label}
+                                </span>
+                                <span className="inline-flex items-center px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
+                                    T{exam.term} {exam.academic_year}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Desktop: Full Layout */}
+                        <div className="hidden md:block">
+                            <h2 className="text-xl font-bold text-white mb-2">{exam.name}</h2>
+                            <div className="flex flex-wrap gap-3 text-sm">
+                                <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
+                                    {exam.grade?.name}
+                                </span>
+                                <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
+                                    {exam.subject?.name}
+                                </span>
+                                <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
+                                    Term {exam.term} - {exam.academic_year}
+                                </span>
+                                <span className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white font-medium">
+                                    {badge.label}
+                                </span>
+                            </div>
                         </div>
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <div className="px-4 py-3 md:px-6 md:py-4 bg-gray-50 border-b border-gray-200">
                         <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-gray-700">Progress</span>
-                            <span className="text-sm font-bold text-gray-900">
+                            <span className="text-xs md:text-sm font-medium text-gray-700">Progress</span>
+                            <span className="text-xs md:text-sm font-bold text-gray-900">
                                 {filledCount} / {students.length} ({completionPercentage}%)
                             </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                        <div className="w-full bg-gray-200 rounded-full h-2 md:h-3 overflow-hidden">
                             <div
                                 className="bg-orange h-full transition-all duration-500"
                                 style={{ width: `${completionPercentage}%` }}
@@ -218,21 +298,56 @@ export default function ExamResultsIndex({ exam, students }) {
                 </div>
 
                 {/* Instructions Card */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start">
-                    <AlertCircle className="w-5 h-5 text-blue-600 mr-3 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 md:p-4 flex items-start">
+                    <AlertCircle className="w-4 h-4 md:w-5 md:h-5 text-blue-600 mr-2 md:mr-3 flex-shrink-0 mt-0.5" />
+                    <div className="text-xs md:text-sm text-blue-800">
                         <p className="font-medium mb-1">Instructions:</p>
-                        <ul className="list-disc list-inside space-y-1">
+                        <ul className="list-disc list-inside space-y-0.5 md:space-y-1">
                             <li>Enter marks between 0 and 100 for each student</li>
-                            <li>You can save partial results - students without marks will be skipped</li>
+                            <li className="hidden md:list-item">You can save partial results - students without marks will be skipped</li>
                             <li>Changes are saved when you click "Save All Marks"</li>
-                            <li>Marks will automatically appear in student reports</li>
+                            <li className="hidden md:list-item">Marks will automatically appear in student reports</li>
                         </ul>
                     </div>
                 </div>
 
-                {/* Marks Entry Form */}
-                <form onSubmit={handleSaveAll}>
+                {/* Mobile View - Student Cards */}
+                <div className="md:hidden">
+                    <MobileListContainer>
+                        {students.length > 0 ? (
+                            students.map((student, index) => (
+                                <MobileStudentItem
+                                    key={student.id}
+                                    student={student}
+                                    index={index}
+                                />
+                            ))
+                        ) : (
+                            <div className="text-center py-12 px-4">
+                                <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                                <p className="text-lg font-medium text-gray-900 mb-1">No students found</p>
+                                <p className="text-sm text-gray-500">There are no active students in {exam.grade?.name}</p>
+                            </div>
+                        )}
+                    </MobileListContainer>
+
+                    {/* Mobile Save Button */}
+                    {students.length > 0 && (
+                        <div className="mt-4">
+                            <button
+                                onClick={handleSaveAll}
+                                disabled={saving || filledCount === 0}
+                                className="w-full flex items-center justify-center gap-2 px-6 py-4 text-base font-bold text-white bg-orange rounded-xl hover:bg-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg active:scale-95"
+                            >
+                                <Save className="w-5 h-5" />
+                                {saving ? 'Saving...' : `Save All Marks (${filledCount}/${students.length})`}
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop View - Table */}
+                <form onSubmit={handleSaveAll} className="hidden md:block">
                     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                             <div className="flex items-center">
@@ -363,33 +478,33 @@ export default function ExamResultsIndex({ exam, students }) {
                 </form>
 
                 {/* Rubric Reference */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
-                        <h3 className="text-lg font-semibold text-gray-900">Grading Rubric</h3>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden mb-20 md:mb-0">
+                    <div className="px-4 py-3 md:px-6 md:py-4 border-b border-gray-200 bg-gray-50">
+                        <h3 className="text-base md:text-lg font-semibold text-gray-900">Grading Rubric</h3>
                     </div>
-                    <div className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="p-4 md:p-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
                             <div className="flex items-center p-3 border border-green-200 bg-green-50 rounded-lg">
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-green-800">Exceeding Expectation</p>
+                                    <p className="text-xs md:text-sm font-semibold text-green-800">Exceeding Expectation</p>
                                     <p className="text-xs text-green-600">90% - 100%</p>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 border border-blue-200 bg-blue-50 rounded-lg">
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-blue-800">Meeting Expectation</p>
+                                    <p className="text-xs md:text-sm font-semibold text-blue-800">Meeting Expectation</p>
                                     <p className="text-xs text-blue-600">75% - 89%</p>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 border border-yellow-200 bg-yellow-50 rounded-lg">
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-yellow-800">Approaching Expectation</p>
+                                    <p className="text-xs md:text-sm font-semibold text-yellow-800">Approaching Expectation</p>
                                     <p className="text-xs text-yellow-600">50% - 74%</p>
                                 </div>
                             </div>
                             <div className="flex items-center p-3 border border-red-200 bg-red-50 rounded-lg">
                                 <div className="flex-1">
-                                    <p className="text-sm font-semibold text-red-800">Below Expectation</p>
+                                    <p className="text-xs md:text-sm font-semibold text-red-800">Below Expectation</p>
                                     <p className="text-xs text-red-600">0% - 49%</p>
                                 </div>
                             </div>
