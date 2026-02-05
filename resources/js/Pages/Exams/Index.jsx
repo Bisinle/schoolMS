@@ -30,15 +30,19 @@ function getExamTypeLabel(type) {
 
 // Mobile List Item Component - Refactored with new components
 function MobileExamItem({ exam, auth, onDelete }) {
-    // Define swipe actions
+    // Define swipe actions - Only admins can edit/delete
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/exams/${exam.id}` },
-        { icon: Edit, label: 'Edit', href: `/exams/${exam.id}/edit` },
     ];
 
-    const secondaryActions = [
+    // Only admins can edit and delete exams
+    if (auth.user.role === 'admin') {
+        primaryActions.push({ icon: Edit, label: 'Edit', href: `/exams/${exam.id}/edit` });
+    }
+
+    const secondaryActions = auth.user.role === 'admin' ? [
         { icon: Trash2, label: 'Delete', onClick: () => onDelete(exam) },
-    ];
+    ] : [];
 
     // Header content with Badge component
     const header = (
@@ -110,28 +114,32 @@ function MobileExamItem({ exam, auth, onDelete }) {
             </div>
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 pt-4 border-t border-gray-100">
+            <div className={`grid ${auth.user.role === 'admin' ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pt-4 border-t border-gray-100`}>
                 <Link
                     href={`/exams/${exam.id}`}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95"
+                    className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95 ${auth.user.role !== 'admin' ? 'col-span-1' : ''}`}
                 >
                     <Eye className="w-4 h-4" />
                     View
                 </Link>
-                <Link
-                    href={`/exams/${exam.id}/edit`}
-                    className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 rounded-xl font-bold text-sm hover:bg-orange-100 transition-colors active:scale-95"
-                >
-                    <Edit className="w-4 h-4" />
-                    Edit
-                </Link>
-                <button
-                    onClick={() => onDelete(exam)}
-                    className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
-                >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Exam
-                </button>
+                {auth.user.role === 'admin' && (
+                    <>
+                        <Link
+                            href={`/exams/${exam.id}/edit`}
+                            className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 rounded-xl font-bold text-sm hover:bg-orange-100 transition-colors active:scale-95"
+                        >
+                            <Edit className="w-4 h-4" />
+                            Edit
+                        </Link>
+                        <button
+                            onClick={() => onDelete(exam)}
+                            className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
+                        >
+                            <Trash2 className="w-4 h-4" />
+                            Delete Exam
+                        </button>
+                    </>
+                )}
             </div>
         </div>
     );
@@ -338,21 +346,23 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Link>
-                                                <Link
-                                                    href={`/exams/${exam.id}/edit`}
-                                                    className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
-                                                    title="Edit Exam"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Link>
                                                 {auth.user.role === 'admin' && (
-                                                    <button
-                                                        onClick={() => confirmDelete(exam)}
-                                                        className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                                        title="Delete Exam"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    <>
+                                                        <Link
+                                                            href={`/exams/${exam.id}/edit`}
+                                                            className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                            title="Edit Exam"
+                                                        >
+                                                            <Edit className="w-4 h-4" />
+                                                        </Link>
+                                                        <button
+                                                            onClick={() => confirmDelete(exam)}
+                                                            className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                                                            title="Delete Exam"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </>
                                                 )}
                                             </td>
                                         </tr>

@@ -1,7 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ArrowLeft, Save, CheckCircle, AlertCircle, Users } from 'lucide-react';
+import { ArrowLeft, Save, CheckCircle, AlertCircle, Users, User } from 'lucide-react';
+import { ExpandableCard, MobileListContainer } from '@/Components/Mobile';
+import { Badge } from '@/Components/UI';
 
 export default function ExamResultsIndex({ exam, students }) {
     const [marks, setMarks] = useState(() => {
@@ -85,19 +87,96 @@ export default function ExamResultsIndex({ exam, students }) {
     const filledCount = Object.values(marks).filter(m => m !== '' && m !== null).length;
     const completionPercentage = students.length > 0 ? Math.round((filledCount / students.length) * 100) : 0;
 
+    // Mobile Student Item Component
+    function MobileStudentItem({ student, index }) {
+        const rubric = getRubric(marks[student.id]);
+        const isSaved = savedStudents.has(student.id);
+
+        return (
+            <ExpandableCard
+                header={
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                        {/* Student Avatar */}
+                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-orange to-orange-dark flex items-center justify-center text-white font-bold shadow-md">
+                            {student.first_name.charAt(0)}{student.last_name.charAt(0)}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                            {/* Top Row: Number & Status */}
+                            <div className="flex items-center justify-between gap-2 mb-1.5">
+                                <span className="text-xs font-semibold text-gray-500">#{index + 1}</span>
+                                {isSaved && (
+                                    <span className="inline-flex items-center text-green-600">
+                                        <CheckCircle className="w-4 h-4" />
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Student Name */}
+                            <h3 className="text-base font-bold text-gray-900 mb-1">
+                                {student.first_name} {student.last_name}
+                            </h3>
+
+                            {/* Admission Number */}
+                            <div className="flex items-center gap-2">
+                                <Badge variant="primary" value={student.admission_number} size="sm" />
+                                {rubric && (
+                                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${rubric.color}`}>
+                                        {rubric.text}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                }
+            >
+                {/* Expanded Content - Mark Entry */}
+                <div className="px-4 pb-4 pt-3 space-y-4">
+                    {/* Mark Input */}
+                    <div className="space-y-2">
+                        <label className="block text-sm font-semibold text-gray-700">
+                            Enter Marks (0-100)
+                        </label>
+                        <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            step="0.01"
+                            value={marks[student.id]}
+                            onChange={(e) => handleMarkChange(student.id, e.target.value)}
+                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange focus:border-orange transition-all text-center text-lg font-bold"
+                            placeholder="Enter marks"
+                        />
+                    </div>
+
+                    {/* Rubric Display */}
+                    {rubric && (
+                        <div className="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                            <p className="text-xs text-gray-600 mb-1">Performance Level</p>
+                            <p className={`text-sm font-semibold ${rubric.color.replace('bg-', 'text-').replace('-100', '-700')}`}>
+                                {rubric.text}
+                            </p>
+                        </div>
+                    )}
+                </div>
+            </ExpandableCard>
+        );
+    }
+
     return (
         <AuthenticatedLayout header={`Enter Marks: ${exam.name}`}>
             <Head title={`Enter Marks - ${exam.name}`} />
 
-            <div className="max-w-7xl mx-auto space-y-6">
+            <div className="max-w-7xl mx-auto space-y-4 md:space-y-6 px-4 md:px-0">
                 {/* Header */}
                 <div className="flex justify-between items-center">
                     <Link
                         href={`/exams/${exam.id}`}
-                        className="inline-flex items-center px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="inline-flex items-center px-3 py-2 md:px-4 md:py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
-                        Back to Exam
+                        <span className="hidden sm:inline">Back to Exam</span>
+                        <span className="sm:hidden">Back</span>
                     </Link>
                 </div>
 

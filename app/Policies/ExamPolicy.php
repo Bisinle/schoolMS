@@ -47,18 +47,9 @@ class ExamPolicy
      */
     public function update(User $user, Exam $exam): bool
     {
-        // Admins can update any exam
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        // Teachers can update exams for their assigned grades
-        if ($user->isTeacher()) {
-            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
-            return in_array($exam->grade_id, $teacherGradeIds);
-        }
-
-        return false;
+        // Only admins can update exams
+        // Teachers can only VIEW exams, not edit them
+        return $user->isAdmin();
     }
 
     /**

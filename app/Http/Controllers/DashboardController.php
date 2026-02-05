@@ -223,14 +223,35 @@ class DashboardController extends Controller
         $assignedGrades = $teacher->grades()->with(['students' => function($query) {
             $query->where('status', 'active');
         }])->get();
-        
+
+        // Debug logging
+        \Log::info('Teacher Dashboard Data Debug', [
+            'teacher_id' => $teacher->id,
+            'teacher_user_id' => $user->id,
+            'assigned_grades_count' => $assignedGrades->count(),
+            'assigned_grade_ids' => $assignedGrades->pluck('id')->toArray(),
+            'assigned_grade_names' => $assignedGrades->pluck('name')->toArray(),
+        ]);
+
         $isClassTeacher = $teacher->grades()->wherePivot('is_class_teacher', true)->exists();
         $classTeacherGrade = $teacher->grades()->wherePivot('is_class_teacher', true)->first();
-    
+
         // Total students across all assigned grades
         $studentsInAssignedGrades = $assignedGrades->sum(function ($grade) {
             return $grade->students->count();
         });
+
+        // Debug logging for students
+        \Log::info('Teacher Students Debug', [
+            'total_students_in_assigned_grades' => $studentsInAssignedGrades,
+            'students_per_grade' => $assignedGrades->map(function($grade) {
+                return [
+                    'grade_id' => $grade->id,
+                    'grade_name' => $grade->name,
+                    'students_count' => $grade->students->count(),
+                ];
+            })->toArray(),
+        ]);
     
         // Get all exams created by this teacher
         $myExams = Exam::where('created_by', $user->id)
