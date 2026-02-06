@@ -122,18 +122,12 @@ export default function ExamResultsIndex({ exam, students }) {
             return;
         }
 
-        router.post(`/exams/${exam.id}/results`, 
+        router.post(`/exams/${exam.id}/results`,
             { results },
             {
                 onSuccess: () => {
-                    setSaving(false);
-                    const studentIds = results.map(r => r.student_id);
-                    setSavedStudents(new Set(studentIds));
-                    
-                    // Clear the saved indicator after 3 seconds
-                    setTimeout(() => {
-                        setSavedStudents(new Set());
-                    }, 3000);
+                    // Redirect to exam detail page after successful save
+                    router.visit(`/exams/${exam.id}`);
                 },
                 onError: () => {
                     setSaving(false);
