@@ -11,6 +11,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
  * @param {Object} props
  * @param {React.ReactNode} props.header - Always visible header content
  * @param {React.ReactNode} props.children - Expandable content (shown when expanded)
+ * @param {boolean} props.expanded - Controlled expanded state (overrides defaultExpanded)
  * @param {boolean} props.defaultExpanded - Initial expanded state (default: false)
  * @param {Function} props.onToggle - Callback when toggled (receives new state)
  * @param {boolean} props.showChevron - Show chevron icon (default: true)
@@ -38,6 +39,7 @@ import { ChevronDown, ChevronUp } from 'lucide-react';
 export default function ExpandableCard({
     header,
     children,
+    expanded,
     defaultExpanded = false,
     onToggle,
     showChevron = true,
@@ -48,18 +50,28 @@ export default function ExpandableCard({
     disabled = false,
     preventSwipeToggle = false,
 }) {
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const [internalExpanded, setInternalExpanded] = useState(defaultExpanded);
+
+    // Use controlled mode if 'expanded' prop is provided, otherwise use internal state
+    const isControlled = expanded !== undefined;
+    const isExpanded = isControlled ? expanded : internalExpanded;
 
     const handleToggle = (e) => {
         if (disabled) return;
-        
+
         // Prevent toggle if parent is being swiped
         if (preventSwipeToggle && e.target.closest('[data-swiping="true"]')) {
             return;
         }
 
         const newState = !isExpanded;
-        setIsExpanded(newState);
+
+        // Update internal state only if not controlled
+        if (!isControlled) {
+            setInternalExpanded(newState);
+        }
+
+        // Always call onToggle callback
         onToggle?.(newState);
     };
 

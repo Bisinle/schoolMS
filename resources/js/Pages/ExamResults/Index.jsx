@@ -1,10 +1,86 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { ArrowLeft, Save, CheckCircle, AlertCircle, Users, User, Award, TrendingUp, Hash } from 'lucide-react';
-import { ExpandableCard, MobileListContainer } from '@/Components/Mobile';
+import { MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
 import Avatar from '@/Components/Avatar';
+
+// Mobile Student Item Component - Moved outside to prevent re-creation on parent re-renders
+const MobileStudentItem = React.memo(({ student, index, currentMark, rubric, isSaved, hasMark, onMarkChange }) => {
+    return (
+        <div className="p-4 bg-white border-b border-gray-200 last:border-b-0">
+            <div className="flex items-start gap-3 mb-3">
+                {/* Avatar */}
+                <Avatar
+                    name={`${student.first_name} ${student.last_name}`}
+                    imagePath={student.profile_picture}
+                    size="md"
+                />
+
+                <div className="flex-1 min-w-0">
+                    {/* Top Row: Admission Number & Saved Status */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                        <Badge variant="primary" value={student.admission_number} size="sm" />
+                        {isSaved && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                                <CheckCircle className="w-3 h-3" />
+                                Saved
+                            </span>
+                        )}
+                    </div>
+
+                    {/* Student Name */}
+                    <h3 className="text-base font-bold text-gray-900 truncate mb-2">
+                        {student.first_name} {student.last_name}
+                    </h3>
+
+                    {/* Current Mark & Rubric */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        {hasMark ? (
+                            <>
+                                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                                    <TrendingUp className="w-3.5 h-3.5 text-orange" />
+                                    <span className="font-bold text-orange">{currentMark}%</span>
+                                </div>
+                                {rubric && (
+                                    <>
+                                        <span className="text-gray-300">•</span>
+                                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${rubric.color}`}>
+                                            {rubric.text}
+                                        </span>
+                                    </>
+                                )}
+                            </>
+                        ) : (
+                            <span className="text-xs text-gray-400 italic">No marks entered</span>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Mark Input Section - Always Visible */}
+            <div className="pt-3 border-t border-gray-100">
+                <label htmlFor={`mark-input-${student.id}`} className="block text-xs font-semibold text-gray-700 mb-2">
+                    Enter Marks (0-100)
+                </label>
+                <input
+                    id={`mark-input-${student.id}`}
+                    type="number"
+                    min="0"
+                    max="100"
+                    step="0.01"
+                    value={currentMark}
+                    onChange={(e) => onMarkChange(student.id, e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange focus:border-orange transition-all text-center text-2xl font-bold text-gray-900 placeholder-gray-400"
+                    placeholder="0"
+                />
+            </div>
+        </div>
+    );
+});
+
+MobileStudentItem.displayName = 'MobileStudentItem';
 
 export default function ExamResultsIndex({ exam, students }) {
     const [marks, setMarks] = useState(() => {
@@ -18,7 +94,7 @@ export default function ExamResultsIndex({ exam, students }) {
     const [saving, setSaving] = useState(false);
     const [savedStudents, setSavedStudents] = useState(new Set());
 
-    const handleMarkChange = (studentId, value) => {
+    const handleMarkChange = useCallback((studentId, value) => {
         // Allow empty string or valid numbers between 0-100
         if (value === '' || (parseFloat(value) >= 0 && parseFloat(value) <= 100)) {
             setMarks(prev => ({
@@ -26,7 +102,7 @@ export default function ExamResultsIndex({ exam, students }) {
                 [studentId]: value
             }));
         }
-    };
+    }, []);
 
     const handleSaveAll = (e) => {
         e.preventDefault();
@@ -87,137 +163,6 @@ export default function ExamResultsIndex({ exam, students }) {
     const badge = getExamTypeBadge(exam.exam_type);
     const filledCount = Object.values(marks).filter(m => m !== '' && m !== null).length;
     const completionPercentage = students.length > 0 ? Math.round((filledCount / students.length) * 100) : 0;
-
-    // Mobile Student Item Component
-    function MobileStudentItem({ student, index }) {
-        const rubric = getRubric(marks[student.id]);
-        const isSaved = savedStudents.has(student.id);
-        const currentMark = marks[student.id];
-        const hasMark = currentMark !== '' && currentMark !== null;
-
-        return (
-            <ExpandableCard
-                className="border-b border-gray-200 last:border-b-0"
-                header={
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                        {/* Avatar */}
-                        <Avatar
-                            name={`${student.first_name} ${student.last_name}`}
-                            imagePath={student.profile_picture}
-                            size="md"
-                        />
-
-                        <div className="flex-1 min-w-0">
-                            {/* Top Row: Admission Number & Saved Status */}
-                            <div className="flex items-center justify-between gap-2 mb-2">
-                                <Badge variant="primary" value={student.admission_number} size="sm" />
-                                {isSaved && (
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                                        <CheckCircle className="w-3 h-3" />
-                                        Saved
-                                    </span>
-                                )}
-                            </div>
-
-                            {/* Student Name */}
-                            <h3 className="text-base font-bold text-gray-900 truncate mb-2">
-                                {student.first_name} {student.last_name}
-                            </h3>
-
-                            {/* Current Mark & Rubric */}
-                            <div className="flex items-center gap-2 flex-wrap">
-                                {hasMark ? (
-                                    <>
-                                        <div className="flex items-center gap-1.5 text-xs text-gray-600">
-                                            <TrendingUp className="w-3.5 h-3.5 text-orange" />
-                                            <span className="font-bold text-orange">{currentMark}%</span>
-                                        </div>
-                                        {rubric && (
-                                            <>
-                                                <span className="text-gray-300">•</span>
-                                                <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${rubric.color}`}>
-                                                    {rubric.text}
-                                                </span>
-                                            </>
-                                        )}
-                                    </>
-                                ) : (
-                                    <span className="text-xs text-gray-400 italic">No marks entered</span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                }
-            >
-                {/* Expanded Details */}
-                <div className="px-4 pb-4 pt-3 space-y-3">
-                    {/* Info Grid */}
-                    <div className="grid grid-cols-1 gap-2">
-                        {/* Student Number */}
-                        <div className="flex items-center gap-2.5 text-sm">
-                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                <Hash className="w-4 h-4 text-blue-600" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="text-xs text-gray-500 mb-0.5">Student Number</p>
-                                <p className="text-sm font-medium text-gray-900">
-                                    #{index + 1}
-                                </p>
-                            </div>
-                        </div>
-
-                        {/* Current Mark */}
-                        {hasMark && (
-                            <div className="flex items-center gap-2.5 text-sm">
-                                <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center flex-shrink-0">
-                                    <TrendingUp className="w-4 h-4 text-orange-600" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-gray-500 mb-0.5">Current Mark</p>
-                                    <p className="text-sm font-bold text-orange-700">{currentMark}%</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Performance Level */}
-                        {rubric && (
-                            <div className="flex items-center gap-2.5 text-sm">
-                                <div className={`w-8 h-8 rounded-full ${rubric.color.replace('text-', 'bg-').replace('-800', '-50')} flex items-center justify-center flex-shrink-0`}>
-                                    <Award className={`w-4 h-4 ${rubric.color.replace('bg-', 'text-').replace('-100', '-600')}`} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-xs text-gray-500 mb-0.5">Performance Level</p>
-                                    <p className={`text-sm font-semibold ${rubric.color.replace('bg-', 'text-').replace('-100', '-700')}`}>
-                                        {rubric.text}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Mark Input Section */}
-                    <div className="pt-2 border-t border-gray-100">
-                        <label className="block text-xs font-semibold text-gray-700 mb-2">
-                            Enter Marks (0-100)
-                        </label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            step="0.01"
-                            value={marks[student.id]}
-                            onChange={(e) => handleMarkChange(student.id, e.target.value)}
-                            className="w-full px-4 py-3 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-orange focus:border-orange transition-all text-center text-2xl font-bold text-gray-900 placeholder-gray-400"
-                            placeholder="0"
-                        />
-                        <p className="text-xs text-gray-500 text-center mt-1.5">
-                            Tap to enter or update marks
-                        </p>
-                    </div>
-                </div>
-            </ExpandableCard>
-        );
-    }
 
     return (
         <AuthenticatedLayout header={
@@ -315,13 +260,25 @@ export default function ExamResultsIndex({ exam, students }) {
                 <div className="md:hidden">
                     <MobileListContainer>
                         {students.length > 0 ? (
-                            students.map((student, index) => (
-                                <MobileStudentItem
-                                    key={student.id}
-                                    student={student}
-                                    index={index}
-                                />
-                            ))
+                            students.map((student, index) => {
+                                const currentMark = marks[student.id] ?? '';
+                                const rubric = getRubric(currentMark);
+                                const isSaved = savedStudents.has(student.id);
+                                const hasMark = currentMark !== '' && currentMark !== null;
+
+                                return (
+                                    <MobileStudentItem
+                                        key={student.id}
+                                        student={student}
+                                        index={index}
+                                        currentMark={currentMark}
+                                        rubric={rubric}
+                                        isSaved={isSaved}
+                                        hasMark={hasMark}
+                                        onMarkChange={handleMarkChange}
+                                    />
+                                );
+                            })
                         ) : (
                             <div className="text-center py-12 px-4">
                                 <Users className="w-16 h-16 mx-auto mb-4 text-gray-300" />
