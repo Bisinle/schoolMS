@@ -55,39 +55,39 @@ export default function TimetableDashboard({ stats, recentTemplates, auth }) {
 
             <div className="max-w-7xl mx-auto space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold text-gray-900">Timetable Management</h2>
-                        <p className="text-sm text-gray-600 mt-1">
+                        <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">Timetable Management</h2>
+                        <p className="text-sm sm:text-base text-gray-600 mt-1">
                             Manage school timetables, periods, rooms, and schedules
                         </p>
                     </div>
                     <Link
                         href={route('timetables.templates.create')}
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange rounded-lg hover:bg-orange-600"
+                        className="inline-flex items-center justify-center px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-medium text-white bg-orange rounded-lg hover:bg-orange-600 transition-colors shadow-md hover:shadow-lg"
                     >
-                        <Calendar className="w-4 h-4 mr-2" />
+                        <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                         Create New Template
                     </Link>
                 </div>
 
                 {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
                     {statCards.map((stat, index) => {
                         const Icon = stat.icon;
                         return (
                             <Link
                                 key={index}
                                 href={stat.link}
-                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow"
+                                className="bg-white rounded-xl shadow-sm border border-gray-200 p-3 sm:p-4 hover:shadow-md transition-all hover:scale-105 active:scale-95"
                             >
                                 <div className="flex items-center justify-between mb-2">
                                     <div className={`${stat.color} p-2 rounded-lg`}>
-                                        <Icon className="w-5 h-5 text-white" />
+                                        <Icon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                                     </div>
                                 </div>
-                                <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                                <p className="text-sm text-gray-600">{stat.title}</p>
+                                <p className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</p>
+                                <p className="text-xs sm:text-sm text-gray-600 mt-1">{stat.title}</p>
                             </Link>
                         );
                     })}
@@ -98,12 +98,12 @@ export default function TimetableDashboard({ stats, recentTemplates, auth }) {
 
                 {/* Recent Templates */}
                 {recentTemplates && recentTemplates.length > 0 && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-lg font-semibold text-gray-900">Recent Templates</h3>
+                            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Recent Templates</h3>
                             <Link
                                 href={route('timetables.templates.index')}
-                                className="text-sm text-orange hover:text-orange-600 font-medium"
+                                className="text-xs sm:text-sm text-orange hover:text-orange-600 font-medium"
                             >
                                 View All →
                             </Link>
@@ -113,19 +113,19 @@ export default function TimetableDashboard({ stats, recentTemplates, auth }) {
                                 <Link
                                     key={template.id}
                                     href={route('timetables.templates.show', template.id)}
-                                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors active:scale-98"
                                 >
-                                    <div className="flex items-center gap-3">
-                                        <Calendar className="w-5 h-5 text-gray-400" />
-                                        <div>
-                                            <p className="font-medium text-gray-900">{template.name}</p>
-                                            <p className="text-sm text-gray-600">
+                                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                                        <Calendar className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-medium text-gray-900 truncate">{template.name}</p>
+                                            <p className="text-xs sm:text-sm text-gray-600 truncate">
                                                 {template.grade?.name} - {template.academic_term?.name}
                                             </p>
                                         </div>
                                     </div>
-                                    <div className="flex items-center gap-3">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+                                        <span className={`px-2 sm:px-3 py-1 rounded-full text-xs font-medium ${
                                             template.status === 'published'
                                                 ? 'bg-green-100 text-green-800'
                                                 : template.status === 'draft'
@@ -134,7 +134,7 @@ export default function TimetableDashboard({ stats, recentTemplates, auth }) {
                                         }`}>
                                             {template.status}
                                         </span>
-                                        <span className="text-sm text-gray-500">
+                                        <span className="text-xs sm:text-sm text-gray-500 whitespace-nowrap">
                                             {template.slots_count || 0} slots
                                         </span>
                                     </div>
@@ -145,46 +145,46 @@ export default function TimetableDashboard({ stats, recentTemplates, auth }) {
                 )}
 
                 {/* Quick Actions */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         <Link
                             href={route('timetables.periods.create')}
-                            className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md active:scale-95"
                         >
-                            <Clock className="w-8 h-8 text-orange" />
+                            <Clock className="w-6 h-6 sm:w-8 sm:h-8 text-orange flex-shrink-0" />
                             <div>
-                                <p className="font-medium text-gray-900">Add Period</p>
+                                <p className="text-sm sm:text-base font-medium text-gray-900">Add Period</p>
                                 <p className="text-xs text-gray-600">Create time slot</p>
                             </div>
                         </Link>
                         <Link
                             href={route('timetables.rooms.create')}
-                            className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md active:scale-95"
                         >
-                            <DoorOpen className="w-8 h-8 text-orange" />
+                            <DoorOpen className="w-6 h-6 sm:w-8 sm:h-8 text-orange flex-shrink-0" />
                             <div>
-                                <p className="font-medium text-gray-900">Add Room</p>
+                                <p className="text-sm sm:text-base font-medium text-gray-900">Add Room</p>
                                 <p className="text-xs text-gray-600">Register classroom</p>
                             </div>
                         </Link>
                         <Link
                             href={route('timetables.templates.create')}
-                            className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md active:scale-95"
                         >
-                            <Calendar className="w-8 h-8 text-orange" />
+                            <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-orange flex-shrink-0" />
                             <div>
-                                <p className="font-medium text-gray-900">New Template</p>
+                                <p className="text-sm sm:text-base font-medium text-gray-900">New Template</p>
                                 <p className="text-xs text-gray-600">Create timetable</p>
                             </div>
                         </Link>
                         <Link
                             href={route('timetables.availability.index')}
-                            className="flex items-center gap-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 p-3 sm:p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all hover:shadow-md active:scale-95"
                         >
-                            <Users className="w-8 h-8 text-orange" />
+                            <Users className="w-6 h-6 sm:w-8 sm:h-8 text-orange flex-shrink-0" />
                             <div>
-                                <p className="font-medium text-gray-900">Availability</p>
+                                <p className="text-sm sm:text-base font-medium text-gray-900">Availability</p>
                                 <p className="text-xs text-gray-600">Teacher schedules</p>
                             </div>
                         </Link>

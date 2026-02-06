@@ -167,7 +167,76 @@ class DashboardController extends Controller
         $schoolId = auth()->user()->school_id;
 
         if ($schoolId) {
-            $timetableAnalytics = $analyticsService->getDashboardAnalytics($schoolId);
+            $rawAnalytics = $analyticsService->getDashboardAnalytics($schoolId);
+
+            // Transform the data for frontend consumption
+            $timetableAnalytics = [
+                // Quick stats for the tiles - Timetable specific metrics
+                'activeTimetables' => $rawAnalytics['quick_stats']['active_timetables'] ?? 0,
+                'totalSlots' => $rawAnalytics['slot_coverage']['total_slots'] ?? 0,
+                'totalConflicts' => $rawAnalytics['conflict_summary']['total_unresolved'] ?? 0,
+                'totalRooms' => $rawAnalytics['quick_stats']['total_rooms'] ?? 0,
+
+                // Curriculum compliance data (transform for frontend)
+                'curriculumCompliance' => collect($rawAnalytics['curriculum_compliance']['grade_details'] ?? [])
+                    ->flatMap(function ($grade) {
+                        return collect($grade['subjects'] ?? [])->map(function ($subject) use ($grade) {
+                            return [
+                                'grade' => $grade['grade_name'] ?? 'Unknown',
+                                'subject' => $subject['subject_name'] ?? 'Unknown',
+                                'required' => $subject['required_periods'] ?? 0,
+                                'scheduled' => $subject['scheduled_periods'] ?? 0,
+                                'complianceRate' => $subject['compliance_rate'] ?? 0,
+                            ];
+                        });
+                    })
+                    ->sortBy('complianceRate')
+                    ->values()
+                    ->toArray(),
+
+                // Teacher utilization data (transform for pie chart)
+                'teacherUtilization' => [
+                    [
+                        'name' => 'Optimal',
+                        'value' => $rawAnalytics['teacher_utilization']['optimally_utilized_teachers'] ?? 0,
+                        'color' => '#10b981', // green
+                    ],
+                    [
+                        'name' => 'Under-utilized',
+                        'value' => $rawAnalytics['teacher_utilization']['under_utilized_teachers'] ?? 0,
+                        'color' => '#f59e0b', // orange
+                    ],
+                    [
+                        'name' => 'Over-utilized',
+                        'value' => $rawAnalytics['teacher_utilization']['over_utilized_teachers'] ?? 0,
+                        'color' => '#ef4444', // red
+                    ],
+                    [
+                        'name' => 'Idle',
+                        'value' => $rawAnalytics['teacher_utilization']['idle_teachers'] ?? 0,
+                        'color' => '#6b7280', // gray
+                    ],
+                ],
+
+                // Slot coverage by day (transform for bar chart)
+                'slotCoverage' => collect($rawAnalytics['slot_coverage']['slots_by_day'] ?? [])
+                    ->map(function ($count, $day) use ($schoolId) {
+                        // Get breakdown by type for this day
+                        $daySlots = \App\Models\TimetableSlot::where('school_id', $schoolId)
+                            ->whereHas('timetableTemplate', fn($q) => $q->where('is_active', true))
+                            ->where('day_of_week', $day)
+                            ->get();
+
+                        return [
+                            'day' => ucfirst($day),
+                            'lessons' => $daySlots->where('slot_type', 'lesson')->count(),
+                            'breaks' => $daySlots->where('slot_type', 'break')->count(),
+                            'activities' => $daySlots->where('slot_type', 'activity')->count(),
+                        ];
+                    })
+                    ->values()
+                    ->toArray(),
+            ];
         }
 
         return [

@@ -20,6 +20,7 @@ import {
     UserCog,
     BarChart3,
     PieChart,
+    DoorOpen,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { PieChart as RechartsPie, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from "recharts";
@@ -167,29 +168,35 @@ export default function AdminDashboardContent({
                         </div>
 
                         <div className="p-4 sm:p-6 space-y-6">
-                            {/* Quick Stats Tiles */}
+                            {/* Quick Stats Tiles - Timetable Specific */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                                <div className="text-center p-4 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-colors">
-                                    <School className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 mx-auto mb-2" />
+                                <Link
+                                    href="/timetables/templates"
+                                    className="text-center p-4 bg-indigo-50 rounded-xl hover:bg-indigo-100 transition-all hover:scale-105 active:scale-95"
+                                >
+                                    <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-indigo-600 mx-auto mb-2" />
                                     <p className="text-2xl sm:text-3xl font-black text-indigo-600">
-                                        {timetableAnalytics.totalGrades || 0}
+                                        {timetableAnalytics.activeTimetables || 0}
                                     </p>
                                     <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
-                                        Total Grades
+                                        Active Timetables
                                     </p>
-                                </div>
+                                </Link>
 
-                                <div className="text-center p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors">
-                                    <GraduationCap className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 mx-auto mb-2" />
+                                <Link
+                                    href="/timetables/templates"
+                                    className="text-center p-4 bg-purple-50 rounded-xl hover:bg-purple-100 transition-all hover:scale-105 active:scale-95"
+                                >
+                                    <CalendarClock className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600 mx-auto mb-2" />
                                     <p className="text-2xl sm:text-3xl font-black text-purple-600">
-                                        {timetableAnalytics.totalTeachers || 0}
+                                        {timetableAnalytics.totalSlots || 0}
                                     </p>
                                     <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
-                                        Total Teachers
+                                        Total Slots
                                     </p>
-                                </div>
+                                </Link>
 
-                                <div className={`text-center p-4 rounded-xl transition-colors ${
+                                <div className={`text-center p-4 rounded-xl transition-all hover:scale-105 active:scale-95 ${
                                     timetableAnalytics.totalConflicts > 0
                                         ? 'bg-red-50 hover:bg-red-100'
                                         : 'bg-green-50 hover:bg-green-100'
@@ -208,15 +215,15 @@ export default function AdminDashboardContent({
                                 </div>
 
                                 <Link
-                                    href="/timetables/dashboard"
-                                    className="text-center p-4 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-colors"
+                                    href="/timetables/rooms"
+                                    className="text-center p-4 bg-cyan-50 rounded-xl hover:bg-cyan-100 transition-all hover:scale-105 active:scale-95"
                                 >
-                                    <Calendar className="w-8 h-8 sm:w-10 sm:h-10 text-cyan-600 mx-auto mb-2" />
+                                    <DoorOpen className="w-8 h-8 sm:w-10 sm:h-10 text-cyan-600 mx-auto mb-2" />
                                     <p className="text-2xl sm:text-3xl font-black text-cyan-600">
-                                        {timetableAnalytics.totalSessions || 0}
+                                        {timetableAnalytics.totalRooms || 0}
                                     </p>
                                     <p className="text-xs sm:text-sm text-gray-600 mt-1 font-bold">
-                                        Total Sessions
+                                        Rooms
                                     </p>
                                 </Link>
                             </div>

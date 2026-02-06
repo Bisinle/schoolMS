@@ -105,25 +105,25 @@ export default function TimetableSetupGuide({ stats }) {
     };
 
     return (
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6">
+            <div className="mb-4 sm:mb-6">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">
                     Timetable Setup Guide
                 </h3>
-                <p className="text-sm text-gray-600">
+                <p className="text-xs sm:text-sm text-gray-600">
                     Follow these steps to create and publish a complete timetable for your school
                 </p>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
                 {steps.map((step, index) => {
                     const status = getStepStatus(step, index);
                     const Icon = step.icon;
-                    
+
                     return (
                         <div
                             key={step.number}
-                            className={`relative border rounded-lg p-4 transition-all ${
+                            className={`relative border rounded-lg p-3 sm:p-4 transition-all ${
                                 status === 'completed'
                                     ? 'bg-green-50 border-green-200'
                                     : status === 'current'
@@ -131,13 +131,13 @@ export default function TimetableSetupGuide({ stats }) {
                                     : 'bg-gray-50 border-gray-200'
                             }`}
                         >
-                            <div className="flex items-start gap-4">
+                            <div className="flex items-start gap-3 sm:gap-4">
                                 {/* Step Number/Status */}
                                 <div className="flex-shrink-0">
                                     {status === 'completed' ? (
-                                        <CheckCircle2 className="w-8 h-8 text-green-600" />
+                                        <CheckCircle2 className="w-6 h-6 sm:w-8 sm:h-8 text-green-600" />
                                     ) : (
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                                        <div className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-base font-bold ${
                                             status === 'current'
                                                 ? 'bg-orange text-white'
                                                 : 'bg-gray-300 text-gray-600'
@@ -149,14 +149,14 @@ export default function TimetableSetupGuide({ stats }) {
 
                                 {/* Content */}
                                 <div className="flex-1 min-w-0">
-                                    <div className="flex items-start justify-between mb-2">
-                                        <div className="flex items-center gap-2">
-                                            <Icon className={`w-5 h-5 ${
+                                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2 mb-2">
+                                        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                                            <Icon className={`w-4 h-4 sm:w-5 sm:h-5 flex-shrink-0 ${
                                                 status === 'completed' ? 'text-green-600' :
                                                 status === 'current' ? 'text-orange' :
                                                 'text-gray-400'
                                             }`} />
-                                            <h4 className="font-semibold text-gray-900">
+                                            <h4 className="text-sm sm:text-base font-semibold text-gray-900">
                                                 {step.title}
                                             </h4>
                                             {step.required && (
@@ -164,30 +164,30 @@ export default function TimetableSetupGuide({ stats }) {
                                             )}
                                         </div>
                                         {step.count > 0 && (
-                                            <span className="text-sm font-medium text-gray-600">
+                                            <span className="text-xs sm:text-sm font-medium text-gray-600 whitespace-nowrap">
                                                 {step.count} created
                                             </span>
                                         )}
                                     </div>
 
-                                    <p className="text-sm text-gray-600 mb-3">
+                                    <p className="text-xs sm:text-sm text-gray-600 mb-2 sm:mb-3">
                                         {step.description}
                                     </p>
 
                                     {step.note && (
-                                        <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
+                                        <div className="mb-2 sm:mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs text-blue-800">
                                             💡 {step.note}
                                         </div>
                                     )}
 
                                     {step.examples && (
-                                        <div className="mb-3">
+                                        <div className="mb-2 sm:mb-3">
                                             <p className="text-xs font-medium text-gray-700 mb-1">Examples:</p>
-                                            <ul className="text-xs text-gray-600 space-y-1">
+                                            <ul className="text-xs text-gray-600 space-y-0.5 sm:space-y-1">
                                                 {step.examples.map((example, i) => (
-                                                    <li key={i} className="flex items-center gap-1">
-                                                        <Circle className="w-2 h-2 fill-current" />
-                                                        {example}
+                                                    <li key={i} className="flex items-start gap-1.5">
+                                                        <Circle className="w-2 h-2 fill-current flex-shrink-0 mt-1" />
+                                                        <span className="flex-1">{example}</span>
                                                     </li>
                                                 ))}
                                             </ul>
@@ -195,11 +195,11 @@ export default function TimetableSetupGuide({ stats }) {
                                     )}
 
                                     {/* Action Buttons */}
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                         {step.createRoute && (
                                             <Link
                                                 href={route(step.createRoute)}
-                                                className={`inline-flex items-center px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                                                className={`inline-flex items-center px-2.5 sm:px-3 py-1.5 text-xs font-medium rounded-lg transition-all active:scale-95 ${
                                                     status === 'current'
                                                         ? 'bg-orange text-white hover:bg-orange-600'
                                                         : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
@@ -210,7 +210,7 @@ export default function TimetableSetupGuide({ stats }) {
                                         )}
                                         <Link
                                             href={route(step.route)}
-                                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+                                            className="inline-flex items-center px-2.5 sm:px-3 py-1.5 text-xs font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all active:scale-95"
                                         >
                                             View All
                                         </Link>
@@ -220,7 +220,7 @@ export default function TimetableSetupGuide({ stats }) {
 
                             {/* Connector Line */}
                             {index < steps.length - 1 && (
-                                <div className={`absolute left-8 top-full w-0.5 h-4 -mb-4 ${
+                                <div className={`absolute left-5 sm:left-8 top-full w-0.5 h-3 sm:h-4 -mb-3 sm:-mb-4 ${
                                     status === 'completed' ? 'bg-green-300' : 'bg-gray-300'
                                 }`} />
                             )}
@@ -230,16 +230,16 @@ export default function TimetableSetupGuide({ stats }) {
             </div>
 
             {/* Progress Summary */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex items-center justify-between">
+            <div className="mt-4 sm:mt-6 pt-4 sm:pt-6 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
                     <div>
-                        <p className="text-sm font-medium text-gray-700">Overall Progress</p>
+                        <p className="text-xs sm:text-sm font-medium text-gray-700">Overall Progress</p>
                         <p className="text-xs text-gray-500">
                             {steps.filter(s => s.completed).length} of {steps.length} steps completed
                         </p>
                     </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="flex-1 sm:flex-none sm:w-32 h-2 bg-gray-200 rounded-full overflow-hidden">
                             <div
                                 className="h-full bg-orange transition-all duration-500"
                                 style={{
@@ -247,7 +247,7 @@ export default function TimetableSetupGuide({ stats }) {
                                 }}
                             />
                         </div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm sm:text-base font-semibold text-gray-900 whitespace-nowrap">
                             {Math.round((steps.filter(s => s.completed).length / steps.length) * 100)}%
                         </span>
                     </div>
