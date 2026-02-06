@@ -42,8 +42,40 @@ class ExamController extends Controller
             ->orderBy('academic_year', 'desc')
             ->orderBy('term', 'desc')
             ->orderBy('exam_date', 'desc')
-            ->paginate(15)
-            ->withQueryString();
+            ->get()
+            ->map(function ($exam) {
+                $completionStats = $exam->getCompletionStats();
+                return array_merge($exam->toArray(), [
+                    'completion_stats' => $completionStats,
+                ]);
+            })
+            // Filter by completion status after calculating stats
+            ->when($request->completion_status, function ($collection, $status) {
+                return $collection->filter(function ($exam) use ($status) {
+                    $stats = $exam['completion_stats'];
+                    if ($status === 'complete') {
+                        return $stats['is_complete'] ?? false;
+                    } elseif ($status === 'partial') {
+                        return $stats['is_partial'] ?? false;
+                    } elseif ($status === 'not_started') {
+                        return $stats['is_not_started'] ?? false;
+                    }
+                    return true;
+                });
+            })
+            ->values(); // Reset array keys
+
+        // Paginate the filtered collection
+        $perPage = 15;
+        $currentPage = $request->input('page', 1);
+        $total = $exams->count();
+        $exams = new \Illuminate\Pagination\LengthAwarePaginator(
+            $exams->forPage($currentPage, $perPage),
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
 
         // Get available grades for filter (including Unassigned)
         $grades = $user->isTeacher()
@@ -57,7 +89,7 @@ class ExamController extends Controller
         return Inertia::render('Exams/Index', [
             'exams' => $exams,
             'grades' => $grades,
-            'filters' => $request->only(['search', 'grade_id', 'term', 'academic_year']),
+            'filters' => $request->only(['search', 'grade_id', 'term', 'academic_year', 'completion_status']),
         ]);
     }
 

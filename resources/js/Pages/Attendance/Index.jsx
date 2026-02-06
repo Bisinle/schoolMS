@@ -372,11 +372,29 @@ export default function AttendanceIndex({
                 {attendanceData && (
                     <div className="bg-gradient-to-r from-orange to-orange-dark rounded-xl shadow-md p-6 text-white">
                         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                            <div className="text-center sm:text-left">
-                                <p className="text-sm text-orange-100">
-                                    Attendance Rate for{" "}
-                                    {attendanceData.grade.name}
-                                </p>
+                            <div className="text-center sm:text-left flex-1">
+                                <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap mb-2">
+                                    <p className="text-sm text-orange-100">
+                                        Attendance Rate for{" "}
+                                        {attendanceData.grade.name}
+                                    </p>
+                                    {attendanceData.marked_count === attendanceData.total_students && attendanceData.total_students > 0 ? (
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-600 text-white shadow-md">
+                                            <CheckCircle className="w-3 h-3 mr-1" />
+                                            Fully Marked
+                                        </span>
+                                    ) : attendanceData.marked_count === 0 ? (
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-gray-700 text-white shadow-md">
+                                            <XCircle className="w-3 h-3 mr-1" />
+                                            Not Marked
+                                        </span>
+                                    ) : (
+                                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-blue-600 text-white shadow-md">
+                                            <Clock className="w-3 h-3 mr-1" />
+                                            Partially Marked
+                                        </span>
+                                    )}
+                                </div>
                                 <p className="text-xs sm:text-sm text-orange-100 mt-1">
                                     {new Date(selectedDate).toLocaleDateString(
                                         "en-US",
@@ -392,7 +410,7 @@ export default function AttendanceIndex({
                                     {attendanceRate}%
                                 </p>
                             </div>
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center">
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-white bg-opacity-20 flex items-center justify-center flex-shrink-0">
                                 <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12" />
                             </div>
                         </div>
@@ -402,22 +420,60 @@ export default function AttendanceIndex({
                 {/* Attendance Form */}
                 {attendanceData ? (
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Already Marked Notice */}
-                        {attendanceData.marked_count > 0 && (
+                        {/* Marking Status Banner */}
+                        {attendanceData.marked_count === attendanceData.total_students && attendanceData.total_students > 0 ? (
+                            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
+                                <div className="flex items-start">
+                                    <CheckCircle className="w-5 h-5 text-green-600 mr-3 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="text-sm font-medium text-green-900">
+                                                Fully Marked
+                                            </p>
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-green-600 text-white">
+                                                ✓ {attendanceData.marked_count}/{attendanceData.total_students}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-green-700 mt-1">
+                                            Attendance has been marked for all students on this date. You can update the records below if needed.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : attendanceData.marked_count === 0 ? (
+                            <div className="bg-gray-50 border border-gray-300 rounded-xl p-4">
+                                <div className="flex items-start">
+                                    <AlertCircle className="w-5 h-5 text-gray-600 mr-3 mt-0.5 flex-shrink-0" />
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="text-sm font-medium text-gray-900">
+                                                Not Marked
+                                            </p>
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-600 text-white">
+                                                0/{attendanceData.total_students}
+                                            </span>
+                                        </div>
+                                        <p className="text-sm text-gray-700 mt-1">
+                                            Attendance has not been marked yet for this date. Mark attendance for all {attendanceData.total_students} students below.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
                             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                                 <div className="flex items-start">
                                     <AlertCircle className="w-5 h-5 text-blue-600 mr-3 mt-0.5 flex-shrink-0" />
-                                    <div>
-                                        <p className="text-sm font-medium text-blue-900">
-                                            Attendance Already Marked
-                                        </p>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="text-sm font-medium text-blue-900">
+                                                Partially Marked
+                                            </p>
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-600 text-white">
+                                                {attendanceData.marked_count}/{attendanceData.total_students}
+                                            </span>
+                                        </div>
                                         <p className="text-sm text-blue-700 mt-1">
-                                            Attendance has already been marked
-                                            for {attendanceData.marked_count}{" "}
-                                            out of{" "}
-                                            {attendanceData.total_students}{" "}
-                                            students on this date. You can
-                                            update the records below.
+                                            Attendance has been marked for {attendanceData.marked_count} out of {attendanceData.total_students} students. Complete marking for the remaining students below.
                                         </p>
                                     </div>
                                 </div>
