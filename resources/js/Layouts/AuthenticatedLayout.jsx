@@ -8,7 +8,7 @@ import Sidebar from "@/Layouts/Sidebar";
 import TopBar from "@/Layouts/TopBar";
 import { getNavigation } from "@/Config/navigation";
 import { useImpersonationBanner } from "@/Hooks/useImpersonationBanner";
-import { BottomNavigation, BottomSheet, TeacherMoreMenu, AdminMoreMenu } from "@/Components/Navigation";
+import { BottomNavigation, BottomSheet, TeacherMoreMenu, AdminMoreMenu, GuardianMoreMenu } from "@/Components/Navigation";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, school, impersonation } = usePage().props;
@@ -31,8 +31,8 @@ export default function AuthenticatedLayout({ header, children }) {
     const isMadrasah = school?.school_type === "madrasah";
     const navigation = getNavigation(auth.user.role, isMadrasah);
 
-    // Determine if bottom nav should be shown (mobile only, for teachers and admins)
-    const showBottomNav = auth.user.role === 'teacher' || auth.user.role === 'admin';
+    // Determine if bottom nav should be shown (mobile only, for teachers, admins, and guardians)
+    const showBottomNav = auth.user.role === 'teacher' || auth.user.role === 'admin' || auth.user.role === 'guardian';
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -138,6 +138,24 @@ export default function AuthenticatedLayout({ header, children }) {
                     title="More"
                 >
                     <AdminMoreMenu
+                        isMadrasah={isMadrasah}
+                        badges={
+                            {
+                                // TODO: Add badge counts from backend
+                            }
+                        }
+                    />
+                </BottomSheet>
+            )}
+
+            {/* More Menu Bottom Sheet - Guardian */}
+            {showBottomNav && auth.user.role === "guardian" && (
+                <BottomSheet
+                    show={showMoreMenu}
+                    onClose={() => setShowMoreMenu(false)}
+                    title="More"
+                >
+                    <GuardianMoreMenu
                         isMadrasah={isMadrasah}
                         badges={
                             {

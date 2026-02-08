@@ -1,0 +1,70 @@
+import { BottomSheetMenuItem, BottomSheetSection } from './BottomSheet';
+import {
+    Book,
+    FileText,
+    FolderOpen,
+    Shield,
+    Home,
+    LayoutDashboard,
+} from 'lucide-react';
+
+/**
+ * Guardian "More" Menu Content
+ * Organized menu items for guardian role
+ * 
+ * @param {Object} props
+ * @param {boolean} props.isMadrasah - Whether school is madrasah type
+ * @param {Object} props.badges - Badge counts for menu items
+ */
+export default function GuardianMoreMenu({ isMadrasah = false, badges = {} }) {
+    return (
+        <div className="pb-6">
+            {/* Quran Section (Madrasah Only) */}
+            {isMadrasah && (
+                <BottomSheetSection title="Quran">
+                    <BottomSheetMenuItem
+                        icon={LayoutDashboard}
+                        label="Quran Dashboard"
+                        href="/quran"
+                    />
+                    <BottomSheetMenuItem
+                        icon={Book}
+                        label="Tracking"
+                        href="/guardian/quran-tracking"
+                        badge={badges.quranTracking}
+                    />
+                    <BottomSheetMenuItem
+                        icon={Home}
+                        label="Home Practice"
+                        href="/quran-home-practice"
+                        badge={badges.quranHomePractice}
+                    />
+                </BottomSheetSection>
+            )}
+
+            {/* Documents & Reports Section */}
+            <BottomSheetSection title="Documents & Reports">
+                {!isMadrasah && (
+                    <BottomSheetMenuItem
+                        icon={FileText}
+                        label="Reports"
+                        href="/reports"
+                        badge={badges.reports}
+                    />
+                )}
+                <BottomSheetMenuItem
+                    icon={FolderOpen}
+                    label="Documents"
+                    href="/documents"
+                    badge={badges.documents}
+                />
+                <BottomSheetMenuItem
+                    icon={Shield}
+                    label="Policies & Regulations"
+                    href="/policies"
+                />
+            </BottomSheetSection>
+        </div>
+    );
+}
+

@@ -51,8 +51,20 @@ class ExamController extends Controller
             })
             // Filter by completion status after calculating stats
             ->when($request->completion_status, function ($collection, $status) {
-                return $collection->filter(function ($exam) use ($status) {
+                \Log::info('Filtering by completion status', [
+                    'status' => $status,
+                    'total_before_filter' => $collection->count(),
+                ]);
+
+                $filtered = $collection->filter(function ($exam) use ($status) {
                     $stats = $exam['completion_stats'];
+
+                    \Log::info('Exam stats', [
+                        'exam_name' => $exam['name'],
+                        'stats' => $stats,
+                        'filter_status' => $status,
+                    ]);
+
                     if ($status === 'complete') {
                         return $stats['is_complete'] ?? false;
                     } elseif ($status === 'partial') {
@@ -62,6 +74,12 @@ class ExamController extends Controller
                     }
                     return true;
                 });
+
+                \Log::info('After filtering', [
+                    'total_after_filter' => $filtered->count(),
+                ]);
+
+                return $filtered;
             })
             ->values(); // Reset array keys
 

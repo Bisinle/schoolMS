@@ -8,6 +8,8 @@ import {
     Book,
     Users,
     Clock,
+    DollarSign,
+    FileText,
 } from 'lucide-react';
 
 /**
@@ -121,6 +123,63 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
         return items;
     };
 
+    // Navigation configuration for guardians
+    const getGuardianNavItems = () => {
+        const baseItems = [
+            {
+                name: 'Dashboard',
+                href: '/dashboard',
+                icon: LayoutDashboard,
+                label: 'Home',
+                badge: badges.dashboard,
+            },
+            {
+                name: 'Attendance',
+                href: '/guardian/attendance',
+                icon: ClipboardCheck,
+                label: 'Attendance',
+                badge: badges.attendance,
+            },
+            {
+                name: 'Invoices',
+                href: '/guardian/invoices',
+                icon: DollarSign,
+                label: 'Invoices',
+                badge: badges.invoices,
+            },
+        ];
+
+        // Add Quran or Reports based on school type
+        if (isMadrasah) {
+            baseItems.push({
+                name: 'Quran',
+                href: '/quran',
+                icon: Book,
+                label: 'Quran',
+                badge: badges.quran,
+            });
+        } else {
+            baseItems.push({
+                name: 'Reports',
+                href: '/reports',
+                icon: FileText,
+                label: 'Reports',
+                badge: badges.reports,
+            });
+        }
+
+        // Always add "More" as the last item
+        baseItems.push({
+            name: 'More',
+            href: null,
+            icon: MoreHorizontal,
+            label: 'More',
+            isMore: true,
+        });
+
+        return baseItems;
+    };
+
     // Get navigation items based on role
     const getNavItems = () => {
         switch (role) {
@@ -128,7 +187,8 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 return getTeacherNavItems();
             case 'admin':
                 return getAdminNavItems();
-            // TODO: Add guardian configuration
+            case 'guardian':
+                return getGuardianNavItems();
             default:
                 return getTeacherNavItems();
         }
