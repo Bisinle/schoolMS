@@ -669,17 +669,27 @@ export default function AdminDashboardContent({
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <h4 className="font-bold text-gray-900 truncate group-hover:text-orange transition-colors">
-                                                {student.first_name} {student.last_name}
+                                                {student.name}
                                             </h4>
                                             <p className="text-sm text-gray-600">
-                                                {student.grade?.name || 'No Grade'} • {student.admission_number}
+                                                {student.grade || 'No Grade'} • {student.admission_number}
                                             </p>
                                         </div>
                                         <div className="flex-shrink-0 text-right">
-                                            <div className="flex items-center gap-1.5">
-                                                <Award className="w-4 h-4 text-orange" />
-                                                <span className="text-lg font-black text-orange">
-                                                    {Math.round(student.average_marks)}%
+                                            <div className="flex flex-col items-end gap-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <Award className="w-4 h-4 text-orange" />
+                                                    <span className="text-lg font-black text-orange">
+                                                        {student.average}%
+                                                    </span>
+                                                </div>
+                                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                                                    student.grade_rubric === 'EE' ? 'bg-green-100 text-green-700' :
+                                                    student.grade_rubric === 'ME' ? 'bg-blue-100 text-blue-700' :
+                                                    student.grade_rubric === 'AE' ? 'bg-yellow-100 text-yellow-700' :
+                                                    'bg-gray-100 text-gray-700'
+                                                }`}>
+                                                    {student.grade_rubric}
                                                 </span>
                                             </div>
                                         </div>
