@@ -121,7 +121,7 @@ class Exam extends Model
     {
         $totalStudents = $this->grade->students()->where('status', 'active')->count();
         $markedStudents = $this->results()->count();
-        $completionRate = $totalStudents > 0 ? round(($markedStudents / $totalStudents) * 100, 1) : 0;
+        $completionRate = $totalStudents > 0 ? round(($markedStudents / $totalStudents) * 100, 1) : 0.0;
 
         return [
             'total_students' => $totalStudents,
@@ -129,7 +129,7 @@ class Exam extends Model
             'completion_rate' => $completionRate,
             'is_complete' => $completionRate === 100.0,
             'is_partial' => $completionRate > 0 && $completionRate < 100,
-            'is_not_started' => $completionRate === 0,
+            'is_not_started' => $completionRate === 0.0,
         ];
     }
 
