@@ -53,7 +53,7 @@ class StudentController extends Controller
 
         $students = $query->orderBy('first_name')
             ->orderBy('last_name')
-            ->paginate(20)
+            ->paginate(10)
             ->withQueryString();
 
         // Get grades for filter dropdown (including Unassigned)
