@@ -113,8 +113,11 @@ class Student extends Model
             ->latest('start_date');
     }
 
-    // Note: Fee preferences belong to guardians, not students
-    // Access via: $student->guardian->feePreferences()->where('student_id', $student->id)
+    // Fee preferences relationship
+    public function feePreferences()
+    {
+        return $this->hasMany(GuardianFeePreference::class);
+    }
 
     // 🆕 NEW: Documents relationship
     public function documents()

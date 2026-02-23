@@ -71,7 +71,7 @@ function MobileInvoiceItem({ invoice, auth, onDelete }) {
                         {/* Guardian Name (Admin only) */}
                         {auth.user.role !== "guardian" && (
                             <h3 className="text-base font-semibold text-gray-900 truncate mb-2">
-                                {invoice.guardian?.user?.name}
+                                {invoice.guardian_name}
                             </h3>
                         )}
 
@@ -348,10 +348,7 @@ export default function InvoicesIndex({
                                                     <div className="flex items-center gap-2">
                                                         <User className="w-4 h-4 text-gray-400" />
                                                         <span className="text-sm text-gray-900">
-                                                            {
-                                                                invoice.guardian
-                                                                    ?.user?.name
-                                                            }
+                                                            {invoice.guardian_name}
                                                         </span>
                                                     </div>
                                                 </td>
