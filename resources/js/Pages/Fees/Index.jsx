@@ -60,7 +60,7 @@ export default function FeeManagementDashboard({ auth, currentTerm, stats, terms
                     </div>
                 </div>
 {/* Stats Cards - Fully Mobile Responsive */}
-<div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+<div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
     {/* Total Guardians */}
     <div className="bg-gradient-to-br from-white to-blue-50 rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 sm:mb-3">
@@ -110,6 +110,20 @@ export default function FeeManagementDashboard({ auth, currentTerm, stats, terms
         <p className="text-[10px] sm:text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wide">Collected</p>
         <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
             <span className="text-xs sm:text-base lg:text-2xl">KSh</span> {Number(stats.total_collected).toLocaleString()}
+        </div>
+    </div>
+
+    {/* Outstanding */}
+    <div className="bg-gradient-to-br from-white to-red-50 rounded-lg sm:rounded-xl border border-gray-200 p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 sm:mb-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-br from-red-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
+                <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </div>
+            <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-red-600 hidden sm:block" />
+        </div>
+        <p className="text-[10px] sm:text-xs text-gray-600 mb-1 font-semibold uppercase tracking-wide">Outstanding</p>
+        <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+            <span className="text-xs sm:text-base lg:text-2xl">KSh</span> {Number(stats.total_pending).toLocaleString()}
         </div>
     </div>
 </div>
