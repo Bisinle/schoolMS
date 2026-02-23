@@ -32,56 +32,64 @@ class InvoiceController extends Controller
      */
     public function index(Request $request)
     {
-        // Authorize: Check if user can view any invoices
         $this->authorize('viewAny', GuardianInvoice::class);
 
         $user = $request->user();
+        $isGuardian = $user->isGuardian();
 
-        // Build query based on user role
-        if ($user->isGuardian()) {
-            // Ensure guardian relationship exists
-            if (!$user->guardian) {
-                abort(403, 'Guardian profile not found. Please contact the administrator.');
-            }
-            $query = GuardianInvoice::where('guardian_id', $user->guardian->id);
-        } else {
-            $query = GuardianInvoice::query();
-        }
+        // Get filter values
+        $search = trim($request->input('search', ''));
+        $termId = $request->input('term_id', '');
+        $status = $request->input('status', '');
 
-        // Get filter values (handle both string and array inputs)
-        $search = is_array($request->search) ? '' : $request->search;
-        $termId = is_array($request->term_id) ? '' : $request->term_id;
-        $status = is_array($request->status) ? '' : $request->status;
-
-        // Get active term for default filtering
+        // Get active term
         $activeTerm = AcademicTerm::where('is_active', true)->first();
 
-        // If no term filter is specified, default to active term
-        // If term_id is "all", don't filter by term (show all invoices)
+        // Default to active term if no filter specified
         if (!$request->has('term_id') && $activeTerm) {
             $termId = $activeTerm->id;
         } elseif ($termId === 'all') {
-            $termId = null; // Don't filter by term
+            $termId = null;
         }
 
-        // Apply filters
-        $query->with(['guardian.user', 'academicTerm.academicYear'])
-            ->when($search, function ($q, $search) {
-                $q->where(function($query) use ($search) {
-                    $query->where('invoice_number', 'like', "%{$search}%")
-                        ->orWhereHas('guardian.user', function($q) use ($search) {
-                            $q->where('name', 'like', "%{$search}%");
-                        });
-                });
-            })
-            ->when($termId, function ($q, $termId) {
-                $q->where('academic_term_id', $termId);
-            })
-            ->when($status, function ($q, $status) {
-                $q->where('status', $status);
-            });
+        // Build base query with optimized select to get guardian name directly
+        $query = GuardianInvoice::query()
+            ->select([
+                'guardian_invoices.*',
+                DB::raw('users.name as guardian_name')
+            ])
+            ->join('guardians', 'guardian_invoices.guardian_id', '=', 'guardians.id')
+            ->join('users', 'guardians.user_id', '=', 'users.id')
+            ->with(['academicTerm.academicYear']);
 
-        $invoices = $query->orderBy('created_at', 'desc')
+        // Filter by guardian if user is guardian
+        if ($isGuardian) {
+            if (!$user->guardian) {
+                abort(403, 'Guardian profile not found.');
+            }
+            $query->where('guardian_invoices.guardian_id', $user->guardian->id);
+        }
+
+        // Apply search filter
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('guardian_invoices.invoice_number', 'like', "%{$search}%")
+                  ->orWhere('users.name', 'like', "%{$search}%");
+            });
+        }
+
+        // Apply term filter
+        if ($termId) {
+            $query->where('guardian_invoices.academic_term_id', $termId);
+        }
+
+        // Apply status filter
+        if ($status) {
+            $query->where('guardian_invoices.status', $status);
+        }
+
+        // Get paginated results
+        $invoices = $query->orderBy('guardian_invoices.created_at', 'desc')
             ->paginate(20)
             ->withQueryString();
 
@@ -95,9 +103,9 @@ class InvoiceController extends Controller
             'terms' => $terms,
             'activeTerm' => $activeTerm,
             'filters' => [
-                'search' => $search ?? '',
-                'term_id' => $termId === null ? 'all' : ($termId ?? ''),
-                'status' => $status ?? '',
+                'search' => $search,
+                'term_id' => $termId === null ? 'all' : ($termId ?: ''),
+                'status' => $status,
             ],
         ]);
     }

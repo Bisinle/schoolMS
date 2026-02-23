@@ -43,14 +43,6 @@ class GuardianInvoice extends Model
         ];
     }
 
-    protected $appends = ['guardian_name'];
-
-    // Accessors
-    public function getGuardianNameAttribute(): string
-    {
-        return $this->guardian?->user?->name ?? 'N/A';
-    }
-
     // Relationships
     public function guardian()
     {

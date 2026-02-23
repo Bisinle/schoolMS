@@ -1,6 +1,6 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link, router } from "@inertiajs/react";
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
     Plus,
     Receipt,
@@ -9,11 +9,9 @@ import {
     DollarSign,
     Calendar,
     User,
-    FileText,
+    ArrowLeft,
 } from "lucide-react";
 import { Badge, EmptyState } from "@/Components/UI";
-//lets get ArrowLeft from lucide-react
-import { ArrowLeft } from "lucide-react";
 import { SearchInput, FilterSelect, FilterBar } from "@/Components/Filters";
 import {
     SwipeableListItem,
@@ -219,7 +217,7 @@ export default function InvoicesIndex({
                     <FilterBar>
                         <SearchInput
                             value={filters.search}
-                            onChange={(value) => updateFilter("search", value)}
+                            onChange={(e) => updateFilter("search", e.target.value)}
                             onSearch={applyFilters}
                             placeholder="Search by invoice number or guardian name..."
                             className="flex-1"
