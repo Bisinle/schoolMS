@@ -84,7 +84,7 @@ class ExamController extends Controller
             ->values(); // Reset array keys
 
         // Paginate the filtered collection
-        $perPage = 15;
+        $perPage = 10;
         $currentPage = $request->input('page', 1);
         $total = $exams->count();
         $exams = new \Illuminate\Pagination\LengthAwarePaginator(

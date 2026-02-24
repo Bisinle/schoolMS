@@ -27,7 +27,7 @@ class SubjectController extends Controller
             ->withCount('grades')
             ->orderBy('category')
             ->orderBy('name')
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         return Inertia::render('Subjects/Index', [

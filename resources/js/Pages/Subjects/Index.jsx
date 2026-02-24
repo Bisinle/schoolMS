@@ -5,9 +5,12 @@ import { Plus, Eye, Edit, Trash2, BookOpen, Tag, AlertCircle, X } from 'lucide-r
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 import useFilters from '@/Hooks/useFilters';
+import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
+import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
+import Pagination from '@/Components/Pagination/Pagination';
 
 // Mobile List Item Component - Refactored with new components
 function MobileSubjectItem({ subject, auth, onDelete }) {
@@ -149,6 +152,13 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
         },
     });
 
+    // Cumulative loading for mobile view
+    const {
+        items: allSubjects,
+        isLoadingMore,
+        handleLoadMore
+    } = useCumulativeLoading(subjects, filters, 'subjects.index', 'subjects');
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedSubject, setSelectedSubject] = useState(null);
 
@@ -218,7 +228,7 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                             message: filters.search || filters.category ? 'Try adjusting your filters' : 'Get started by adding a new subject',
                         }}
                     >
-                        {subjects.data.length > 0 && subjects.data.map((subject) => (
+                        {allSubjects && allSubjects.length > 0 && allSubjects.map((subject) => (
                             <MobileSubjectItem
                                 key={subject.id}
                                 subject={subject}
@@ -227,6 +237,16 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                             />
                         ))}
                     </MobileListContainer>
+
+                    {subjects.data && subjects.data.length > 0 && (
+                        <LoadMoreButton
+                            currentCount={allSubjects.length}
+                            totalCount={subjects.total}
+                            isLoading={isLoadingMore}
+                            onLoadMore={handleLoadMore}
+                            itemName="subjects"
+                        />
+                    )}
                 </div>
 
                 {/* Desktop Table View */}
@@ -334,34 +354,16 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    {/* Desktop Pagination */}
                     {subjects.data.length > 0 && (
-                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                                <div className="text-sm text-gray-700">
-                                    Showing <span className="font-medium">{subjects.from}</span> to{' '}
-                                    <span className="font-medium">{subjects.to}</span> of{' '}
-                                    <span className="font-medium">{subjects.total}</span> results
-                                </div>
-                                <div className="flex gap-2">
-                                    {subjects.links.map((link, index) => (
-                                        <Link
-                                            key={index}
-                                            href={link.url || '#'}
-                                            className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                                                link.active
-                                                    ? 'bg-orange text-white shadow-sm'
-                                                    : link.url
-                                                    ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            }`}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                            preserveState
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+                        <Pagination
+                            links={subjects.links}
+                            currentPage={subjects.current_page}
+                            lastPage={subjects.last_page}
+                            total={subjects.total}
+                            from={subjects.from}
+                            to={subjects.to}
+                        />
                     )}
                 </div>
             </div>

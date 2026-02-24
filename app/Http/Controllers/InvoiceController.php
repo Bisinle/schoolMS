@@ -90,7 +90,7 @@ class InvoiceController extends Controller
 
         // Get paginated results
         $invoices = $query->orderBy('guardian_invoices.created_at', 'desc')
-            ->paginate(20)
+            ->paginate(10)
             ->withQueryString();
 
         // Get terms for filter dropdown

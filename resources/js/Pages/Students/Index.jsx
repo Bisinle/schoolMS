@@ -1,10 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Plus, Users, Eye, Edit, Trash2, FileText, Mail, Phone, User, Calendar, GraduationCap } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import GenerateReportModal from '@/Components/Students/GenerateReportModal';
 import useFilters from '@/Hooks/useFilters';
+import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
@@ -178,13 +179,12 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedStudentForReport, setSelectedStudentForReport] = useState(null);
 
-    // State for mobile "Load More" functionality
-    const [allStudents, setAllStudents] = useState(students.data);
-    const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [currentPage, setCurrentPage] = useState(students.current_page);
-
-    // Track previous filters to detect when they change
-    const prevFiltersRef = useRef(filters);
+    // Cumulative loading for mobile view
+    const {
+        items: allStudents,
+        isLoadingMore,
+        handleLoadMore
+    } = useCumulativeLoading(students, filters, 'students.index', 'students');
 
     // Memoize filter options that don't change
     const gradeOptions = useMemo(() =>
@@ -224,43 +224,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
         setShowReportModal(true);
     }, []);
 
-    // Reset allStudents when filters change (not when loading more)
-    useEffect(() => {
-        const filtersChanged = JSON.stringify(prevFiltersRef.current) !== JSON.stringify(filters);
 
-        if (filtersChanged || students.current_page === 1) {
-            // Filters changed or back to page 1 - reset the list
-            setAllStudents(students.data);
-            setCurrentPage(students.current_page);
-            prevFiltersRef.current = filters;
-        }
-    }, [filters, students.data, students.current_page]);
-
-    // Handle "Load More" for mobile
-    const handleLoadMore = useCallback(() => {
-        if (isLoadingMore || currentPage >= students.last_page) return;
-
-        setIsLoadingMore(true);
-
-        router.get(
-            route('students.index'),
-            { ...filters, page: currentPage + 1 },
-            {
-                preserveState: true,
-                preserveScroll: true,
-                only: ['students'],
-                onSuccess: (page) => {
-                    // Append new students to existing list
-                    setAllStudents(prev => [...prev, ...page.props.students.data]);
-                    setCurrentPage(page.props.students.current_page);
-                    setIsLoadingMore(false);
-                },
-                onError: () => {
-                    setIsLoadingMore(false);
-                }
-            }
-        );
-    }, [filters, currentPage, students.last_page, isLoadingMore]);
 
     return (
         <AuthenticatedLayout header="All Students">

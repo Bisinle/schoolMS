@@ -20,6 +20,9 @@ import {
 } from "@/Components/Mobile";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import useFilters from "@/Hooks/useFilters";
+import useCumulativeLoading from "@/Hooks/useCumulativeLoading";
+import LoadMoreButton from "@/Components/Pagination/LoadMoreButton";
+import Pagination from "@/Components/Pagination/Pagination";
 
 // Mobile Invoice Item Component
 function MobileInvoiceItem({ invoice, auth, onDelete }) {
@@ -155,6 +158,13 @@ export default function InvoicesIndex({
         },
     });
 
+    // Cumulative loading for mobile view
+    const {
+        items: allInvoices,
+        isLoadingMore,
+        handleLoadMore
+    } = useCumulativeLoading(invoices, filters, invoiceBaseUrl, 'invoices');
+
     const handleDelete = (invoice) => {
         setDeleteModal({ show: true, invoice });
     };
@@ -278,16 +288,26 @@ export default function InvoicesIndex({
 
                 {/* Mobile View */}
                 {invoices.data.length > 0 && (
-                    <MobileListContainer className="sm:hidden">
-                        {invoices.data.map((invoice) => (
-                            <MobileInvoiceItem
-                                key={invoice.id}
-                                invoice={invoice}
-                                auth={auth}
-                                onDelete={handleDelete}
-                            />
-                        ))}
-                    </MobileListContainer>
+                    <div className="sm:hidden">
+                        <MobileListContainer>
+                            {allInvoices.map((invoice) => (
+                                <MobileInvoiceItem
+                                    key={invoice.id}
+                                    invoice={invoice}
+                                    auth={auth}
+                                    onDelete={handleDelete}
+                                />
+                            ))}
+                        </MobileListContainer>
+
+                        <LoadMoreButton
+                            currentCount={allInvoices.length}
+                            totalCount={invoices.total}
+                            isLoading={isLoadingMore}
+                            onLoadMore={handleLoadMore}
+                            itemName="invoices"
+                        />
+                    </div>
                 )}
 
                 {/* Desktop Table View */}
@@ -425,6 +445,16 @@ export default function InvoicesIndex({
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* Desktop Pagination */}
+                        <Pagination
+                            links={invoices.links}
+                            currentPage={invoices.current_page}
+                            lastPage={invoices.last_page}
+                            total={invoices.total}
+                            from={invoices.from}
+                            to={invoices.to}
+                        />
                     </div>
                 )}
                 {/* Delete Confirmation Modal */}

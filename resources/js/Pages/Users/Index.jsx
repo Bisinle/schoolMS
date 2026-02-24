@@ -21,6 +21,7 @@ import {
     UserCircle2,
 } from "lucide-react";
 import useFilters from "@/Hooks/useFilters";
+import useCumulativeLoading from "@/Hooks/useCumulativeLoading";
 import { SearchInput, FilterSelect, FilterBar } from "@/Components/Filters";
 import {
     SwipeableListItem,
@@ -29,6 +30,8 @@ import {
 } from "@/Components/Mobile";
 import { Badge } from "@/Components/UI";
 import Avatar from "@/Components/Avatar";
+import LoadMoreButton from "@/Components/Pagination/LoadMoreButton";
+import Pagination from "@/Components/Pagination/Pagination";
 
 // Helper to get role badge variant
 function getRoleBadgeVariant(role) {
@@ -331,6 +334,13 @@ export default function Index({
         },
     });
 
+    // Cumulative loading for mobile view
+    const {
+        items: allUsers,
+        isLoadingMore,
+        handleLoadMore
+    } = useCumulativeLoading(users, filters, 'users.index', 'users');
+
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [generatedPassword, setGeneratedPassword] = useState("");
     const [passwordUserName, setPasswordUserName] = useState("");
@@ -557,9 +567,9 @@ export default function Index({
                         },
                     }}
                 >
-                    {users.data.filter((u) => u.id !== auth.user.id).length >
+                    {allUsers && allUsers.filter((u) => u.id !== auth.user.id).length >
                         0 &&
-                        users.data.map((user) => (
+                        allUsers.map((user) => (
                             <MobileUserItem
                                 key={user.id}
                                 user={user}
@@ -572,6 +582,16 @@ export default function Index({
                             />
                         ))}
                 </MobileListContainer>
+
+                {users.data && users.data.length > 0 && (
+                    <LoadMoreButton
+                        currentCount={allUsers.length}
+                        totalCount={users.total}
+                        isLoading={isLoadingMore}
+                        onLoadMore={handleLoadMore}
+                        itemName="users"
+                    />
+                )}
             </div>
 
             {/* Desktop Table View - UNCHANGED */}
@@ -923,34 +943,16 @@ export default function Index({
                     </div>
                 </div>
 
-                {/* Pagination */}
+                {/* Desktop Pagination */}
                 {users.links.length > 3 && (
-                    <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-                        <div className="text-sm text-gray-600">
-                            Showing {users.from} to {users.to} of {users.total}{" "}
-                            users
-                        </div>
-                        <div className="flex gap-2">
-                            {users.links.map((link, index) => (
-                                <Link
-                                    key={index}
-                                    href={link.url || "#"}
-                                    className={`px-3 py-2 text-sm font-medium rounded-lg transition-colors ${
-                                        link.active
-                                            ? "bg-orange text-white"
-                                            : link.url
-                                            ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                            : "bg-gray-50 text-gray-400 cursor-not-allowed"
-                                    }`}
-                                    dangerouslySetInnerHTML={{
-                                        __html: link.label,
-                                    }}
-                                    preserveState
-                                    preserveScroll
-                                />
-                            ))}
-                        </div>
-                    </div>
+                    <Pagination
+                        links={users.links}
+                        currentPage={users.current_page}
+                        lastPage={users.last_page}
+                        total={users.total}
+                        from={users.from}
+                        to={users.to}
+                    />
                 )}
             </div>
 

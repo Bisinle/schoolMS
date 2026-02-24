@@ -4,9 +4,12 @@ import { useState, useCallback } from 'react';
 import { Plus, Eye, Edit, Trash2, Users, Mail, Phone, MapPin, UserCircle } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import useFilters from '@/Hooks/useFilters';
+import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { SearchInput } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
+import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
+import Pagination from '@/Components/Pagination/Pagination';
 
 // Mobile List Item Component - Refactored with new components
 function MobileGuardianItem({ guardian, auth, onDelete }) {
@@ -150,6 +153,13 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
         },
     });
 
+    // Cumulative loading for mobile view
+    const {
+        items: allGuardians,
+        isLoadingMore,
+        handleLoadMore
+    } = useCumulativeLoading(guardians, filters, 'guardians.index', 'guardians');
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedGuardian, setSelectedGuardian] = useState(null);
 
@@ -205,7 +215,7 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                             message: 'Try adjusting your search',
                         }}
                     >
-                        {guardians.data && guardians.data.length > 0 && guardians.data.map((guardian) => (
+                        {allGuardians && allGuardians.length > 0 && allGuardians.map((guardian) => (
                             <MobileGuardianItem
                                 key={guardian.id}
                                 guardian={guardian}
@@ -214,6 +224,16 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                             />
                         ))}
                     </MobileListContainer>
+
+                    {guardians.data && guardians.data.length > 0 && (
+                        <LoadMoreButton
+                            currentCount={allGuardians.length}
+                            totalCount={guardians.total}
+                            isLoading={isLoadingMore}
+                            onLoadMore={handleLoadMore}
+                            itemName="guardians"
+                        />
+                    )}
                 </div>
 
                 {/* Desktop Table View - UNCHANGED */}
@@ -299,33 +319,15 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                         </table>
                     </div>
 
-                    {/* Pagination */}
-                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div className="text-sm text-gray-700">
-                                Showing <span className="font-medium">{guardians.from}</span> to{' '}
-                                <span className="font-medium">{guardians.to}</span> of{' '}
-                                <span className="font-medium">{guardians.total}</span> results
-                            </div>
-                            <div className="flex gap-2">
-                                {guardians.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                                            link.active
-                                                ? 'bg-orange text-white shadow-sm'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                        preserveState
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    {/* Desktop Pagination */}
+                    <Pagination
+                        links={guardians.links}
+                        currentPage={guardians.current_page}
+                        lastPage={guardians.last_page}
+                        total={guardians.total}
+                        from={guardians.from}
+                        to={guardians.to}
+                    />
                 </div>
             </div>
 

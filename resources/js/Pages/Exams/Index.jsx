@@ -4,9 +4,12 @@ import { useState } from 'react';
 import { Plus, Eye, Edit, Trash2, Calendar, FileText, BookOpen, GraduationCap, Clock, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import useFilters from '@/Hooks/useFilters';
+import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
+import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
+import Pagination from '@/Components/Pagination/Pagination';
 
 // Helper to get exam type badge variant
 function getExamTypeBadgeVariant(type) {
@@ -234,6 +237,13 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
         },
     });
 
+    // Cumulative loading for mobile view
+    const {
+        items: allExams,
+        isLoadingMore,
+        handleLoadMore
+    } = useCumulativeLoading(exams, filters, 'exams.index', 'exams');
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedExam, setSelectedExam] = useState(null);
 
@@ -341,7 +351,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                             }
                         }}
                     >
-                        {exams.data.length > 0 && exams.data.map((exam) => (
+                        {allExams && allExams.length > 0 && allExams.map((exam) => (
                             <MobileExamItem
                                 key={exam.id}
                                 exam={exam}
@@ -350,6 +360,16 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                             />
                         ))}
                     </MobileListContainer>
+
+                    {exams.data && exams.data.length > 0 && (
+                        <LoadMoreButton
+                            currentCount={allExams.length}
+                            totalCount={exams.total}
+                            isLoading={isLoadingMore}
+                            onLoadMore={handleLoadMore}
+                            itemName="exams"
+                        />
+                    )}
                 </div>
 
                 {/* Desktop Table View */}
@@ -490,34 +510,16 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                         </table>
                     </div>
 
-                    {/* Pagination */}
+                    {/* Desktop Pagination */}
                     {exams.data.length > 0 && (
-                        <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                            <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                                <div className="text-sm text-gray-700">
-                                    Showing <span className="font-medium">{exams.from}</span> to{' '}
-                                    <span className="font-medium">{exams.to}</span> of{' '}
-                                    <span className="font-medium">{exams.total}</span> results
-                                </div>
-                                <div className="flex gap-2">
-                                    {exams.links.map((link, index) => (
-                                        <Link
-                                            key={index}
-                                            href={link.url || '#'}
-                                            className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                                                link.active
-                                                    ? 'bg-orange text-white shadow-sm'
-                                                    : link.url
-                                                    ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                                                    : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                            }`}
-                                            dangerouslySetInnerHTML={{ __html: link.label }}
-                                            preserveState
-                                        />
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
+                        <Pagination
+                            links={exams.links}
+                            currentPage={exams.current_page}
+                            lastPage={exams.last_page}
+                            total={exams.total}
+                            from={exams.from}
+                            to={exams.to}
+                        />
                     )}
                 </div>
             </div>

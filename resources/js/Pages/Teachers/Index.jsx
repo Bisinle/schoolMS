@@ -4,9 +4,12 @@ import { useState, useCallback } from 'react';
 import { Plus, Eye, Edit, Trash2, BookOpen, Mail, Phone, User, GraduationCap } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import useFilters from '@/Hooks/useFilters';
+import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { SearchInput } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
+import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
+import Pagination from '@/Components/Pagination/Pagination';
 
 // Mobile List Item Component - Refactored with new components
 function MobileTeacherItem({ teacher, auth, onDelete }) {
@@ -191,6 +194,13 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
         },
     });
 
+    // Cumulative loading for mobile view
+    const {
+        items: allTeachers,
+        isLoadingMore,
+        handleLoadMore
+    } = useCumulativeLoading(teachers, filters, 'teachers.index', 'teachers');
+
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedTeacher, setSelectedTeacher] = useState(null);
 
@@ -244,7 +254,7 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                             message: 'Try adjusting your search',
                         }}
                     >
-                        {teachers.data && teachers.data.length > 0 && teachers.data.map((teacher) => (
+                        {allTeachers && allTeachers.length > 0 && allTeachers.map((teacher) => (
                             <MobileTeacherItem
                                 key={teacher.id}
                                 teacher={teacher}
@@ -253,6 +263,16 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                             />
                         ))}
                     </MobileListContainer>
+
+                    {teachers.data && teachers.data.length > 0 && (
+                        <LoadMoreButton
+                            currentCount={allTeachers.length}
+                            totalCount={teachers.total}
+                            isLoading={isLoadingMore}
+                            onLoadMore={handleLoadMore}
+                            itemName="teachers"
+                        />
+                    )}
                 </div>
 
                 {/* Desktop Table View - UNCHANGED */}
@@ -345,33 +365,15 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                         </table>
                     </div>
 
-                    {/* Pagination */}
-                    <div className="px-6 py-4 border-t border-gray-200 bg-gray-50">
-                        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                            <div className="text-sm text-gray-700">
-                                Showing <span className="font-medium">{teachers.from}</span> to{' '}
-                                <span className="font-medium">{teachers.to}</span> of{' '}
-                                <span className="font-medium">{teachers.total}</span> results
-                            </div>
-                            <div className="flex gap-2">
-                                {teachers.links.map((link, index) => (
-                                    <Link
-                                        key={index}
-                                        href={link.url || '#'}
-                                        className={`inline-flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                                            link.active
-                                                ? 'bg-orange text-white shadow-sm'
-                                                : link.url
-                                                ? 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-300'
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                        }`}
-                                        dangerouslySetInnerHTML={{ __html: link.label }}
-                                        preserveState
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    </div>
+                    {/* Desktop Pagination */}
+                    <Pagination
+                        links={teachers.links}
+                        currentPage={teachers.current_page}
+                        lastPage={teachers.last_page}
+                        total={teachers.total}
+                        from={teachers.from}
+                        to={teachers.to}
+                    />
                 </div>
             </div>
 
