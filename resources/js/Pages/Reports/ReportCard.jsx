@@ -790,7 +790,7 @@ export default function ReportCard({
                 @media print {
                     @page {
                         size: A4;
-                        margin: 3mm 4mm;
+                        margin: 8mm;
                     }
                     body {
                         print-color-adjust: exact;
@@ -819,14 +819,14 @@ export default function ReportCard({
 
                     /* Compact header for print */
                     .bg-gradient-to-br {
-                        padding-top: 0.3rem !important;
-                        padding-bottom: 0.3rem !important;
+                        padding-top: 0.5rem !important;
+                        padding-bottom: 0.5rem !important;
                     }
 
                     /* Reduce spacing in student info section */
                     .bg-gradient-to-r {
-                        padding-top: 0.25rem !important;
-                        padding-bottom: 0.25rem !important;
+                        padding-top: 0.4rem !important;
+                        padding-bottom: 0.4rem !important;
                     }
 
                     /* Compact table sections */
@@ -842,68 +842,23 @@ export default function ReportCard({
 
                     /* Reduce comment section height */
                     .min-h-\\[60px\\] {
-                        min-height: 30px !important;
+                        min-height: 40px !important;
                     }
 
                     /* Compact signatures section */
                     .h-12 {
-                        height: 1.5rem !important;
+                        height: 2rem !important;
                     }
 
                     /* Reduce overall performance section spacing */
                     .space-y-4 {
-                        gap: 0.3rem !important;
+                        gap: 0.5rem !important;
                     }
 
                     /* Make footer more compact */
                     footer, .bg-gradient-to-r.from-gray-900 {
-                        padding-top: 0.25rem !important;
-                        padding-bottom: 0.25rem !important;
-                    }
-
-                    /* Reduce table cell padding */
-                    table td, table th {
-                        padding: 0.25rem 0.3rem !important;
-                        line-height: 1.4 !important;
-                    }
-
-                    /* Reduce border width */
-                    .border-2, .border-b-2 {
-                        border-width: 1px !important;
-                    }
-
-                    .border-3, .border-\\[3px\\] {
-                        border-width: 2px !important;
-                    }
-
-                    /* Compact section headers */
-                    h3 {
-                        margin-bottom: 0.2rem !important;
-                    }
-
-                    /* Reduce gap in grid layouts */
-                    .gap-2, .gap-3, .gap-4 {
-                        gap: 0.25rem !important;
-                    }
-
-                    /* Hide empty comment placeholders to save space */
-                    .border-dashed {
-                        display: none !important;
-                    }
-
-                    /* Make comment section single column on print */
-                    .grid-cols-1.md\\:grid-cols-2 {
-                        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
-                    }
-
-                    /* Reduce student info grid gap */
-                    .grid.grid-cols-2 {
-                        gap: 0.2rem !important;
-                    }
-
-                    /* Compact average summary cards */
-                    .bg-blue-50, .bg-green-50 {
-                        padding: 0.3rem !important;
+                        padding-top: 0.4rem !important;
+                        padding-bottom: 0.4rem !important;
                     }
 
                     /* Ensure single page */
@@ -911,12 +866,6 @@ export default function ReportCard({
                         page-break-inside: avoid;
                         page-break-after: avoid;
                         page-break-before: avoid;
-                    }
-
-                    /* Scale down if still too large */
-                    .report-card-container {
-                        transform: scale(0.95);
-                        transform-origin: top center;
                     }
                 }
             `}</style>
