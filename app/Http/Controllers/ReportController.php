@@ -433,4 +433,39 @@ class ReportController extends Controller
 
         return back()->with('success', ucfirst($validated['comment_type']) . ' comment locked successfully.');
     }
+
+    public function unlockComment(Request $request, Student $student)
+    {
+        $user = $request->user();
+
+        // Only admins can unlock comments
+        if (!$user->isAdmin()) {
+            abort(403, 'Only administrators can unlock comments.');
+        }
+
+        $validated = $request->validate([
+            'term' => 'required|in:1,2,3',
+            'academic_year' => 'required|integer',
+            'comment_type' => 'required|in:teacher,headteacher',
+        ]);
+
+        $reportComment = ReportComment::where('student_id', $student->id)
+            ->where('term', $validated['term'])
+            ->where('academic_year', $validated['academic_year'])
+            ->firstOrFail();
+
+        if ($validated['comment_type'] === 'teacher') {
+            $reportComment->update([
+                'teacher_comment_locked_at' => null,
+                'teacher_locked_by' => null,
+            ]);
+        } else {
+            $reportComment->update([
+                'headteacher_comment_locked_at' => null,
+                'headteacher_locked_by' => null,
+            ]);
+        }
+
+        return back()->with('success', ucfirst($validated['comment_type']) . ' comment unlocked successfully.');
+    }
 }

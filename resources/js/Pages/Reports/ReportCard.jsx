@@ -13,10 +13,16 @@ export default function ReportCard({
     canEditHeadteacherComment,
     isGuardian
 }) {
-    const { school } = usePage().props;
+    const { school, auth } = usePage().props;
     const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
     const [showTeacherCommentForm, setShowTeacherCommentForm] = useState(false);
     const [showHeadteacherCommentForm, setShowHeadteacherCommentForm] = useState(false);
+    const [showLockModal, setShowLockModal] = useState(false);
+    const [lockCommentType, setLockCommentType] = useState(null);
+    const [showUnlockModal, setShowUnlockModal] = useState(false);
+    const [unlockCommentType, setUnlockCommentType] = useState(null);
+
+    const isAdmin = auth?.user?.role === 'admin';
 
     const { data: teacherData, setData: setTeacherData, post: postTeacher, processing: processingTeacher } = useForm({
         comment_type: 'teacher',
@@ -51,13 +57,39 @@ export default function ReportCard({
     };
 
     const handleLockComment = (commentType) => {
-        if (confirm(`Are you sure you want to lock the ${commentType} comment? This action cannot be undone.`)) {
-            router.post(`/reports/students/${student.id}/comments/lock`, {
-                comment_type: commentType,
-                term: term,
-                academic_year: academicYear,
-            });
-        }
+        setLockCommentType(commentType);
+        setShowLockModal(true);
+    };
+
+    const confirmLockComment = () => {
+        router.post(`/reports/students/${student.id}/comments/lock`, {
+            comment_type: lockCommentType,
+            term: term,
+            academic_year: academicYear,
+        }, {
+            onSuccess: () => {
+                setShowLockModal(false);
+                setLockCommentType(null);
+            }
+        });
+    };
+
+    const handleUnlockComment = (commentType) => {
+        setUnlockCommentType(commentType);
+        setShowUnlockModal(true);
+    };
+
+    const confirmUnlockComment = () => {
+        router.post(`/reports/students/${student.id}/comments/unlock`, {
+            comment_type: unlockCommentType,
+            term: term,
+            academic_year: academicYear,
+        }, {
+            onSuccess: () => {
+                setShowUnlockModal(false);
+                setUnlockCommentType(null);
+            }
+        });
     };
 
     const formatMarks = (marks) => {
@@ -73,7 +105,7 @@ export default function ReportCard({
     };
 
     return (
-        <AuthenticatedLayout header={`Report Card - ${student.first_name} ${student.last_name}`}>
+        <AuthenticatedLayout>
             <Head title={`Report Card - ${student.first_name} ${student.last_name}`} />
 
             {/* Back and Print Buttons */}
@@ -97,8 +129,8 @@ export default function ReportCard({
             </div>
 
             {/* Report Card - Responsive A4 Size */}
-            <div className="max-w-full lg:max-w-[210mm] mx-auto bg-white shadow-lg print:shadow-none">
-                
+            <div className="max-w-full lg:max-w-[210mm] mx-auto bg-white shadow-lg print:shadow-none report-card-container">
+
                 <div className="border-[3px] border-gray-900">
                     {/* Beautiful School Header - REDESIGNED & RESPONSIVE */}
                     <div className="relative bg-gradient-to-br from-[#1e3a5f] via-[#2d4a7c] to-[#1e3a5f] px-4 sm:px-6 md:px-8 py-6 sm:py-8 print:from-white print:via-white print:to-white print:border-b-[3px] print:border-gray-900">
@@ -425,98 +457,466 @@ export default function ReportCard({
                     </div>
 
                     {/* Comments - Enhanced & Responsive */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-4 sm:px-6 py-4 border-b-2 border-gray-300">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:gap-2 px-4 sm:px-6 py-4 print:py-2 border-b-2 border-gray-300">
                         {/* Teacher Comment */}
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="w-1 h-5 bg-indigo-600 rounded-full"></div>
-                                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wide text-gray-700">Class Teacher's Comment</h3>
+                            <div className="flex items-center justify-between gap-2 mb-1 print:mb-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1 h-5 bg-indigo-600 rounded-full print:hidden"></div>
+                                    <h3 className="text-xs sm:text-sm print:text-[10px] font-bold uppercase tracking-wide text-gray-700">Class Teacher's Comment</h3>
+                                </div>
                             </div>
+
                             {reportData.comments?.teacher_comment ? (
-                                <div className="min-h-[60px] p-3 border-2 border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs leading-relaxed">
-                                    {reportData.comments.teacher_comment}
+                                <div>
+                                    <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] leading-relaxed print:leading-snug">
+                                        {reportData.comments.teacher_comment}
+                                    </div>
+                                    {reportData.comments.teacher_comment_locked_at ? (
+                                        <div className="flex items-center gap-2 mt-2 print:hidden">
+                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                                                <Lock className="w-3 h-3" />
+                                                <span className="font-medium">Locked</span>
+                                            </div>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={() => handleUnlockComment('teacher')}
+                                                    className="inline-flex items-center px-3 py-1.5 text-xs text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                                                >
+                                                    <Lock className="w-3 h-3 mr-1" />
+                                                    Unlock
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : canEditTeacherComment && (
+                                        <div className="flex gap-2 mt-2 print:hidden">
+                                            <button
+                                                onClick={() => {
+                                                    setTeacherData('comment', reportData.comments.teacher_comment);
+                                                    setShowTeacherCommentForm(true);
+                                                }}
+                                                className="inline-flex items-center px-3 py-1.5 text-xs text-orange bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                                            >
+                                                Edit Comment
+                                            </button>
+                                            <button
+                                                onClick={() => handleLockComment('teacher')}
+                                                className="inline-flex items-center px-3 py-1.5 text-xs text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                                            >
+                                                <Lock className="w-3 h-3 mr-1" />
+                                                Lock
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
-                                <div className="min-h-[60px] p-3 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs text-gray-400 italic flex items-center justify-center">
-                                    No comment provided
+                                <div>
+                                    {canEditTeacherComment && !isGuardian ? (
+                                        <div className="print:hidden">
+                                            {showTeacherCommentForm ? (
+                                                <form onSubmit={handleSaveTeacherComment} className="space-y-3">
+                                                    <textarea
+                                                        value={teacherData.comment}
+                                                        onChange={(e) => setTeacherData('comment', e.target.value)}
+                                                        rows="4"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all text-xs"
+                                                        placeholder="Enter teacher's comment about the student's performance, behavior, and areas for improvement..."
+                                                        required
+                                                    ></textarea>
+                                                    <div className="flex gap-2 justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowTeacherCommentForm(false)}
+                                                            className="px-3 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            type="submit"
+                                                            disabled={processingTeacher}
+                                                            className="inline-flex items-center px-3 py-1.5 text-xs text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors disabled:opacity-50"
+                                                        >
+                                                            <Save className="w-3 h-3 mr-1" />
+                                                            {processingTeacher ? 'Saving...' : 'Save'}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setShowTeacherCommentForm(true)}
+                                                    className="inline-flex items-center px-4 py-2 text-xs text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
+                                                >
+                                                    <Save className="w-3 h-3 mr-1" />
+                                                    Add Teacher Comment
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-dashed border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] text-gray-400 italic flex items-center justify-center">
+                                            No comment provided
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
 
                         {/* Principal Comment */}
                         <div>
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="w-1 h-5 bg-purple-600 rounded-full"></div>
-                                <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wide text-gray-700">Principal's Comment</h3>
+                            <div className="flex items-center justify-between gap-2 mb-1 print:mb-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-1 h-5 bg-purple-600 rounded-full print:hidden"></div>
+                                    <h3 className="text-xs sm:text-sm print:text-[10px] font-bold uppercase tracking-wide text-gray-700">Principal's Comment</h3>
+                                </div>
                             </div>
+
                             {reportData.comments?.headteacher_comment ? (
-                                <div className="min-h-[60px] p-3 border-2 border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs leading-relaxed">
-                                    {reportData.comments.headteacher_comment}
+                                <div>
+                                    <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] leading-relaxed print:leading-snug">
+                                        {reportData.comments.headteacher_comment}
+                                    </div>
+                                    {reportData.comments.headteacher_comment_locked_at ? (
+                                        <div className="flex items-center gap-2 mt-2 print:hidden">
+                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                                                <Lock className="w-3 h-3" />
+                                                <span className="font-medium">Locked</span>
+                                            </div>
+                                            {isAdmin && (
+                                                <button
+                                                    onClick={() => handleUnlockComment('headteacher')}
+                                                    className="inline-flex items-center px-3 py-1.5 text-xs text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                                                >
+                                                    <Lock className="w-3 h-3 mr-1" />
+                                                    Unlock
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : canEditHeadteacherComment && (
+                                        <div className="flex gap-2 mt-2 print:hidden">
+                                            <button
+                                                onClick={() => {
+                                                    setHeadteacherData('comment', reportData.comments.headteacher_comment);
+                                                    setShowHeadteacherCommentForm(true);
+                                                }}
+                                                className="inline-flex items-center px-3 py-1.5 text-xs text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
+                                            >
+                                                Edit Comment
+                                            </button>
+                                            <button
+                                                onClick={() => handleLockComment('headteacher')}
+                                                className="inline-flex items-center px-3 py-1.5 text-xs text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                                            >
+                                                <Lock className="w-3 h-3 mr-1" />
+                                                Lock
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
-                                <div className="min-h-[60px] p-3 border-2 border-dashed border-gray-300 rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs text-gray-400 italic flex items-center justify-center">
-                                    No comment provided
+                                <div>
+                                    {canEditHeadteacherComment && !isGuardian ? (
+                                        <div className="print:hidden">
+                                            {showHeadteacherCommentForm ? (
+                                                <form onSubmit={handleSaveHeadteacherComment} className="space-y-3">
+                                                    <textarea
+                                                        value={headteacherData.comment}
+                                                        onChange={(e) => setHeadteacherData('comment', e.target.value)}
+                                                        rows="4"
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-xs"
+                                                        placeholder="Enter headteacher's comment about the student's overall performance and conduct..."
+                                                        required
+                                                    ></textarea>
+                                                    <div className="flex gap-2 justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setShowHeadteacherCommentForm(false)}
+                                                            className="px-3 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button
+                                                            type="submit"
+                                                            disabled={processingHeadteacher}
+                                                            className="inline-flex items-center px-3 py-1.5 text-xs text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                                        >
+                                                            <Save className="w-3 h-3 mr-1" />
+                                                            {processingHeadteacher ? 'Saving...' : 'Save'}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            ) : (
+                                                <button
+                                                    onClick={() => setShowHeadteacherCommentForm(true)}
+                                                    className="inline-flex items-center px-4 py-2 text-xs text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                                                >
+                                                    <Save className="w-3 h-3 mr-1" />
+                                                    Add Principal Comment
+                                                </button>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-dashed border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] text-gray-400 italic flex items-center justify-center">
+                                            No comment provided
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* Signatures - Enhanced & Responsive */}
-                    <div className="px-4 sm:px-6 py-4 border-b-2 border-gray-300 bg-gray-50 print:bg-white">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                    <div className="px-4 sm:px-6 py-4 print:py-2 border-b-2 border-gray-300 bg-gray-50 print:bg-white">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 print:gap-3">
                             <div className="text-center">
-                                <div className="border-b-2 border-gray-900 mb-1 h-12"></div>
-                                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-gray-700">Class Teacher</p>
-                                <p className="text-[8px] sm:text-[9px] text-gray-500 mt-0.5">Signature & Date</p>
+                                <div className="border-b-2 border-gray-900 mb-1 h-12 print:h-8"></div>
+                                <p className="text-[10px] sm:text-xs print:text-[9px] font-bold uppercase tracking-wide text-gray-700">Class Teacher</p>
+                                <p className="text-[8px] sm:text-[9px] print:text-[8px] text-gray-500 mt-0.5 print:hidden">Signature & Date</p>
                             </div>
                             <div className="text-center">
-                                <div className="border-b-2 border-gray-900 mb-1 h-12"></div>
-                                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-gray-700">Principal</p>
-                                <p className="text-[8px] sm:text-[9px] text-gray-500 mt-0.5">Signature & Date</p>
-                            </div>
-                            <div className="text-center">
-                                <div className="border-b-2 border-gray-900 mb-1 h-12"></div>
-                                <p className="text-[10px] sm:text-xs font-bold uppercase tracking-wide text-gray-700">Parent/Guardian</p>
-                                <p className="text-[8px] sm:text-[9px] text-gray-500 mt-0.5">Signature & Date</p>
+                                <div className="border-b-2 border-gray-900 mb-1 h-12 print:h-8"></div>
+                                <p className="text-[10px] sm:text-xs print:text-[9px] font-bold uppercase tracking-wide text-gray-700">Principal</p>
+                                <p className="text-[8px] sm:text-[9px] print:text-[8px] text-gray-500 mt-0.5 print:hidden">Signature & Date</p>
                             </div>
                         </div>
                     </div>
 
                     {/* Footer - Enhanced & Responsive */}
-                    <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white print:bg-gray-200 print:text-gray-900 px-4 sm:px-6 py-3 text-center border-t-4 border-[#ff6b35] print:border-gray-900">
-                        <p className="text-[10px] sm:text-xs font-semibold tracking-wide">
+                    <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white print:bg-gray-200 print:text-gray-900 px-4 sm:px-6 py-3 print:py-2 text-center border-t-4 border-[#ff6b35] print:border-gray-900">
+                        <p className="text-[10px] sm:text-xs print:text-[9px] font-semibold tracking-wide">
                             Official Document • Generated: {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
                         </p>
-                        <p className="text-[8px] sm:text-[9px] text-gray-400 print:text-gray-600 mt-1">
+                        <p className="text-[8px] sm:text-[9px] print:text-[8px] text-gray-400 print:text-gray-600 mt-1 print:mt-0">
                             {school?.name || 'School Name'} • Academic Excellence
                         </p>
                     </div>
                 </div>
             </div>
 
+            {/* Lock Comment Confirmation Modal */}
+            {showLockModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="flex-shrink-0 w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
+                                    <Lock className="w-6 h-6 text-yellow-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">Lock Comment</h3>
+                                    <p className="text-sm text-gray-500">Confirm this action</p>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <p className="text-sm text-gray-700">
+                                    Are you sure you want to lock the <span className="font-semibold">{lockCommentType === 'teacher' ? 'Class Teacher' : 'Principal'}</span> comment?
+                                </p>
+                                <p className="text-sm text-red-600 mt-2 font-medium">
+                                    ⚠️ This action cannot be undone. Only administrators will be able to unlock it.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => {
+                                        setShowLockModal(false);
+                                        setLockCommentType(null);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmLockComment}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-yellow-600 rounded-lg hover:bg-yellow-700 transition-colors inline-flex items-center gap-2"
+                                >
+                                    <Lock className="w-4 h-4" />
+                                    Lock Comment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Unlock Comment Confirmation Modal */}
+            {showUnlockModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 print:hidden">
+                    <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+                        <div className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                                    <Lock className="w-6 h-6 text-red-600" />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900">Unlock Comment</h3>
+                                    <p className="text-sm text-gray-500">Admin Action Required</p>
+                                </div>
+                            </div>
+
+                            <div className="mb-6">
+                                <p className="text-sm text-gray-700">
+                                    Are you sure you want to unlock the <span className="font-semibold">{unlockCommentType === 'teacher' ? 'Class Teacher' : 'Principal'}</span> comment?
+                                </p>
+                                <p className="text-sm text-blue-600 mt-2 font-medium">
+                                    ℹ️ This will allow the comment to be edited again.
+                                </p>
+                            </div>
+
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => {
+                                        setShowUnlockModal(false);
+                                        setUnlockCommentType(null);
+                                    }}
+                                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmUnlockComment}
+                                    className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors inline-flex items-center gap-2"
+                                >
+                                    <Lock className="w-4 h-4" />
+                                    Unlock Comment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Print Styles */}
             <style>{`
                 @media print {
                     @page {
                         size: A4;
-                        margin: 8mm;
+                        margin: 3mm 4mm;
                     }
                     body {
                         print-color-adjust: exact;
                         -webkit-print-color-adjust: exact;
                     }
+
+                    /* Hide everything except the report card */
+                    body > div:not(:has(.report-card-container)) {
+                        display: none !important;
+                    }
+
+                    /* Hide navigation, header, sidebar */
+                    nav, header, aside, .sidebar, [role="navigation"] {
+                        display: none !important;
+                    }
+
                     .print\\:hidden {
                         display: none !important;
                     }
+
+                    /* Remove all margins and padding from body and main containers */
+                    body, #app, main {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                    }
+
                     /* Compact header for print */
                     .bg-gradient-to-br {
-                        padding-top: 0.75rem !important;
-                        padding-bottom: 0.75rem !important;
+                        padding-top: 0.3rem !important;
+                        padding-bottom: 0.3rem !important;
                     }
+
                     /* Reduce spacing in student info section */
                     .bg-gradient-to-r {
-                        padding-top: 0.5rem !important;
-                        padding-bottom: 0.5rem !important;
+                        padding-top: 0.25rem !important;
+                        padding-bottom: 0.25rem !important;
+                    }
+
+                    /* Compact table sections */
+                    .px-2, .px-4, .px-6 {
+                        padding-left: 0.25rem !important;
+                        padding-right: 0.25rem !important;
+                    }
+
+                    .py-3, .py-4 {
+                        padding-top: 0.4rem !important;
+                        padding-bottom: 0.4rem !important;
+                    }
+
+                    /* Reduce comment section height */
+                    .min-h-\\[60px\\] {
+                        min-height: 30px !important;
+                    }
+
+                    /* Compact signatures section */
+                    .h-12 {
+                        height: 1.5rem !important;
+                    }
+
+                    /* Reduce overall performance section spacing */
+                    .space-y-4 {
+                        gap: 0.3rem !important;
+                    }
+
+                    /* Make footer more compact */
+                    footer, .bg-gradient-to-r.from-gray-900 {
+                        padding-top: 0.25rem !important;
+                        padding-bottom: 0.25rem !important;
+                    }
+
+                    /* Reduce table cell padding */
+                    table td, table th {
+                        padding: 0.25rem 0.3rem !important;
+                        line-height: 1.4 !important;
+                    }
+
+                    /* Reduce border width */
+                    .border-2, .border-b-2 {
+                        border-width: 1px !important;
+                    }
+
+                    .border-3, .border-\\[3px\\] {
+                        border-width: 2px !important;
+                    }
+
+                    /* Compact section headers */
+                    h3 {
+                        margin-bottom: 0.2rem !important;
+                    }
+
+                    /* Reduce gap in grid layouts */
+                    .gap-2, .gap-3, .gap-4 {
+                        gap: 0.25rem !important;
+                    }
+
+                    /* Hide empty comment placeholders to save space */
+                    .border-dashed {
+                        display: none !important;
+                    }
+
+                    /* Make comment section single column on print */
+                    .grid-cols-1.md\\:grid-cols-2 {
+                        grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
+                    }
+
+                    /* Reduce student info grid gap */
+                    .grid.grid-cols-2 {
+                        gap: 0.2rem !important;
+                    }
+
+                    /* Compact average summary cards */
+                    .bg-blue-50, .bg-green-50 {
+                        padding: 0.3rem !important;
+                    }
+
+                    /* Ensure single page */
+                    .report-card-container {
+                        page-break-inside: avoid;
+                        page-break-after: avoid;
+                        page-break-before: avoid;
+                    }
+
+                    /* Scale down if still too large */
+                    .report-card-container {
+                        transform: scale(0.95);
+                        transform-origin: top center;
                     }
                 }
             `}</style>

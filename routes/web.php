@@ -276,6 +276,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::middleware(['role:admin,teacher'])->group(function () {
         Route::post('/reports/students/{student}/comments', [ReportController::class, 'saveComment'])->name('reports.saveComment');
         Route::post('/reports/students/{student}/comments/lock', [ReportController::class, 'lockComment'])->name('reports.lockComment');
+        Route::post('/reports/students/{student}/comments/unlock', [ReportController::class, 'unlockComment'])->name('reports.unlockComment');
     });
 
     //^ School Settings Routes
