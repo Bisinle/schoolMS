@@ -39,6 +39,9 @@ class ExamController extends Controller
             ->when($request->academic_year, function ($q, $year) {
                 $q->where('academic_year', $year);
             })
+            ->when($request->exam_type, function ($q, $examType) {
+                $q->where('exam_type', $examType);
+            })
             ->orderBy('academic_year', 'desc')
             ->orderBy('term', 'desc')
             ->orderBy('exam_date', 'desc')
@@ -107,7 +110,7 @@ class ExamController extends Controller
         return Inertia::render('Exams/Index', [
             'exams' => $exams,
             'grades' => $grades,
-            'filters' => $request->only(['search', 'grade_id', 'term', 'academic_year', 'completion_status']),
+            'filters' => $request->only(['search', 'grade_id', 'term', 'academic_year', 'exam_type', 'completion_status']),
         ]);
     }
 

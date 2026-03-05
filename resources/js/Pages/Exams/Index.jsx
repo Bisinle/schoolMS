@@ -233,6 +233,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
             grade_id: initialFilters.grade_id || '',
             term: initialFilters.term || '',
             academic_year: initialFilters.academic_year || '',
+            exam_type: initialFilters.exam_type || '',
             completion_status: initialFilters.completion_status || '',
         },
     });
@@ -290,7 +291,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                 </div>
 
                 {/* Filters - Refactored with FilterBar */}
-                <FilterBar onClear={clearFilters} gridCols="5">
+                <FilterBar onClear={clearFilters} gridCols="6">
                     <SearchInput
                         value={filters.search}
                         onChange={(e) => updateFilter('search', e.target.value)}
@@ -313,6 +314,17 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                             { value: '3', label: 'Term 3' }
                         ]}
                         allLabel="All Terms"
+                        hideLabel
+                    />
+                    <FilterSelect
+                        value={filters.exam_type}
+                        onChange={(e) => updateFilter('exam_type', e.target.value)}
+                        options={[
+                            { value: 'opening', label: 'Opening' },
+                            { value: 'midterm', label: 'Midterm' },
+                            { value: 'end_term', label: 'End-Term' }
+                        ]}
+                        allLabel="All Types"
                         hideLabel
                     />
                     <div>
@@ -343,7 +355,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                         emptyState={{
                             icon: FileText,
                             title: 'No exams found',
-                            message: filters.search || filters.grade_id || filters.term || filters.academic_year || filters.completion_status ? 'Try adjusting your filters' : 'Schedule your first exam',
+                            message: filters.search || filters.grade_id || filters.term || filters.academic_year || filters.exam_type || filters.completion_status ? 'Try adjusting your filters' : 'Schedule your first exam',
                             action: {
                                 label: 'Schedule Exam',
                                 href: '/exams/create',
@@ -501,7 +513,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                             <FileText className="w-12 h-12 mx-auto mb-3 opacity-30" />
                                             <p className="text-lg font-medium">No exams found</p>
                                             <p className="text-sm mt-1">
-                                                {filters.search || filters.grade_id || filters.term || filters.academic_year || filters.completion_status ? 'Try adjusting your filters' : 'Get started by scheduling a new exam'}
+                                                {filters.search || filters.grade_id || filters.term || filters.academic_year || filters.exam_type || filters.completion_status ? 'Try adjusting your filters' : 'Get started by scheduling a new exam'}
                                             </p>
                                         </td>
                                     </tr>
