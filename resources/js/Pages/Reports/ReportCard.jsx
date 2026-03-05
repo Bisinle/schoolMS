@@ -109,27 +109,27 @@ export default function ReportCard({
                         <div className="absolute bottom-0 right-0 w-16 sm:w-20 md:w-24 h-16 sm:h-20 md:h-24 border-b-4 border-r-4 border-[#ff6b35] print:border-gray-900"></div>
 
                         <div className="relative z-10">
-                            {/* School Logo & Name - Centered Layout */}
-                            <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
+                            {/* Screen View - Centered Layout */}
+                            <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4 print:hidden">
                                 {/* School Logo */}
                                 {school?.logo_path ? (
-                                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl print:border-4 print:border-gray-900 overflow-hidden ring-4 ring-white/30">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/30">
                                         <img src={school.logo_path} alt={school.name} className="w-full h-full object-cover" />
                                     </div>
                                 ) : (
-                                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl print:border-4 print:border-gray-900 ring-4 ring-white/30">
+                                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30">
                                         <span className="text-3xl sm:text-4xl md:text-5xl">🏫</span>
                                     </div>
                                 )}
 
                                 {/* School Name */}
-                                <div className="text-white print:text-gray-900">
+                                <div className="text-white">
                                     <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black tracking-wider uppercase leading-tight drop-shadow-lg">
                                         {school?.name || 'School Name'}
                                     </h1>
                                     <div className="mt-2 flex items-center justify-center gap-2">
                                         <div className="h-px w-8 sm:w-12 md:w-16 bg-[#ff6b35]"></div>
-                                        <p className="text-xs sm:text-sm md:text-base font-bold tracking-widest uppercase text-[#ff6b35] print:text-gray-700">
+                                        <p className="text-xs sm:text-sm md:text-base font-bold tracking-widest uppercase text-[#ff6b35]">
                                             Excellence in Education
                                         </p>
                                         <div className="h-px w-8 sm:w-12 md:w-16 bg-[#ff6b35]"></div>
@@ -138,16 +138,16 @@ export default function ReportCard({
 
                                 {/* Report Card Title Badge */}
                                 <div className="mt-4 sm:mt-6">
-                                    <div className="inline-block bg-white print:bg-gray-50 px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-2xl shadow-2xl print:shadow-none print:border-4 print:border-gray-900 transform hover:scale-105 transition-transform">
+                                    <div className="inline-block bg-white px-6 sm:px-8 md:px-10 py-3 sm:py-4 rounded-2xl shadow-2xl transform hover:scale-105 transition-transform">
                                         <h2 className="text-base sm:text-lg md:text-xl lg:text-2xl font-black text-[#1e3a5f] tracking-widest uppercase">
                                             Student Report Card
                                         </h2>
                                         <div className="flex items-center justify-center gap-3 mt-2">
-                                            <div className="flex items-center gap-2 bg-[#ff6b35] print:bg-gray-200 px-3 sm:px-4 py-1 sm:py-1.5 rounded-full">
-                                                <span className="text-xs sm:text-sm font-black text-white print:text-gray-900 uppercase tracking-wide">
+                                            <div className="flex items-center gap-2 bg-[#ff6b35] px-3 sm:px-4 py-1 sm:py-1.5 rounded-full">
+                                                <span className="text-xs sm:text-sm font-black text-white uppercase tracking-wide">
                                                     Academic Year
                                                 </span>
-                                                <span className="text-sm sm:text-base font-black text-white print:text-gray-900">
+                                                <span className="text-sm sm:text-base font-black text-white">
                                                     {academicYear}
                                                 </span>
                                             </div>
@@ -155,46 +155,85 @@ export default function ReportCard({
                                     </div>
                                 </div>
                             </div>
+
+                            {/* Print View - Compact Horizontal Layout */}
+                            <div className="hidden print:flex items-center justify-between py-3">
+                                {/* Left: Logo & School Name */}
+                                <div className="flex items-center gap-3">
+                                    {school?.logo_path ? (
+                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-gray-900 overflow-hidden flex-shrink-0">
+                                            <img src={school.logo_path} alt={school.name} className="w-full h-full object-cover" />
+                                        </div>
+                                    ) : (
+                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-gray-900 flex-shrink-0">
+                                            <span className="text-2xl">🏫</span>
+                                        </div>
+                                    )}
+                                    <div className="text-left">
+                                        <h1 className="text-lg font-black text-gray-900 uppercase leading-tight">
+                                            {school?.name || 'School Name'}
+                                        </h1>
+                                        <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">
+                                            Excellence in Education
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Center: Report Card Title */}
+                                <div className="text-center">
+                                    <h2 className="text-base font-black text-gray-900 uppercase tracking-wide border-2 border-gray-900 px-4 py-1.5 bg-gray-50">
+                                        Student Report Card
+                                    </h2>
+                                </div>
+
+                                {/* Right: Academic Year */}
+                                <div className="text-right">
+                                    <div className="border-2 border-gray-900 px-3 py-1.5 bg-gray-100">
+                                        <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide">Academic Year</p>
+                                        <p className="text-sm font-black text-gray-900">{academicYear}</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
                     {/* Student Information - Enhanced & Responsive */}
-                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 print:bg-white border-b-2 border-gray-300 px-4 sm:px-6 py-4">
-                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 sm:gap-x-6 lg:gap-x-8 text-xs sm:text-sm">
+                    <div className="bg-gradient-to-r from-gray-50 to-gray-100 print:bg-white border-b-2 border-gray-300 px-4 sm:px-6 py-4 print:py-2">
+                        <div className="grid grid-cols-2 print:grid-cols-3 gap-x-4 gap-y-3 print:gap-y-2 sm:gap-x-6 text-xs sm:text-sm">
                             {/* Admission No */}
                             <div className="flex flex-col">
                                 <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Admission No</span>
-                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.admission_number}</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base print:text-xs">{student.admission_number}</span>
                             </div>
 
                             {/* Class */}
                             <div className="flex flex-col">
                                 <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Class</span>
-                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.grade?.name}</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base print:text-xs">{student.grade?.name}</span>
                             </div>
 
                             {/* Term */}
                             <div className="flex flex-col">
                                 <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Term</span>
-                                <span className="font-semibold text-gray-900 text-sm sm:text-base">Term {term}</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base print:text-xs">Term {term}</span>
                             </div>
 
                             {/* Student Name */}
                             <div className="flex flex-col">
                                 <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Student Name</span>
-                                <span className="font-semibold text-gray-900 capitalize text-sm sm:text-base">{student.first_name} {student.last_name}</span>
+                                <span className="font-semibold text-gray-900 capitalize text-sm sm:text-base print:text-xs">{student.first_name} {student.last_name}</span>
                             </div>
 
                             {/* Stream */}
                             <div className="flex flex-col">
                                 <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Stream</span>
-                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.grade?.code || 'N/A'}</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base print:text-xs">{student.grade?.code || 'N/A'}</span>
                             </div>
 
                             {/* Date of Birth */}
                             <div className="flex flex-col">
                                 <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Date of Birth</span>
-                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{new Date(student.date_of_birth).toLocaleDateString()}</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base print:text-xs">{new Date(student.date_of_birth).toLocaleDateString()}</span>
                             </div>
                         </div>
                     </div>
@@ -468,6 +507,16 @@ export default function ReportCard({
                     }
                     .print\\:hidden {
                         display: none !important;
+                    }
+                    /* Compact header for print */
+                    .bg-gradient-to-br {
+                        padding-top: 0.75rem !important;
+                        padding-bottom: 0.75rem !important;
+                    }
+                    /* Reduce spacing in student info section */
+                    .bg-gradient-to-r {
+                        padding-top: 0.5rem !important;
+                        padding-bottom: 0.5rem !important;
                     }
                 }
             `}</style>
