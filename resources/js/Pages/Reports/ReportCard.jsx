@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
-import { Download, Lock, Save } from 'lucide-react';
+import { Download, Lock, Save, ArrowLeft } from 'lucide-react';
 import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 
 export default function ReportCard({
@@ -76,15 +76,24 @@ export default function ReportCard({
         <AuthenticatedLayout header={`Report Card - ${student.first_name} ${student.last_name}`}>
             <Head title={`Report Card - ${student.first_name} ${student.last_name}`} />
 
-            {/* Print Button */}
+            {/* Back and Print Buttons */}
             <div className="max-w-full lg:max-w-[210mm] mx-auto mb-4 px-4 print:hidden">
-                <button
-                    onClick={() => window.print()}
-                    className="inline-flex items-center px-6 py-2.5 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md text-sm"
-                >
-                    <Download className="w-4 h-4 mr-2" />
-                    Print Report Card
-                </button>
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={() => window.history.back()}
+                        className="inline-flex items-center px-4 py-2.5 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-md text-sm"
+                    >
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back
+                    </button>
+                    <button
+                        onClick={() => window.print()}
+                        className="inline-flex items-center px-6 py-2.5 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md text-sm"
+                    >
+                        <Download className="w-4 h-4 mr-2" />
+                        Print Report Card
+                    </button>
+                </div>
             </div>
 
             {/* Report Card - Responsive A4 Size */}
@@ -151,201 +160,120 @@ export default function ReportCard({
 
                     {/* Student Information - Enhanced & Responsive */}
                     <div className="bg-gradient-to-r from-gray-50 to-gray-100 print:bg-white border-b-2 border-gray-300 px-4 sm:px-6 py-4">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8 text-xs sm:text-sm">
-                            <div className="space-y-2 sm:space-y-3">
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Admission No</span>
-                                    <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.admission_number}</span>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Student Name</span>
-                                    <span className="font-semibold text-gray-900 capitalize text-sm sm:text-base">{student.first_name} {student.last_name}</span>
-                                </div>
+                        <div className="grid grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 sm:gap-x-6 lg:gap-x-8 text-xs sm:text-sm">
+                            {/* Admission No */}
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Admission No</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.admission_number}</span>
                             </div>
-                            <div className="space-y-2 sm:space-y-3">
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Class</span>
-                                    <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.grade?.name}</span>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Stream</span>
-                                    <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.grade?.code || 'N/A'}</span>
-                                </div>
+
+                            {/* Class */}
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Class</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.grade?.name}</span>
                             </div>
-                            <div className="space-y-2 sm:space-y-3">
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Term</span>
-                                    <span className="font-semibold text-gray-900 text-sm sm:text-base">Term {term}</span>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Date of Birth</span>
-                                    <span className="font-semibold text-gray-900 text-sm sm:text-base">{new Date(student.date_of_birth).toLocaleDateString()}</span>
-                                </div>
+
+                            {/* Term */}
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Term</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base">Term {term}</span>
+                            </div>
+
+                            {/* Student Name */}
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Student Name</span>
+                                <span className="font-semibold text-gray-900 capitalize text-sm sm:text-base">{student.first_name} {student.last_name}</span>
+                            </div>
+
+                            {/* Stream */}
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Stream</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{student.grade?.code || 'N/A'}</span>
+                            </div>
+
+                            {/* Date of Birth */}
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-600 text-[10px] sm:text-xs uppercase tracking-wide">Date of Birth</span>
+                                <span className="font-semibold text-gray-900 text-sm sm:text-base">{new Date(student.date_of_birth).toLocaleDateString()}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Academic Performance Table - Enhanced & Responsive */}
                     {showAcademicSubjects && (
-                    <div className="px-4 sm:px-6 py-3">
+                    <div className="px-2 sm:px-4 md:px-6 py-3 overflow-x-auto">
                         <div className="flex items-center gap-2 mb-2">
                             <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
                             <h3 className="text-xs sm:text-sm font-black text-blue-900 uppercase tracking-wide">Academic Performance</h3>
                         </div>
 
-                        {/* Mobile View - Cards */}
-                        <div className="md:hidden space-y-3">
-                            {reportData.academic_subjects.map((subject, index) => (
-                                <div key={subject.id} className="border-2 border-gray-300 rounded-lg bg-white p-3">
-                                    <div className="font-bold text-sm text-gray-900 mb-2 pb-2 border-b border-gray-200">
-                                        {subject.name}
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-2 text-xs">
-                                        {reportData.is_term3 ? (
-                                            <>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 font-medium">Term 1 Avg:</span>
-                                                    <span className={`font-bold ${getMarkColor(subject.term1_average)}`}>
-                                                        {formatMarks(subject.term1_average)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 font-medium">Term 2 Avg:</span>
-                                                    <span className={`font-bold ${getMarkColor(subject.term2_average)}`}>
-                                                        {formatMarks(subject.term2_average)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 font-medium">Term 3:</span>
-                                                    <span className={`font-bold ${getMarkColor(subject.term3_result)}`}>
-                                                        {formatMarks(subject.term3_result)}
-                                                    </span>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 font-medium">Opening:</span>
-                                                    <span className={`font-bold ${getMarkColor(subject.opening)}`}>
-                                                        {formatMarks(subject.opening)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 font-medium">Mid Term:</span>
-                                                    <span className={`font-bold ${getMarkColor(subject.midterm)}`}>
-                                                        {formatMarks(subject.midterm)}
-                                                    </span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                    <span className="text-gray-600 font-medium">End Term:</span>
-                                                    <span className={`font-bold ${getMarkColor(subject.end_term)}`}>
-                                                        {formatMarks(subject.end_term)}
-                                                    </span>
-                                                </div>
-                                            </>
-                                        )}
-                                        <div className="flex justify-between col-span-2 pt-2 border-t border-gray-200">
-                                            <span className="text-gray-700 font-bold">Average:</span>
-                                            <span className={`font-bold text-base ${getMarkColor(subject.average)}`}>
-                                                {formatMarks(subject.average)}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between col-span-2">
-                                            <span className="text-gray-700 font-bold">Grade:</span>
-                                            <span className="font-bold text-base text-gray-900">
-                                                {subject.rubric || '-'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                            {/* Academic Average Card */}
-                            <div className="border-2 border-blue-600 rounded-lg bg-blue-50 p-3">
-                                <div className="grid grid-cols-2 gap-2 text-sm">
-                                    <div className="flex justify-between col-span-2">
-                                        <span className="font-black text-blue-900 uppercase">Academic Average:</span>
-                                        <span className="font-black text-blue-900 text-base">
-                                            {reportData.academic_average ? reportData.academic_average.toFixed(2) : '-'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between col-span-2">
-                                        <span className="font-black text-blue-900 uppercase">Grade:</span>
-                                        <span className="font-black text-blue-900 text-base">
-                                            {reportData.academic_rubric || '-'}
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Desktop View - Table */}
-                        <div className="hidden md:block overflow-x-auto">
-                            <table className="w-full border-2 border-gray-900 text-[10px] sm:text-xs">
+                        <div className="w-full">
+                            <table className="w-full border-2 border-gray-900 text-[8px] sm:text-[10px] md:text-xs">
                                 <thead>
                                     <tr className="bg-blue-100 print:bg-gray-200">
-                                        <th className="border border-gray-900 px-2 sm:px-3 py-1.5 text-left font-bold uppercase text-[9px] sm:text-[10px]">Subject</th>
+                                        <th className="border border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 text-left font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Subject</th>
                                         {reportData.is_term3 ? (
                                             <>
-                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Term 1 Avg</th>
-                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Term 2 Avg</th>
-                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Term 3</th>
+                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T1</th>
+                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T2</th>
+                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T3</th>
                                             </>
                                         ) : (
                                             <>
-                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Opening</th>
-                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Mid Term</th>
-                                                <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">End Term</th>
+                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Open</th>
+                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Mid</th>
+                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">End</th>
                                             </>
                                         )}
-                                        <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Average</th>
-                                        <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-12 sm:w-16 uppercase text-[9px] sm:text-[10px]">Grade</th>
+                                        <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Avg</th>
+                                        <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Grade</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {reportData.academic_subjects.map((subject, index) => (
                                         <tr key={subject.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <td className="border border-gray-900 px-2 sm:px-3 py-1 font-semibold">{subject.name}</td>
+                                            <td className="border border-gray-900 px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 font-semibold text-[8px] sm:text-[10px] md:text-xs">{subject.name}</td>
                                             {reportData.is_term3 ? (
                                                 <>
-                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
+                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
                                                         {formatMarks(subject.term1_average)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
+                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
                                                         {formatMarks(subject.term2_average)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
+                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
                                                         {formatMarks(subject.term3_result)}
                                                     </td>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
+                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
                                                         {formatMarks(subject.opening)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
+                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
                                                         {formatMarks(subject.midterm)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
+                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
                                                         {formatMarks(subject.end_term)}
                                                     </td>
                                                 </>
                                             )}
-                                            <td className={`border border-gray-900 px-2 py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
+                                            <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
                                                 {formatMarks(subject.average)}
                                             </td>
-                                            <td className="border border-gray-900 px-2 py-1 text-center font-bold">
+                                            <td className="border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold">
                                                 {subject.rubric || '-'}
                                             </td>
                                         </tr>
                                     ))}
                                     <tr className="bg-blue-200 print:bg-gray-300 font-bold">
-                                        <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 uppercase text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
+                                        <td className="border-2 border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 uppercase text-[8px] sm:text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
                                             Academic Average
                                         </td>
-                                        <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
+                                        <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
                                             {reportData.academic_average ? reportData.academic_average.toFixed(2) : '-'}
                                         </td>
-                                        <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
+                                        <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
                                             {reportData.academic_rubric || '-'}
                                         </td>
                                     </tr>
@@ -357,165 +285,79 @@ export default function ReportCard({
 
                     {/* Islamic Studies Performance Table - Enhanced & Responsive */}
                     {reportData.islamic_subjects.length > 0 && (
-                        <div className="px-4 sm:px-6 py-3">
+                        <div className="px-2 sm:px-4 md:px-6 py-3 overflow-x-auto">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="w-1 h-6 bg-green-600 rounded-full"></div>
                                 <h3 className="text-xs sm:text-sm font-black text-green-900 uppercase tracking-wide">Islamic Studies</h3>
                             </div>
 
-                            {/* Mobile View - Cards */}
-                            <div className="md:hidden space-y-3">
-                                {reportData.islamic_subjects.map((subject, index) => (
-                                    <div key={subject.id} className="border-2 border-gray-300 rounded-lg bg-white p-3">
-                                        <div className="font-bold text-sm text-gray-900 mb-2 pb-2 border-b border-gray-200">
-                                            {subject.name}
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-2 text-xs">
-                                            {reportData.is_term3 ? (
-                                                <>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600 font-medium">Term 1 Avg:</span>
-                                                        <span className={`font-bold ${getMarkColor(subject.term1_average)}`}>
-                                                            {formatMarks(subject.term1_average)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600 font-medium">Term 2 Avg:</span>
-                                                        <span className={`font-bold ${getMarkColor(subject.term2_average)}`}>
-                                                            {formatMarks(subject.term2_average)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600 font-medium">Term 3:</span>
-                                                        <span className={`font-bold ${getMarkColor(subject.term3_result)}`}>
-                                                            {formatMarks(subject.term3_result)}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600 font-medium">Opening:</span>
-                                                        <span className={`font-bold ${getMarkColor(subject.opening)}`}>
-                                                            {formatMarks(subject.opening)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600 font-medium">Mid Term:</span>
-                                                        <span className={`font-bold ${getMarkColor(subject.midterm)}`}>
-                                                            {formatMarks(subject.midterm)}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex justify-between">
-                                                        <span className="text-gray-600 font-medium">End Term:</span>
-                                                        <span className={`font-bold ${getMarkColor(subject.end_term)}`}>
-                                                            {formatMarks(subject.end_term)}
-                                                        </span>
-                                                    </div>
-                                                </>
-                                            )}
-                                            <div className="flex justify-between col-span-2 pt-2 border-t border-gray-200">
-                                                <span className="text-gray-700 font-bold">Average:</span>
-                                                <span className={`font-bold text-base ${getMarkColor(subject.average)}`}>
-                                                    {formatMarks(subject.average)}
-                                                </span>
-                                            </div>
-                                            <div className="flex justify-between col-span-2">
-                                                <span className="text-gray-700 font-bold">Grade:</span>
-                                                <span className="font-bold text-base text-gray-900">
-                                                    {subject.rubric || '-'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                                {/* Islamic Studies Average Card */}
-                                <div className="border-2 border-green-600 rounded-lg bg-green-50 p-3">
-                                    <div className="grid grid-cols-2 gap-2 text-sm">
-                                        <div className="flex justify-between col-span-2">
-                                            <span className="font-black text-green-900 uppercase">Islamic Studies Average:</span>
-                                            <span className="font-black text-green-900 text-base">
-                                                {reportData.islamic_average ? reportData.islamic_average.toFixed(2) : '-'}
-                                            </span>
-                                        </div>
-                                        <div className="flex justify-between col-span-2">
-                                            <span className="font-black text-green-900 uppercase">Grade:</span>
-                                            <span className="font-black text-green-900 text-base">
-                                                {reportData.islamic_rubric || '-'}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Desktop View - Table */}
-                            <div className="hidden md:block overflow-x-auto">
-                                <table className="w-full border-2 border-gray-900 text-[10px] sm:text-xs">
+                            <div className="w-full">
+                                <table className="w-full border-2 border-gray-900 text-[8px] sm:text-[10px] md:text-xs">
                                     <thead>
                                         <tr className="bg-green-100 print:bg-gray-200">
-                                            <th className="border border-gray-900 px-2 sm:px-3 py-1.5 text-left font-bold uppercase text-[9px] sm:text-[10px]">Subject</th>
+                                            <th className="border border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 text-left font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Subject</th>
                                             {reportData.is_term3 ? (
                                                 <>
-                                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Term 1 Avg</th>
-                                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Term 2 Avg</th>
-                                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Term 3</th>
+                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T1</th>
+                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T2</th>
+                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T3</th>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Opening</th>
-                                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Mid Term</th>
-                                                    <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">End Term</th>
+                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Open</th>
+                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Mid</th>
+                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">End</th>
                                                 </>
                                             )}
-                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-16 sm:w-20 uppercase text-[9px] sm:text-[10px]">Average</th>
-                                            <th className="border border-gray-900 px-2 py-1.5 text-center font-bold w-12 sm:w-16 uppercase text-[9px] sm:text-[10px]">Grade</th>
+                                            <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Avg</th>
+                                            <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Grade</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {reportData.islamic_subjects.map((subject, index) => (
                                             <tr key={subject.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                <td className="border border-gray-900 px-2 sm:px-3 py-1 font-semibold">{subject.name}</td>
+                                                <td className="border border-gray-900 px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 font-semibold text-[8px] sm:text-[10px] md:text-xs">{subject.name}</td>
                                                 {reportData.is_term3 ? (
                                                     <>
-                                                        <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
+                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
                                                             {formatMarks(subject.term1_average)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
+                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
                                                             {formatMarks(subject.term2_average)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
+                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
                                                             {formatMarks(subject.term3_result)}
                                                         </td>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
+                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
                                                             {formatMarks(subject.opening)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
+                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
                                                             {formatMarks(subject.midterm)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-2 py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
+                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
                                                             {formatMarks(subject.end_term)}
                                                         </td>
                                                     </>
                                                 )}
-                                                <td className={`border border-gray-900 px-2 py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
+                                                <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
                                                     {formatMarks(subject.average)}
                                                 </td>
-                                                <td className="border border-gray-900 px-2 py-1 text-center font-bold">
+                                                <td className="border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold">
                                                     {subject.rubric || '-'}
                                                 </td>
                                             </tr>
                                         ))}
                                         <tr className="bg-green-200 print:bg-gray-300 font-bold">
-                                            <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 uppercase text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
+                                            <td className="border-2 border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 uppercase text-[8px] sm:text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
                                                 Islamic Studies Average
                                             </td>
-                                            <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
+                                            <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
                                                 {reportData.islamic_average ? reportData.islamic_average.toFixed(2) : '-'}
                                             </td>
-                                            <td className="border-2 border-gray-900 px-2 py-1.5 text-center text-sm">
+                                            <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
                                                 {reportData.islamic_rubric || '-'}
                                             </td>
                                         </tr>
