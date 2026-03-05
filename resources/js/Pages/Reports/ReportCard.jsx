@@ -187,13 +187,99 @@ export default function ReportCard({
 
                     {/* Academic Performance Table - Enhanced & Responsive */}
                     {showAcademicSubjects && (
-                    <div className="px-4 sm:px-6 py-3 overflow-x-auto">
+                    <div className="px-4 sm:px-6 py-3">
                         <div className="flex items-center gap-2 mb-2">
                             <div className="w-1 h-6 bg-blue-600 rounded-full"></div>
                             <h3 className="text-xs sm:text-sm font-black text-blue-900 uppercase tracking-wide">Academic Performance</h3>
                         </div>
 
-                        <div className="min-w-[600px]">
+                        {/* Mobile View - Cards */}
+                        <div className="md:hidden space-y-3">
+                            {reportData.academic_subjects.map((subject, index) => (
+                                <div key={subject.id} className="border-2 border-gray-300 rounded-lg bg-white p-3">
+                                    <div className="font-bold text-sm text-gray-900 mb-2 pb-2 border-b border-gray-200">
+                                        {subject.name}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 text-xs">
+                                        {reportData.is_term3 ? (
+                                            <>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 font-medium">Term 1 Avg:</span>
+                                                    <span className={`font-bold ${getMarkColor(subject.term1_average)}`}>
+                                                        {formatMarks(subject.term1_average)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 font-medium">Term 2 Avg:</span>
+                                                    <span className={`font-bold ${getMarkColor(subject.term2_average)}`}>
+                                                        {formatMarks(subject.term2_average)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 font-medium">Term 3:</span>
+                                                    <span className={`font-bold ${getMarkColor(subject.term3_result)}`}>
+                                                        {formatMarks(subject.term3_result)}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 font-medium">Opening:</span>
+                                                    <span className={`font-bold ${getMarkColor(subject.opening)}`}>
+                                                        {formatMarks(subject.opening)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 font-medium">Mid Term:</span>
+                                                    <span className={`font-bold ${getMarkColor(subject.midterm)}`}>
+                                                        {formatMarks(subject.midterm)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600 font-medium">End Term:</span>
+                                                    <span className={`font-bold ${getMarkColor(subject.end_term)}`}>
+                                                        {formatMarks(subject.end_term)}
+                                                    </span>
+                                                </div>
+                                            </>
+                                        )}
+                                        <div className="flex justify-between col-span-2 pt-2 border-t border-gray-200">
+                                            <span className="text-gray-700 font-bold">Average:</span>
+                                            <span className={`font-bold text-base ${getMarkColor(subject.average)}`}>
+                                                {formatMarks(subject.average)}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between col-span-2">
+                                            <span className="text-gray-700 font-bold">Grade:</span>
+                                            <span className="font-bold text-base text-gray-900">
+                                                {subject.rubric || '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                            {/* Academic Average Card */}
+                            <div className="border-2 border-blue-600 rounded-lg bg-blue-50 p-3">
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="flex justify-between col-span-2">
+                                        <span className="font-black text-blue-900 uppercase">Academic Average:</span>
+                                        <span className="font-black text-blue-900 text-base">
+                                            {reportData.academic_average ? reportData.academic_average.toFixed(2) : '-'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between col-span-2">
+                                        <span className="font-black text-blue-900 uppercase">Grade:</span>
+                                        <span className="font-black text-blue-900 text-base">
+                                            {reportData.academic_rubric || '-'}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Desktop View - Table */}
+                        <div className="hidden md:block overflow-x-auto">
                             <table className="w-full border-2 border-gray-900 text-[10px] sm:text-xs">
                                 <thead>
                                     <tr className="bg-blue-100 print:bg-gray-200">
@@ -271,13 +357,99 @@ export default function ReportCard({
 
                     {/* Islamic Studies Performance Table - Enhanced & Responsive */}
                     {reportData.islamic_subjects.length > 0 && (
-                        <div className="px-4 sm:px-6 py-3 overflow-x-auto">
+                        <div className="px-4 sm:px-6 py-3">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="w-1 h-6 bg-green-600 rounded-full"></div>
                                 <h3 className="text-xs sm:text-sm font-black text-green-900 uppercase tracking-wide">Islamic Studies</h3>
                             </div>
 
-                            <div className="min-w-[600px]">
+                            {/* Mobile View - Cards */}
+                            <div className="md:hidden space-y-3">
+                                {reportData.islamic_subjects.map((subject, index) => (
+                                    <div key={subject.id} className="border-2 border-gray-300 rounded-lg bg-white p-3">
+                                        <div className="font-bold text-sm text-gray-900 mb-2 pb-2 border-b border-gray-200">
+                                            {subject.name}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 text-xs">
+                                            {reportData.is_term3 ? (
+                                                <>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 font-medium">Term 1 Avg:</span>
+                                                        <span className={`font-bold ${getMarkColor(subject.term1_average)}`}>
+                                                            {formatMarks(subject.term1_average)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 font-medium">Term 2 Avg:</span>
+                                                        <span className={`font-bold ${getMarkColor(subject.term2_average)}`}>
+                                                            {formatMarks(subject.term2_average)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 font-medium">Term 3:</span>
+                                                        <span className={`font-bold ${getMarkColor(subject.term3_result)}`}>
+                                                            {formatMarks(subject.term3_result)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 font-medium">Opening:</span>
+                                                        <span className={`font-bold ${getMarkColor(subject.opening)}`}>
+                                                            {formatMarks(subject.opening)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 font-medium">Mid Term:</span>
+                                                        <span className={`font-bold ${getMarkColor(subject.midterm)}`}>
+                                                            {formatMarks(subject.midterm)}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex justify-between">
+                                                        <span className="text-gray-600 font-medium">End Term:</span>
+                                                        <span className={`font-bold ${getMarkColor(subject.end_term)}`}>
+                                                            {formatMarks(subject.end_term)}
+                                                        </span>
+                                                    </div>
+                                                </>
+                                            )}
+                                            <div className="flex justify-between col-span-2 pt-2 border-t border-gray-200">
+                                                <span className="text-gray-700 font-bold">Average:</span>
+                                                <span className={`font-bold text-base ${getMarkColor(subject.average)}`}>
+                                                    {formatMarks(subject.average)}
+                                                </span>
+                                            </div>
+                                            <div className="flex justify-between col-span-2">
+                                                <span className="text-gray-700 font-bold">Grade:</span>
+                                                <span className="font-bold text-base text-gray-900">
+                                                    {subject.rubric || '-'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                                {/* Islamic Studies Average Card */}
+                                <div className="border-2 border-green-600 rounded-lg bg-green-50 p-3">
+                                    <div className="grid grid-cols-2 gap-2 text-sm">
+                                        <div className="flex justify-between col-span-2">
+                                            <span className="font-black text-green-900 uppercase">Islamic Studies Average:</span>
+                                            <span className="font-black text-green-900 text-base">
+                                                {reportData.islamic_average ? reportData.islamic_average.toFixed(2) : '-'}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between col-span-2">
+                                            <span className="font-black text-green-900 uppercase">Grade:</span>
+                                            <span className="font-black text-green-900 text-base">
+                                                {reportData.islamic_rubric || '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Desktop View - Table */}
+                            <div className="hidden md:block overflow-x-auto">
                                 <table className="w-full border-2 border-gray-900 text-[10px] sm:text-xs">
                                     <thead>
                                         <tr className="bg-green-100 print:bg-gray-200">
