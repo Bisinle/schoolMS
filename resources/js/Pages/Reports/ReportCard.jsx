@@ -146,7 +146,7 @@ export default function ReportCard({
                                 {/* School Logo */}
                                 {school?.logo_path ? (
                                     <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/30">
-                                        <img src={school.logo_path} alt={school.name} className="w-full h-full object-cover" />
+                                        <img src={`/storage/${school.logo_path}`} alt={school.name} className="w-full h-full object-cover" />
                                     </div>
                                 ) : (
                                     <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30">
@@ -194,7 +194,7 @@ export default function ReportCard({
                                 <div className="flex items-center gap-3">
                                     {school?.logo_path ? (
                                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-gray-900 overflow-hidden flex-shrink-0">
-                                            <img src={school.logo_path} alt={school.name} className="w-full h-full object-cover" />
+                                            <img src={`/storage/${school.logo_path}`} alt={school.name} className="w-full h-full object-cover" />
                                         </div>
                                     ) : (
                                         <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-gray-900 flex-shrink-0">
