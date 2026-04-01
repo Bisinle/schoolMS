@@ -10,6 +10,8 @@ import ImageUpload from '@/Components/Forms/ImageUpload';
 import { Combobox } from '@headlessui/react';
 import { useState } from 'react';
 
+const RELATIONSHIP_OPTIONS = ['Father', 'Mother', 'Uncle', 'Aunt', 'Grandparent', 'Other'];
+
 export default function StudentsEdit({ student, guardians, studentGuardians, grades }) {
     const { data, setData, post, processing, errors } = useForm({
         first_name: student.first_name || '',
@@ -45,6 +47,8 @@ export default function StudentsEdit({ student, guardians, studentGuardians, gra
             );
         });
 
+    const RELATIONSHIP_OPTIONS = ['Father', 'Mother', 'Uncle', 'Aunt', 'Grandparent', 'Other'];
+
     // Add guardian to the list
     const addGuardian = (guardian) => {
         if (!guardian) return;
@@ -59,7 +63,7 @@ export default function StudentsEdit({ student, guardians, studentGuardians, gra
             guardian_id: guardian.id,
             guardian_number: guardian.guardian_number,
             name: guardian.name,
-            relationship: '',
+            relationship: guardian.relationship || '',
             is_primary: data.guardians.length === 0,
             can_receive_invoices: true,
             can_pickup: true,
@@ -330,14 +334,17 @@ export default function StudentsEdit({ student, guardians, studentGuardians, gra
                                                         <label className="block text-xs font-medium text-gray-700 mb-1">
                                                             Relationship <span className="text-red-500">*</span>
                                                         </label>
-                                                        <input
-                                                            type="text"
+                                                        <select
                                                             value={guardian.relationship}
                                                             onChange={(e) => updateGuardian(index, 'relationship', e.target.value)}
-                                                            placeholder="e.g., Mother, Father"
                                                             className="w-full border-gray-300 rounded-md shadow-sm focus:border-orange-500 focus:ring-orange-500 text-sm"
                                                             required
-                                                        />
+                                                        >
+                                                            <option value="">Select relationship</option>
+                                                            {RELATIONSHIP_OPTIONS.map(opt => (
+                                                                <option key={opt} value={opt}>{opt}</option>
+                                                            ))}
+                                                        </select>
                                                         {errors[`guardians.${index}.relationship`] && (
                                                             <p className="mt-1 text-xs text-red-600">{errors[`guardians.${index}.relationship`]}</p>
                                                         )}

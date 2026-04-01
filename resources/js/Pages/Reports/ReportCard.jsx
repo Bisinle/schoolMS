@@ -123,16 +123,16 @@ export default function ReportCard({
                         <div className="absolute bottom-0 right-0 w-16 sm:w-20 md:w-24 h-16 sm:h-20 md:h-24 border-b-4 border-r-4 border-[#ff6b35] print:border-gray-900"></div>
 
                         <div className="relative z-10">
-                            {/* Screen View - Centered Layout */}
+                            {/* Screen View - Original Centered Stacked Layout */}
                             <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4 print:hidden">
                                 {/* School Logo */}
                                 {school?.logo_path ? (
-                                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/30">
+                                    <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 bg-white rounded-full flex items-center justify-center shadow-2xl overflow-hidden ring-4 ring-white/30">
                                         <img src={`/storage/${school.logo_path}`} alt={school.name} className="w-full h-full object-cover" />
                                     </div>
                                 ) : (
-                                    <div className="w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30">
-                                        <span className="text-3xl sm:text-4xl md:text-5xl">🏫</span>
+                                    <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 bg-white rounded-full flex items-center justify-center shadow-2xl ring-4 ring-white/30">
+                                        <span className="text-5xl sm:text-6xl md:text-7xl">🏫</span>
                                     </div>
                                 )}
 
@@ -170,42 +170,44 @@ export default function ReportCard({
                                 </div>
                             </div>
 
-                            {/* Print View - Compact Horizontal Layout */}
-                            <div className="hidden print:flex items-center justify-between py-3">
-                                {/* Left: Logo & School Name */}
-                                <div className="flex items-center gap-3">
-                                    {school?.logo_path ? (
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-gray-900 overflow-hidden flex-shrink-0">
-                                            <img src={`/storage/${school.logo_path}`} alt={school.name} className="w-full h-full object-cover" />
-                                        </div>
-                                    ) : (
-                                        <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center border-2 border-gray-900 flex-shrink-0">
-                                            <span className="text-2xl">🏫</span>
-                                        </div>
-                                    )}
-                                    <div className="text-left">
-                                        <h1 className="text-lg font-black text-gray-900 uppercase leading-tight">
-                                            {school?.name || 'School Name'}
-                                        </h1>
-                                        <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wide">
-                                            Excellence in Education
-                                        </p>
+                            {/* Print View - Professional Centred Layout */}
+                            <div className="hidden print:flex flex-col items-center text-center py-4 gap-2">
+                                {/* Logo */}
+                                {school?.logo_path ? (
+                                    <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-gray-900 flex-shrink-0">
+                                        <img src={`/storage/${school.logo_path}`} alt={school.name} className="w-full h-full object-cover" />
                                     </div>
+                                ) : (
+                                    <div className="w-20 h-20 rounded-full border-[3px] border-gray-900 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-4xl">🏫</span>
+                                    </div>
+                                )}
+
+                                {/* School Name */}
+                                <div>
+                                    <h1 className="text-2xl font-black text-gray-900 uppercase tracking-widest leading-tight">
+                                        {school?.name || 'School Name'}
+                                    </h1>
+                                    <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em] mt-0.5">
+                                        Excellence in Education
+                                    </p>
                                 </div>
 
-                                {/* Center: Report Card Title */}
-                                <div className="text-center">
-                                    <h2 className="text-base font-black text-gray-900 uppercase tracking-wide border-2 border-gray-900 px-4 py-1.5 bg-gray-50">
+                                {/* Decorative rule */}
+                                <div className="flex items-center gap-2 w-full max-w-xs">
+                                    <div className="flex-1 h-px bg-gray-900"></div>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-900"></div>
+                                    <div className="flex-1 h-px bg-gray-900"></div>
+                                </div>
+
+                                {/* Title + Academic Year */}
+                                <div>
+                                    <h2 className="text-base font-black text-gray-900 uppercase tracking-[0.2em]">
                                         Student Report Card
                                     </h2>
-                                </div>
-
-                                {/* Right: Academic Year */}
-                                <div className="text-right">
-                                    <div className="border-2 border-gray-900 px-3 py-1.5 bg-gray-100">
-                                        <p className="text-[9px] font-bold text-gray-600 uppercase tracking-wide">Academic Year</p>
-                                        <p className="text-sm font-black text-gray-900">{academicYear}</p>
-                                    </div>
+                                    <p className="text-[11px] font-semibold text-gray-600 uppercase tracking-widest mt-0.5">
+                                        Academic Year: <span className="text-gray-900 font-black">{academicYear}</span>
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -685,83 +687,42 @@ export default function ReportCard({
             <style>{`
                 @media print {
                     @page {
-                        size: A4;
-                        margin: 8mm;
+                        size: A4 portrait;
+                        margin: 5mm;
                     }
+
                     body {
                         print-color-adjust: exact;
                         -webkit-print-color-adjust: exact;
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        background: white !important;
                     }
 
-                    /* Hide everything except the report card */
-                    body > div:not(:has(.report-card-container)) {
-                        display: none !important;
-                    }
-
-                    /* Hide navigation, header, sidebar */
-                    nav, header, aside, .sidebar, [role="navigation"] {
-                        display: none !important;
-                    }
-
-                    .print\\:hidden {
-                        display: none !important;
-                    }
-
-                    /* Remove all margins and padding from body and main containers */
                     body, #app, main {
                         margin: 0 !important;
                         padding: 0 !important;
                     }
 
-                    /* Compact header for print */
-                    .bg-gradient-to-br {
-                        padding-top: 0.5rem !important;
-                        padding-bottom: 0.5rem !important;
+                    /* Hide navigation and UI chrome */
+                    nav, header, aside, .sidebar, [role="navigation"],
+                    .print\\:hidden {
+                        display: none !important;
                     }
 
-                    /* Reduce spacing in student info section */
-                    .bg-gradient-to-r {
-                        padding-top: 0.4rem !important;
-                        padding-bottom: 0.4rem !important;
-                    }
-
-                    /* Compact table sections */
-                    .px-2, .px-4, .px-6 {
-                        padding-left: 0.25rem !important;
-                        padding-right: 0.25rem !important;
-                    }
-
-                    .py-3, .py-4 {
-                        padding-top: 0.4rem !important;
-                        padding-bottom: 0.4rem !important;
-                    }
-
-                    /* Reduce comment section height */
-                    .min-h-\\[60px\\] {
-                        min-height: 40px !important;
-                    }
-
-                    /* Compact signatures section */
-                    .h-12 {
-                        height: 2rem !important;
-                    }
-
-                    /* Reduce overall performance section spacing */
-                    .space-y-4 {
-                        gap: 0.5rem !important;
-                    }
-
-                    /* Make footer more compact */
-                    footer, .bg-gradient-to-r.from-gray-900 {
-                        padding-top: 0.4rem !important;
-                        padding-bottom: 0.4rem !important;
-                    }
-
-                    /* Ensure single page */
+                    /*
+                     * Scale the entire card to fit one A4 page.
+                     * zoom shrinks all child elements proportionally —
+                     * text, padding, borders, images — without clipping.
+                     * Adjust the value down if your school has many subjects.
+                     */
                     .report-card-container {
+                        zoom: 0.78;
+                        width: 100% !important;
+                        max-width: 100% !important;
+                        box-shadow: none !important;
                         page-break-inside: avoid;
-                        page-break-after: avoid;
-                        page-break-before: avoid;
+                        break-inside: avoid;
                     }
                 }
             `}</style>
