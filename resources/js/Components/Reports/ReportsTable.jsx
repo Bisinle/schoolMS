@@ -9,7 +9,7 @@ function MobileStudentReportItem({ student, onGenerateReport }) {
     const primaryActions = [
         {
             icon: FileText,
-            label: 'Generate',
+            label: 'Report Card',
             onClick: () => onGenerateReport(student),
             color: 'orange',
         },

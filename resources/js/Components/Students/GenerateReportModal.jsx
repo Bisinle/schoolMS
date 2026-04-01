@@ -1,12 +1,20 @@
 import { useState } from 'react';
-import { FileText } from 'lucide-react';
+import { FileText, Printer } from 'lucide-react';
 
 export default function GenerateReportModal({ student, show, onClose }) {
     const [term, setTerm] = useState('1');
     const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
 
-    const handleGenerate = () => {
-        window.location.href = `/reports/generate?student_id=${student.id}&term=${term}&academic_year=${academicYear}`;
+    const baseUrl = () =>
+        `/reports/generate?student_id=${student.id}&term=${term}&academic_year=${academicYear}`;
+
+    const handleView = () => {
+        window.location.href = baseUrl();
+    };
+
+    const handlePrint = () => {
+        window.open(baseUrl() + '&autoprint=1', '_blank');
+        onClose();
     };
 
     if (!show) return null;
@@ -15,18 +23,15 @@ export default function GenerateReportModal({ student, show, onClose }) {
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
                 <div className="px-6 py-4 border-b border-gray-200">
-                    <h3 className="text-lg font-semibold text-gray-900">
-                        Generate Report Card
-                    </h3>
+                    <h3 className="text-lg font-semibold text-gray-900">Report Card</h3>
                     <p className="text-sm text-gray-600 mt-1">
                         {student.first_name} {student.last_name}
                     </p>
                 </div>
+
                 <div className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Term
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Term</label>
                         <select
                             value={term}
                             onChange={(e) => setTerm(e.target.value)}
@@ -38,9 +43,7 @@ export default function GenerateReportModal({ student, show, onClose }) {
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Academic Year
-                        </label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Academic Year</label>
                         <input
                             type="number"
                             value={academicYear}
@@ -51,6 +54,7 @@ export default function GenerateReportModal({ student, show, onClose }) {
                         />
                     </div>
                 </div>
+
                 <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
                     <button
                         onClick={onClose}
@@ -59,11 +63,18 @@ export default function GenerateReportModal({ student, show, onClose }) {
                         Cancel
                     </button>
                     <button
-                        onClick={handleGenerate}
+                        onClick={handlePrint}
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                    >
+                        <Printer className="w-4 h-4 mr-2" />
+                        Print
+                    </button>
+                    <button
+                        onClick={handleView}
                         className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
                     >
                         <FileText className="w-4 h-4 mr-2" />
-                        Generate Report
+                        View Report
                     </button>
                 </div>
             </div>

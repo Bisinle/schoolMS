@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, useForm, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Download, Lock, Save, ArrowLeft } from 'lucide-react';
 import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
 
@@ -21,6 +21,15 @@ export default function ReportCard({
     const [unlockCommentType, setUnlockCommentType] = useState(null);
 
     const isAdmin = auth?.user?.role === 'admin';
+
+    // Auto-print when opened via the Print button on the index page
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('autoprint') === '1') {
+            const timer = setTimeout(() => window.print(), 800);
+            return () => clearTimeout(timer);
+        }
+    }, []);
 
     const { data: teacherData, setData: setTeacherData, post: postTeacher, processing: processingTeacher } = useForm({
         comment_type: 'teacher',
