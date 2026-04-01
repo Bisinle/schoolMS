@@ -10,13 +10,11 @@ export default function ReportCard({
     academicYear,
     reportData,
     canEditTeacherComment,
-    canEditHeadteacherComment,
     isGuardian
 }) {
     const { school, auth } = usePage().props;
     const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
     const [showTeacherCommentForm, setShowTeacherCommentForm] = useState(false);
-    const [showHeadteacherCommentForm, setShowHeadteacherCommentForm] = useState(false);
     const [showLockModal, setShowLockModal] = useState(false);
     const [lockCommentType, setLockCommentType] = useState(null);
     const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -31,27 +29,11 @@ export default function ReportCard({
         comment: reportData.comments?.teacher_comment || '',
     });
 
-    const { data: headteacherData, setData: setHeadteacherData, post: postHeadteacher, processing: processingHeadteacher } = useForm({
-        comment_type: 'headteacher',
-        term: term,
-        academic_year: academicYear,
-        comment: reportData.comments?.headteacher_comment || '',
-    });
-
     const handleSaveTeacherComment = (e) => {
         e.preventDefault();
         postTeacher(`/reports/students/${student.id}/comments`, {
             onSuccess: () => {
                 setShowTeacherCommentForm(false);
-            }
-        });
-    };
-
-    const handleSaveHeadteacherComment = (e) => {
-        e.preventDefault();
-        postHeadteacher(`/reports/students/${student.id}/comments`, {
-            onSuccess: () => {
-                setShowHeadteacherCommentForm(false);
             }
         });
     };
@@ -456,211 +438,114 @@ export default function ReportCard({
                         </div>
                     </div>
 
-                    {/* Comments - Enhanced & Responsive */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:gap-2 px-4 sm:px-6 py-4 print:py-2 border-b-2 border-gray-300">
-                        {/* Teacher Comment */}
-                        <div>
-                            <div className="flex items-center justify-between gap-2 mb-1 print:mb-1">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1 h-5 bg-indigo-600 rounded-full print:hidden"></div>
-                                    <h3 className="text-xs sm:text-sm print:text-[10px] font-bold uppercase tracking-wide text-gray-700">Class Teacher's Comment</h3>
-                                </div>
+                    {/* Class Teacher's Comment - Full Width */}
+                    <div className="px-4 sm:px-6 py-4 print:py-3 border-b-2 border-gray-300">
+                        <div className="flex items-center justify-between gap-2 mb-2 print:mb-2">
+                            <div className="flex items-center gap-2">
+                                <div className="w-1 h-5 bg-indigo-600 rounded-full print:hidden"></div>
+                                <h3 className="text-xs sm:text-sm print:text-[10px] font-bold uppercase tracking-wide text-gray-700">Class Teacher's Comment</h3>
                             </div>
-
-                            {reportData.comments?.teacher_comment ? (
-                                <div>
-                                    <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] leading-relaxed print:leading-snug">
-                                        {reportData.comments.teacher_comment}
-                                    </div>
-                                    {reportData.comments.teacher_comment_locked_at ? (
-                                        <div className="flex items-center gap-2 mt-2 print:hidden">
-                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
-                                                <Lock className="w-3 h-3" />
-                                                <span className="font-medium">Locked</span>
-                                            </div>
-                                            {isAdmin && (
-                                                <button
-                                                    onClick={() => handleUnlockComment('teacher')}
-                                                    className="inline-flex items-center px-3 py-1.5 text-xs text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                                                >
-                                                    <Lock className="w-3 h-3 mr-1" />
-                                                    Unlock
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : canEditTeacherComment && (
-                                        <div className="flex gap-2 mt-2 print:hidden">
-                                            <button
-                                                onClick={() => {
-                                                    setTeacherData('comment', reportData.comments.teacher_comment);
-                                                    setShowTeacherCommentForm(true);
-                                                }}
-                                                className="inline-flex items-center px-3 py-1.5 text-xs text-orange bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
-                                            >
-                                                Edit Comment
-                                            </button>
-                                            <button
-                                                onClick={() => handleLockComment('teacher')}
-                                                className="inline-flex items-center px-3 py-1.5 text-xs text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
-                                            >
-                                                <Lock className="w-3 h-3 mr-1" />
-                                                Lock
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div>
-                                    {canEditTeacherComment && !isGuardian ? (
-                                        <div className="print:hidden">
-                                            {showTeacherCommentForm ? (
-                                                <form onSubmit={handleSaveTeacherComment} className="space-y-3">
-                                                    <textarea
-                                                        value={teacherData.comment}
-                                                        onChange={(e) => setTeacherData('comment', e.target.value)}
-                                                        rows="4"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all text-xs"
-                                                        placeholder="Enter teacher's comment about the student's performance, behavior, and areas for improvement..."
-                                                        required
-                                                    ></textarea>
-                                                    <div className="flex gap-2 justify-end">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowTeacherCommentForm(false)}
-                                                            className="px-3 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <button
-                                                            type="submit"
-                                                            disabled={processingTeacher}
-                                                            className="inline-flex items-center px-3 py-1.5 text-xs text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors disabled:opacity-50"
-                                                        >
-                                                            <Save className="w-3 h-3 mr-1" />
-                                                            {processingTeacher ? 'Saving...' : 'Save'}
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setShowTeacherCommentForm(true)}
-                                                    className="inline-flex items-center px-4 py-2 text-xs text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
-                                                >
-                                                    <Save className="w-3 h-3 mr-1" />
-                                                    Add Teacher Comment
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-dashed border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] text-gray-400 italic flex items-center justify-center">
-                                            No comment provided
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
 
-                        {/* Principal Comment */}
-                        <div>
-                            <div className="flex items-center justify-between gap-2 mb-1 print:mb-1">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-1 h-5 bg-purple-600 rounded-full print:hidden"></div>
-                                    <h3 className="text-xs sm:text-sm print:text-[10px] font-bold uppercase tracking-wide text-gray-700">Principal's Comment</h3>
+                        {reportData.comments?.teacher_comment ? (
+                            <div>
+                                <div className="min-h-[100px] print:min-h-[80px] p-3 print:p-2 border-2 border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] leading-relaxed print:leading-snug">
+                                    {reportData.comments.teacher_comment}
                                 </div>
-                            </div>
-
-                            {reportData.comments?.headteacher_comment ? (
-                                <div>
-                                    <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] leading-relaxed print:leading-snug">
-                                        {reportData.comments.headteacher_comment}
-                                    </div>
-                                    {reportData.comments.headteacher_comment_locked_at ? (
-                                        <div className="flex items-center gap-2 mt-2 print:hidden">
-                                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
-                                                <Lock className="w-3 h-3" />
-                                                <span className="font-medium">Locked</span>
-                                            </div>
-                                            {isAdmin && (
-                                                <button
-                                                    onClick={() => handleUnlockComment('headteacher')}
-                                                    className="inline-flex items-center px-3 py-1.5 text-xs text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
-                                                >
-                                                    <Lock className="w-3 h-3 mr-1" />
-                                                    Unlock
-                                                </button>
-                                            )}
+                                {reportData.comments.teacher_comment_locked_at ? (
+                                    <div className="flex items-center gap-2 mt-2 print:hidden">
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-yellow-50 border border-yellow-200 rounded-lg text-xs text-yellow-700">
+                                            <Lock className="w-3 h-3" />
+                                            <span className="font-medium">Locked</span>
                                         </div>
-                                    ) : canEditHeadteacherComment && (
-                                        <div className="flex gap-2 mt-2 print:hidden">
+                                        {isAdmin && (
                                             <button
-                                                onClick={() => {
-                                                    setHeadteacherData('comment', reportData.comments.headteacher_comment);
-                                                    setShowHeadteacherCommentForm(true);
-                                                }}
-                                                className="inline-flex items-center px-3 py-1.5 text-xs text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-                                            >
-                                                Edit Comment
-                                            </button>
-                                            <button
-                                                onClick={() => handleLockComment('headteacher')}
-                                                className="inline-flex items-center px-3 py-1.5 text-xs text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                                                onClick={() => handleUnlockComment('teacher')}
+                                                className="inline-flex items-center px-3 py-1.5 text-xs text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
                                             >
                                                 <Lock className="w-3 h-3 mr-1" />
-                                                Lock
+                                                Unlock
                                             </button>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                ) : canEditTeacherComment && (
+                                    <div className="flex gap-2 mt-2 print:hidden">
+                                        <button
+                                            onClick={() => {
+                                                setTeacherData('comment', reportData.comments.teacher_comment);
+                                                setShowTeacherCommentForm(true);
+                                            }}
+                                            className="inline-flex items-center px-3 py-1.5 text-xs text-orange bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
+                                        >
+                                            Edit Comment
+                                        </button>
+                                        <button
+                                            onClick={() => handleLockComment('teacher')}
+                                            className="inline-flex items-center px-3 py-1.5 text-xs text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors"
+                                        >
+                                            <Lock className="w-3 h-3 mr-1" />
+                                            Lock
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <div>
+                                {canEditTeacherComment && !isGuardian ? (
+                                    <div className="print:hidden">
+                                        {showTeacherCommentForm ? (
+                                            <form onSubmit={handleSaveTeacherComment} className="space-y-3">
+                                                <textarea
+                                                    value={teacherData.comment}
+                                                    onChange={(e) => setTeacherData('comment', e.target.value)}
+                                                    rows="6"
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all text-xs"
+                                                    placeholder="Enter teacher's comment about the student's performance, behavior, and areas for improvement..."
+                                                    required
+                                                ></textarea>
+                                                <div className="flex gap-2 justify-end">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowTeacherCommentForm(false)}
+                                                        className="px-3 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                    <button
+                                                        type="submit"
+                                                        disabled={processingTeacher}
+                                                        className="inline-flex items-center px-3 py-1.5 text-xs text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors disabled:opacity-50"
+                                                    >
+                                                        <Save className="w-3 h-3 mr-1" />
+                                                        {processingTeacher ? 'Saving...' : 'Save'}
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        ) : (
+                                            <button
+                                                onClick={() => setShowTeacherCommentForm(true)}
+                                                className="inline-flex items-center px-4 py-2 text-xs text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
+                                            >
+                                                <Save className="w-3 h-3 mr-1" />
+                                                Add Teacher Comment
+                                            </button>
+                                        )}
+                                    </div>
+                                ) : (
+                                    /* Print-only: large blank handwriting area */
+                                    <div className="min-h-[100px] print:min-h-[80px] p-3 print:p-2 border-2 border-dashed border-gray-300 print:border-gray-400 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] text-gray-400 italic flex items-start justify-start">
+                                        <span className="print:hidden">No comment provided</span>
+                                    </div>
+                                )}
+                                {/* Blank lined area for handwritten comment on print */}
+                                <div className="hidden print:block mt-2 space-y-3">
+                                    <div className="border-b border-gray-400 h-5"></div>
+                                    <div className="border-b border-gray-400 h-5"></div>
+                                    <div className="border-b border-gray-400 h-5"></div>
+                                    <div className="border-b border-gray-400 h-5"></div>
                                 </div>
-                            ) : (
-                                <div>
-                                    {canEditHeadteacherComment && !isGuardian ? (
-                                        <div className="print:hidden">
-                                            {showHeadteacherCommentForm ? (
-                                                <form onSubmit={handleSaveHeadteacherComment} className="space-y-3">
-                                                    <textarea
-                                                        value={headteacherData.comment}
-                                                        onChange={(e) => setHeadteacherData('comment', e.target.value)}
-                                                        rows="4"
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-xs"
-                                                        placeholder="Enter headteacher's comment about the student's overall performance and conduct..."
-                                                        required
-                                                    ></textarea>
-                                                    <div className="flex gap-2 justify-end">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setShowHeadteacherCommentForm(false)}
-                                                            className="px-3 py-1.5 text-xs text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                                                        >
-                                                            Cancel
-                                                        </button>
-                                                        <button
-                                                            type="submit"
-                                                            disabled={processingHeadteacher}
-                                                            className="inline-flex items-center px-3 py-1.5 text-xs text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                                                        >
-                                                            <Save className="w-3 h-3 mr-1" />
-                                                            {processingHeadteacher ? 'Saving...' : 'Save'}
-                                                        </button>
-                                                    </div>
-                                                </form>
-                                            ) : (
-                                                <button
-                                                    onClick={() => setShowHeadteacherCommentForm(true)}
-                                                    className="inline-flex items-center px-4 py-2 text-xs text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                                                >
-                                                    <Save className="w-3 h-3 mr-1" />
-                                                    Add Principal Comment
-                                                </button>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <div className="min-h-[60px] print:min-h-[35px] p-3 print:p-2 border-2 border-dashed border-gray-300 print:rounded-none rounded-lg bg-gray-50 print:bg-white text-[10px] sm:text-xs print:text-[9px] text-gray-400 italic flex items-center justify-center">
-                                            No comment provided
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Signatures - Enhanced & Responsive */}
