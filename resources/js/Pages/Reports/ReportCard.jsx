@@ -179,38 +179,35 @@ export default function ReportCard({
                                 </div>
                             </div>
 
-                            {/* Print View - Professional Centred Layout */}
-                            <div className="hidden print:flex flex-col items-center text-center py-4 gap-2 print-header-block">
-                                {/* Logo */}
-                                {school?.logo_path ? (
-                                    <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-gray-900 flex-shrink-0">
-                                        <img src={`/storage/${school.logo_path}`} alt={school.name} className="w-full h-full object-cover" />
-                                    </div>
-                                ) : (
-                                    <div className="w-20 h-20 rounded-full border-[3px] border-gray-900 flex items-center justify-center flex-shrink-0">
-                                        <span className="text-4xl">🏫</span>
-                                    </div>
-                                )}
+                            {/* Print View - Two-column: large logo left, school info right */}
+                            <div className="hidden print:flex flex-row items-center print-header-block">
+                                {/* Left quarter — logo */}
+                                <div className="flex items-center justify-center flex-shrink-0 print-header-logo-wrap">
+                                    {school?.logo_path ? (
+                                        <img src={`/storage/${school.logo_path}`} alt={school.name} className="print-header-logo" />
+                                    ) : (
+                                        <div className="flex items-center justify-center print-header-logo">
+                                            <span className="text-7xl">🏫</span>
+                                        </div>
+                                    )}
+                                </div>
 
-                                {/* School Name */}
-                                <div>
+                                {/* Right three-quarters — school identity */}
+                                <div className="flex flex-col items-center justify-center text-center flex-1">
                                     <h1 className="text-2xl font-black text-gray-900 uppercase tracking-widest leading-tight">
                                         {school?.name || 'School Name'}
                                     </h1>
                                     <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-[0.25em] mt-0.5">
                                         Excellence in Education
                                     </p>
-                                </div>
 
-                                {/* Decorative rule */}
-                                <div className="flex items-center gap-2 w-full max-w-xs">
-                                    <div className="flex-1 h-px bg-gray-900"></div>
-                                    <div className="w-1.5 h-1.5 rounded-full bg-gray-900"></div>
-                                    <div className="flex-1 h-px bg-gray-900"></div>
-                                </div>
+                                    {/* Decorative rule */}
+                                    <div className="flex items-center gap-2 w-full max-w-xs my-1.5">
+                                        <div className="flex-1 h-px bg-gray-900"></div>
+                                        <div className="w-1.5 h-1.5 rounded-full bg-gray-900"></div>
+                                        <div className="flex-1 h-px bg-gray-900"></div>
+                                    </div>
 
-                                {/* Title + Academic Year */}
-                                <div>
                                     <h2 className="text-base font-black text-gray-900 uppercase tracking-[0.2em]">
                                         Student Report Card
                                     </h2>
@@ -747,16 +744,32 @@ export default function ReportCard({
                         break-inside: avoid;
                     }
 
-                    /* ── Compact the print header ── */
+                    /* ── Print header: two-column row ── */
                     .print-header-block {
+                        flex-direction: row !important;
+                        align-items: center !important;
                         padding-top: 6px !important;
                         padding-bottom: 6px !important;
-                        gap: 4px !important;
+                        gap: 0 !important;
                     }
-                    /* Shrink the logo */
-                    .print-header-block > div:first-child {
-                        width: 54px !important;
-                        height: 54px !important;
+                    /* Left quarter — logo container fills 25% of the header */
+                    .print-header-logo-wrap {
+                        width: 25% !important;
+                        align-self: stretch !important;
+                        display: flex !important;
+                        align-items: center !important;
+                        justify-content: center !important;
+                        padding: 4px !important;
+                    }
+                    /* Logo: no circle, no border — just the image filling the space */
+                    .print-header-logo {
+                        width: 100% !important;
+                        height: 100% !important;
+                        max-width: 100% !important;
+                        object-fit: contain !important;
+                        border-radius: 0 !important;
+                        border: none !important;
+                        display: block !important;
                     }
                     .print-header-block h1 { font-size: 14pt !important; }
                     .print-header-block h2 { font-size: 10pt !important; }
