@@ -79,7 +79,14 @@ export default function useCumulativeLoading(paginatedData, filters, routeName, 
                 only: [onlyProp],
                 onSuccess: (page) => {
                     // Append new items to existing list
-                    const newData = page.props[onlyProp]?.data || [];
+                    // Guard against non-sequential PHP array keys being serialized
+                    // as a JSON object instead of a JSON array (e.g. page 2 keys 10-19)
+                    const rawData = page.props[onlyProp]?.data;
+                    const newData = Array.isArray(rawData)
+                        ? rawData
+                        : rawData && typeof rawData === 'object'
+                        ? Object.values(rawData)
+                        : [];
                     setItems(prev => [...prev, ...newData]);
                     setCurrentPage(page.props[onlyProp]?.current_page || currentPage + 1);
                     setIsLoadingMore(false);

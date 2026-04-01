@@ -91,7 +91,7 @@ class ExamController extends Controller
         $currentPage = $request->input('page', 1);
         $total = $exams->count();
         $exams = new \Illuminate\Pagination\LengthAwarePaginator(
-            $exams->forPage($currentPage, $perPage),
+            $exams->forPage($currentPage, $perPage)->values(),
             $total,
             $perPage,
             $currentPage,
