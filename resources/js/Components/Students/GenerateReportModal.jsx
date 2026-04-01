@@ -1,20 +1,12 @@
 import { useState } from 'react';
-import { FileText, Printer } from 'lucide-react';
+import { FileText } from 'lucide-react';
 
 export default function GenerateReportModal({ student, show, onClose }) {
     const [term, setTerm] = useState('1');
     const [academicYear, setAcademicYear] = useState(new Date().getFullYear());
 
-    const baseUrl = () =>
-        `/reports/generate?student_id=${student.id}&term=${term}&academic_year=${academicYear}`;
-
     const handleView = () => {
-        window.location.href = baseUrl();
-    };
-
-    const handlePrint = () => {
-        window.open(baseUrl() + '&autoprint=1', '_blank');
-        onClose();
+        window.location.href = `/reports/generate?student_id=${student.id}&term=${term}&academic_year=${academicYear}`;
     };
 
     if (!show) return null;
@@ -63,18 +55,11 @@ export default function GenerateReportModal({ student, show, onClose }) {
                         Cancel
                     </button>
                     <button
-                        onClick={handlePrint}
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                    >
-                        <Printer className="w-4 h-4 mr-2" />
-                        Print
-                    </button>
-                    <button
                         onClick={handleView}
                         className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
                     >
                         <FileText className="w-4 h-4 mr-2" />
-                        View Report
+                        Generate Report
                     </button>
                 </div>
             </div>

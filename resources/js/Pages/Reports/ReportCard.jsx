@@ -180,7 +180,7 @@ export default function ReportCard({
                             </div>
 
                             {/* Print View - Professional Centred Layout */}
-                            <div className="hidden print:flex flex-col items-center text-center py-4 gap-2">
+                            <div className="hidden print:flex flex-col items-center text-center py-4 gap-2 print-header-block">
                                 {/* Logo */}
                                 {school?.logo_path ? (
                                     <div className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-gray-900 flex-shrink-0">
@@ -272,72 +272,72 @@ export default function ReportCard({
                         </div>
 
                         <div className="w-full">
-                            <table className="w-full border-2 border-gray-900 text-[8px] sm:text-[10px] md:text-xs">
+                            <table className="w-full border-2 border-gray-900 text-sm sm:text-base">
                                 <thead>
                                     <tr className="bg-blue-100 print:bg-gray-200">
-                                        <th className="border border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 text-left font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Subject</th>
+                                        <th className="border border-gray-900 px-2 sm:px-3 md:px-4 py-3 sm:py-3.5 text-left font-bold uppercase text-xs sm:text-sm">Subject</th>
                                         {reportData.is_term3 ? (
                                             <>
-                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T1</th>
-                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T2</th>
-                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T3</th>
+                                                <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">T1</th>
+                                                <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">T2</th>
+                                                <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">T3</th>
                                             </>
                                         ) : (
                                             <>
-                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Open</th>
-                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Mid</th>
-                                                <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">End</th>
+                                                <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">Open</th>
+                                                <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">Mid</th>
+                                                <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">End</th>
                                             </>
                                         )}
-                                        <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Avg</th>
-                                        <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Grade</th>
+                                        <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">Avg</th>
+                                        <th className="border border-gray-900 px-2 sm:px-3 py-3 sm:py-3.5 text-center font-bold uppercase text-xs sm:text-sm">Grade</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {reportData.academic_subjects.map((subject, index) => (
                                         <tr key={subject.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                            <td className="border border-gray-900 px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 font-semibold text-[8px] sm:text-[10px] md:text-xs">{subject.name}</td>
+                                            <td className="border border-gray-900 px-2 sm:px-3 md:px-4 py-2.5 sm:py-3 font-semibold text-sm sm:text-base">{subject.name}</td>
                                             {reportData.is_term3 ? (
                                                 <>
-                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
+                                                    <td className={`border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.term1_average)}`}>
                                                         {formatMarks(subject.term1_average)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
+                                                    <td className={`border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.term2_average)}`}>
                                                         {formatMarks(subject.term2_average)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
+                                                    <td className={`border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.term3_result)}`}>
                                                         {formatMarks(subject.term3_result)}
                                                     </td>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
+                                                    <td className={`border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.opening)}`}>
                                                         {formatMarks(subject.opening)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
+                                                    <td className={`border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.midterm)}`}>
                                                         {formatMarks(subject.midterm)}
                                                     </td>
-                                                    <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
+                                                    <td className={`border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.end_term)}`}>
                                                         {formatMarks(subject.end_term)}
                                                     </td>
                                                 </>
                                             )}
-                                            <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
+                                            <td className={`border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-bold text-sm sm:text-base ${getMarkColor(subject.average)}`}>
                                                 {formatMarks(subject.average)}
                                             </td>
-                                            <td className="border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold">
+                                            <td className="border border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center font-bold text-sm sm:text-base">
                                                 {subject.rubric || '-'}
                                             </td>
                                         </tr>
                                     ))}
                                     <tr className="bg-blue-200 print:bg-gray-300 font-bold">
-                                        <td className="border-2 border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 uppercase text-[8px] sm:text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
+                                        <td className="border-2 border-gray-900 px-2 sm:px-3 md:px-4 py-2.5 sm:py-3 uppercase text-xs sm:text-sm" colSpan={reportData.is_term3 ? "4" : "4"}>
                                             Academic Average
                                         </td>
-                                        <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
+                                        <td className="border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base">
                                             {reportData.academic_average ? reportData.academic_average.toFixed(2) : '-'}
                                         </td>
-                                        <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
+                                        <td className="border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base">
                                             {reportData.academic_rubric || '-'}
                                         </td>
                                     </tr>
@@ -356,72 +356,72 @@ export default function ReportCard({
                             </div>
 
                             <div className="w-full">
-                                <table className="w-full border-2 border-gray-900 text-[8px] sm:text-[10px] md:text-xs">
+                                <table className="w-full border-2 border-gray-900 text-sm sm:text-base">
                                     <thead>
                                         <tr className="bg-green-100 print:bg-gray-200">
-                                            <th className="border border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 text-left font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Subject</th>
+                                            <th className="border border-gray-900 px-2 sm:px-3 md:px-4 py-2 sm:py-2.5 text-left font-bold uppercase text-xs sm:text-sm">Subject</th>
                                             {reportData.is_term3 ? (
                                                 <>
-                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T1</th>
-                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T2</th>
-                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">T3</th>
+                                                    <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">T1</th>
+                                                    <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">T2</th>
+                                                    <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">T3</th>
                                                 </>
                                             ) : (
                                                 <>
-                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Open</th>
-                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Mid</th>
-                                                    <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">End</th>
+                                                    <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">Open</th>
+                                                    <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">Mid</th>
+                                                    <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">End</th>
                                                 </>
                                             )}
-                                            <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Avg</th>
-                                            <th className="border border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center font-bold uppercase text-[7px] sm:text-[9px] md:text-[10px]">Grade</th>
+                                            <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">Avg</th>
+                                            <th className="border border-gray-900 px-2 sm:px-3 py-2 sm:py-2.5 text-center font-bold uppercase text-xs sm:text-sm">Grade</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {reportData.islamic_subjects.map((subject, index) => (
                                             <tr key={subject.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                                                <td className="border border-gray-900 px-1 sm:px-2 md:px-3 py-0.5 sm:py-1 font-semibold text-[8px] sm:text-[10px] md:text-xs">{subject.name}</td>
+                                                <td className="border border-gray-900 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 font-semibold text-sm sm:text-base">{subject.name}</td>
                                                 {reportData.is_term3 ? (
                                                     <>
-                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term1_average)}`}>
+                                                        <td className={`border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.term1_average)}`}>
                                                             {formatMarks(subject.term1_average)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term2_average)}`}>
+                                                        <td className={`border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.term2_average)}`}>
                                                             {formatMarks(subject.term2_average)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.term3_result)}`}>
+                                                        <td className={`border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.term3_result)}`}>
                                                             {formatMarks(subject.term3_result)}
                                                         </td>
                                                     </>
                                                 ) : (
                                                     <>
-                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.opening)}`}>
+                                                        <td className={`border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.opening)}`}>
                                                             {formatMarks(subject.opening)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.midterm)}`}>
+                                                        <td className={`border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.midterm)}`}>
                                                             {formatMarks(subject.midterm)}
                                                         </td>
-                                                        <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-medium ${getMarkColor(subject.end_term)}`}>
+                                                        <td className={`border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-semibold text-sm sm:text-base ${getMarkColor(subject.end_term)}`}>
                                                             {formatMarks(subject.end_term)}
                                                         </td>
                                                     </>
                                                 )}
-                                                <td className={`border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold ${getMarkColor(subject.average)}`}>
+                                                <td className={`border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-bold text-sm sm:text-base ${getMarkColor(subject.average)}`}>
                                                     {formatMarks(subject.average)}
                                                 </td>
-                                                <td className="border border-gray-900 px-1 sm:px-2 py-0.5 sm:py-1 text-center font-bold">
+                                                <td className="border border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center font-bold text-sm sm:text-base">
                                                     {subject.rubric || '-'}
                                                 </td>
                                             </tr>
                                         ))}
                                         <tr className="bg-green-200 print:bg-gray-300 font-bold">
-                                            <td className="border-2 border-gray-900 px-1 sm:px-2 md:px-3 py-1 sm:py-1.5 uppercase text-[8px] sm:text-xs" colSpan={reportData.is_term3 ? "4" : "4"}>
+                                            <td className="border-2 border-gray-900 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 uppercase text-xs sm:text-sm" colSpan={reportData.is_term3 ? "4" : "4"}>
                                                 Islamic Studies Average
                                             </td>
-                                            <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
+                                            <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base">
                                                 {reportData.islamic_average ? reportData.islamic_average.toFixed(2) : '-'}
                                             </td>
-                                            <td className="border-2 border-gray-900 px-1 sm:px-2 py-1 sm:py-1.5 text-center text-[9px] sm:text-sm">
+                                            <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base">
                                                 {reportData.islamic_rubric || '-'}
                                             </td>
                                         </tr>
@@ -697,7 +697,7 @@ export default function ReportCard({
                 @media print {
                     @page {
                         size: A4 portrait;
-                        margin: 5mm;
+                        margin: 8mm 10mm;
                     }
 
                     body {
@@ -708,30 +708,97 @@ export default function ReportCard({
                         background: white !important;
                     }
 
-                    body, #app, main {
-                        margin: 0 !important;
-                        padding: 0 !important;
-                    }
-
-                    /* Hide navigation and UI chrome */
-                    nav, header, aside, .sidebar, [role="navigation"],
-                    .print\\:hidden {
+                    /* Hide every sibling of the report card — sidebar, bottomnav, etc.
+                       This eliminates the blank first page. */
+                    .min-h-screen > *:not(:has(.report-card-container)) {
                         display: none !important;
                     }
 
-                    /*
-                     * Scale the entire card to fit one A4 page.
-                     * zoom shrinks all child elements proportionally —
-                     * text, padding, borders, images — without clipping.
-                     * Adjust the value down if your school has many subjects.
-                     */
+                    /* Collapse the layout shell so it takes zero height */
+                    .min-h-screen,
+                    .min-h-screen > *,
+                    .min-h-screen > * > * {
+                        min-height: 0 !important;
+                        height: auto !important;
+                    }
+
+                    /* Strip margin/padding from every layout wrapper */
+                    body, #app,
+                    body > div, #app > div,
+                    [class*="pl-64"],
+                    main, main > div, main > div > div {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        max-width: 100% !important;
+                    }
+
+                    /* Hide nav chrome */
+                    nav, header, aside,
+                    .sticky, .print\\:hidden {
+                        display: none !important;
+                    }
+
+                    /* Report card container — no zoom, full width */
                     .report-card-container {
-                        zoom: 0.78;
                         width: 100% !important;
                         max-width: 100% !important;
                         box-shadow: none !important;
                         page-break-inside: avoid;
                         break-inside: avoid;
+                    }
+
+                    /* ── Compact the print header ── */
+                    .print-header-block {
+                        padding-top: 6px !important;
+                        padding-bottom: 6px !important;
+                        gap: 4px !important;
+                    }
+                    /* Shrink the logo */
+                    .print-header-block > div:first-child {
+                        width: 54px !important;
+                        height: 54px !important;
+                    }
+                    .print-header-block h1 { font-size: 14pt !important; }
+                    .print-header-block h2 { font-size: 10pt !important; }
+                    .print-header-block p  { font-size: 7pt  !important; }
+
+                    /* ── Table fonts — 9pt is the standard for printed tables ── */
+                    .report-card-container table {
+                        font-size: 9pt !important;
+                    }
+                    .report-card-container table th {
+                        font-size: 8pt !important;
+                        padding: 3px 5px !important;
+                    }
+                    .report-card-container table td {
+                        font-size: 9pt !important;
+                        padding: 3px 5px !important;
+                    }
+
+                    /* ── Compact section paddings ── */
+                    .report-card-container [class*="py-3"],
+                    .report-card-container [class*="py-4"] {
+                        padding-top: 4px !important;
+                        padding-bottom: 4px !important;
+                    }
+                    .report-card-container [class*="px-4"],
+                    .report-card-container [class*="px-6"] {
+                        padding-left: 8px !important;
+                        padding-right: 8px !important;
+                    }
+
+                    /* ── Averages summary ── */
+                    .report-card-container [class*="text-xl"],
+                    .report-card-container [class*="text-2xl"] {
+                        font-size: 13pt !important;
+                    }
+
+                    /* ── Teacher comment + signature areas ── */
+                    .report-card-container [class*="min-h-"] {
+                        min-height: 50px !important;
+                    }
+                    .report-card-container [class*="h-12"] {
+                        height: 28px !important;
                     }
                 }
             `}</style>
