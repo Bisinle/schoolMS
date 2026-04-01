@@ -420,19 +420,30 @@ export default function ReportCard({
                         </div>
                     )}
 
-                    {/* Overall Performance - Enhanced & Responsive */}
-                    <div className="px-4 sm:px-6 py-4 bg-gradient-to-r from-purple-100 via-indigo-100 to-blue-100 print:bg-gray-100 border-y-2 border-gray-300">
-                        <div className="flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4">
-                            <div className="flex items-center space-x-2 sm:space-x-3">
-                                <span className="font-black text-xs sm:text-sm uppercase tracking-wide text-gray-700">Overall Average:</span>
-                                <span className="text-xl sm:text-2xl md:text-3xl font-black text-purple-700 print:text-purple-900">
-                                    {reportData.overall_average ? `${reportData.overall_average}%` : 'N/A'}
+                    {/* Averages Summary - Two separate blocks */}
+                    <div className="grid grid-cols-2 border-y-2 border-gray-300 print:border-gray-900 divide-x-2 divide-gray-300 print:divide-gray-900">
+                        {/* Academic Average */}
+                        <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-blue-100 to-indigo-100 print:bg-gray-100">
+                            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wide text-blue-800 print:text-gray-600 mb-1">Academic Average</p>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-xl sm:text-2xl font-black text-blue-700 print:text-gray-900">
+                                    {reportData.academic_average ? `${reportData.academic_average.toFixed(2)}%` : 'N/A'}
+                                </span>
+                                <span className="px-2 py-0.5 bg-blue-700 text-white rounded font-black text-xs print:bg-white print:text-blue-700 print:border print:border-blue-700">
+                                    {reportData.academic_rubric || '—'}
                                 </span>
                             </div>
-                            <div className="flex items-center space-x-2 sm:space-x-3">
-                                <span className="font-black text-xs sm:text-sm uppercase tracking-wide text-gray-700">Overall Grade:</span>
-                                <span className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-700 text-white rounded-lg font-black text-sm sm:text-base md:text-lg print:bg-white print:text-purple-700 print:border-2 print:border-purple-700">
-                                    {reportData.overall_rubric || 'N/A'}
+                        </div>
+
+                        {/* Islamic Studies Average */}
+                        <div className="px-4 sm:px-6 py-3 bg-gradient-to-r from-green-100 to-emerald-100 print:bg-gray-50">
+                            <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-wide text-green-800 print:text-gray-600 mb-1">Islamic Studies Average</p>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-xl sm:text-2xl font-black text-green-700 print:text-gray-900">
+                                    {reportData.islamic_average ? `${reportData.islamic_average.toFixed(2)}%` : 'N/A'}
+                                </span>
+                                <span className="px-2 py-0.5 bg-green-700 text-white rounded font-black text-xs print:bg-white print:text-green-700 print:border print:border-green-700">
+                                    {reportData.islamic_rubric || '—'}
                                 </span>
                             </div>
                         </div>
