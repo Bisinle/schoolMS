@@ -27,28 +27,34 @@ export default function Pagination({ links, currentPage, lastPage, total, from, 
             <div className="flex items-center justify-between">
                 {/* Results count - Left side */}
                 <div className="flex-1 flex justify-between sm:hidden">
-                    <Link
-                        href={links[0].url || '#'}
-                        preserveScroll
-                        className={`relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                            links[0].url
-                                ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-                        }`}
-                    >
-                        Previous
-                    </Link>
-                    <Link
-                        href={links[links.length - 1].url || '#'}
-                        preserveScroll
-                        className={`ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md ${
-                            links[links.length - 1].url
-                                ? 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
-                                : 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
-                        }`}
-                    >
-                        Next
-                    </Link>
+                    {links[0].url ? (
+                        <Link
+                            href={links[0].url}
+                            preserveScroll
+                            preserveState
+                            className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                            Previous
+                        </Link>
+                    ) : (
+                        <span className="relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed">
+                            Previous
+                        </span>
+                    )}
+                    {links[links.length - 1].url ? (
+                        <Link
+                            href={links[links.length - 1].url}
+                            preserveScroll
+                            preserveState
+                            className="ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                        >
+                            Next
+                        </Link>
+                    ) : (
+                        <span className="ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium rounded-md bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed">
+                            Next
+                        </span>
+                    )}
                 </div>
 
                 {/* Desktop pagination */}
@@ -63,18 +69,22 @@ export default function Pagination({ links, currentPage, lastPage, total, from, 
                     <div>
                         <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
                             {/* Previous Button */}
-                            <Link
-                                href={links[0].url || '#'}
-                                preserveScroll
-                                className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
-                                    links[0].url
-                                        ? 'bg-white text-gray-500 hover:bg-gray-50'
-                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                }`}
-                            >
-                                <span className="sr-only">Previous</span>
-                                <ChevronLeft className="h-5 w-5" />
-                            </Link>
+                            {links[0].url ? (
+                                <Link
+                                    href={links[0].url}
+                                    preserveScroll
+                                    preserveState
+                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                >
+                                    <span className="sr-only">Previous</span>
+                                    <ChevronLeft className="h-5 w-5" />
+                                </Link>
+                            ) : (
+                                <span className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                    <span className="sr-only">Previous</span>
+                                    <ChevronLeft className="h-5 w-5" />
+                                </span>
+                            )}
 
                             {/* Page Numbers */}
                             {pageLinks.map((link, index) => {
@@ -92,16 +102,28 @@ export default function Pagination({ links, currentPage, lastPage, total, from, 
                                     );
                                 }
 
+                                if (isActive || !link.url) {
+                                    return (
+                                        <span
+                                            key={index}
+                                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                                                isActive
+                                                    ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                                                    : 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
+                                            }`}
+                                        >
+                                            {link.label}
+                                        </span>
+                                    );
+                                }
+
                                 return (
                                     <Link
                                         key={index}
-                                        href={link.url || '#'}
+                                        href={link.url}
                                         preserveScroll
-                                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                                            isActive
-                                                ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                                        }`}
+                                        preserveState
+                                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
                                     >
                                         {link.label}
                                     </Link>
@@ -109,18 +131,22 @@ export default function Pagination({ links, currentPage, lastPage, total, from, 
                             })}
 
                             {/* Next Button */}
-                            <Link
-                                href={links[links.length - 1].url || '#'}
-                                preserveScroll
-                                className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
-                                    links[links.length - 1].url
-                                        ? 'bg-white text-gray-500 hover:bg-gray-50'
-                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                }`}
-                            >
-                                <span className="sr-only">Next</span>
-                                <ChevronRight className="h-5 w-5" />
-                            </Link>
+                            {links[links.length - 1].url ? (
+                                <Link
+                                    href={links[links.length - 1].url}
+                                    preserveScroll
+                                    preserveState
+                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50"
+                                >
+                                    <span className="sr-only">Next</span>
+                                    <ChevronRight className="h-5 w-5" />
+                                </Link>
+                            ) : (
+                                <span className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-gray-100 text-sm font-medium text-gray-400 cursor-not-allowed">
+                                    <span className="sr-only">Next</span>
+                                    <ChevronRight className="h-5 w-5" />
+                                </span>
+                            )}
                         </nav>
                     </div>
                 </div>

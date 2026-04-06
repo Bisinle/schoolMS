@@ -7,6 +7,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\GuardianController;
+use App\Http\Controllers\GuardianImportController;
 use App\Http\Controllers\TeacherController;
 use App\Http\Controllers\TeacherTimetableController;
 use App\Http\Controllers\GradeController;
@@ -161,6 +162,8 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/guardians/create', [GuardianController::class, 'create'])->name('guardians.create');
         Route::post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
+        Route::get('/guardians/import/template', [GuardianImportController::class, 'downloadTemplate'])->name('guardians.import.template');
+        Route::post('/guardians/import', [GuardianImportController::class, 'import'])->name('guardians.import');
     });
 
     Route::middleware(['role:admin,teacher'])->group(function () {

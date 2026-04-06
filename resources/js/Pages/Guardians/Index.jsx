@@ -1,8 +1,9 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useCallback } from 'react';
-import { Plus, Eye, Edit, Trash2, Users, Mail, Phone, MapPin, UserCircle } from 'lucide-react';
+import { Plus, Upload, Eye, Edit, Trash2, Users, Mail, Phone, MapPin, UserCircle, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import GuardianImportModal from '@/Components/Guardians/GuardianImportModal';
 import useFilters from '@/Hooks/useFilters';
 import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { SearchInput } from '@/Components/Filters';
@@ -144,7 +145,7 @@ function MobileGuardianItem({ guardian, auth, onDelete }) {
     );
 }
 
-export default function GuardiansIndex({ guardians, filters: initialFilters = {}, auth }) {
+export default function GuardiansIndex({ guardians, filters: initialFilters = {}, auth, importResults }) {
     // Use the new useFilters hook
     const { filters, updateFilter } = useFilters({
         route: '/guardians',
@@ -162,6 +163,8 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [selectedGuardian, setSelectedGuardian] = useState(null);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [showResultsBanner, setShowResultsBanner] = useState(!!importResults);
 
     // Memoize handlers passed to child components
     const confirmDelete = useCallback((guardian) => {
@@ -185,6 +188,37 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
             <Head title="Guardians" />
 
             <div className="space-y-6">
+                {/* Import Results Banner */}
+                {importResults && showResultsBanner && (
+                    <div className={`rounded-xl border p-4 flex items-start gap-3 ${
+                        importResults.failed === 0 && importResults.skipped === 0
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-yellow-50 border-yellow-200'
+                    }`}>
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 text-sm">
+                            <p className="font-semibold text-gray-800">
+                                Import complete — {importResults.imported} guardian{importResults.imported !== 1 ? 's' : ''} imported
+                                {importResults.skipped > 0 && `, ${importResults.skipped} skipped (duplicate)`}
+                                {importResults.failed > 0 && `, ${importResults.failed} failed`}
+                            </p>
+                            {importResults.errors && importResults.errors.length > 0 && (
+                                <ul className="mt-2 space-y-0.5">
+                                    {importResults.errors.map((err, i) => (
+                                        <li key={i} className="flex items-start gap-1 text-xs text-yellow-800">
+                                            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                            Row {err.row} ({err.email}): {err.reason}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                        <button onClick={() => setShowResultsBanner(false)} className="text-gray-400 hover:text-gray-600">
+                            <XCircle className="w-4 h-4" />
+                        </button>
+                    </div>
+                )}
+
                 {/* Header Actions - Refactored with SearchInput */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="flex-1 w-full sm:max-w-md">
@@ -196,13 +230,22 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                     </div>
 
                     {auth.user.role === 'admin' && (
-                        <Link
-                            href={route('guardians.create')}
-                            className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
-                        >
-                            <Plus className="w-5 h-5 mr-2" />
-                            Add Guardian
-                        </Link>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setShowImportModal(true)}
+                                className="inline-flex items-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm"
+                            >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Bulk Import
+                            </button>
+                            <Link
+                                href={route('guardians.create')}
+                                className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
+                            >
+                                <Plus className="w-5 h-5 mr-2" />
+                                Add Guardian
+                            </Link>
+                        </div>
                     )}
                 </div>
 
@@ -339,6 +382,11 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                 message={`Are you sure you want to delete ${selectedGuardian?.user?.name}? This action cannot be undone and will also delete all associated students.`}
                 confirmText="Delete"
                 type="danger"
+            />
+
+            <GuardianImportModal
+                show={showImportModal}
+                onClose={() => setShowImportModal(false)}
             />
         </AuthenticatedLayout>
     );

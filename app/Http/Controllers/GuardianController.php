@@ -32,6 +32,7 @@ class GuardianController extends Controller
         return Inertia::render('Guardians/Index', [
             'guardians' => $guardians,
             'filters' => $request->only(['search']),
+            'importResults' => session('importResults'),
         ]);
     }
 
