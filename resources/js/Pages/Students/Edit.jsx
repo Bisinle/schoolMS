@@ -177,7 +177,6 @@ export default function StudentsEdit({ student, guardians, studentGuardians, gra
                                 value={data.date_of_birth}
                                 onChange={(e) => setData('date_of_birth', e.target.value)}
                                 error={errors.date_of_birth}
-                                required
                             />
 
                             <FormField span="full">
@@ -218,7 +217,6 @@ export default function StudentsEdit({ student, guardians, studentGuardians, gra
                                 value={data.enrollment_date}
                                 onChange={(e) => setData('enrollment_date', e.target.value)}
                                 error={errors.enrollment_date}
-                                required
                             />
 
                             <SelectInput

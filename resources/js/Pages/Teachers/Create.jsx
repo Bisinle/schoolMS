@@ -135,7 +135,6 @@ export default function TeachersCreate({ grades, subjects }) {
                                 value={data.date_of_joining}
                                 onChange={(e) => setData('date_of_joining', e.target.value)}
                                 error={errors.date_of_joining}
-                                required
                             />
                         </FormSection>
 
