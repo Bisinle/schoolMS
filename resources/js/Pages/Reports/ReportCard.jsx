@@ -328,10 +328,29 @@ export default function ReportCard({
                                         </tr>
                                     ))}
                                     <tr className="bg-blue-200 print:bg-gray-300 font-bold">
-                                        <td className="border-2 border-gray-900 px-2 sm:px-3 md:px-4 py-2.5 sm:py-3 uppercase text-xs sm:text-sm" colSpan={reportData.is_term3 ? "4" : "4"}>
-                                            Academic Average
+                                        <td className="border-2 border-gray-900 px-2 sm:px-3 md:px-4 py-2.5 sm:py-3 uppercase text-xs sm:text-sm">
+                                            Average
                                         </td>
-                                        <td className="border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base">
+                                        {reportData.is_term3 ? (
+                                            <>
+                                                <td className="border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base">-</td>
+                                                <td className="border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base">-</td>
+                                                <td className="border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base">-</td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td className={`border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base ${getMarkColor(reportData.academic_opening_average)}`}>
+                                                    {reportData.academic_opening_average !== null ? reportData.academic_opening_average.toFixed(2) : '-'}
+                                                </td>
+                                                <td className={`border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base ${getMarkColor(reportData.academic_midterm_average)}`}>
+                                                    {reportData.academic_midterm_average !== null ? reportData.academic_midterm_average.toFixed(2) : '-'}
+                                                </td>
+                                                <td className={`border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base ${getMarkColor(reportData.academic_end_term_average)}`}>
+                                                    {reportData.academic_end_term_average !== null ? reportData.academic_end_term_average.toFixed(2) : '-'}
+                                                </td>
+                                            </>
+                                        )}
+                                        <td className={`border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base ${getMarkColor(reportData.academic_average)}`}>
                                             {reportData.academic_average ? reportData.academic_average.toFixed(2) : '-'}
                                         </td>
                                         <td className="border-2 border-gray-900 px-2 sm:px-3 py-2.5 sm:py-3 text-center text-sm sm:text-base">
@@ -412,10 +431,29 @@ export default function ReportCard({
                                             </tr>
                                         ))}
                                         <tr className="bg-green-200 print:bg-gray-300 font-bold">
-                                            <td className="border-2 border-gray-900 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 uppercase text-xs sm:text-sm" colSpan={reportData.is_term3 ? "4" : "4"}>
-                                                Islamic Studies Average
+                                            <td className="border-2 border-gray-900 px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 uppercase text-xs sm:text-sm">
+                                                Average
                                             </td>
-                                            <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base">
+                                            {reportData.is_term3 ? (
+                                                <>
+                                                    <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base">-</td>
+                                                    <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base">-</td>
+                                                    <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base">-</td>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <td className={`border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base ${getMarkColor(reportData.islamic_opening_average)}`}>
+                                                        {reportData.islamic_opening_average !== null ? reportData.islamic_opening_average.toFixed(2) : '-'}
+                                                    </td>
+                                                    <td className={`border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base ${getMarkColor(reportData.islamic_midterm_average)}`}>
+                                                        {reportData.islamic_midterm_average !== null ? reportData.islamic_midterm_average.toFixed(2) : '-'}
+                                                    </td>
+                                                    <td className={`border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base ${getMarkColor(reportData.islamic_end_term_average)}`}>
+                                                        {reportData.islamic_end_term_average !== null ? reportData.islamic_end_term_average.toFixed(2) : '-'}
+                                                    </td>
+                                                </>
+                                            )}
+                                            <td className={`border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base ${getMarkColor(reportData.islamic_average)}`}>
                                                 {reportData.islamic_average ? reportData.islamic_average.toFixed(2) : '-'}
                                             </td>
                                             <td className="border-2 border-gray-900 px-2 sm:px-3 py-1.5 sm:py-2 text-center text-sm sm:text-base">

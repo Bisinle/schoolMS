@@ -295,7 +295,10 @@ class DocumentController extends Controller
             return $this->download($document);
         }
 
-        return response()->file(Storage::path($document->file_path));
+        return Storage::response($document->file_path, null, [
+            'Content-Type'        => $mimeType,
+            'Content-Disposition' => 'inline; filename="' . $document->original_filename . '"',
+        ]);
     }
 
     /**

@@ -308,6 +308,24 @@ class ReportController extends Controller
         $allAverages = array_merge($academicAverages, $islamicAverages);
         $overallAverage = count($allAverages) > 0 ? round(array_sum($allAverages) / count($allAverages), 2) : null;
 
+        // Per-exam-type averages (Term 1 & 2 only — Term 3 uses term averages instead)
+        $academicOpeningAverage = $academicMidtermAverage = $academicEndTermAverage = null;
+        $islamicOpeningAverage  = $islamicMidtermAverage  = $islamicEndTermAverage  = null;
+
+        if ($term != '3') {
+            $helper = function (array $subjects, string $field): ?float {
+                $vals = array_filter(array_column($subjects, $field), fn($v) => !is_null($v));
+                return count($vals) > 0 ? round(array_sum($vals) / count($vals), 2) : null;
+            };
+
+            $academicOpeningAverage  = $helper($academicSubjects, 'opening');
+            $academicMidtermAverage  = $helper($academicSubjects, 'midterm');
+            $academicEndTermAverage  = $helper($academicSubjects, 'end_term');
+            $islamicOpeningAverage   = $helper($islamicSubjects,  'opening');
+            $islamicMidtermAverage   = $helper($islamicSubjects,  'midterm');
+            $islamicEndTermAverage   = $helper($islamicSubjects,  'end_term');
+        }
+
         // Get comments
         $comments = ReportComment::where('student_id', $student->id)
             ->where('term', $term)
@@ -319,8 +337,14 @@ class ReportController extends Controller
             'islamic_subjects' => $islamicSubjects,
             'academic_average' => $academicAverage,
             'academic_rubric' => $this->getRubric($academicAverage),
+            'academic_opening_average' => $academicOpeningAverage,
+            'academic_midterm_average' => $academicMidtermAverage,
+            'academic_end_term_average' => $academicEndTermAverage,
             'islamic_average' => $islamicAverage,
             'islamic_rubric' => $this->getRubric($islamicAverage),
+            'islamic_opening_average' => $islamicOpeningAverage,
+            'islamic_midterm_average' => $islamicMidtermAverage,
+            'islamic_end_term_average' => $islamicEndTermAverage,
             'overall_average' => $overallAverage,
             'overall_rubric' => $this->getRubric($overallAverage),
             'comments' => $comments,
