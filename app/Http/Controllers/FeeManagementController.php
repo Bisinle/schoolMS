@@ -24,9 +24,19 @@ class FeeManagementController extends Controller
     /**
      * Display fee management dashboard
      */
-    public function index()
+    public function index(Request $request)
     {
-        $currentTerm = AcademicTerm::where('is_active', true)->first();
+        $activeTerm = AcademicTerm::where('is_active', true)->first();
+
+        $terms = AcademicTerm::with('academicYear')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Use the term_id from the request, falling back to the active term
+        $selectedTermId = $request->input('term_id');
+        $selectedTerm = $selectedTermId
+            ? AcademicTerm::with('academicYear')->find($selectedTermId)
+            : $activeTerm;
 
         $stats = [
             'total_guardians' => Guardian::whereHas('students', function($q) {
@@ -45,9 +55,12 @@ class FeeManagementController extends Controller
         ];
 
         $monthlyCollections = [];
+        $yearTerms         = [];
+        $billedGuardians   = collect();
+        $unbilledGuardians = collect();
 
-        if ($currentTerm) {
-            $invoices = GuardianInvoice::where('academic_term_id', $currentTerm->id)->get();
+        if ($selectedTerm) {
+            $invoices = GuardianInvoice::where('academic_term_id', $selectedTerm->id)->get();
             $stats['total_invoices'] = $invoices->count();
             $stats['total_billed'] = $invoices->sum('total_amount');
             $stats['total_collected'] = $invoices->sum('amount_paid');
@@ -60,38 +73,96 @@ class FeeManagementController extends Controller
                 'paid' => $invoices->where('status', 'paid')->count(),
             ];
 
-            // Monthly collections for the current term (last 6 months)
-            $monthlyCollections = DB::table('guardian_payments')
-                ->join('guardian_invoices', 'guardian_payments.guardian_invoice_id', '=', 'guardian_invoices.id')
-                ->where('guardian_invoices.academic_term_id', $currentTerm->id)
+            // All terms for this academic year (for chart grouping)
+            $allYearTerms = AcademicTerm::where('academic_year_id', $selectedTerm->academic_year_id)
+                ->orderBy('term_number')
+                ->get();
+
+            $yearTermIds = $allYearTerms->pluck('id');
+
+            // Monthly collections across the entire academic year, with term annotation
+            $rawRows = DB::table('guardian_payments as gp')
+                ->join('guardian_invoices as gi', 'gp.guardian_invoice_id', '=', 'gi.id')
+                ->join('academic_terms as at', 'gi.academic_term_id', '=', 'at.id')
+                ->whereIn('gi.academic_term_id', $yearTermIds)
                 ->select(
-                    DB::raw('DATE_FORMAT(guardian_payments.payment_date, "%Y-%m") as month'),
-                    DB::raw('SUM(guardian_payments.amount) as total')
+                    DB::raw('DATE_FORMAT(gp.payment_date, "%Y-%m") as month_key'),
+                    DB::raw('SUM(gp.amount) as total'),
+                    'at.term_number'
                 )
-                ->groupBy('month')
-                ->orderBy('month', 'desc')
-                ->limit(6)
+                ->groupBy('month_key', 'at.term_number')
+                ->orderBy('month_key')
+                ->get();
+
+            // Consolidate: one bar per month, term = whichever term collected most that month
+            $byMonth = [];
+            foreach ($rawRows as $row) {
+                $key = $row->month_key;
+                if (!isset($byMonth[$key])) {
+                    $byMonth[$key] = ['total' => 0, 'term_totals' => []];
+                }
+                $byMonth[$key]['total'] += $row->total;
+                $byMonth[$key]['term_totals'][$row->term_number] =
+                    ($byMonth[$key]['term_totals'][$row->term_number] ?? 0) + $row->total;
+            }
+
+            $monthlyCollections = collect($byMonth)->map(function ($data, $month_key) {
+                arsort($data['term_totals']);
+                $dominantTerm = (int) array_key_first($data['term_totals']);
+                return [
+                    'month'       => date('M Y', strtotime($month_key . '-01')),
+                    'month_key'   => $month_key,
+                    'total'       => (float) $data['total'],
+                    'term_number' => $dominantTerm,
+                ];
+            })->values();
+
+            // Term boundary metadata for the frontend
+            $yearTerms = $allYearTerms->map(fn($t) => [
+                'term_number' => $t->term_number,
+                'start_month' => $t->start_date?->format('Y-m'),
+                'end_month'   => $t->end_date?->format('Y-m'),
+            ])->values();
+
+            // Guardian billing status for the selected term
+            // Build a map: guardian_id => invoice_id
+            $billedMap = GuardianInvoice::where('academic_term_id', $selectedTerm->id)
+                ->get(['id', 'guardian_id'])
+                ->keyBy('guardian_id');
+
+            $guardianList = Guardian::with(['user', 'students' => function ($q) {
+                    $q->where('status', 'active');
+                }])
+                ->whereHas('students', function ($q) {
+                    $q->where('status', 'active');
+                })
                 ->get()
-                ->reverse()
-                ->values()
-                ->map(function($item) {
+                ->map(function ($guardian) use ($billedMap) {
+                    $invoice = $billedMap->get($guardian->id);
                     return [
-                        'month' => date('M Y', strtotime($item->month . '-01')),
-                        'total' => (float) $item->total,
+                        'id'              => $guardian->id,
+                        'name'            => $guardian->user->name,
+                        'guardian_number' => $guardian->guardian_number,
+                        'students_count'  => $guardian->students->count(),
+                        'is_billed'       => $invoice !== null,
+                        'invoice_id'      => $invoice?->id,
                     ];
                 });
+
+            $billedGuardians   = $guardianList->filter(fn($g) => $g['is_billed'])->values();
+            $unbilledGuardians = $guardianList->filter(fn($g) => !$g['is_billed'])->values();
         }
 
-        $terms = AcademicTerm::with('academicYear')
-            ->orderBy('created_at', 'desc')
-            ->get();
-
         return Inertia::render('Fees/Index', [
-            'currentTerm' => $currentTerm,
-            'stats' => $stats,
-            'terms' => $terms,
-            'invoicesByStatus' => $invoicesByStatus,
+            'currentTerm'        => $activeTerm,
+            'selectedTerm'       => $selectedTerm,
+            'stats'              => $stats,
+            'terms'              => $terms,
+            'invoicesByStatus'   => $invoicesByStatus,
             'monthlyCollections' => $monthlyCollections,
+            'yearTerms'          => $yearTerms,
+            'billedGuardians'    => $billedGuardians,
+            'unbilledGuardians'  => $unbilledGuardians,
         ]);
     }
 

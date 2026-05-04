@@ -38,7 +38,7 @@ class InvoiceController extends Controller
         $isGuardian = $user->isGuardian();
 
         // Get filter values
-        $search = trim($request->input('search', ''));
+        $search = trim((string) $request->input('search', ''));
         $termId = $request->input('term_id', '');
         $status = $request->input('status', '');
 
@@ -167,11 +167,12 @@ class InvoiceController extends Controller
             ->keyBy('fee_type');
 
         return Inertia::render('Fees/Invoices/Create', [
-            'guardians' => $guardians,
-            'activeTerm' => $activeTerm,
-            'tuitionFees' => $tuitionFees,
-            'transportRoutes' => $transportRoutes,
-            'universalFees' => $universalFees,
+            'guardians'             => $guardians,
+            'activeTerm'            => $activeTerm,
+            'tuitionFees'           => $tuitionFees,
+            'transportRoutes'       => $transportRoutes,
+            'universalFees'         => $universalFees,
+            'preselectedGuardianId' => $request->integer('guardian_id') ?: null,
         ]);
     }
 

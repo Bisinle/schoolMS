@@ -6,10 +6,6 @@ use App\Models\AcademicTerm;
 use App\Models\Guardian;
 use App\Models\GuardianInvoice;
 use App\Models\InvoiceLineItem;
-use App\Models\FeeCategory;
-use App\Models\FeeAmount;
-use App\Models\GuardianFeeAdjustment;
-use App\Models\OneTimeFee;
 use App\Models\GuardianFeePreference;
 use App\Models\TuitionFee;
 use App\Models\TransportRoute;
@@ -219,49 +215,10 @@ class InvoiceGenerationService
                     'fee_breakdown' => $feeBreakdown,
                 ]);
             } else {
-                // Fallback to old fee structure
-                $gradeName = $grade->name;
-                $academicYearId = $term->academic_year_id;
-
-                // Get fee adjustments for this guardian and term
-                $adjustments = GuardianFeeAdjustment::where('guardian_id', $guardian->id)
-                    ->where('academic_term_id', $term->id)
-                    ->get()
-                    ->keyBy('category_name');
-
-                // Get all applicable fee amounts for this student's grade and academic year
-                $applicableFees = FeeAmount::getApplicableFeesForGrade($gradeName, $academicYearId);
-
-                foreach ($applicableFees as $feeAmount) {
-                    $categoryName = $feeAmount->feeCategory->name;
-
-                    // Check if this category is excluded or adjusted
-                    $adjustment = $adjustments->get($categoryName);
-
-                    if ($adjustment && $adjustment->adjustment_type === 'exclude') {
-                        continue; // Skip this category
-                    }
-
-                    // Determine the amount to use
-                    $amount = $feeAmount->amount;
-                    $type = 'Standard';
-
-                    if ($adjustment && $adjustment->adjustment_type === 'custom_amount') {
-                        $amount = $adjustment->custom_amount;
-                        $type = 'Adjusted';
-                    }
-
-                    // Add to fee breakdown with type information
-                    $feeBreakdown[$categoryName] = [
-                        'type' => $type,
-                        'amount' => (float) $amount,
-                    ];
-                }
-
-                Log::info('Invoice Generation - Using Old Fee Structure', [
-                    'student' => $student->first_name . ' ' . $student->last_name,
-                    'fees_found' => $applicableFees->count(),
-                ]);
+                throw new \Exception(
+                    "Guardian '{$guardian->user->name}' has no fee preferences set for this term. " .
+                    "Please configure fee preferences before generating an invoice."
+                );
             }
 
             // Create single line item for this student with all fees

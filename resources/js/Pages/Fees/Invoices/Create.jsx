@@ -5,9 +5,9 @@ import { Combobox } from '@headlessui/react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-export default function CreateInvoice({ auth, guardians = [], activeTerm, tuitionFees, transportRoutes, universalFees }) {
+export default function CreateInvoice({ auth, guardians = [], activeTerm, tuitionFees, transportRoutes, universalFees, preselectedGuardianId = null }) {
     const { data, setData, post, processing, errors } = useForm({
-        guardian_id: '',
+        guardian_id: preselectedGuardianId ? String(preselectedGuardianId) : '',
         academic_term_id: activeTerm?.id ?? '',
         payment_plan: 'full',
     });
