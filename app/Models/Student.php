@@ -23,14 +23,37 @@ class Student extends Model
         'enrollment_date',
         'status',
         'profile_picture',
+        'deactivated_at',
+        'deactivation_reason',
     ];
 
     protected function casts(): array
     {
         return [
-            'date_of_birth' => 'date',
+            'date_of_birth'  => 'date',
             'enrollment_date' => 'date',
+            'deactivated_at'  => 'datetime',
         ];
+    }
+
+    // ── Deactivation helpers ──────────────────────────────────────────────────
+
+    public function deactivate(?string $reason = null): void
+    {
+        $this->update([
+            'status'              => 'inactive',
+            'deactivated_at'      => now(),
+            'deactivation_reason' => $reason,
+        ]);
+    }
+
+    public function reactivate(): void
+    {
+        $this->update([
+            'status'              => 'active',
+            'deactivated_at'      => null,
+            'deactivation_reason' => null,
+        ]);
     }
 
     // Legacy relationship - kept for backward compatibility

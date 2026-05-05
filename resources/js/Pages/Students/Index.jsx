@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useMemo, useCallback } from 'react';
-import { Plus, Users, Eye, Edit, Trash2, FileText, Mail, Phone, User, Calendar, GraduationCap } from 'lucide-react';
+import { Plus, Users, Eye, Edit, Trash2, FileText, Mail, Phone, User, Calendar, GraduationCap, UserX, UserCheck } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import GenerateReportModal from '@/Components/Students/GenerateReportModal';
 import useFilters from '@/Hooks/useFilters';
@@ -14,7 +14,9 @@ import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
 
 // Mobile List Item Component - Refactored with new components
-function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
+function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate, onGenerateReport }) {
+    const isInactive = student.status === 'inactive';
+
     // Build swipe actions based on user role
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/students/${student.id}` },
@@ -23,8 +25,12 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
     if (auth.user.role === 'admin') {
         primaryActions.push(
             { icon: Edit, label: 'Edit', href: `/students/${student.id}/edit` },
-            { icon: Trash2, label: 'Delete', onClick: () => onDelete(student) }
         );
+        if (isInactive) {
+            primaryActions.push({ icon: UserCheck, label: 'Reactivate', onClick: () => onReactivate(student) });
+        } else {
+            primaryActions.push({ icon: UserX, label: 'Deactivate', onClick: () => onDeactivate(student) });
+        }
     }
 
     const secondaryActions = [
@@ -38,7 +44,7 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
         >
             <ExpandableCard
                 header={
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                    <div className={`flex items-start gap-3 flex-1 min-w-0 ${isInactive ? 'opacity-70' : ''}`}>
                         {/* Avatar */}
                         <Avatar
                             name={`${student.first_name} ${student.last_name}`}
@@ -54,7 +60,7 @@ function MobileStudentItem({ student, auth, onDelete, onGenerateReport }) {
                             </div>
 
                             {/* Student Name */}
-                            <h3 className="text-base font-bold text-gray-900 truncate mb-2">
+                            <h3 className={`text-base font-bold truncate mb-2 ${isInactive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                                 {student.first_name} {student.last_name}
                             </h3>
 
@@ -175,6 +181,8 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
     });
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+    const [showReactivateModal, setShowReactivateModal] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedStudentForReport, setSelectedStudentForReport] = useState(null);
@@ -213,6 +221,38 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
             router.delete(`/students/${selectedStudent.id}`, {
                 onSuccess: () => {
                     setShowDeleteModal(false);
+                    setSelectedStudent(null);
+                },
+            });
+        }
+    }, [selectedStudent]);
+
+    const confirmDeactivate = useCallback((student) => {
+        setSelectedStudent(student);
+        setShowDeactivateModal(true);
+    }, []);
+
+    const handleDeactivate = useCallback(() => {
+        if (selectedStudent) {
+            router.patch(`/students/${selectedStudent.id}/deactivate`, {}, {
+                onSuccess: () => {
+                    setShowDeactivateModal(false);
+                    setSelectedStudent(null);
+                },
+            });
+        }
+    }, [selectedStudent]);
+
+    const confirmReactivate = useCallback((student) => {
+        setSelectedStudent(student);
+        setShowReactivateModal(true);
+    }, []);
+
+    const handleReactivate = useCallback(() => {
+        if (selectedStudent) {
+            router.patch(`/students/${selectedStudent.id}/reactivate`, {}, {
+                onSuccess: () => {
+                    setShowReactivateModal(false);
                     setSelectedStudent(null);
                 },
             });
@@ -300,6 +340,8 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                 student={student}
                                 auth={auth}
                                 onDelete={confirmDelete}
+                                onDeactivate={confirmDeactivate}
+                                onReactivate={confirmReactivate}
                                 onGenerateReport={handleGenerateReport}
                             />
                         ))}
@@ -335,25 +377,29 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {students.data && students.data.map((student) => (
-                                        <tr key={student.id} className="hover:bg-gray-50 transition-colors">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-navy">
+                                    {students.data && students.data.map((student) => {
+                                        const inactive = student.status === 'inactive';
+                                        return (
+                                        <tr key={student.id} className={`hover:bg-gray-50 transition-colors ${inactive ? 'bg-gray-50/60' : ''}`}>
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${inactive ? 'text-gray-400' : 'text-navy'}`}>
                                                 {student.admission_number}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                                <div className="flex items-center gap-3">
+                                                <div className={`flex items-center gap-3 ${inactive ? 'opacity-60' : ''}`}>
                                                     <Avatar
                                                         name={`${student.first_name} ${student.last_name}`}
                                                         imagePath={student.profile_picture}
                                                         size="sm"
                                                     />
-                                                    <span>{student.first_name} {student.last_name}</span>
+                                                    <span className={inactive ? 'line-through text-gray-400' : ''}>
+                                                        {student.first_name} {student.last_name}
+                                                    </span>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm ${inactive ? 'text-gray-400' : 'text-gray-600'}`}>
                                                 {student.grade?.name || 'No Grade'}
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 capitalize">
+                                            <td className={`px-6 py-4 whitespace-nowrap text-sm capitalize ${inactive ? 'text-gray-400' : 'text-gray-600'}`}>
                                                 {student.gender}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -363,6 +409,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                                 <Link
                                                     href={`/students/${student.id}`}
                                                     className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                                                    title="View"
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Link>
@@ -371,20 +418,33 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                                         <Link
                                                             href={`/students/${student.id}/edit`}
                                                             className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                            title="Edit"
                                                         >
                                                             <Edit className="w-4 h-4" />
                                                         </Link>
-                                                        <button
-                                                            onClick={() => confirmDelete(student)}
-                                                            className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
+                                                        {inactive ? (
+                                                            <button
+                                                                onClick={() => confirmReactivate(student)}
+                                                                className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors"
+                                                                title="Reactivate student"
+                                                            >
+                                                                <UserCheck className="w-4 h-4" />
+                                                            </button>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => confirmDeactivate(student)}
+                                                                className="inline-flex items-center text-amber-600 hover:text-amber-800 transition-colors"
+                                                                title="Deactivate student"
+                                                            >
+                                                                <UserX className="w-4 h-4" />
+                                                            </button>
+                                                        )}
                                                     </>
                                                 )}
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -402,14 +462,37 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                 </div>
             </div>
 
+            {/* Delete (hard) — kept for admin use if needed */}
             <ConfirmationModal
                 show={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={handleDelete}
                 title="Delete Student"
-                message={`Are you sure you want to delete ${selectedStudent?.first_name} ${selectedStudent?.last_name}? This action cannot be undone.`}
+                message={`Are you sure you want to permanently delete ${selectedStudent?.first_name} ${selectedStudent?.last_name}? This action cannot be undone.`}
                 confirmText="Delete"
                 type="danger"
+            />
+
+            {/* Deactivate */}
+            <ConfirmationModal
+                show={showDeactivateModal}
+                onClose={() => setShowDeactivateModal(false)}
+                onConfirm={handleDeactivate}
+                title="Deactivate Student"
+                message={`This will mark ${selectedStudent?.first_name} ${selectedStudent?.last_name} as inactive. All their attendance, exam results and reports are kept and can still be reviewed. You can reactivate them at any time.`}
+                confirmText="Deactivate"
+                type="warning"
+            />
+
+            {/* Reactivate */}
+            <ConfirmationModal
+                show={showReactivateModal}
+                onClose={() => setShowReactivateModal(false)}
+                onConfirm={handleReactivate}
+                title="Reactivate Student"
+                message={`Reactivate ${selectedStudent?.first_name} ${selectedStudent?.last_name} and mark them as active again?`}
+                confirmText="Reactivate"
+                type="success"
             />
 
             <GenerateReportModal

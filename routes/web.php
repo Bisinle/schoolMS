@@ -152,6 +152,8 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
         Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+        Route::patch('/students/{student}/deactivate', [StudentController::class, 'deactivate'])->name('students.deactivate');
+        Route::patch('/students/{student}/reactivate', [StudentController::class, 'reactivate'])->name('students.reactivate');
     });
 
     //^ Guardian Routes
@@ -184,6 +186,8 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::get('/guardians/{guardian}/edit', [GuardianController::class, 'edit'])->name('guardians.edit');
         Route::put('/guardians/{guardian}', [GuardianController::class, 'update'])->name('guardians.update');
         Route::delete('/guardians/{guardian}', [GuardianController::class, 'destroy'])->name('guardians.destroy');
+        Route::patch('/guardians/{guardian}/deactivate', [GuardianController::class, 'deactivate'])->name('guardians.deactivate');
+        Route::patch('/guardians/{guardian}/reactivate', [GuardianController::class, 'reactivate'])->name('guardians.reactivate');
     });
 
     //^ Teacher Routes

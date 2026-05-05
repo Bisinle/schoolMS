@@ -1,7 +1,8 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useCallback } from 'react';
-import { Plus, Upload, Eye, Edit, Trash2, Users, Mail, Phone, MapPin, UserCircle, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Plus, Upload, Eye, Edit, Trash2, Users, Mail, Phone, MapPin, UserCircle, CheckCircle, AlertCircle, XCircle, UserX, UserCheck } from 'lucide-react';
+import { FilterSelect } from '@/Components/Filters';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import GuardianImportModal from '@/Components/Guardians/GuardianImportModal';
 import useFilters from '@/Hooks/useFilters';
@@ -13,7 +14,9 @@ import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
 
 // Mobile List Item Component - Refactored with new components
-function MobileGuardianItem({ guardian, auth, onDelete }) {
+function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactivate }) {
+    const isInactive = guardian.status === 'inactive';
+
     // Build swipe actions
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/guardians/${guardian.id}` },
@@ -22,8 +25,12 @@ function MobileGuardianItem({ guardian, auth, onDelete }) {
     if (auth.user.role === 'admin') {
         primaryActions.push(
             { icon: Edit, label: 'Edit', href: `/guardians/${guardian.id}/edit` },
-            { icon: Trash2, label: 'Delete', onClick: () => onDelete(guardian) }
         );
+        if (isInactive) {
+            primaryActions.push({ icon: UserCheck, label: 'Reactivate', onClick: () => onReactivate(guardian) });
+        } else {
+            primaryActions.push({ icon: UserX, label: 'Deactivate', onClick: () => onDeactivate(guardian) });
+        }
     }
 
     const secondaryActions = guardian.phone_number ? [
@@ -37,14 +44,15 @@ function MobileGuardianItem({ guardian, auth, onDelete }) {
         >
             <ExpandableCard
                 header={
-                    <div className="flex items-start justify-between gap-3">
+                    <div className={`flex items-start justify-between gap-3 ${isInactive ? 'opacity-70' : ''}`}>
                         <div className="flex-1 min-w-0">
-                            {/* Guardian Number Badge */}
-                            <div className="mb-2">
+                            {/* Guardian Number + Status */}
+                            <div className="flex items-center gap-2 mb-2">
                                 <Badge variant="primary" value={guardian.guardian_number} size="sm" />
+                                <Badge variant="status" value={guardian.status || 'active'} size="sm" />
                             </div>
 
-                            <h3 className="text-base font-bold text-gray-900 truncate mb-2">
+                            <h3 className={`text-base font-bold truncate mb-2 ${isInactive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
                                 {guardian.user?.name}
                             </h3>
 
@@ -151,8 +159,14 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
         route: '/guardians',
         initialFilters: {
             search: initialFilters.search || '',
+            status: initialFilters.status || '',
         },
     });
+
+    const statusOptions = [
+        { value: 'active', label: 'Active' },
+        { value: 'inactive', label: 'Inactive' },
+    ];
 
     // Cumulative loading for mobile view
     const {
@@ -162,6 +176,8 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
     } = useCumulativeLoading(guardians, filters, 'guardians.index', 'guardians');
 
     const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+    const [showReactivateModal, setShowReactivateModal] = useState(false);
     const [selectedGuardian, setSelectedGuardian] = useState(null);
     const [showImportModal, setShowImportModal] = useState(false);
     const [showResultsBanner, setShowResultsBanner] = useState(!!importResults);
@@ -177,6 +193,38 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
             router.delete(`/guardians/${selectedGuardian.id}`, {
                 onSuccess: () => {
                     setShowDeleteModal(false);
+                    setSelectedGuardian(null);
+                },
+            });
+        }
+    }, [selectedGuardian]);
+
+    const confirmDeactivate = useCallback((guardian) => {
+        setSelectedGuardian(guardian);
+        setShowDeactivateModal(true);
+    }, []);
+
+    const handleDeactivate = useCallback(() => {
+        if (selectedGuardian) {
+            router.patch(`/guardians/${selectedGuardian.id}/deactivate`, {}, {
+                onSuccess: () => {
+                    setShowDeactivateModal(false);
+                    setSelectedGuardian(null);
+                },
+            });
+        }
+    }, [selectedGuardian]);
+
+    const confirmReactivate = useCallback((guardian) => {
+        setSelectedGuardian(guardian);
+        setShowReactivateModal(true);
+    }, []);
+
+    const handleReactivate = useCallback(() => {
+        if (selectedGuardian) {
+            router.patch(`/guardians/${selectedGuardian.id}/reactivate`, {}, {
+                onSuccess: () => {
+                    setShowReactivateModal(false);
                     setSelectedGuardian(null);
                 },
             });
@@ -221,11 +269,20 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
 
                 {/* Header Actions - Refactored with SearchInput */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                    <div className="flex-1 w-full sm:max-w-md">
-                        <SearchInput
-                            value={filters.search}
-                            onChange={(e) => updateFilter('search', e.target.value)}
-                            placeholder="Search guardians..."
+                    <div className="flex flex-col sm:flex-row gap-2 flex-1 w-full sm:max-w-xl">
+                        <div className="flex-1">
+                            <SearchInput
+                                value={filters.search}
+                                onChange={(e) => updateFilter('search', e.target.value)}
+                                placeholder="Search guardians..."
+                            />
+                        </div>
+                        <FilterSelect
+                            value={filters.status}
+                            onChange={(e) => updateFilter('status', e.target.value)}
+                            options={statusOptions}
+                            allLabel="All Status"
+                            hideLabel
                         />
                     </div>
 
@@ -264,6 +321,8 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                                 guardian={guardian}
                                 auth={auth}
                                 onDelete={confirmDelete}
+                                onDeactivate={confirmDeactivate}
+                                onReactivate={confirmReactivate}
                             />
                         ))}
                     </MobileListContainer>
@@ -285,45 +344,34 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Guardian No
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Name
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Email
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Phone
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Relationship
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Students
-                                    </th>
-                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                                        Actions
-                                    </th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Guardian No</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Name</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Email</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Phone</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Relationship</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Students</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
-                                {guardians.data.map((guardian) => (
-                                    <tr key={guardian.id} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-navy">
+                                {guardians.data.map((guardian) => {
+                                    const inactive = guardian.status === 'inactive';
+                                    return (
+                                    <tr key={guardian.id} className={`hover:bg-gray-50 transition-colors ${inactive ? 'bg-gray-50/60' : ''}`}>
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${inactive ? 'text-gray-400' : 'text-navy'}`}>
                                             {guardian.guardian_number}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                                            {guardian.user?.name}
+                                            <span className={inactive ? 'line-through text-gray-400' : ''}>{guardian.user?.name}</span>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${inactive ? 'text-gray-400' : 'text-gray-600'}`}>
                                             {guardian.user?.email}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${inactive ? 'text-gray-400' : 'text-gray-600'}`}>
                                             {guardian.phone_number}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                                        <td className={`px-6 py-4 whitespace-nowrap text-sm ${inactive ? 'text-gray-400' : 'text-gray-600'}`}>
                                             {guardian.relationship}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -332,10 +380,14 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                                                 {guardian.students?.length || 0}
                                             </span>
                                         </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <Badge variant="status" value={guardian.status || 'active'} />
+                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                                             <Link
                                                 href={`/guardians/${guardian.id}`}
                                                 className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+                                                title="View"
                                             >
                                                 <Eye className="w-4 h-4" />
                                             </Link>
@@ -344,20 +396,33 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                                                     <Link
                                                         href={`/guardians/${guardian.id}/edit`}
                                                         className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                        title="Edit"
                                                     >
                                                         <Edit className="w-4 h-4" />
                                                     </Link>
-                                                    <button
-                                                        onClick={() => confirmDelete(guardian)}
-                                                        className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                    </button>
+                                                    {inactive ? (
+                                                        <button
+                                                            onClick={() => confirmReactivate(guardian)}
+                                                            className="inline-flex items-center text-green-600 hover:text-green-800 transition-colors"
+                                                            title="Reactivate guardian"
+                                                        >
+                                                            <UserCheck className="w-4 h-4" />
+                                                        </button>
+                                                    ) : (
+                                                        <button
+                                                            onClick={() => confirmDeactivate(guardian)}
+                                                            className="inline-flex items-center text-amber-600 hover:text-amber-800 transition-colors"
+                                                            title="Deactivate guardian"
+                                                        >
+                                                            <UserX className="w-4 h-4" />
+                                                        </button>
+                                                    )}
                                                 </>
                                             )}
                                         </td>
                                     </tr>
-                                ))}
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>
@@ -374,14 +439,37 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                 </div>
             </div>
 
+            {/* Delete (hard) */}
             <ConfirmationModal
                 show={showDeleteModal}
                 onClose={() => setShowDeleteModal(false)}
                 onConfirm={handleDelete}
                 title="Delete Guardian"
-                message={`Are you sure you want to delete ${selectedGuardian?.user?.name}? This action cannot be undone and will also delete all associated students.`}
+                message={`Are you sure you want to permanently delete ${selectedGuardian?.user?.name}? This action cannot be undone.`}
                 confirmText="Delete"
                 type="danger"
+            />
+
+            {/* Deactivate */}
+            <ConfirmationModal
+                show={showDeactivateModal}
+                onClose={() => setShowDeactivateModal(false)}
+                onConfirm={handleDeactivate}
+                title="Deactivate Guardian"
+                message={`This will mark ${selectedGuardian?.user?.name} as inactive and also deactivate all their linked students. All records (attendance, invoices, reports) are preserved and can still be reviewed. You can reactivate them at any time.`}
+                confirmText="Deactivate"
+                type="warning"
+            />
+
+            {/* Reactivate */}
+            <ConfirmationModal
+                show={showReactivateModal}
+                onClose={() => setShowReactivateModal(false)}
+                onConfirm={handleReactivate}
+                title="Reactivate Guardian"
+                message={`Reactivate ${selectedGuardian?.user?.name}? Their linked students will remain inactive — reactivate each student individually if needed.`}
+                confirmText="Reactivate"
+                type="success"
             />
 
             <GuardianImportModal

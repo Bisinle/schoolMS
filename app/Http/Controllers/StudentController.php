@@ -303,4 +303,34 @@ class StudentController extends Controller
         return redirect()->route('students.index')
             ->with('success', 'Student deleted successfully.');
     }
+
+    // ── Deactivation ──────────────────────────────────────────────────────────
+
+    /**
+     * Deactivate a student (mark inactive, keep all records).
+     */
+    public function deactivate(Student $student)
+    {
+        $this->authorize('update', $student);
+
+        $reason = request()->input('reason');
+
+        $student->deactivate($reason);
+
+        return redirect()->back()
+            ->with('success', "{$student->full_name} has been deactivated.");
+    }
+
+    /**
+     * Reactivate a previously deactivated student.
+     */
+    public function reactivate(Student $student)
+    {
+        $this->authorize('update', $student);
+
+        $student->reactivate();
+
+        return redirect()->back()
+            ->with('success', "{$student->full_name} has been reactivated.");
+    }
 }

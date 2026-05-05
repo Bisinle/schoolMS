@@ -26,12 +26,15 @@ class GuardianController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
+            ->when($request->status, function ($query, $status) {
+                $query->where('status', $status);
+            })
             ->paginate(10)
             ->withQueryString();
 
         return Inertia::render('Guardians/Index', [
             'guardians' => $guardians,
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'status']),
             'importResults' => session('importResults'),
         ]);
     }
@@ -167,5 +170,35 @@ class GuardianController extends Controller
 
         return redirect()->route('guardians.index')
             ->with('success', 'Guardian deleted successfully.');
+    }
+
+    // ── Deactivation ──────────────────────────────────────────────────────────
+
+    /**
+     * Deactivate a guardian and cascade to all their linked students.
+     */
+    public function deactivate(Guardian $guardian)
+    {
+        $this->authorize('update', $guardian);
+
+        $reason = request()->input('reason');
+
+        $guardian->deactivate($reason);
+
+        return redirect()->back()
+            ->with('success', "{$guardian->full_name} and all linked students have been deactivated.");
+    }
+
+    /**
+     * Reactivate a guardian (linked students remain inactive — reactivate them individually if needed).
+     */
+    public function reactivate(Guardian $guardian)
+    {
+        $this->authorize('update', $guardian);
+
+        $guardian->reactivate();
+
+        return redirect()->back()
+            ->with('success', "{$guardian->full_name} has been reactivated.");
     }
 }

@@ -18,7 +18,50 @@ class Guardian extends Model
         'address',
         'occupation',
         'relationship',
+        'status',
+        'deactivated_at',
+        'deactivation_reason',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'deactivated_at' => 'datetime',
+        ];
+    }
+
+    // ── Deactivation helpers ──────────────────────────────────────────────────
+
+    /**
+     * Deactivate this guardian and cascade to all linked students.
+     */
+    public function deactivate(?string $reason = null): void
+    {
+        $this->update([
+            'status'               => 'inactive',
+            'deactivated_at'       => now(),
+            'deactivation_reason'  => $reason,
+        ]);
+
+        // Cascade: deactivate every linked student
+        $this->studentsMany()->update([
+            'status'              => 'inactive',
+            'deactivated_at'      => now(),
+            'deactivation_reason' => $reason ?? 'Guardian deactivated',
+        ]);
+    }
+
+    /**
+     * Reactivate this guardian (students remain inactive until manually reactivated).
+     */
+    public function reactivate(): void
+    {
+        $this->update([
+            'status'              => 'active',
+            'deactivated_at'      => null,
+            'deactivation_reason' => null,
+        ]);
+    }
 
     public function user()
     {
