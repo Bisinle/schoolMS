@@ -43,12 +43,21 @@ class Guardian extends Model
             'deactivation_reason'  => $reason,
         ]);
 
-        // Cascade: deactivate every linked student
-        $this->studentsMany()->update([
+        $studentPayload = [
             'status'              => 'inactive',
             'deactivated_at'      => now(),
             'deactivation_reason' => $reason ?? 'Guardian deactivated',
-        ]);
+        ];
+
+        // Collect IDs from both relationship paths to avoid missing students
+        // linked only via the legacy guardian_id column vs the pivot table.
+        $legacyIds = $this->students()->pluck('students.id');
+        $pivotIds  = $this->studentsMany()->allRelatedIds();
+        $allIds    = $legacyIds->merge($pivotIds)->unique()->values();
+
+        if ($allIds->isNotEmpty()) {
+            Student::whereIn('id', $allIds)->update($studentPayload);
+        }
     }
 
     /**

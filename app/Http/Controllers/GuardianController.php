@@ -172,6 +172,34 @@ class GuardianController extends Controller
             ->with('success', 'Guardian deleted successfully.');
     }
 
+    // ── Inactive list ─────────────────────────────────────────────────────────
+
+    /**
+     * List all inactive guardians (admin-only analytics view).
+     */
+    public function inactive(Request $request)
+    {
+        $this->authorize('viewAny', Guardian::class);
+
+        $guardians = Guardian::with(['user', 'students'])
+            ->where('status', 'inactive')
+            ->when($request->search, function ($query, $search) {
+                $query->whereHas('user', function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%");
+                });
+            })
+            ->orderByDesc('deactivated_at')
+            ->paginate(15)
+            ->withQueryString();
+
+        return Inertia::render('Guardians/Inactive', [
+            'guardians' => $guardians,
+            'filters'   => $request->only(['search']),
+            'total'     => Guardian::where('status', 'inactive')->count(),
+        ]);
+    }
+
     // ── Deactivation ──────────────────────────────────────────────────────────
 
     /**

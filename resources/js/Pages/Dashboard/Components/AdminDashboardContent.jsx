@@ -2,6 +2,7 @@ import { Link } from "@inertiajs/react";
 import {
     Users,
     UserCheck,
+    UserX,
     UserCircle,
     GraduationCap,
     School,
@@ -96,6 +97,13 @@ export default function AdminDashboardContent({
                     value={stats?.activeStudents || 0}
                     gradient="from-green-500 to-emerald-600"
                     link="/students"
+                />
+                <StatCard
+                    icon={UserX}
+                    label="Inactive Guardians"
+                    value={stats?.inactiveGuardians || 0}
+                    gradient="from-slate-400 to-slate-600"
+                    link="/guardians/inactive"
                 />
                 <StatCard
                     icon={UserCircle}

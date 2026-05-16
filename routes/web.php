@@ -163,6 +163,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
 
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/guardians/create', [GuardianController::class, 'create'])->name('guardians.create');
+        Route::get('/guardians/inactive', [GuardianController::class, 'inactive'])->name('guardians.inactive');
         Route::post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
         Route::get('/guardians/import/template', [GuardianImportController::class, 'downloadTemplate'])->name('guardians.import.template');
         Route::post('/guardians/import', [GuardianImportController::class, 'import'])->name('guardians.import');

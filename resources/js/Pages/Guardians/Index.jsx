@@ -288,6 +288,13 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
 
                     {auth.user.role === 'admin' && (
                         <div className="flex items-center gap-2">
+                            <Link
+                                href={route('guardians.inactive')}
+                                className="inline-flex items-center px-4 py-2.5 bg-white border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-all duration-200 shadow-sm"
+                            >
+                                <UserX className="w-4 h-4 mr-2" />
+                                Inactive
+                            </Link>
                             <button
                                 onClick={() => setShowImportModal(true)}
                                 className="inline-flex items-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm"
