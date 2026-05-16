@@ -633,9 +633,11 @@ class DashboardController extends Controller
                 ->map(function ($tracking) {
                     return [
                         'id' => $tracking->id,
-                        'student_name' => $tracking->student->name,
+                        'student_name' => $tracking->student
+                            ? trim($tracking->student->first_name . ' ' . $tracking->student->last_name)
+                            : 'Unknown',
                         'student_id' => $tracking->student_id,
-                        'teacher_name' => $tracking->teacher->name ?? 'N/A',
+                        'teacher_name' => $tracking->teacher?->name ?? 'N/A',
                         'date' => $tracking->date->format('M d, Y'),
                         'reading_type' => $tracking->reading_type_label,
                         'surah_range' => $tracking->surah_range,
@@ -749,13 +751,13 @@ class DashboardController extends Controller
                 'first_name' => $student->first_name,
                 'last_name' => $student->last_name,
                 'admission_number' => $student->admission_number,
-                'class_name' => $student->grade->name ?? 'N/A',
+                'class_name' => $student->grade?->name ?? 'N/A',
                 'gender' => $student->gender,
-                'date_of_birth' => $student->date_of_birth->format('Y-m-d'),
-                'age' => $student->date_of_birth->age,
+                'date_of_birth' => $student->date_of_birth?->format('Y-m-d'),
+                'age' => $student->date_of_birth?->age,
                 'status' => $student->status,
                 'grade_id' => $student->grade_id,
-                'grade_code' => $student->grade->code ?? null,
+                'grade_code' => $student->grade?->code ?? null,
                 'attendance_stats' => $attendanceStats,
                 'recent_exams' => $recentExams,
                 'overall_average' => $overallAverage,
