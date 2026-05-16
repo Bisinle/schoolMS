@@ -662,7 +662,7 @@ class TimetableTemplateController extends Controller
      */
     public function regenerate(TimetableTemplate $template)
     {
-        $this->authorize('update', $template);
+        $this->authorize('regenerate', $template);
 
         // ============================================
         // LAYER 2: CONTROLLER VALIDATION
@@ -781,7 +781,7 @@ class TimetableTemplateController extends Controller
      */
     public function bulkUpdateTeacher(Request $request, TimetableTemplate $template)
     {
-        $this->authorize('update', $template);
+        $this->authorize('manageSlots', $template);
 
         $validated = $request->validate([
             'subject_id' => 'required|exists:subjects,id',

@@ -75,6 +75,30 @@ class TimetableTemplatePolicy
     }
 
     /**
+     * Determine whether the user can regenerate timetable slots.
+     *
+     * Intentionally NOT restricted to draft status — admins need to be able to
+     * regenerate a published timetable after updating the blueprint or curriculum.
+     * Manually-created slots are preserved; only auto-generated ones are replaced.
+     */
+    public function regenerate(User $user, TimetableTemplate $timetableTemplate): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
+     * Determine whether the user can manage slots on the timetable
+     * (bulk teacher changes, individual slot edits on published templates).
+     *
+     * NOT restricted to draft — slot-level edits (e.g. assigning a substitute
+     * teacher) must be possible on a published, live timetable.
+     */
+    public function manageSlots(User $user, TimetableTemplate $timetableTemplate): bool
+    {
+        return $user->isAdmin();
+    }
+
+    /**
      * Determine whether the user can publish the timetable.
      */
     public function publish(User $user, TimetableTemplate $timetableTemplate): bool
