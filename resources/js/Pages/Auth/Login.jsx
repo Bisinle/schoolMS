@@ -2,7 +2,7 @@ import { useState } from "react";
 import InputError from "@/Components/InputError";
 import GuestLayout from "@/Components/GuestLayout";
 import { Head, Link, useForm } from "@inertiajs/react";
-import { Mail, Lock, Eye, EyeOff, LogIn, ShieldCheck } from "lucide-react";
+import { Mail, Lock, Eye, EyeOff, LogIn, ShieldCheck, ArrowRight } from "lucide-react";
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -23,38 +23,46 @@ export default function Login({ status, canResetPassword }) {
             <Head title="Log in" />
 
             <div className="w-full">
+
                 {/* Header */}
-                <div className="mb-5 sm:mb-7 lg:mb-8">
-                    <h2 className="text-2xl sm:text-3xl font-extrabold text-[#0b1a34] mb-1">
+                <div className="mb-7 sm:mb-8">
+                    <p className="text-xs font-bold uppercase tracking-[0.15em] text-orange-500 mb-2">
                         Welcome back
+                    </p>
+                    <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight mb-2">
+                        Sign in to your account
                     </h2>
-                    <p className="text-gray-500 text-sm">
-                        Sign in to continue to your dashboard
+                    <p className="text-slate-500 text-sm leading-relaxed">
+                        Enter your credentials to access your dashboard.
                     </p>
                 </div>
 
                 {/* Status Message */}
                 {status && (
-                    <div className="mb-5 p-4 bg-green-50 border-l-4 border-green-500 rounded-r-lg">
-                        <p className="text-sm font-medium text-green-800">{status}</p>
+                    <div className="mb-6 flex items-start gap-3 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                        <ShieldCheck className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                        <p className="text-sm font-medium text-emerald-800">{status}</p>
                     </div>
                 )}
 
                 {/* Card */}
-                <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-                    {/* Orange accent bar */}
-                    <div className="h-1 w-full bg-gradient-to-r from-orange-400 via-orange-500 to-orange-400" />
+                <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xl shadow-slate-200/60 overflow-hidden">
 
-                    <form onSubmit={submit} className="p-5 sm:p-7 lg:p-8 space-y-4 sm:space-y-5">
+                    {/* Gradient accent bar */}
+                    <div className="h-1 w-full"
+                         style={{ background: 'linear-gradient(90deg, #f97316 0%, #fb923c 50%, #fdba74 100%)' }} />
+
+                    <form onSubmit={submit} className="p-6 sm:p-8 space-y-5">
 
                         {/* Email */}
                         <div>
-                            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-1.5">
+                            <label htmlFor="email"
+                                   className="block text-xs font-bold uppercase tracking-wide text-slate-500 mb-2">
                                 Email Address
                             </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Mail className="h-4.5 w-4.5 text-gray-400" />
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Mail className={`h-4 w-4 transition-colors ${errors.email ? 'text-red-400' : 'text-slate-400 group-focus-within:text-orange-500'}`} />
                                 </div>
                                 <input
                                     id="email"
@@ -62,35 +70,39 @@ export default function Login({ status, canResetPassword }) {
                                     name="email"
                                     value={data.email}
                                     onChange={(e) => setData("email", e.target.value)}
-                                    className={`block w-full pl-10 pr-4 py-3 text-sm border rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition-all bg-gray-50 focus:bg-white ${
-                                        errors.email ? "border-red-400 bg-red-50" : "border-gray-200"
-                                    }`}
+                                    className={`block w-full pl-11 pr-4 py-3 text-sm rounded-xl border outline-none transition-all
+                                        focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400
+                                        ${errors.email
+                                            ? 'border-red-300 bg-red-50 text-red-900 placeholder-red-300'
+                                            : 'border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white'
+                                        }`}
                                     placeholder="you@example.com"
                                     autoComplete="username"
                                     autoFocus
                                 />
                             </div>
-                            <InputError message={errors.email} className="mt-1.5" />
+                            <InputError message={errors.email} className="mt-2" />
                         </div>
 
                         {/* Password */}
                         <div>
-                            <div className="flex items-center justify-between mb-1.5">
-                                <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
+                            <div className="flex items-center justify-between mb-2">
+                                <label htmlFor="password"
+                                       className="block text-xs font-bold uppercase tracking-wide text-slate-500">
                                     Password
                                 </label>
                                 {canResetPassword && (
                                     <Link
                                         href={route("password.request")}
-                                        className="text-xs font-medium text-orange-500 hover:text-orange-600 transition-colors"
+                                        className="text-xs font-semibold text-orange-500 hover:text-orange-600 transition-colors"
                                     >
                                         Forgot password?
                                     </Link>
                                 )}
                             </div>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Lock className="h-4.5 w-4.5 text-gray-400" />
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                    <Lock className={`h-4 w-4 transition-colors ${errors.password ? 'text-red-400' : 'text-slate-400 group-focus-within:text-orange-500'}`} />
                                 </div>
                                 <input
                                     id="password"
@@ -98,40 +110,56 @@ export default function Login({ status, canResetPassword }) {
                                     name="password"
                                     value={data.password}
                                     onChange={(e) => setData("password", e.target.value)}
-                                    className={`block w-full pl-10 pr-11 py-3 text-sm border rounded-xl focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none transition-all bg-gray-50 focus:bg-white ${
-                                        errors.password ? "border-red-400 bg-red-50" : "border-gray-200"
-                                    }`}
+                                    className={`block w-full pl-11 pr-12 py-3 text-sm rounded-xl border outline-none transition-all
+                                        focus:ring-2 focus:ring-orange-400/30 focus:border-orange-400
+                                        ${errors.password
+                                            ? 'border-red-300 bg-red-50 text-red-900 placeholder-red-300'
+                                            : 'border-slate-200 bg-slate-50 text-slate-900 placeholder-slate-400 focus:bg-white'
+                                        }`}
                                     placeholder="Enter your password"
                                     autoComplete="current-password"
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
+                                    tabIndex={-1}
                                 >
-                                    {showPassword ? <EyeOff className="h-4.5 w-4.5" /> : <Eye className="h-4.5 w-4.5" />}
+                                    {showPassword
+                                        ? <EyeOff className="h-4 w-4" />
+                                        : <Eye className="h-4 w-4" />}
                                 </button>
                             </div>
-                            <InputError message={errors.password} className="mt-1.5" />
+                            <InputError message={errors.password} className="mt-2" />
                         </div>
 
-                        {/* Remember me */}
-                        <label className="flex items-center gap-2.5 cursor-pointer select-none w-fit">
-                            <input
-                                type="checkbox"
-                                name="remember"
-                                checked={data.remember}
-                                onChange={(e) => setData("remember", e.target.checked)}
-                                className="w-4 h-4 text-orange-500 border-gray-300 rounded focus:ring-orange-400"
-                            />
-                            <span className="text-sm text-gray-600">Keep me signed in</span>
-                        </label>
+                        {/* Remember me + Submit row */}
+                        <div className="flex items-center justify-between pt-1">
+                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                <input
+                                    type="checkbox"
+                                    name="remember"
+                                    checked={data.remember}
+                                    onChange={(e) => setData("remember", e.target.checked)}
+                                    className="w-4 h-4 rounded border-slate-300 text-orange-500 focus:ring-orange-400 focus:ring-offset-0"
+                                />
+                                <span className="text-sm text-slate-600">Keep me signed in</span>
+                            </label>
+                        </div>
 
                         {/* Submit */}
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#0b1a34] text-white text-sm font-semibold rounded-xl hover:bg-[#1e3a5f] focus:outline-none focus:ring-2 focus:ring-[#0b1a34] focus:ring-offset-2 transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-md hover:shadow-lg"
+                            className="w-full flex items-center justify-center gap-2.5 px-4 py-3.5 rounded-xl text-sm font-bold text-white transition-all
+                                       disabled:opacity-60 disabled:cursor-not-allowed
+                                       focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2"
+                            style={{
+                                background: processing
+                                    ? 'linear-gradient(135deg, #6b7280, #9ca3af)'
+                                    : 'linear-gradient(135deg, #ea580c 0%, #f97316 60%, #fb923c 100%)',
+                                boxShadow: processing ? 'none' : '0 4px 14px 0 rgba(249,115,22,0.35)',
+                            }}
                         >
                             {processing ? (
                                 <>
@@ -143,8 +171,8 @@ export default function Login({ status, canResetPassword }) {
                                 </>
                             ) : (
                                 <>
-                                    <LogIn className="w-4 h-4" />
                                     Sign In
+                                    <ArrowRight className="w-4 h-4" />
                                 </>
                             )}
                         </button>
@@ -152,18 +180,21 @@ export default function Login({ status, canResetPassword }) {
                     </form>
                 </div>
 
-                {/* Trust indicator */}
-                <div className="mt-4 sm:mt-5 flex items-center justify-center gap-2 text-xs text-gray-400">
-                    <ShieldCheck className="w-3.5 h-3.5 text-green-500 flex-shrink-0" />
-                    <span>Your connection is secure &amp; encrypted</span>
-                </div>
-
-                {/* Footer */}
-                <div className="mt-4 sm:mt-6 text-center">
-                    <p className="text-xs text-gray-400">
+                {/* Trust + footer */}
+                <div className="mt-6 space-y-3">
+                    <div className="flex items-center justify-center gap-2">
+                        <div className="h-px flex-1 bg-slate-200" />
+                        <div className="flex items-center gap-1.5 px-2">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                            <span className="text-xs text-slate-400 font-medium">Secure &amp; encrypted connection</span>
+                        </div>
+                        <div className="h-px flex-1 bg-slate-200" />
+                    </div>
+                    <p className="text-center text-xs text-slate-400">
                         © {new Date().getFullYear()} School Management System. All rights reserved.
                     </p>
                 </div>
+
             </div>
         </GuestLayout>
     );
