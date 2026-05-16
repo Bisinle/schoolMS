@@ -2,8 +2,11 @@
     "$schema": "https://json.schemastore.org/package.json",
     "private": true,
     "type": "module",
+    "packageManager": "pnpm@10.0.0",
     "pnpm": {
-        "onlyBuiltDependencies": ["esbuild"]
+        "onlyBuiltDependencies": [
+            "esbuild"
+        ]
     },
     "scripts": {
         "build": "vite build",
