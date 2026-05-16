@@ -724,18 +724,7 @@ export default function Index({
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <Badge
                                                     variant="status"
-                                                    value={
-                                                        <span className="inline-flex items-center gap-1">
-                                                            {user.is_active ? (
-                                                                <CheckCircle className="w-3 h-3" />
-                                                            ) : (
-                                                                <XCircle className="w-3 h-3" />
-                                                            )}
-                                                            {user.is_active
-                                                                ? "Active"
-                                                                : "Inactive"}
-                                                        </span>
-                                                    }
+                                                    value={user.is_active ? 'active' : 'inactive'}
                                                     size="sm"
                                                 />
                                             </td>
