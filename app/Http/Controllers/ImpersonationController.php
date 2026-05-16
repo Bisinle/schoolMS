@@ -95,8 +95,7 @@ class ImpersonationController extends Controller
      */
     public function logs(Request $request)
     {
-        if (!Auth::user()->role === 'admin')) {
-        
+        if (Auth::user()->role !== 'admin') {
             abort(403);
         }
 
