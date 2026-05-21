@@ -1,6 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head } from '@inertiajs/react';
-import { Clock, BookOpen, DoorOpen, Calendar, TrendingUp, Award } from 'lucide-react';
+import { Clock, BookOpen, DoorOpen, Calendar, TrendingUp, Award, User } from 'lucide-react';
 
 export default function MyTimetable({ auth, timetable, teacher, stats, todayLessons, upcomingLessons, currentDay }) {
     const daysOfWeek = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
@@ -63,16 +63,24 @@ export default function MyTimetable({ auth, timetable, teacher, stats, todayLess
                         </div>
                     </div>
 
-                    {/* Today's Lessons */}
+                    {/* Today's School Schedule */}
                     {todayLessons && todayLessons.length > 0 && (
                         <div className="bg-white rounded-lg shadow mb-6 p-6">
-                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center">
                                 <Clock className="w-5 h-5 mr-2 text-orange" />
-                                Today's Lessons ({getDayLabel(currentDay)})
+                                Today's School Schedule ({getDayLabel(currentDay)})
                             </h3>
+                            <p className="text-xs text-gray-500 mb-4">All lessons across the school today. Your own lessons are highlighted.</p>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {todayLessons.map((lesson) => (
-                                    <div key={lesson.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                                    <div
+                                        key={lesson.id}
+                                        className={`border rounded-lg p-4 hover:shadow-md transition-shadow ${
+                                            lesson.is_mine
+                                                ? 'border-orange bg-orange-50'
+                                                : 'border-gray-200'
+                                        }`}
+                                    >
                                         <div className="flex items-start justify-between mb-2">
                                             <div className="flex items-center text-sm font-semibold text-gray-900">
                                                 <BookOpen className="w-4 h-4 mr-2 text-blue-600" />
@@ -86,6 +94,15 @@ export default function MyTimetable({ auth, timetable, teacher, stats, todayLess
                                             <Clock className="w-3 h-3 mr-2" />
                                             {lesson.start_time || lesson.period?.start_time} - {lesson.end_time || lesson.period?.end_time}
                                         </div>
+                                        {lesson.teacher && (
+                                            <div className="flex items-center text-sm text-gray-600 mb-1">
+                                                <User className="w-3 h-3 mr-2" />
+                                                {lesson.teacher.name}
+                                                {lesson.is_mine && (
+                                                    <span className="ml-1 text-xs font-medium text-orange">(you)</span>
+                                                )}
+                                            </div>
+                                        )}
                                         {lesson.room && (
                                             <div className="flex items-center text-sm text-gray-600">
                                                 <DoorOpen className="w-3 h-3 mr-2" />

@@ -72,25 +72,7 @@ export default function AdminDashboardContent({
                     transition={{ type: "spring", stiffness: 60, damping: 12, delay: 0.15 }}
                 >
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-6">
-            <motion.div
-                    initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: -50, scale: 0.9 }}
-                    transition={{ type: "spring", stiffness: 60, damping: 12 }}
-                >
-                <StatCard
-                    icon={Users}
-                    label="Total Students"
-                    value={stats?.totalStudents || 0}
-                    gradient="from-orange-500 to-red-600"
-                    trend={
-                        stats?.recentEnrollments > 0
-                            ? `+${stats.recentEnrollments} this month`
-                            : ""
-                    }
-                    link="/students"
-                />
-                    </motion.div>
+
                 <StatCard
                     icon={UserCheck}
                     label="Active Students"
@@ -107,8 +89,8 @@ export default function AdminDashboardContent({
                 />
                 <StatCard
                     icon={UserCircle}
-                    label="Total Guardians"
-                    value={stats?.totalGuardians || 0}
+                    label="Active Guardians"
+                    value={stats?.activeGuardians || 0}
                     gradient="from-blue-500 to-indigo-600"
                     link="/guardians"
                 />

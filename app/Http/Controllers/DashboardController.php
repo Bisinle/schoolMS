@@ -45,8 +45,8 @@ class DashboardController extends Controller
         // Keep existing admin dashboard code exactly as is
         $totalStudents = Student::count();
         $activeStudents = Student::where('status', 'active')->count();
+        $activeGuardians  = Guardian::where('status', 'active')->count();
         $inactiveGuardians = Guardian::where('status', 'inactive')->count();
-        $totalGuardians = Guardian::count();
         $totalTeachers = Teacher::count();
         $totalGrades = Grade::where('status', 'active')->count();
         $totalSubjects = Subject::where('status', 'active')->count();
@@ -244,8 +244,8 @@ class DashboardController extends Controller
             'stats' => [
                 'totalStudents' => $totalStudents,
                 'activeStudents' => $activeStudents,
+                'activeGuardians'   => $activeGuardians,
                 'inactiveGuardians' => $inactiveGuardians,
-                'totalGuardians' => $totalGuardians,
                 'totalTeachers' => $totalTeachers,
                 'totalGrades' => $totalGrades,
                 'totalSubjects' => $totalSubjects,

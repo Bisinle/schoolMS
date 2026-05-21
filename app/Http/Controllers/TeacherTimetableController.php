@@ -92,9 +92,47 @@ class TeacherTimetableController extends Controller
         // Get teacher's teaching statistics
         $stats = $this->getTeacherStats($teacher, $schoolId);
 
-        // Get today's lessons
+        // Get today's lessons — ALL lessons for the day across the school (not just this teacher's)
         $today = strtolower(Carbon::now()->format('l'));
-        $todayLessons = $slots->where('day_of_week', $today)->values();
+        $todayLessons = TimetableSlot::query()
+            ->where('school_id', $schoolId)
+            ->where('day_of_week', $today)
+            ->where(function ($query) {
+                $query->where(function ($q) {
+                    $q->where('is_teachable', true)
+                      ->where('slot_type', 'lesson');
+                })
+                ->orWhere('slot_type', TimetableSlot::TYPE_LESSON);
+            })
+            ->whereHas('template', function ($query) {
+                $query->where('status', 'published');
+            })
+            ->with([
+                'subject:id,name,code,category',
+                'period:id,name,start_time,end_time',
+                'room:id,name',
+                'teacher.user:id,name',
+                'template.grade:id,name',
+            ])
+            ->get()
+            ->sortBy(function ($slot) {
+                return $slot->start_time ?? ($slot->period ? $slot->period->start_time : '99:99');
+            })
+            ->map(function ($slot) use ($teacher) {
+                return [
+                    'id'         => $slot->id,
+                    'day_of_week' => $slot->day_of_week,
+                    'start_time' => $slot->start_time ?? ($slot->period->start_time ?? null),
+                    'end_time'   => $slot->end_time   ?? ($slot->period->end_time   ?? null),
+                    'subject'    => $slot->subject ? ['id' => $slot->subject->id, 'name' => $slot->subject->name] : null,
+                    'grade'      => $slot->template?->grade ? ['id' => $slot->template->grade->id, 'name' => $slot->template->grade->name] : null,
+                    'room'       => $slot->room ? ['id' => $slot->room->id, 'room_number' => $slot->room->name] : null,
+                    'teacher'    => $slot->teacher?->user ? ['id' => $slot->teacher->id, 'name' => $slot->teacher->user->name] : null,
+                    'period'     => $slot->period ? ['id' => $slot->period->id, 'name' => $slot->period->name, 'start_time' => $slot->period->start_time, 'end_time' => $slot->period->end_time] : null,
+                    'is_mine'    => $slot->teacher_id === $teacher->id,
+                ];
+            })
+            ->values();
 
         // Get upcoming lessons (next 3 days)
         $upcomingDays = [];

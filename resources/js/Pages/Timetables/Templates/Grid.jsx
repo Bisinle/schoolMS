@@ -638,7 +638,16 @@ export default function TimetableGridView({ template, slots, periods, conflicts,
                 </div>
 
                 {/* Timetable Grid */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <div id="timetable-print-area" className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    {/* Print-only header — hidden on screen */}
+                    <div className="hidden print:block mb-6 border-b-2 border-gray-800 pb-4">
+                        <h1 className="text-xl font-bold text-gray-900">{template.name}</h1>
+                        <p className="text-sm text-gray-600 mt-1">
+                            {template.grade?.name}
+                            {template.academic_term?.name ? ` — ${template.academic_term.name}` : ''}
+                        </p>
+                        <p className="text-xs text-gray-400 mt-1">Printed: {new Date().toLocaleDateString()}</p>
+                    </div>
                     <TimetableGrid
                         template={template}
                         slots={slots.filter(slot => {
@@ -689,9 +698,27 @@ export default function TimetableGridView({ template, slots, periods, conflicts,
             {/* Print Styles */}
             <style>{`
                 @media print {
-                    .print\\:hidden {
-                        display: none !important;
+                    /* Hide everything on the page */
+                    body * {
+                        visibility: hidden !important;
                     }
+                    /* Show only the timetable print area */
+                    #timetable-print-area,
+                    #timetable-print-area * {
+                        visibility: visible !important;
+                    }
+                    /* Position it at the top-left of the page */
+                    #timetable-print-area {
+                        position: absolute;
+                        inset: 0;
+                        width: 100%;
+                        padding: 1cm;
+                        background: white !important;
+                        box-shadow: none !important;
+                        border: none !important;
+                        border-radius: 0 !important;
+                    }
+                    /* Preserve subject colours */
                     body {
                         print-color-adjust: exact;
                         -webkit-print-color-adjust: exact;
