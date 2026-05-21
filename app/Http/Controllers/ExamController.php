@@ -189,10 +189,31 @@ class ExamController extends Controller
             'results.student'
         ]);
 
+        // Active students in this grade
+        $activeStudents = $exam->grade->students()
+            ->where('status', 'active')
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get(['id', 'first_name', 'last_name', 'admission_number']);
+
+        // IDs of students who already have a result for this exam
+        $markedIds = $exam->results()->pluck('student_id');
+
+        // Students with no mark entered yet
+        $unmarkedStudents = $activeStudents
+            ->whereNotIn('id', $markedIds)
+            ->map(fn($s) => [
+                'id'               => $s->id,
+                'full_name'        => $s->first_name . ' ' . $s->last_name,
+                'admission_number' => $s->admission_number,
+            ])
+            ->values();
+
         return Inertia::render('Exams/Show', [
-            'exam' => $exam,
-            'resultsCount' => $exam->results()->count(),
-            'totalStudents' => $exam->grade->students()->count(),
+            'exam'             => $exam,
+            'resultsCount'     => $markedIds->count(),
+            'totalStudents'    => $activeStudents->count(),
+            'unmarkedStudents' => $unmarkedStudents,
         ]);
     }
 

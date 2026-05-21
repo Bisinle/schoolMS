@@ -1,11 +1,11 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ArrowLeft, Save, FileText, Users, Calendar, BookOpen, Edit, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Save, FileText, Users, Calendar, BookOpen, Edit, TrendingUp, AlertCircle } from 'lucide-react';
 import { Badge } from '@/Components/UI';
 import Avatar from '@/Components/Avatar';
 
-export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
+export default function ExamsShow({ exam, resultsCount, totalStudents, unmarkedStudents, auth }) {
     // Helper function to get exam type badge variant
     const getExamTypeBadgeVariant = (type) => {
         const variants = {
@@ -233,6 +233,72 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
                         </p>
                     </div>
                 </div>
+
+                {/* Unmarked Students */}
+                {unmarkedStudents && unmarkedStudents.length > 0 && (
+                    <div className="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
+                        <div className="px-4 md:px-6 py-3 md:py-4 border-b border-red-200 bg-red-50">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center">
+                                    <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-red-500 mr-2 md:mr-3" />
+                                    <h2 className="text-base md:text-lg font-semibold text-red-800">
+                                        Students Without Marks ({unmarkedStudents.length})
+                                    </h2>
+                                </div>
+                                {(auth.user.role === 'admin' || auth.user.role === 'teacher') && (
+                                    <Link
+                                        href={`/exams/${exam.id}/results`}
+                                        className="inline-flex items-center px-3 py-1.5 text-xs text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                                    >
+                                        <FileText className="w-3 h-3 mr-1.5" />
+                                        Enter Marks
+                                    </Link>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Mobile — stacked list */}
+                        <div className="md:hidden divide-y divide-gray-100">
+                            {unmarkedStudents.map((student) => (
+                                <div key={student.id} className="px-4 py-3 flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-900">{student.full_name}</p>
+                                        <p className="text-xs text-gray-500">{student.admission_number}</p>
+                                    </div>
+                                    <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">No mark</span>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Desktop — table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">#</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Student</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Admission No.</th>
+                                        <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {unmarkedStudents.map((student, index) => (
+                                        <tr key={student.id} className="hover:bg-red-50">
+                                            <td className="px-6 py-3 text-sm text-gray-500">{index + 1}</td>
+                                            <td className="px-6 py-3 text-sm font-medium text-gray-900">{student.full_name}</td>
+                                            <td className="px-6 py-3 text-sm text-gray-600">{student.admission_number}</td>
+                                            <td className="px-6 py-3">
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
+                                                    No mark entered
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                )}
 
                 {/* Student Results Preview */}
                 {exam.results && exam.results.length > 0 && (
