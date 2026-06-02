@@ -196,8 +196,13 @@ class ExamController extends Controller
             ->orderBy('last_name')
             ->get(['id', 'first_name', 'last_name', 'admission_number']);
 
-        // IDs of students who already have a result for this exam
-        $markedIds = $exam->results()->pluck('student_id');
+        // IDs of ACTIVE students who already have a result for this exam
+        // (exclude results belonging to now-deactivated students so the count
+        //  and percentage are always relative to the active cohort only)
+        $activeStudentIds = $activeStudents->pluck('id');
+        $markedIds = $exam->results()
+            ->whereIn('student_id', $activeStudentIds)
+            ->pluck('student_id');
 
         // Students with no mark entered yet
         $unmarkedStudents = $activeStudents
