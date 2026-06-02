@@ -119,8 +119,17 @@ class Exam extends Model
     // NEW: Get completion statistics
     public function getCompletionStats()
     {
-        $totalStudents = $this->grade->students()->where('status', 'active')->count();
-        $markedStudents = $this->results()->count();
+        $activeStudentIds = $this->grade->students()
+            ->where('status', 'active')
+            ->pluck('id');
+
+        $totalStudents = $activeStudentIds->count();
+
+        // Only count results for currently active students
+        $markedStudents = $this->results()
+            ->whereIn('student_id', $activeStudentIds)
+            ->count();
+
         $completionRate = $totalStudents > 0 ? round(($markedStudents / $totalStudents) * 100, 1) : 0.0;
 
         return [
