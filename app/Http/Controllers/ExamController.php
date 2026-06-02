@@ -186,7 +186,10 @@ class ExamController extends Controller
             'grade',
             'subject',
             'creator',
-            'results.student'
+            'results' => function ($query) {
+                $query->whereHas('student', fn($q) => $q->where('status', 'active'))
+                      ->with('student');
+            },
         ]);
 
         // Active students in this grade
