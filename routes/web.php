@@ -6,6 +6,7 @@ use App\Http\Controllers\DemoBookingController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\StudentController;
+use App\Http\Controllers\StudentImportController;
 use App\Http\Controllers\GuardianController;
 use App\Http\Controllers\GuardianImportController;
 use App\Http\Controllers\TeacherController;
@@ -142,6 +143,9 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::middleware(['role:admin'])->group(function () {
         Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
         Route::post('/students', [StudentController::class, 'store'])->name('students.store');
+        Route::get('/students/import/template', [StudentImportController::class, 'downloadTemplate'])->name('students.import.template');
+        Route::post('/students/import/preview', [StudentImportController::class, 'preview'])->name('students.import.preview');
+        Route::post('/students/import', [StudentImportController::class, 'import'])->name('students.import');
     });
 
     Route::middleware(['role:admin,teacher'])->group(function () {
@@ -166,6 +170,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::get('/guardians/inactive', [GuardianController::class, 'inactive'])->name('guardians.inactive');
         Route::post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
         Route::get('/guardians/import/template', [GuardianImportController::class, 'downloadTemplate'])->name('guardians.import.template');
+        Route::post('/guardians/import/preview', [GuardianImportController::class, 'preview'])->name('guardians.import.preview');
         Route::post('/guardians/import', [GuardianImportController::class, 'import'])->name('guardians.import');
     });
 

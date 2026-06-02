@@ -255,7 +255,7 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                                     {importResults.errors.map((err, i) => (
                                         <li key={i} className="flex items-start gap-1 text-xs text-yellow-800">
                                             <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                                            Row {err.row} ({err.email}): {err.reason}
+                                            Row {err.row} ({err.name}): {err.reason}
                                         </li>
                                     ))}
                                 </ul>

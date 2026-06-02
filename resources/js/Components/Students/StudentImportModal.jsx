@@ -4,14 +4,15 @@ import { X, Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle, ArrowLe
 import { router } from '@inertiajs/react';
 import axios from 'axios';
 
+// Status config for preview table rows
 const STATUS = {
-    ready:     { label: 'Will import', bg: 'bg-green-50',  text: 'text-green-700',  badge: 'bg-green-100 text-green-700' },
-    duplicate: { label: 'Duplicate',   bg: 'bg-yellow-50', text: 'text-yellow-700', badge: 'bg-yellow-100 text-yellow-700' },
-    failed:    { label: 'Failed',      bg: 'bg-red-50',    text: 'text-red-700',    badge: 'bg-red-100 text-red-700' },
-    error:     { label: 'Error',       bg: 'bg-red-50',    text: 'text-red-700',    badge: 'bg-red-100 text-red-700' },
+    ready:     { label: 'Will import',  bg: 'bg-green-50',  text: 'text-green-700',  badge: 'bg-green-100 text-green-700' },
+    duplicate: { label: 'Duplicate',    bg: 'bg-yellow-50', text: 'text-yellow-700', badge: 'bg-yellow-100 text-yellow-700' },
+    failed:    { label: 'Failed',       bg: 'bg-red-50',    text: 'text-red-700',    badge: 'bg-red-100 text-red-700' },
+    error:     { label: 'Error',        bg: 'bg-red-50',    text: 'text-red-700',    badge: 'bg-red-100 text-red-700' },
 };
 
-export default function GuardianImportModal({ show = false, onClose }) {
+export default function StudentImportModal({ show = false, onClose }) {
     const [file, setFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
     // 'upload' | 'previewing' | 'preview' | 'importing'
@@ -49,6 +50,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
         }
     };
 
+    // Step 1 → Step 2: send file to preview endpoint, show results table
     const handlePreview = async (e) => {
         e.preventDefault();
         if (!file) return;
@@ -60,7 +62,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
         formData.append('file', file);
 
         try {
-            const response = await axios.post(route('guardians.import.preview'), formData, {
+            const response = await axios.post(route('students.import.preview'), formData, {
                 headers: { 'Content-Type': 'multipart/form-data', 'X-Requested-With': 'XMLHttpRequest' },
             });
             setPreviewRows(response.data.rows);
@@ -76,6 +78,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
         }
     };
 
+    // Step 2 confirm → re-submit file to real import endpoint
     const handleConfirm = () => {
         if (!file || readyCount === 0) return;
         setStep('importing');
@@ -83,7 +86,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
         const formData = new FormData();
         formData.append('file', file);
 
-        router.post(route('guardians.import'), formData, {
+        router.post(route('students.import'), formData, {
             forceFormData: true,
             onSuccess: () => handleClose(),
             onError: () => setStep('preview'),
@@ -109,15 +112,15 @@ export default function GuardianImportModal({ show = false, onClose }) {
                             enter="ease-out duration-300" enterFrom="opacity-0 scale-95" enterTo="opacity-100 scale-100"
                             leave="ease-in duration-200" leaveFrom="opacity-100 scale-100" leaveTo="opacity-0 scale-95"
                         >
-                            <Dialog.Panel className={`w-full transform overflow-hidden rounded-2xl bg-white p-6 text-left shadow-xl transition-all ${step === 'preview' || step === 'importing' ? 'max-w-3xl' : 'max-w-lg'}`}>
+                            <Dialog.Panel className={`w-full transform overflow-hidden rounded-2xl bg-white p-6 text-left shadow-xl transition-all ${step === 'preview' ? 'max-w-3xl' : 'max-w-lg'}`}>
                                 {/* Header */}
                                 <div className="flex items-center justify-between mb-5">
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-blue-100 rounded-lg">
-                                            <FileSpreadsheet className="w-5 h-5 text-blue-600" />
+                                        <div className="p-2 bg-orange-100 rounded-lg">
+                                            <FileSpreadsheet className="w-5 h-5 text-orange-600" />
                                         </div>
                                         <Dialog.Title className="text-lg font-semibold text-navy">
-                                            {step === 'preview' || step === 'importing' ? 'Review Before Importing' : 'Bulk Import Guardians'}
+                                            {step === 'preview' || step === 'importing' ? 'Review Before Importing' : 'Bulk Import Students'}
                                         </Dialog.Title>
                                     </div>
                                     <button onClick={handleClose} className="text-gray-400 hover:text-gray-600 transition-colors">
@@ -128,12 +131,12 @@ export default function GuardianImportModal({ show = false, onClose }) {
                                 {/* ── SCREEN 1: Upload ── */}
                                 {(step === 'upload' || step === 'previewing') && (
                                     <>
-                                        <div className="mb-5 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                                            <p className="text-sm font-medium text-blue-800 mb-1">Step 1 — Download the template</p>
-                                            <p className="text-xs text-blue-600 mb-3">
-                                                Required columns: <strong>name, email, phone_number, relationship</strong>. Optional: address, occupation.
+                                        <div className="mb-5 p-4 bg-orange-50 rounded-xl border border-orange-100">
+                                            <p className="text-sm font-medium text-orange-800 mb-1">Step 1 — Download the template</p>
+                                            <p className="text-xs text-orange-700 mb-3">
+                                                Required columns: <strong>first_name, last_name, gender, grade, guardian_phone</strong>. Optional: date_of_birth, relationship, enrollment_date, status.
                                             </p>
-                                            <a href={route('guardians.import.template')} className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors">
+                                            <a href={route('students.import.template')} className="inline-flex items-center gap-2 px-4 py-2 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors">
                                                 <Download className="w-4 h-4" /> Download Template
                                             </a>
                                         </div>
@@ -145,7 +148,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
                                                 onDragLeave={() => setIsDragging(false)}
                                                 onDrop={handleDrop}
                                                 onClick={() => fileInputRef.current?.click()}
-                                                className={`cursor-pointer border-2 border-dashed rounded-xl p-6 text-center transition-colors ${isDragging ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'}`}
+                                                className={`cursor-pointer border-2 border-dashed rounded-xl p-6 text-center transition-colors ${isDragging ? 'border-orange-400 bg-orange-50' : 'border-gray-200 hover:border-orange-300 hover:bg-gray-50'}`}
                                             >
                                                 <Upload className="w-8 h-8 text-gray-400 mx-auto mb-2" />
                                                 {file ? (
@@ -154,7 +157,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
                                                     </p>
                                                 ) : (
                                                     <>
-                                                        <p className="text-sm text-gray-600">Drag & drop your file here, or <span className="text-blue-600 font-medium">browse</span></p>
+                                                        <p className="text-sm text-gray-600">Drag & drop your file here, or <span className="text-orange-600 font-medium">browse</span></p>
                                                         <p className="text-xs text-gray-400 mt-1">Supports .xlsx and .xls files</p>
                                                     </>
                                                 )}
@@ -178,7 +181,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
                                                 <button
                                                     type="submit"
                                                     disabled={!file || step === 'previewing'}
-                                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {step === 'previewing' ? <><Loader2 className="w-4 h-4 animate-spin" /> Parsing...</> : <><Upload className="w-4 h-4" /> Preview Import</>}
                                                 </button>
@@ -214,8 +217,8 @@ export default function GuardianImportModal({ show = false, onClose }) {
                                                     <tr>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Row</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Name</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</th>
-                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Phone</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Grade</th>
+                                                        <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Guardian</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Status</th>
                                                         <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">Note</th>
                                                     </tr>
@@ -227,8 +230,8 @@ export default function GuardianImportModal({ show = false, onClose }) {
                                                             <tr key={i} className={cfg.bg}>
                                                                 <td className="px-3 py-2 text-gray-500">{row.row}</td>
                                                                 <td className="px-3 py-2 font-medium text-gray-800">{row.name}</td>
-                                                                <td className="px-3 py-2 text-gray-600">{row.email}</td>
-                                                                <td className="px-3 py-2 text-gray-600">{row.phone}</td>
+                                                                <td className="px-3 py-2 text-gray-600">{row.grade}</td>
+                                                                <td className="px-3 py-2 text-gray-600">{row.guardian_name ?? row.guardian_phone}</td>
                                                                 <td className="px-3 py-2">
                                                                     <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${cfg.badge}`}>{cfg.label}</span>
                                                                 </td>
@@ -251,7 +254,7 @@ export default function GuardianImportModal({ show = false, onClose }) {
                                                 <button
                                                     onClick={handleConfirm}
                                                     disabled={readyCount === 0 || step === 'importing'}
-                                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                                                 >
                                                     {step === 'importing' ? <><Loader2 className="w-4 h-4 animate-spin" /> Importing...</> : <><CheckCircle className="w-4 h-4" /> Confirm Import ({readyCount})</>}
                                                 </button>
@@ -267,4 +270,3 @@ export default function GuardianImportModal({ show = false, onClose }) {
         </Transition>
     );
 }
-

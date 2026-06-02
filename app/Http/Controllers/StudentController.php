@@ -69,6 +69,7 @@ class StudentController extends Controller
             'students' => $students,
             'grades' => $grades,
             'filters' => $request->only(['search', 'grade_id', 'gender', 'status']),
+            'importResults' => session('importResults'),
         ]);
     }
 

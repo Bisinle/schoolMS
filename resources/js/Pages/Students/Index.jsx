@@ -1,9 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState, useMemo, useCallback } from 'react';
-import { Plus, Users, Eye, Edit, Trash2, FileText, Mail, Phone, User, Calendar, GraduationCap, UserX, UserCheck } from 'lucide-react';
+import { Plus, Upload, Users, Eye, Edit, Trash2, FileText, Mail, Phone, User, Calendar, GraduationCap, UserX, UserCheck, CheckCircle, AlertCircle } from 'lucide-react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 import GenerateReportModal from '@/Components/Students/GenerateReportModal';
+import StudentImportModal from '@/Components/Students/StudentImportModal';
 import useFilters from '@/Hooks/useFilters';
 import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
@@ -168,7 +169,7 @@ function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate
     );
 }
 
-export default function StudentsIndex({ students, grades, filters: initialFilters = {}, auth }) {
+export default function StudentsIndex({ students, grades, filters: initialFilters = {}, auth, importResults }) {
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/students',
@@ -186,6 +187,8 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
     const [selectedStudent, setSelectedStudent] = useState(null);
     const [showReportModal, setShowReportModal] = useState(false);
     const [selectedStudentForReport, setSelectedStudentForReport] = useState(null);
+    const [showImportModal, setShowImportModal] = useState(false);
+    const [showResultsBanner, setShowResultsBanner] = useState(!!importResults);
 
     // Cumulative loading for mobile view
     const {
@@ -271,6 +274,35 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
             <Head title="Students" />
 
             <div className="space-y-6">
+                {/* Import Results Banner */}
+                {importResults && showResultsBanner && (
+                    <div className={`rounded-xl border p-4 flex items-start gap-3 ${
+                        importResults.failed === 0 && importResults.skipped === 0
+                            ? 'bg-green-50 border-green-200'
+                            : 'bg-yellow-50 border-yellow-200'
+                    }`}>
+                        <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1 text-sm">
+                            <p className="font-semibold text-gray-800">
+                                Import complete — {importResults.imported} student{importResults.imported !== 1 ? 's' : ''} imported
+                                {importResults.skipped > 0 && `, ${importResults.skipped} skipped (duplicate)`}
+                                {importResults.failed > 0 && `, ${importResults.failed} failed`}
+                            </p>
+                            {importResults.errors && importResults.errors.length > 0 && (
+                                <ul className="mt-2 space-y-0.5">
+                                    {importResults.errors.map((err, i) => (
+                                        <li key={i} className="flex items-start gap-1 text-xs text-yellow-800">
+                                            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                                            Row {err.row} ({err.name}): {err.reason}
+                                        </li>
+                                    ))}
+                                </ul>
+                            )}
+                        </div>
+                        <button onClick={() => setShowResultsBanner(false)} className="text-gray-400 hover:text-gray-600 text-lg leading-none">&times;</button>
+                    </div>
+                )}
+
                 {/* Header */}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                     <div className="flex items-center space-x-3">
@@ -282,13 +314,22 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                     </div>
 
                     {auth.user.role === 'admin' && (
-                        <Link
-                            href={route('students.create')}
-                            className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
-                        >
-                            <Plus className="w-5 h-5 mr-2" />
-                            Add Student
-                        </Link>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={() => setShowImportModal(true)}
+                                className="inline-flex items-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm"
+                            >
+                                <Upload className="w-4 h-4 mr-2" />
+                                Bulk Import
+                            </button>
+                            <Link
+                                href={route('students.create')}
+                                className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
+                            >
+                                <Plus className="w-5 h-5 mr-2" />
+                                Add Student
+                            </Link>
+                        </div>
                     )}
                 </div>
 
@@ -499,6 +540,11 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                 student={selectedStudentForReport}
                 show={showReportModal}
                 onClose={() => setShowReportModal(false)}
+            />
+
+            <StudentImportModal
+                show={showImportModal}
+                onClose={() => setShowImportModal(false)}
             />
         </AuthenticatedLayout>
     );
