@@ -481,6 +481,9 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                                 <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                                     Recorded By
                                                 </th>
+                                                <th className="px-4 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
+                                                    Notes
+                                                </th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200">
@@ -503,6 +506,12 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                                     </td>
                                                     <td className="px-4 py-3 text-sm text-gray-600">
                                                         {payment.recorded_by?.name || 'System'}
+                                                    </td>
+                                                    <td className="px-4 py-3 text-sm text-gray-500 max-w-xs">
+                                                        {payment.notes
+                                                            ? <span className="italic">{payment.notes}</span>
+                                                            : <span className="text-gray-300">—</span>
+                                                        }
                                                     </td>
                                                 </tr>
                                             ))}
@@ -557,6 +566,12 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                                         <span className="text-gray-900 font-semibold text-xs">
                                                             {payment.recorded_by.name}
                                                         </span>
+                                                    </div>
+                                                )}
+                                                {payment.notes && (
+                                                    <div className="py-2 px-3 bg-amber-50 rounded border border-amber-200">
+                                                        <p className="text-xs text-amber-700 font-semibold mb-0.5">Notes:</p>
+                                                        <p className="text-sm text-gray-800 italic">{payment.notes}</p>
                                                     </div>
                                                 )}
                                             </div>
