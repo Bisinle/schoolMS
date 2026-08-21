@@ -201,7 +201,7 @@ export default function Edit({ practice, students, surahs }) {
                                     <select value={data.surah_from} onChange={handleSurahFromChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent">
                                         <option value="">Select Surah</option>
                                         {surahs.map((surah) => (
-                                            <option key={surah.id} value={surah.id}>{surah.id}. {surah.name_english} ({surah.name_arabic})</option>
+                                            <option key={surah.id} value={surah.id}>{surah.id}. {surah.name_simple} ({surah.name_arabic})</option>
                                         ))}
                                     </select>
                                 </div>
@@ -210,7 +210,7 @@ export default function Edit({ practice, students, surahs }) {
                                     <select value={data.surah_to} onChange={handleSurahToChange} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent">
                                         <option value="">Select Surah</option>
                                         {surahs.map((surah) => (
-                                            <option key={surah.id} value={surah.id}>{surah.id}. {surah.name_english} ({surah.name_arabic})</option>
+                                            <option key={surah.id} value={surah.id}>{surah.id}. {surah.name_simple} ({surah.name_arabic})</option>
                                         ))}
                                     </select>
                                 </div>

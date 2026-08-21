@@ -17,7 +17,14 @@ class StudentFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'admission_number' => fake()->unique()->numerify('ADM-#####'),
+            'first_name' => fake()->firstName(),
+            'last_name' => fake()->lastName(),
+            'gender' => fake()->randomElement(['male', 'female']),
+            'date_of_birth' => fake()->dateTimeBetween('-15 years', '-5 years'),
+            'guardian_id' => GuardianFactory::new(),
+            'enrollment_date' => now()->subMonths(6),
+            'status' => 'active',
         ];
     }
 }

@@ -82,8 +82,8 @@ class QuranTrackingController extends Controller
                 // Calculate total verses
                 $latestTracking->calculated_total_verses = $this->quranApi->calculateTotalVerses(
                     $latestTracking->surah_from,
-                    $latestTracking->verse_from,
                     $latestTracking->surah_to,
+                    $latestTracking->verse_from,
                     $latestTracking->verse_to
                 );
             }
@@ -191,8 +191,8 @@ class QuranTrackingController extends Controller
         // Calculate total verses for display message
         $totalVerses = $this->quranApi->calculateTotalVerses(
             $validated['surah_from'],
-            $validated['verse_from'],
             $validated['surah_to'],
+            $validated['verse_from'],
             $validated['verse_to']
         );
 
@@ -259,8 +259,8 @@ class QuranTrackingController extends Controller
         // Calculate total verses for this record
         $quranTracking->calculated_total_verses = $this->quranApi->calculateTotalVerses(
             $quranTracking->surah_from,
-            $quranTracking->verse_from,
             $quranTracking->surah_to,
+            $quranTracking->verse_from,
             $quranTracking->verse_to
         );
 
@@ -360,8 +360,8 @@ class QuranTrackingController extends Controller
         // Calculate total verses for display message
         $totalVerses = $this->quranApi->calculateTotalVerses(
             $validated['surah_from'],
-            $validated['verse_from'],
             $validated['surah_to'],
+            $validated['verse_from'],
             $validated['verse_to']
         );
 
@@ -427,8 +427,8 @@ class QuranTrackingController extends Controller
             if (!$record->page_from || !$record->page_to) {
                 $pageRange = $this->quranApi->calculatePageRange(
                     $record->surah_from,
-                    $record->verse_from,
                     $record->surah_to,
+                    $record->verse_from,
                     $record->verse_to
                 );
 
@@ -455,8 +455,8 @@ class QuranTrackingController extends Controller
             // Calculate total verses (temporary attribute for display only)
             $record->calculated_total_verses = $this->quranApi->calculateTotalVerses(
                 $record->surah_from,
-                $record->verse_from,
                 $record->surah_to,
+                $record->verse_from,
                 $record->verse_to
             );
 

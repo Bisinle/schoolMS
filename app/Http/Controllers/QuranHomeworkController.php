@@ -116,6 +116,8 @@ class QuranHomeworkController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', QuranHomework::class);
+
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'assigned_date' => 'required|date',
@@ -156,6 +158,8 @@ class QuranHomeworkController extends Controller
      */
     public function show(QuranHomework $quranHomework)
     {
+        $this->authorize('view', $quranHomework);
+
         $quranHomework->load(['student.grade', 'teacher']);
 
         // Get surah names from API
@@ -174,6 +178,8 @@ class QuranHomeworkController extends Controller
      */
     public function edit(QuranHomework $quranHomework)
     {
+        $this->authorize('update', $quranHomework);
+
         $user = auth()->user();
 
         // Get students
@@ -209,6 +215,8 @@ class QuranHomeworkController extends Controller
      */
     public function update(Request $request, QuranHomework $quranHomework)
     {
+        $this->authorize('update', $quranHomework);
+
         $validated = $request->validate([
             'student_id' => 'required|exists:students,id',
             'assigned_date' => 'required|date',
@@ -246,6 +254,8 @@ class QuranHomeworkController extends Controller
      */
     public function destroy(QuranHomework $quranHomework)
     {
+        $this->authorize('delete', $quranHomework);
+
         $quranHomework->delete();
 
         return redirect()->route('quran-homework.index')
@@ -257,6 +267,8 @@ class QuranHomeworkController extends Controller
      */
     public function markComplete(Request $request, QuranHomework $quranHomework)
     {
+        $this->authorize('update', $quranHomework);
+
         $validated = $request->validate([
             'completion_notes' => 'nullable|string|max:1000',
         ]);

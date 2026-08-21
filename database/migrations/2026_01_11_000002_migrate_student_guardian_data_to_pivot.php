@@ -26,8 +26,8 @@ return new class extends Migration
                 1 as can_receive_invoices,
                 1 as can_pickup,
                 1 as emergency_contact,
-                NOW(),
-                NOW()
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
             FROM students s
             INNER JOIN guardians g ON s.guardian_id = g.id
             WHERE s.guardian_id IS NOT NULL

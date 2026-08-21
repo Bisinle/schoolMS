@@ -75,7 +75,7 @@ class QuranHomePracticeController extends Controller
             ? $user->guardian->students
             : Student::where('school_id', $user->school_id)->get();
 
-        $surahs = $this->quranApiService->getAllSurahs();
+        $surahs = $this->quranApiService->getSurahs();
 
         return Inertia::render('Quran/HomePractice/Create', [
             'students' => $students,
@@ -88,6 +88,8 @@ class QuranHomePracticeController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', QuranHomePractice::class);
+
         $validated = $request->validate(QuranHomePractice::validationRules());
 
         $user = auth()->user();
@@ -124,12 +126,7 @@ class QuranHomePracticeController extends Controller
      */
     public function show(QuranHomePractice $quranHomePractice)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'guardian' && $quranHomePractice->guardian_id !== $user->guardian->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('view', $quranHomePractice);
 
         $quranHomePractice->load(['student.grade', 'guardian.user']);
 
@@ -143,18 +140,15 @@ class QuranHomePracticeController extends Controller
      */
     public function edit(QuranHomePractice $quranHomePractice)
     {
-        $user = auth()->user();
+        $this->authorize('update', $quranHomePractice);
 
-        // Authorization check
-        if ($user->role === 'guardian' && $quranHomePractice->guardian_id !== $user->guardian->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $user = auth()->user();
 
         $students = $user->role === 'guardian'
             ? $user->guardian->students
             : Student::where('school_id', $user->school_id)->get();
 
-        $surahs = $this->quranApiService->getAllSurahs();
+        $surahs = $this->quranApiService->getSurahs();
 
         return Inertia::render('Quran/HomePractice/Edit', [
             'practice' => $quranHomePractice,
@@ -168,12 +162,9 @@ class QuranHomePracticeController extends Controller
      */
     public function update(Request $request, QuranHomePractice $quranHomePractice)
     {
-        $user = auth()->user();
+        $this->authorize('update', $quranHomePractice);
 
-        // Authorization check
-        if ($user->role === 'guardian' && $quranHomePractice->guardian_id !== $user->guardian->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $user = auth()->user();
 
         $validated = $request->validate(QuranHomePractice::validationRules());
 
@@ -197,12 +188,7 @@ class QuranHomePracticeController extends Controller
      */
     public function destroy(QuranHomePractice $quranHomePractice)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'guardian' && $quranHomePractice->guardian_id !== $user->guardian->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('delete', $quranHomePractice);
 
         $quranHomePractice->delete();
 

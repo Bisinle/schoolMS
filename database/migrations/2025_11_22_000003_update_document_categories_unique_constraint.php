@@ -8,19 +8,16 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // Check if the unique constraint exists
-        $indexes = \DB::select("SHOW INDEX FROM document_categories WHERE Key_name = 'document_categories_slug_unique'");
-
-        if (!empty($indexes)) {
+        // Check if the unique constraint exists (driver-agnostic, unlike the raw
+        // "SHOW INDEX" SQL this replaced, which is MySQL-only and breaks SQLite)
+        if (Schema::hasIndex('document_categories', 'document_categories_slug_unique')) {
             Schema::table('document_categories', function (Blueprint $table) {
                 $table->dropUnique('document_categories_slug_unique');
             });
         }
 
         // Check if the composite unique constraint already exists
-        $compositeIndexes = \DB::select("SHOW INDEX FROM document_categories WHERE Key_name = 'document_categories_slug_school_unique'");
-
-        if (empty($compositeIndexes)) {
+        if (!Schema::hasIndex('document_categories', 'document_categories_slug_school_unique')) {
             Schema::table('document_categories', function (Blueprint $table) {
                 $table->unique(['slug', 'school_id'], 'document_categories_slug_school_unique');
             });

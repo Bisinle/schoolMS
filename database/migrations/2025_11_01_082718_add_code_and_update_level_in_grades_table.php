@@ -23,14 +23,25 @@ return new class extends Migration
             });
 
             // Copy existing data
-            DB::statement('INSERT INTO grades_temp (id, name, code, level, capacity, description, status, created_at, updated_at) 
+            DB::statement('INSERT INTO grades_temp (id, name, code, level, capacity, description, status, created_at, updated_at)
                           SELECT id, name, NULL, "LOWER PRIMARY", capacity, description, status, created_at, updated_at FROM grades');
 
-            // Drop old table
+            // Drop old table (this also drops its grades_name_unique index, so the
+            // name is free again — recreating it on grades_temp before this point
+            // would collide, since SQLite index names are unique per-database, not
+            // per-table)
             Schema::dropIfExists('grades');
 
             // Rename temp table
             Schema::rename('grades_temp', 'grades');
+
+            // Recreate the unique constraint under the name later migrations
+            // (e.g. update_grades_unique_constraint) expect. SQLite keeps an
+            // index's name as of creation time, not the table's current name, so
+            // this must be added after the rename, not on grades_temp directly.
+            Schema::table('grades', function (Blueprint $table) {
+                $table->unique('name', 'grades_name_unique');
+            });
         } else {
             // For MySQL/PostgreSQL
             Schema::table('grades', function (Blueprint $table) {
@@ -62,11 +73,15 @@ return new class extends Migration
                 $table->timestamps();
             });
 
-            DB::statement('INSERT INTO grades_temp (id, name, level, capacity, description, status, created_at, updated_at) 
+            DB::statement('INSERT INTO grades_temp (id, name, level, capacity, description, status, created_at, updated_at)
                           SELECT id, name, 1, capacity, description, status, created_at, updated_at FROM grades');
 
             Schema::dropIfExists('grades');
             Schema::rename('grades_temp', 'grades');
+
+            Schema::table('grades', function (Blueprint $table) {
+                $table->unique('name', 'grades_name_unique');
+            });
         } else {
             Schema::table('grades', function (Blueprint $table) {
                 $table->dropColumn(['code', 'level']);

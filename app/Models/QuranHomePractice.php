@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Carbon\Carbon;
 
 class QuranHomePractice extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToSchool;
 
     protected $table = 'quran_home_practice';
 

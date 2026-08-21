@@ -8,8 +8,8 @@ use Illuminate\Support\Facades\Log;
 
 class QuranApiService
 {
-    private string $clientId;
-    private string $clientSecret;
+    private ?string $clientId;
+    private ?string $clientSecret;
     private string $authUrl;
     private string $apiBaseUrl;
     private const CACHE_TTL = 86400; // 24 hours
@@ -39,9 +39,14 @@ class QuranApiService
     {
         return Cache::remember('quran_api_access_token', self::TOKEN_TTL - 60, function() {
             try {
+                if (!$this->clientId || !$this->clientSecret) {
+                    throw new \Exception('Quran API credentials are not configured');
+                }
+
                 // Use HTTP Basic Auth (client_secret_basic method)
                 $response = Http::withBasicAuth($this->clientId, $this->clientSecret)
                     ->asForm()
+                    ->timeout(10)
                     ->post($this->authUrl . '/oauth2/token', [
                         'grant_type' => 'client_credentials',
                         'scope' => 'content', // Required for accessing Quran content API
@@ -81,7 +86,7 @@ class QuranApiService
             $response = Http::withHeaders([
                 'x-auth-token' => $token,
                 'x-client-id' => $this->clientId,
-            ])->get($this->apiBaseUrl . $endpoint, $params);
+            ])->timeout(10)->get($this->apiBaseUrl . $endpoint, $params);
 
             if ($response->successful()) {
                 return $response->json();

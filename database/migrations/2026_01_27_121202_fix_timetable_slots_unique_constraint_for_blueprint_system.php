@@ -3,7 +3,6 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 return new class extends Migration
@@ -37,10 +36,9 @@ return new class extends Migration
     public function up(): void
     {
         try {
-            // Check if the old constraint exists
-            $indexes = DB::select("SHOW INDEX FROM timetable_slots WHERE Key_name = 'unique_slot_position'");
-
-            if (!empty($indexes)) {
+            // Check if the old constraint exists (driver-agnostic, unlike the raw
+            // "SHOW INDEX" SQL this replaced, which is MySQL-only and breaks SQLite)
+            if (Schema::hasIndex('timetable_slots', 'unique_slot_position')) {
                 Log::info('Dropping old unique_slot_position constraint from timetable_slots');
 
                 // Drop the problematic unique constraint
@@ -60,9 +58,7 @@ return new class extends Migration
         try {
             // Add a composite index for performance (not unique)
             // This helps with queries but doesn't enforce uniqueness
-            $newIndexes = DB::select("SHOW INDEX FROM timetable_slots WHERE Key_name = 'idx_slot_position_lookup'");
-
-            if (empty($newIndexes)) {
+            if (!Schema::hasIndex('timetable_slots', 'idx_slot_position_lookup')) {
                 Log::info('Creating new composite index idx_slot_position_lookup');
 
                 Schema::table('timetable_slots', function (Blueprint $table) {
@@ -84,9 +80,7 @@ return new class extends Migration
 
         try {
             // Add another index for blueprint-generated slots (using sequence_order)
-            $sequenceIndexes = DB::select("SHOW INDEX FROM timetable_slots WHERE Key_name = 'idx_slot_sequence_lookup'");
-
-            if (empty($sequenceIndexes)) {
+            if (!Schema::hasIndex('timetable_slots', 'idx_slot_sequence_lookup')) {
                 Log::info('Creating new composite index idx_slot_sequence_lookup');
 
                 Schema::table('timetable_slots', function (Blueprint $table) {

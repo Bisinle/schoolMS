@@ -190,7 +190,7 @@ export default function Create({ students, surahs }) {
                                         <option value="">Select Surah</option>
                                         {surahs.map((surah) => (
                                             <option key={surah.id} value={surah.id}>
-                                                {surah.id}. {surah.name_english} ({surah.name_arabic})
+                                                {surah.id}. {surah.name_simple} ({surah.name_arabic})
                                             </option>
                                         ))}
                                     </select>
@@ -210,7 +210,7 @@ export default function Create({ students, surahs }) {
                                         <option value="">Select Surah</option>
                                         {surahs.map((surah) => (
                                             <option key={surah.id} value={surah.id}>
-                                                {surah.id}. {surah.name_english} ({surah.name_arabic})
+                                                {surah.id}. {surah.name_simple} ({surah.name_arabic})
                                             </option>
                                         ))}
                                     </select>

@@ -478,20 +478,24 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::get('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'show'])->name('quran-homework.show');
         });
 
-        // Quran Home Practice Routes (guardians can CRUD their own, teachers/admins can view)
-        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
-            Route::get('/quran-home-practice', [QuranHomePracticeController::class, 'index'])->name('quran-home-practice.index');
-            Route::get('/quran-home-practice/{quranHomePractice}', [QuranHomePracticeController::class, 'show'])->name('quran-home-practice.show');
-            Route::get('/api/quran-home-practice/student/{student}/stats', [QuranHomePracticeController::class, 'studentStats'])->name('quran-home-practice.student-stats');
-        });
-
         // Guardian-only routes for creating/editing home practice
+        // NOTE: this group must be registered before the show route below —
+        // /quran-home-practice/create is a literal path but Laravel matches
+        // routes in registration order, so if the wildcard {quranHomePractice}
+        // show route came first it would swallow "create" as an id and 404.
         Route::middleware(['role:guardian'])->group(function () {
             Route::get('/quran-home-practice/create', [QuranHomePracticeController::class, 'create'])->name('quran-home-practice.create');
             Route::post('/quran-home-practice', [QuranHomePracticeController::class, 'store'])->name('quran-home-practice.store');
             Route::get('/quran-home-practice/{quranHomePractice}/edit', [QuranHomePracticeController::class, 'edit'])->name('quran-home-practice.edit');
             Route::put('/quran-home-practice/{quranHomePractice}', [QuranHomePracticeController::class, 'update'])->name('quran-home-practice.update');
             Route::delete('/quran-home-practice/{quranHomePractice}', [QuranHomePracticeController::class, 'destroy'])->name('quran-home-practice.destroy');
+        });
+
+        // Quran Home Practice Routes (guardians can CRUD their own, teachers/admins can view)
+        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+            Route::get('/quran-home-practice', [QuranHomePracticeController::class, 'index'])->name('quran-home-practice.index');
+            Route::get('/quran-home-practice/{quranHomePractice}', [QuranHomePracticeController::class, 'show'])->name('quran-home-practice.show');
+            Route::get('/api/quran-home-practice/student/{student}/stats', [QuranHomePracticeController::class, 'studentStats'])->name('quran-home-practice.student-stats');
         });
 
         // Quran Schedule Routes (admin and teacher only)

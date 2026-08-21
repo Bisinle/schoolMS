@@ -71,6 +71,8 @@ class QuranScheduleController extends Controller
      */
     public function store(Request $request)
     {
+        $this->authorize('create', QuranSchedule::class);
+
         $validated = $request->validate(QuranSchedule::validationRules());
 
         $user = auth()->user();
@@ -101,12 +103,7 @@ class QuranScheduleController extends Controller
      */
     public function show(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('view', $quranSchedule);
 
         $quranSchedule->load(['student.grade', 'teacher']);
 
@@ -127,12 +124,9 @@ class QuranScheduleController extends Controller
      */
     public function edit(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
+        $this->authorize('update', $quranSchedule);
 
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $user = auth()->user();
 
         $students = Student::where('school_id', $user->school_id)->get();
 
@@ -147,12 +141,7 @@ class QuranScheduleController extends Controller
      */
     public function update(Request $request, QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('update', $quranSchedule);
 
         $validated = $request->validate(QuranSchedule::validationRules());
 
@@ -181,12 +170,7 @@ class QuranScheduleController extends Controller
      */
     public function deactivate(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('update', $quranSchedule);
 
         $quranSchedule->deactivate();
 
@@ -199,12 +183,7 @@ class QuranScheduleController extends Controller
      */
     public function activate(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('update', $quranSchedule);
 
         $quranSchedule->activate();
 
@@ -217,12 +196,7 @@ class QuranScheduleController extends Controller
      */
     public function destroy(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('delete', $quranSchedule);
 
         $quranSchedule->delete();
 
