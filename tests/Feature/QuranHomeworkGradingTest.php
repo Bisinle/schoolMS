@@ -50,6 +50,48 @@ class QuranHomeworkGradingTest extends TestCase
         ]);
     }
 
+    /**
+     * A re-grade that supplies neither fluency_rating nor tajweed_rating
+     * must not leave a prior grading pass's QuranAssessment row behind with
+     * stale values — grade() must delete it, mirroring markUngraded().
+     */
+    public function test_regrading_without_ratings_deletes_the_stale_assessment(): void
+    {
+        $this->withoutVite();
+
+        $school = School::factory()->create();
+        $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
+        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $student = Student::factory()->create(['school_id' => $school->id]);
+
+        $homework = QuranHomework::factory()->create([
+            'school_id' => $school->id,
+            'student_id' => $student->id,
+            'teacher_id' => $teacherUser->id,
+            'status' => 'pending',
+        ]);
+
+        // First grading pass: leaves ratings behind.
+        $this->actingAs($teacherUser)->post(route('quran-homework.grade', $homework->id), [
+            'quality_rating' => 'excellent',
+            'fluency_rating' => 5,
+            'tajweed_rating' => 4,
+        ]);
+        $this->assertNotNull($homework->assessment()->first());
+
+        // Re-grade with no ratings supplied at all.
+        $response = $this->actingAs($teacherUser)->post(route('quran-homework.grade', $homework->id), [
+            'quality_rating' => 'moderate',
+        ]);
+
+        $response->assertRedirect();
+
+        $homework->refresh();
+        $this->assertSame('graded', $homework->status);
+        $this->assertSame('moderate', $homework->quality_rating);
+        $this->assertNull($homework->assessment()->first());
+    }
+
     public function test_marking_absent_clears_any_existing_assessment_and_quality_rating(): void
     {
         $this->withoutVite();

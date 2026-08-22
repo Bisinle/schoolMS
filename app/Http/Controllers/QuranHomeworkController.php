@@ -163,6 +163,14 @@ class QuranHomeworkController extends Controller
     {
         $this->authorize('view', $quranHomework);
 
+        $user = $request->user();
+        if ($user->isGuardian()) {
+            $guardian = $user->guardian;
+            if (! $guardian || ! $guardian->students()->where('students.id', $quranHomework->student_id)->exists()) {
+                abort(403, "You can only view your own children's Quran homework.");
+            }
+        }
+
         $quranHomework->load(['student', 'teacher', 'schedule', 'assessment']);
 
         $surahs = $this->quranApi->getSurahs();
@@ -284,6 +292,10 @@ class QuranHomeworkController extends Controller
                 'mistakes_count' => $validated['mistakes_count'] ?? 0,
                 'assessment_notes' => $validated['assessment_notes'] ?? null,
             ]);
+        } elseif ($quranHomework->assessment) {
+            // A re-grade that supplies neither rating must not leave a
+            // stale assessment from a prior grading pass behind.
+            $quranHomework->assessment()->delete();
         }
 
         return back()->with('success', 'Homework graded successfully!');

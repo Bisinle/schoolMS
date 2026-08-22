@@ -122,6 +122,61 @@ class QuranHomeworkChainingTest extends TestCase
         ]);
     }
 
+    /**
+     * store()'s validate() rules don't accept surah_from/verse_from at all
+     * today — the From point is only ever derived server-side via
+     * deriveFromPoint(). This locks in that invariant explicitly (rather
+     * than relying on "the field isn't in the validate array" as implicit,
+     * easily-regressed protection): even if a client posts a hostile/wrong
+     * surah_from/verse_from alongside the real fields, the stored value
+     * must still be the schedule-derived one, not the posted one.
+     */
+    public function test_client_supplied_surah_from_and_verse_from_are_ignored(): void
+    {
+        $this->withoutVite();
+        $this->fakeQuranApi();
+
+        $school = School::factory()->create();
+        $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
+        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $student = Student::factory()->create(['school_id' => $school->id]);
+
+        $schedule = QuranSchedule::factory()->create([
+            'school_id' => $school->id,
+            'student_id' => $student->id,
+            'teacher_id' => $teacherUser->id,
+            'surah_from' => 2,
+            'verse_from' => 1,
+            'surah_to' => 2,
+            'verse_to' => 286,
+        ]);
+
+        $response = $this->actingAs($teacherUser)->post(route('quran-homework.store'), [
+            'student_id' => $student->id,
+            'reading_type' => 'new_learning',
+            'surah_from' => 50,
+            'verse_from' => 99,
+            'surah_to' => 2,
+            'verse_to' => 10,
+        ]);
+
+        $response->assertRedirect();
+
+        $this->assertDatabaseHas('quran_homework', [
+            'student_id' => $student->id,
+            'quran_schedule_id' => $schedule->id,
+            'surah_from' => 2,
+            'verse_from' => 1,
+            'surah_to' => 2,
+            'verse_to' => 10,
+        ]);
+        $this->assertDatabaseMissing('quran_homework', [
+            'student_id' => $student->id,
+            'surah_from' => 50,
+            'verse_from' => 99,
+        ]);
+    }
+
     public function test_homework_creation_is_blocked_without_an_active_schedule(): void
     {
         $this->withoutVite();
