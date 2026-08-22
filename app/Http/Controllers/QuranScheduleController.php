@@ -107,15 +107,13 @@ class QuranScheduleController extends Controller
 
         $quranSchedule->load(['student.grade', 'teacher']);
 
-        // Get student's tracking records since schedule start
-        $trackingRecords = $quranSchedule->student->quranTracking()
-            ->where('date', '>=', $quranSchedule->start_date)
-            ->orderBy('date', 'desc')
+        $homeworkRecords = $quranSchedule->homework()
+            ->orderBy('assigned_date', 'desc')
             ->get();
 
         return Inertia::render('Quran/Schedule/Show', [
             'schedule' => $quranSchedule,
-            'trackingRecords' => $trackingRecords,
+            'homeworkRecords' => $homeworkRecords,
         ]);
     }
 

@@ -49,9 +49,18 @@ class QuranHomeworkObserver
                 $model->page_to = $metrics['page_to'];
             }
 
-            $model->pages_memorized = $metrics['pages_memorized'];
-            $model->surahs_memorized = $metrics['surahs_memorized'];
-            $model->juz_memorized = $metrics['juz_memorized'];
+            // Only compute these metrics if they haven't been explicitly set (i.e., if they're still 0/default)
+            if (empty($model->pages_memorized)) {
+                $model->pages_memorized = $metrics['pages_memorized'];
+            }
+            if (empty($model->surahs_memorized)) {
+                $model->surahs_memorized = $metrics['surahs_memorized'];
+            }
+            if (empty($model->juz_memorized)) {
+                $model->juz_memorized = $metrics['juz_memorized'];
+            }
+
+            // Always set the structural ranges
             $model->juz_from = $metrics['juz_from'];
             $model->juz_to = $metrics['juz_to'];
             $model->hizb_from = $metrics['hizb_from'];
