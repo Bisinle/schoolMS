@@ -9,6 +9,7 @@ use App\Models\Student;
 use App\Models\Teacher;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class QuranScheduleProgressTest extends TestCase
@@ -29,24 +30,24 @@ class QuranScheduleProgressTest extends TestCase
             'surah_from' => 1, 'verse_from' => 1, 'surah_to' => 1, 'verse_to' => 7,
         ]);
 
-        QuranHomework::factory()->create([
+        $graded = QuranHomework::factory()->create([
             'school_id' => $school->id,
             'student_id' => $student->id,
             'teacher_id' => $teacherUser->id,
             'quran_schedule_id' => $schedule->id,
             'status' => 'graded',
-            'pages_memorized' => 3,
         ]);
+        DB::table('quran_homework')->where('id', $graded->id)->update(['pages_memorized' => 3]);
 
         // Pending — must not count.
-        QuranHomework::factory()->create([
+        $pending = QuranHomework::factory()->create([
             'school_id' => $school->id,
             'student_id' => $student->id,
             'teacher_id' => $teacherUser->id,
             'quran_schedule_id' => $schedule->id,
             'status' => 'pending',
-            'pages_memorized' => 5,
         ]);
+        DB::table('quran_homework')->where('id', $pending->id)->update(['pages_memorized' => 5]);
 
         $this->actingAs($teacherUser);
         $this->assertSame(3, $schedule->fresh()->current_progress);
