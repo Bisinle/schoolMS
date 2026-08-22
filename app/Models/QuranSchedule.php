@@ -3,9 +3,10 @@
 namespace App\Models;
 
 use App\Models\Traits\BelongsToSchool;
+use App\Services\QuranTrackingCalculator;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class QuranSchedule extends Model
 {
@@ -15,28 +16,26 @@ class QuranSchedule extends Model
         'student_id',
         'teacher_id',
         'school_id',
-        'schedule_type',
-        'target_pages_per_period',
-        'target_verses_per_period',
+        'surah_from',
+        'verse_from',
+        'surah_to',
+        'verse_to',
         'start_date',
-        'expected_completion_date',
-        'target_total_pages',
+        'end_date',
         'is_active',
         'notes',
     ];
 
     protected $casts = [
         'start_date' => 'date',
-        'expected_completion_date' => 'date',
+        'end_date' => 'date',
         'is_active' => 'boolean',
-        'target_pages_per_period' => 'integer',
-        'target_verses_per_period' => 'integer',
-        'target_total_pages' => 'integer',
+        'surah_from' => 'integer',
+        'verse_from' => 'integer',
+        'surah_to' => 'integer',
+        'verse_to' => 'integer',
     ];
 
-    /**
-     * Relationships
-     */
     public function student()
     {
         return $this->belongsTo(Student::class);
@@ -52,9 +51,11 @@ class QuranSchedule extends Model
         return $this->belongsTo(School::class);
     }
 
-    /**
-     * Scopes
-     */
+    public function homework()
+    {
+        return $this->hasMany(QuranHomework::class);
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -70,25 +71,6 @@ class QuranSchedule extends Model
         return $query->where('student_id', $studentId);
     }
 
-    public function scopeScheduleType($query, $type)
-    {
-        return $query->where('schedule_type', $type);
-    }
-
-    /**
-     * Computed Attributes
-     */
-    public function getScheduleTypeLabelAttribute()
-    {
-        $labels = [
-            'daily' => 'Daily',
-            'weekly' => 'Weekly',
-            'monthly' => 'Monthly',
-        ];
-
-        return $labels[$this->schedule_type] ?? 'Unknown';
-    }
-
     public function getDaysElapsedAttribute()
     {
         return $this->start_date->diffInDays(Carbon::now());
@@ -96,48 +78,59 @@ class QuranSchedule extends Model
 
     public function getDaysRemainingAttribute()
     {
-        if (!$this->expected_completion_date) {
+        if (! $this->end_date) {
             return null;
         }
 
-        $remaining = Carbon::now()->diffInDays($this->expected_completion_date, false);
+        $remaining = Carbon::now()->diffInDays($this->end_date, false);
+
         return $remaining > 0 ? $remaining : 0;
     }
 
     public function getIsOverdueAttribute()
     {
-        if (!$this->expected_completion_date) {
+        if (! $this->end_date) {
             return false;
         }
 
-        return Carbon::now()->isAfter($this->expected_completion_date);
+        return Carbon::now()->isAfter($this->end_date);
+    }
+
+    /**
+     * Computed, not stored — derived from the verse range via the same
+     * page-mapping infra Homework uses, so it can never drift from it.
+     */
+    public function getTargetTotalPagesAttribute()
+    {
+        $calculator = app(QuranTrackingCalculator::class);
+        $pages = $calculator->derivePagesFromVerses($this->surah_from, $this->verse_from, $this->surah_to, $this->verse_to);
+
+        if (! $pages) {
+            return null;
+        }
+
+        return $calculator->computePages($pages[0], $pages[1]);
     }
 
     public function getProgressPercentageAttribute()
     {
-        if (!$this->target_total_pages) {
+        $target = $this->target_total_pages;
+
+        if (! $target) {
             return 0;
         }
 
-        // Get student's total pages memorized
-        $totalMemorized = $this->student->quranTracking()
-            ->where('date', '>=', $this->start_date)
-            ->sum('pages_memorized');
-
-        return min(100, round(($totalMemorized / $this->target_total_pages) * 100));
+        return min(100, round(($this->current_progress / $target) * 100));
     }
 
     public function getCurrentProgressAttribute()
     {
-        // Get student's total pages memorized since schedule start
-        return $this->student->quranTracking()
-            ->where('date', '>=', $this->start_date)
-            ->sum('pages_memorized');
+        return $this->homework()->where('status', 'graded')->sum('pages_memorized');
     }
 
     public function getStatusBadgeAttribute()
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return 'inactive';
         }
 
@@ -158,9 +151,6 @@ class QuranSchedule extends Model
         }
     }
 
-    /**
-     * Helper Methods
-     */
     public function deactivate()
     {
         $this->update(['is_active' => false]);
@@ -168,7 +158,6 @@ class QuranSchedule extends Model
 
     public function activate()
     {
-        // Deactivate other active schedules for this student
         self::where('student_id', $this->student_id)
             ->where('id', '!=', $this->id)
             ->update(['is_active' => false]);
@@ -176,33 +165,26 @@ class QuranSchedule extends Model
         $this->update(['is_active' => true]);
     }
 
-    /**
-     * Validation Rules
-     */
     public static function validationRules()
     {
         return [
             'student_id' => 'required|exists:students,id',
-            'schedule_type' => 'required|in:daily,weekly,monthly',
-            'target_pages_per_period' => 'nullable|integer|min:1',
-            'target_verses_per_period' => 'nullable|integer|min:1',
+            'surah_from' => 'required|integer|min:1|max:114',
+            'verse_from' => 'required|integer|min:1',
+            'surah_to' => 'required|integer|min:1|max:114',
+            'verse_to' => 'required|integer|min:1',
             'start_date' => 'required|date',
-            'expected_completion_date' => 'nullable|date|after:start_date',
-            'target_total_pages' => 'nullable|integer|min:1|max:604',
+            'end_date' => 'nullable|date|after:start_date',
             'notes' => 'nullable|string|max:1000',
         ];
     }
 
-    /**
-     * Boot method to enforce one active schedule per student
-     */
     protected static function boot()
     {
         parent::boot();
 
         static::creating(function ($schedule) {
             if ($schedule->is_active) {
-                // Deactivate other active schedules for this student
                 self::where('student_id', $schedule->student_id)
                     ->where('is_active', true)
                     ->update(['is_active' => false]);
@@ -211,7 +193,6 @@ class QuranSchedule extends Model
 
         static::updating(function ($schedule) {
             if ($schedule->is_active && $schedule->isDirty('is_active')) {
-                // Deactivate other active schedules for this student
                 self::where('student_id', $schedule->student_id)
                     ->where('id', '!=', $schedule->id)
                     ->where('is_active', true)
@@ -220,4 +201,3 @@ class QuranSchedule extends Model
         });
     }
 }
-
