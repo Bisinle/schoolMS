@@ -3,7 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Guardian;
-use App\Models\QuranTracking;
+use App\Models\QuranHomework;
 use App\Models\School;
 use App\Models\Student;
 use App\Models\Teacher;
@@ -11,12 +11,12 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class QuranTrackingCalculatedVersesBugTest extends TestCase
+class QuranHomeworkCalculatedVersesBugTest extends TestCase
 {
     use RefreshDatabase;
 
     /**
-     * QuranTrackingController::show() calls calculateTotalVerses() with the
+     * QuranHomeworkController::show() calls calculateTotalVerses() with the
      * verse_from/surah_to arguments swapped relative to the method's real
      * signature (surahFrom, surahTo, verseFrom, verseTo). For a single-surah
      * record this corrupts the "same surah" fast path and produces the wrong
@@ -33,7 +33,7 @@ class QuranTrackingCalculatedVersesBugTest extends TestCase
         $guardian = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $guardianUser->id]);
         $student = Student::factory()->create(['school_id' => $school->id, 'guardian_id' => $guardian->id]);
 
-        $tracking = QuranTracking::factory()->create([
+        $homework = QuranHomework::factory()->create([
             'school_id' => $school->id,
             'student_id' => $student->id,
             'teacher_id' => $teacherUser->id,
@@ -44,11 +44,11 @@ class QuranTrackingCalculatedVersesBugTest extends TestCase
         ]);
 
         $response = $this->actingAs($teacherUser)
-            ->get(route('quran-tracking.show', $tracking->id));
+            ->get(route('quran-homework.show', $homework->id));
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->where('tracking.calculated_total_verses', 10)
+            ->where('homework.calculated_total_verses', 10)
         );
     }
 }
