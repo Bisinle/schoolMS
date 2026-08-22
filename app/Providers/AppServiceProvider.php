@@ -7,7 +7,6 @@ use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Grade;
 use App\Models\GuardianInvoice;
-use App\Models\QuranTracking;
 use App\Models\QuranHomework;
 use App\Models\QuranSchedule;
 use App\Models\QuranHomePractice;
@@ -24,7 +23,7 @@ use App\Models\TimetableSlot;
 use App\Models\AccidentReport;
 use App\Models\IncidentReport;
 use App\Models\Policy;
-use App\Observers\QuranTrackingObserver;
+use App\Observers\QuranHomeworkObserver;
 use App\Policies\AttendancePolicy;
 use App\Policies\ExamPolicy;
 use App\Policies\ExamResultPolicy;
@@ -73,7 +72,7 @@ class AppServiceProvider extends ServiceProvider
         $this->createGoogleCalendarCredentials();
 
         // Register model observers
-        QuranTracking::observe(QuranTrackingObserver::class);
+        QuranHomework::observe(QuranHomeworkObserver::class);
 
         Gate::policy(Student::class, StudentPolicy::class);
         Gate::policy(Guardian::class, GuardianPolicy::class);

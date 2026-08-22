@@ -12,27 +12,21 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  */
 class QuranHomeworkFactory extends Factory
 {
-    /**
-     * Define the model's default state.
-     *
-     * @return array<string, mixed>
-     */
     public function definition(): array
     {
         return [
             'student_id' => Student::factory(),
             'teacher_id' => User::factory()->state(['role' => 'teacher']),
             'school_id' => School::factory(),
+            'quran_schedule_id' => null,
             'assigned_date' => now(),
-            'due_date' => now()->addWeek(),
-            'homework_type' => 'memorize',
+            'status' => 'pending',
+            'reading_type' => 'new_learning',
             'surah_from' => 1,
-            'verse_from' => 1,
             'surah_to' => 1,
+            'verse_from' => 1,
             'verse_to' => 7,
-            'page_from' => 1,
-            'page_to' => 1,
-            'completed' => false,
+            'quality_rating' => null,
         ];
     }
 }

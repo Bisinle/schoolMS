@@ -103,11 +103,6 @@ class Student extends Model
         return $this->hasMany(ReportComment::class);
     }
 
-    public function quranTracking()
-    {
-        return $this->hasMany(QuranTracking::class);
-    }
-
     public function quranHomework()
     {
         return $this->hasMany(QuranHomework::class);
@@ -116,7 +111,7 @@ class Student extends Model
     public function pendingQuranHomework()
     {
         return $this->hasMany(QuranHomework::class)
-            ->where('completed', false);
+            ->where('status', 'pending');
     }
 
     public function quranHomePractice()

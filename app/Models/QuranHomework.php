@@ -16,35 +16,52 @@ class QuranHomework extends Model
         'student_id',
         'teacher_id',
         'school_id',
+        'quran_schedule_id',
         'assigned_date',
-        'due_date',
-        'homework_type',
+        'status',
+        'reading_type',
         'surah_from',
         'verse_from',
         'surah_to',
         'verse_to',
         'page_from',
         'page_to',
-        'completed',
-        'completion_date',
-        'teacher_instructions',
-        'completion_notes',
+        'quality_rating',
+        'pages_memorized',
+        'surahs_memorized',
+        'juz_memorized',
+        'juz_from',
+        'juz_to',
+        'hizb_from',
+        'hizb_to',
+        'rub_from',
+        'rub_to',
+        'subac_participation',
+        'notes',
     ];
 
     protected $casts = [
         'assigned_date' => 'date',
-        'due_date' => 'date',
-        'completion_date' => 'date',
         'surah_from' => 'integer',
         'verse_from' => 'integer',
         'surah_to' => 'integer',
         'verse_to' => 'integer',
         'page_from' => 'integer',
         'page_to' => 'integer',
-        'completed' => 'boolean',
+        'pages_memorized' => 'integer',
+        'surahs_memorized' => 'integer',
+        'juz_memorized' => 'integer',
+        'juz_from' => 'integer',
+        'juz_to' => 'integer',
+        'hizb_from' => 'integer',
+        'hizb_to' => 'integer',
+        'rub_from' => 'integer',
+        'rub_to' => 'integer',
+        'subac_participation' => 'boolean',
     ];
 
-    // Relationships
+    protected $appends = ['reading_type_label', 'quality_rating_label', 'total_verses', 'status_label'];
+
     public function student()
     {
         return $this->belongsTo(Student::class);
@@ -60,21 +77,24 @@ class QuranHomework extends Model
         return $this->belongsTo(School::class);
     }
 
-    // Scopes
-    public function scopePending($query)
+    public function schedule()
     {
-        return $query->where('completed', false);
+        return $this->belongsTo(QuranSchedule::class, 'quran_schedule_id');
     }
 
-    public function scopeCompleted($query)
+    public function assessment()
     {
-        return $query->where('completed', true);
+        return $this->hasOne(QuranAssessment::class);
     }
 
-    public function scopeOverdue($query)
+    public function scopeReadingType($query, $type)
     {
-        return $query->where('completed', false)
-            ->where('due_date', '<', now());
+        return $query->where('reading_type', $type);
+    }
+
+    public function scopeDateRange($query, $from, $to)
+    {
+        return $query->whereBetween('assigned_date', [$from, $to]);
     }
 
     public function scopeForStudent($query, $studentId)
@@ -82,64 +102,79 @@ class QuranHomework extends Model
         return $query->where('student_id', $studentId);
     }
 
-    public function scopeHomeworkType($query, $type)
+    public function scopePending($query)
     {
-        return $query->where('homework_type', $type);
+        return $query->where('status', 'pending');
     }
 
-    // Computed attributes
-    public function getIsOverdueAttribute()
+    public function scopeGraded($query)
     {
-        return !$this->completed && $this->due_date->isPast();
+        return $query->where('status', 'graded');
     }
 
-    public function getDaysUntilDueAttribute()
+    public function scopeAbsent($query)
     {
-        return $this->due_date->diffInDays(now(), false);
+        return $query->where('status', 'absent');
     }
 
-    public function getHomeworkTypeLabelAttribute()
+    public function scopeNotPrepared($query)
     {
-        return match($this->homework_type) {
-            'memorize' => 'Memorization',
-            'revise' => 'Revision',
-            'read' => 'Reading',
-            default => 'Unknown'
+        return $query->where('status', 'not_prepared');
+    }
+
+    public function getTotalVersesAttribute()
+    {
+        if ($this->surah_from == $this->surah_to) {
+            return ($this->verse_to - $this->verse_from) + 1;
+        }
+
+        // Multi-surah: computed in the controller via QuranApiClient.
+        return null;
+    }
+
+    public function getIsMultiSurahAttribute()
+    {
+        return $this->surah_from != $this->surah_to;
+    }
+
+    public function getSurahRangeAttribute()
+    {
+        if ($this->surah_from == $this->surah_to) {
+            return "Surah {$this->surah_from}";
+        }
+
+        return "Surah {$this->surah_from} - {$this->surah_to}";
+    }
+
+    public function getReadingTypeLabelAttribute()
+    {
+        return match ($this->reading_type) {
+            'new_learning' => 'New Learning',
+            'revision' => 'Revision',
+            'subac' => 'Subac',
+            default => $this->reading_type,
         };
     }
 
-    public function getStatusBadgeAttribute()
+    public function getQualityRatingLabelAttribute()
     {
-        if ($this->completed) {
-            return 'completed';
-        }
-        
-        if ($this->is_overdue) {
-            return 'overdue';
-        }
-        
-        return 'pending';
+        return match ($this->quality_rating) {
+            'excellent' => 'Excellent',
+            'very_good' => 'Very Good',
+            'moderate' => 'Moderate',
+            'poor' => 'Poor',
+            default => null,
+        };
     }
 
-    protected $appends = ['homework_type_label', 'is_overdue', 'status_badge'];
-
-    // Helper method to check if homework matches a tracking record
-    public function matchesTracking(QuranTracking $tracking)
+    public function getStatusLabelAttribute()
     {
-        return $this->surah_from == $tracking->surah_from
-            && $this->surah_to == $tracking->surah_to
-            && $this->verse_from == $tracking->verse_from
-            && $this->verse_to == $tracking->verse_to;
-    }
-
-    // Mark homework as complete
-    public function markAsComplete($notes = null)
-    {
-        $this->update([
-            'completed' => true,
-            'completion_date' => now(),
-            'completion_notes' => $notes,
-        ]);
+        return match ($this->status) {
+            'pending' => 'Pending',
+            'graded' => 'Graded',
+            'absent' => 'Absent',
+            'not_prepared' => 'Not Prepared',
+            default => $this->status,
+        };
     }
 }
-
