@@ -11,7 +11,7 @@ use App\Models\Subject;
 use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Document;
-use App\Models\QuranTracking;
+use App\Models\QuranHomework;
 use App\Models\TimetableSlot;
 use App\Services\TimetableAnalyticsService;
 use Illuminate\Http\Request;
@@ -151,14 +151,14 @@ class DashboardController extends Controller
         $quranStats = null;
         if (auth()->user()->school && auth()->user()->school->school_type === 'madrasah') {
             $quranStats = [
-                'total_sessions' => QuranTracking::count(),
-                'total_pages_memorized' => QuranTracking::where('reading_type', 'new_learning')->sum('pages_memorized'),
-                'total_surahs_memorized' => QuranTracking::where('reading_type', 'new_learning')->sum('surahs_memorized'),
-                'total_juz_memorized' => QuranTracking::where('reading_type', 'new_learning')->sum('juz_memorized'),
-                'sessions_this_month' => QuranTracking::whereMonth('date', now()->month)
-                    ->whereYear('date', now()->year)
+                'total_sessions' => QuranHomework::where('status', 'graded')->count(),
+                'total_pages_memorized' => QuranHomework::where('reading_type', 'new_learning')->where('status', 'graded')->sum('pages_memorized'),
+                'total_surahs_memorized' => QuranHomework::where('reading_type', 'new_learning')->where('status', 'graded')->sum('surahs_memorized'),
+                'total_juz_memorized' => QuranHomework::where('reading_type', 'new_learning')->where('status', 'graded')->sum('juz_memorized'),
+                'sessions_this_month' => QuranHomework::whereMonth('assigned_date', now()->month)
+                    ->whereYear('assigned_date', now()->year)
                     ->count(),
-                'students_tracked' => QuranTracking::distinct('student_id')->count('student_id'),
+                'students_tracked' => QuranHomework::distinct('student_id')->count('student_id'),
             ];
         }
 
@@ -624,48 +624,48 @@ class DashboardController extends Controller
             'total_balance' => $invoices->sum('balance_due'),
         ];
 
-        // Quran tracking data (only for madrasah schools)
-        $quranTrackingData = null;
+        // Quran homework data (only for madrasah schools)
+        $quranHomeworkData = null;
         if ($user->school && $user->school->school_type === 'madrasah' && $studentIds->isNotEmpty()) {
-            $quranTrackingData = QuranTracking::whereIn('student_id', $studentIds)
+            $quranHomeworkData = QuranHomework::whereIn('student_id', $studentIds)
                 ->with(['student', 'teacher'])
-                ->orderBy('date', 'desc')
+                ->orderBy('assigned_date', 'desc')
                 ->take(20) // Last 20 sessions across all children
                 ->get()
-                ->map(function ($tracking) {
+                ->map(function ($homework) {
                     return [
-                        'id' => $tracking->id,
-                        'student_name' => $tracking->student
-                            ? trim($tracking->student->first_name . ' ' . $tracking->student->last_name)
+                        'id' => $homework->id,
+                        'student_name' => $homework->student
+                            ? trim($homework->student->first_name.' '.$homework->student->last_name)
                             : 'Unknown',
-                        'student_id' => $tracking->student_id,
-                        'teacher_name' => $tracking->teacher?->name ?? 'N/A',
-                        'date' => $tracking->date->format('M d, Y'),
-                        'reading_type' => $tracking->reading_type_label,
-                        'surah_range' => $tracking->surah_range,
-                        'pages_memorized' => $tracking->pages_memorized,
-                        'surahs_memorized' => $tracking->surahs_memorized,
-                        'juz_memorized' => $tracking->juz_memorized,
-                        'difficulty' => $tracking->difficulty_label,
-                        'notes' => $tracking->notes,
+                        'student_id' => $homework->student_id,
+                        'teacher_name' => $homework->teacher?->name ?? 'N/A',
+                        'date' => $homework->assigned_date->format('M d, Y'),
+                        'reading_type' => $homework->reading_type_label,
+                        'surah_range' => $homework->surah_range,
+                        'pages_memorized' => $homework->pages_memorized,
+                        'surahs_memorized' => $homework->surahs_memorized,
+                        'juz_memorized' => $homework->juz_memorized,
+                        'quality_rating' => $homework->quality_rating_label,
+                        'notes' => $homework->notes,
                     ];
                 });
 
             // Summary stats for all children
             $quranStats = [
-                'total_sessions' => QuranTracking::whereIn('student_id', $studentIds)->count(),
-                'total_pages' => QuranTracking::whereIn('student_id', $studentIds)
-                    ->where('reading_type', 'new_learning')
+                'total_sessions' => QuranHomework::whereIn('student_id', $studentIds)->where('status', 'graded')->count(),
+                'total_pages' => QuranHomework::whereIn('student_id', $studentIds)
+                    ->where('reading_type', 'new_learning')->where('status', 'graded')
                     ->sum('pages_memorized'),
-                'total_surahs' => QuranTracking::whereIn('student_id', $studentIds)
-                    ->where('reading_type', 'new_learning')
+                'total_surahs' => QuranHomework::whereIn('student_id', $studentIds)
+                    ->where('reading_type', 'new_learning')->where('status', 'graded')
                     ->sum('surahs_memorized'),
-                'total_juz' => QuranTracking::whereIn('student_id', $studentIds)
-                    ->where('reading_type', 'new_learning')
+                'total_juz' => QuranHomework::whereIn('student_id', $studentIds)
+                    ->where('reading_type', 'new_learning')->where('status', 'graded')
                     ->sum('juz_memorized'),
-                'this_month' => QuranTracking::whereIn('student_id', $studentIds)
-                    ->whereMonth('date', now()->month)
-                    ->whereYear('date', now()->year)
+                'this_month' => QuranHomework::whereIn('student_id', $studentIds)
+                    ->whereMonth('assigned_date', now()->month)
+                    ->whereYear('assigned_date', now()->year)
                     ->count(),
             ];
         } else {
@@ -793,7 +793,7 @@ class DashboardController extends Controller
             'currentTerm' => $currentTerm,
             'totalChildren' => $students->count(),
             'documentStats' => $documentStats,
-            'quranTrackingData' => $quranTrackingData ?? null,
+            'quranHomeworkData' => $quranHomeworkData ?? null,
             'quranStats' => $quranStats ?? null,
         ];
     }

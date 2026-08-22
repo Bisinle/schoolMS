@@ -19,7 +19,7 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\ExamResultController;
 use App\Http\Controllers\GuardianAttendanceController;
 use App\Http\Controllers\GuardianChildrenController;
-use App\Http\Controllers\GuardianQuranTrackingController;
+use App\Http\Controllers\GuardianQuranHomeworkController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\SchoolSettingController;
 use App\Http\Controllers\UserController;
@@ -183,7 +183,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
 
         // Guardian Quran Tracking (read-only, madrasah only)
         Route::middleware(['madrasah.only'])->group(function () {
-            Route::get('/guardian/quran-tracking', [GuardianQuranTrackingController::class, 'index'])->name('guardian.quran-tracking');
+            Route::get('/guardian/quran-homework', [GuardianQuranHomeworkController::class, 'index'])->name('guardian.quran-homework');
         });
     });
 

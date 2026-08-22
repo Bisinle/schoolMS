@@ -22,7 +22,7 @@ export default function GuardianDashboardContent({
     students,
     documentStats,
     quranStats,
-    quranTrackingData,
+    quranHomeworkData,
 }) {
     return (
         <div className="space-y-6">
@@ -176,8 +176,8 @@ export default function GuardianDashboardContent({
                 </div>
             </div>
 
-            {/* Quran Tracking (Madrasah Only) */}
-            {quranStats && quranTrackingData && (
+            {/* Quran Homework (Madrasah Only) */}
+            {quranStats && quranHomeworkData && (
                 <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                     <div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
                         <h3 className="text-lg font-semibold text-navy flex items-center">
@@ -233,8 +233,8 @@ export default function GuardianDashboardContent({
                             Recent Sessions
                         </h4>
                         <div className="space-y-3 max-h-96 overflow-y-auto">
-                            {quranTrackingData.length > 0 ? (
-                                quranTrackingData.map((session) => (
+                            {quranHomeworkData.length > 0 ? (
+                                quranHomeworkData.map((session) => (
                                     <div
                                         key={session.id}
                                         className="p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-green-300 transition-colors"
@@ -271,8 +271,8 @@ export default function GuardianDashboardContent({
                                                 {session.pages_memorized}
                                             </div>
                                             <div>
-                                                <span className="font-medium">Difficulty:</span>{" "}
-                                                {session.difficulty}
+                                                <span className="font-medium">Quality:</span>{" "}
+                                                {session.quality_rating}
                                             </div>
                                             <div>
                                                 <span className="font-medium">Teacher:</span>{" "}

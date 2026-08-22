@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\QuranTracking;
+use App\Models\QuranHomework;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
-class GuardianQuranTrackingController extends Controller
+class GuardianQuranHomeworkController extends Controller
 {
     /**
-     * Display a list of guardian's children who have Quran tracking records
+     * Display a list of guardian's children who have Quran homework records
      */
     public function index(Request $request)
     {
@@ -30,20 +30,20 @@ class GuardianQuranTrackingController extends Controller
             abort(403, 'Quran tracking is only available for madrasah schools.');
         }
 
-        // Get guardian's children with their latest Quran tracking
+        // Get guardian's children with their latest Quran homework
         $students = $guardian->students()
             ->with(['grade'])
-            ->withCount('quranTracking')
+            ->withCount('quranHomework')
             ->where('status', 'active')
             ->get()
             ->filter(function ($student) {
-                // Only show students who have at least one tracking record
-                return $student->quran_tracking_count > 0;
+                // Only show students who have at least one homework record
+                return $student->quran_homework_count > 0;
             })
             ->map(function ($student) {
-                // Get the latest tracking session separately
-                $latestTracking = QuranTracking::where('student_id', $student->id)
-                    ->latest('date')
+                // Get the latest homework session separately
+                $latestTracking = QuranHomework::where('student_id', $student->id)
+                    ->latest('assigned_date')
                     ->first();
 
                 return [
@@ -55,14 +55,14 @@ class GuardianQuranTrackingController extends Controller
                         'id' => $student->grade->id ?? null,
                         'name' => $student->grade->name ?? 'N/A',
                     ],
-                    'total_sessions' => $student->quran_tracking_count,
+                    'total_sessions' => $student->quran_homework_count,
                     'latest_tracking' => $latestTracking ? [
                         'id' => $latestTracking->id,
-                        'date' => $latestTracking->date->format('M d, Y'),
+                        'date' => $latestTracking->assigned_date->format('M d, Y'),
                         'reading_type' => $latestTracking->reading_type,
                         'reading_type_label' => $latestTracking->reading_type_label,
-                        'difficulty' => $latestTracking->difficulty,
-                        'difficulty_label' => $latestTracking->difficulty_label,
+                        'difficulty' => $latestTracking->quality_rating,
+                        'difficulty_label' => $latestTracking->quality_rating_label,
                         'pages_memorized' => $latestTracking->pages_memorized,
                         'surahs_memorized' => $latestTracking->surahs_memorized,
                         'juz_memorized' => $latestTracking->juz_memorized,
@@ -76,4 +76,3 @@ class GuardianQuranTrackingController extends Controller
         ]);
     }
 }
-
