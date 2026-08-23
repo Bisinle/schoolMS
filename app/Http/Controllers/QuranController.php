@@ -17,20 +17,19 @@ class QuranController extends Controller
     {
         $user = $request->user();
 
-        // Overall statistics
+        // Overall statistics — pages/juz memorized are only meaningful once a
+        // homework entry is actually graded: QuranHomeworkObserver computes
+        // pages_memorized/juz_memorized on every create/update regardless of
+        // status, so an ungraded/absent/not_prepared entry still carries a
+        // non-zero value. Mirrors DashboardController's madrasah quick-stats
+        // block, which filters the same way for the same reason.
         $stats = [
-            'totalSessions' => QuranHomework::count(),
+            'totalSessions' => QuranHomework::where('status', 'graded')->count(),
             'studentsTracked' => QuranHomework::distinct('student_id')->count('student_id'),
-            'pagesMemorized' => QuranHomework::where('reading_type', 'new_learning')->sum('pages_memorized'),
-            'juzMemorized' => QuranHomework::where('reading_type', 'new_learning')->sum('juz_memorized'),
+            'pagesMemorized' => QuranHomework::where('reading_type', 'new_learning')->where('status', 'graded')->sum('pages_memorized'),
+            'juzMemorized' => QuranHomework::where('reading_type', 'new_learning')->where('status', 'graded')->sum('juz_memorized'),
 
             // Module-specific stats
-            'tracking' => [
-                'total' => QuranHomework::count(),
-                'thisMonth' => QuranHomework::whereMonth('assigned_date', now()->month)
-                    ->whereYear('assigned_date', now()->year)
-                    ->count(),
-            ],
             'homework' => [
                 'total' => QuranHomework::count(),
                 'thisMonth' => QuranHomework::whereMonth('assigned_date', now()->month)
