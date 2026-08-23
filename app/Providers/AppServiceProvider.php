@@ -9,7 +9,6 @@ use App\Models\Grade;
 use App\Models\GuardianInvoice;
 use App\Models\QuranHomework;
 use App\Models\QuranSchedule;
-use App\Models\QuranHomePractice;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Student;
 use App\Models\Guardian;
@@ -43,7 +42,6 @@ use App\Policies\IncidentReportPolicy;
 use App\Policies\PolicyPolicy;
 use App\Policies\QuranHomeworkPolicy;
 use App\Policies\QuranSchedulePolicy;
-use App\Policies\QuranHomePracticePolicy;
 use App\External\QuranApiClient;
 use App\External\QuranComApiClient;
 use Illuminate\Support\Facades\Vite;
@@ -99,7 +97,6 @@ class AppServiceProvider extends ServiceProvider
         // Quran Policies - Added in restructure Phase 1
         Gate::policy(QuranHomework::class, QuranHomeworkPolicy::class);
         Gate::policy(QuranSchedule::class, QuranSchedulePolicy::class);
-        Gate::policy(QuranHomePractice::class, QuranHomePracticePolicy::class);
 
         Vite::prefetch(concurrency: 3);
     }

@@ -114,11 +114,6 @@ class Student extends Model
             ->where('status', 'pending');
     }
 
-    public function quranHomePractice()
-    {
-        return $this->hasMany(QuranHomePractice::class);
-    }
-
     public function quranSchedules()
     {
         return $this->hasMany(QuranSchedule::class);

@@ -174,7 +174,7 @@ export default function StudentReport({ student, sessions, analytics }) {
                                 <Award className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
                                 <div className="text-center sm:text-right">
                                     <div className="text-2xl sm:text-3xl font-bold">{analytics.pages_memorized}</div>
-                                    <div className="text-xs sm:text-sm opacity-90">Pages Memorized</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Pages Covered</div>
                                 </div>
                             </div>
                         </div>
@@ -287,27 +287,29 @@ export default function StudentReport({ student, sessions, analytics }) {
                         </div>
                     </div>
 
-                    {/* Memorization Progress */}
+                    {/* Progress Overview */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
                         <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
                             <Award className="w-5 h-5 mr-2 text-orange" />
-                            Memorization Progress
+                            Progress Overview
                         </h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
                                 <div className="text-4xl font-bold text-green-600 mb-2">{analytics.pages_memorized}</div>
-                                <div className="text-sm text-gray-700 font-medium">Pages Memorized</div>
+                                <div className="text-sm text-gray-700 font-medium">Pages Covered</div>
                                 <div className="text-xs text-gray-500 mt-1">Out of 604 total pages</div>
                             </div>
                             <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
-                                <div className="text-4xl font-bold text-blue-600 mb-2">{analytics.surahs_memorized}</div>
-                                <div className="text-sm text-gray-700 font-medium">Surahs Memorized</div>
-                                <div className="text-xs text-gray-500 mt-1">Out of 114 total surahs</div>
+                                <div className="text-2xl sm:text-3xl font-bold text-blue-600 mb-2" dir="rtl" lang="ar">
+                                    {analytics.current_surah_arabic || '—'}
+                                </div>
+                                <div className="text-sm text-gray-700 font-medium">Current Surah</div>
                             </div>
                             <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
-                                <div className="text-4xl font-bold text-purple-600 mb-2">{analytics.juz_memorized}</div>
-                                <div className="text-sm text-gray-700 font-medium">Juz Memorized</div>
-                                <div className="text-xs text-gray-500 mt-1">Out of 30 total juz</div>
+                                <div className="text-2xl sm:text-3xl font-bold text-purple-600 mb-2">
+                                    {analytics.current_juz || '—'}
+                                </div>
+                                <div className="text-sm text-gray-700 font-medium">Current Juz</div>
                             </div>
                         </div>
                     </div>

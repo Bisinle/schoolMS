@@ -31,7 +31,7 @@ class GuardianQuranHomeworkController extends Controller
         }
 
         // Get guardian's children with their latest Quran homework
-        $students = $guardian->students()
+        $students = $guardian->allStudents()
             ->with(['grade'])
             ->withCount('quranHomework')
             ->where('status', 'active')

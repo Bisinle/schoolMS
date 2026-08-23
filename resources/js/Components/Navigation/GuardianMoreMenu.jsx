@@ -4,7 +4,6 @@ import {
     FileText,
     FolderOpen,
     Shield,
-    Home,
     LayoutDashboard,
 } from 'lucide-react';
 
@@ -32,12 +31,6 @@ export default function GuardianMoreMenu({ isMadrasah = false, badges = {} }) {
                         label="Homework"
                         href="/guardian/quran-homework"
                         badge={badges.quranHomework}
-                    />
-                    <BottomSheetMenuItem
-                        icon={Home}
-                        label="Home Practice"
-                        href="/quran-home-practice"
-                        badge={badges.quranHomePractice}
                     />
                 </BottomSheetSection>
             )}

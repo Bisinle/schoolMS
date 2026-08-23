@@ -26,6 +26,12 @@ const getStatusIcon = (status) => {
 };
 
 export default function Show({ auth, schedule, homeworkRecords }) {
+    // Guardians can view a schedule (QuranSchedulePolicy::view() permits
+    // it) but activate/deactivate/edit/delete are role:admin,teacher-only
+    // routes — those controls must not render for a guardian, who'd just
+    // hit a 403 on click.
+    const isGuardian = auth.user.role === 'guardian';
+
     const handleActivate = () => {
         if (confirm('Activate this schedule? This will deactivate any other active schedules for this student.')) {
             router.post(`/quran-schedule/${schedule.id}/activate`);
@@ -84,39 +90,41 @@ export default function Show({ auth, schedule, homeworkRecords }) {
                             </p>
                         </div>
 
-                        <div className="flex gap-2">
-                            {schedule.is_active ? (
-                                <button
-                                    onClick={handleDeactivate}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                        {!isGuardian && (
+                            <div className="flex gap-2">
+                                {schedule.is_active ? (
+                                    <button
+                                        onClick={handleDeactivate}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                                    >
+                                        <PowerOff className="w-4 h-4" />
+                                        Deactivate
+                                    </button>
+                                ) : (
+                                    <button
+                                        onClick={handleActivate}
+                                        className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                    >
+                                        <Power className="w-4 h-4" />
+                                        Activate
+                                    </button>
+                                )}
+                                <Link
+                                    href={`/quran-schedule/${schedule.id}/edit`}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
                                 >
-                                    <PowerOff className="w-4 h-4" />
-                                    Deactivate
-                                </button>
-                            ) : (
+                                    <Edit className="w-4 h-4" />
+                                    Edit
+                                </Link>
                                 <button
-                                    onClick={handleActivate}
-                                    className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                    onClick={handleDelete}
+                                    className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
                                 >
-                                    <Power className="w-4 h-4" />
-                                    Activate
+                                    <Trash2 className="w-4 h-4" />
+                                    Delete
                                 </button>
-                            )}
-                            <Link
-                                href={`/quran-schedule/${schedule.id}/edit`}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                <Edit className="w-4 h-4" />
-                                Edit
-                            </Link>
-                            <button
-                                onClick={handleDelete}
-                                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
-                            >
-                                <Trash2 className="w-4 h-4" />
-                                Delete
-                            </button>
-                        </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Status Card */}
@@ -317,12 +325,21 @@ export default function Show({ auth, schedule, homeworkRecords }) {
 
                     {/* Back Button */}
                     <div className="mt-6">
-                        <Link
-                            href="/quran-schedule"
-                            className="inline-flex items-center text-orange hover:text-orange-dark font-medium"
-                        >
-                            ← Back to Schedules
-                        </Link>
+                        {isGuardian ? (
+                            <Link
+                                href="/quran"
+                                className="inline-flex items-center text-orange hover:text-orange-dark font-medium"
+                            >
+                                ← Back to Dashboard
+                            </Link>
+                        ) : (
+                            <Link
+                                href="/quran-schedule"
+                                className="inline-flex items-center text-orange hover:text-orange-dark font-medium"
+                            >
+                                ← Back to Schedules
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>

@@ -16,7 +16,6 @@ import {
     Bus,
     Tag,
     Receipt,
-    Home,
     Clock,
     Shield,
     AlertTriangle,
@@ -153,7 +152,6 @@ export const getNavigation = (role, isMadrasah = false) => {
                     submenu: [
                         { name: "Dashboard", href: "/quran", icon: LayoutDashboard },
                         { name: "Homework", href: "/guardian/quran-homework", icon: BookOpen },
-                        { name: "Home Practice", href: "/quran-home-practice", icon: Home },
                     ]
                 },
             ] : []),

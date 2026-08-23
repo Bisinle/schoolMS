@@ -91,9 +91,27 @@ class QuranSchedule extends Model
         return $query->where('student_id', $studentId);
     }
 
+    /**
+     * Schedules whose start/end date range includes today (or the given
+     * date) — a null end_date is treated as ongoing/unbounded. This is
+     * distinct from scopeActive()'s is_active flag (which tracks "the
+     * current schedule for this student," flipped off when replaced); this
+     * scope is about the date range itself, used by the dashboard's
+     * "Active Schedules" cards.
+     */
+    public function scopeInDateRange($query, $date = null)
+    {
+        $date = $date ?: now();
+
+        return $query->where('start_date', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->whereNull('end_date')->orWhere('end_date', '>=', $date);
+            });
+    }
+
     public function getDaysElapsedAttribute()
     {
-        return $this->start_date->diffInDays(Carbon::now());
+        return (int) floor($this->start_date->diffInDays(Carbon::now()));
     }
 
     public function getDaysRemainingAttribute()
@@ -102,7 +120,7 @@ class QuranSchedule extends Model
             return null;
         }
 
-        $remaining = Carbon::now()->diffInDays($this->end_date, false);
+        $remaining = (int) ceil(Carbon::now()->diffInDays($this->end_date, false));
 
         return $remaining > 0 ? $remaining : 0;
     }

@@ -167,7 +167,7 @@ class QuranHomeworkController extends Controller
         $user = $request->user();
         if ($user->isGuardian()) {
             $guardian = $user->guardian;
-            if (! $guardian || ! $guardian->students()->where('students.id', $quranHomework->student_id)->exists()) {
+            if (! $guardian || ! $guardian->allStudents()->where('id', $quranHomework->student_id)->exists()) {
                 abort(403, "You can only view your own children's Quran homework.");
             }
         }
@@ -334,7 +334,7 @@ class QuranHomeworkController extends Controller
         $user = $request->user();
         if ($user->isGuardian()) {
             $guardian = $user->guardian;
-            if (! $guardian || ! $guardian->students()->where('students.id', $student->id)->exists()) {
+            if (! $guardian || ! $guardian->allStudents()->where('id', $student->id)->exists()) {
                 abort(403, "You can only view your own children's Quran reports.");
             }
         }
@@ -342,6 +342,7 @@ class QuranHomeworkController extends Controller
         $sessions = QuranHomework::where('student_id', $student->id)
             ->with(['teacher', 'assessment'])
             ->orderBy('assigned_date', 'desc')
+            ->orderBy('id', 'desc')
             ->get();
 
         $surahs = $this->quranApi->getSurahs();
@@ -368,6 +369,28 @@ class QuranHomeworkController extends Controller
         $graded = $sessions->where('status', 'graded');
         $newLearningGraded = $graded->where('reading_type', 'new_learning');
 
+        // "Current" position — the same most-recent-entry definition
+        // deriveFromPoint() uses (assigned_date desc, id desc tiebreak) to
+        // chain a new Homework's own from-point, so this always reflects
+        // where the student's own homework trail says they actually are,
+        // regardless of grading status.
+        $latestSession = $sessions->first();
+
+        $currentSurahArabic = $latestSession
+            ? ($surahsMap[$latestSession->surah_to]['name_arabic'] ?? null)
+            : null;
+
+        $currentJuz = null;
+        if ($latestSession && $latestSession->juz_to && $latestSession->page_to) {
+            $juzRange = $this->quranApi->getJuzPageRanges()[$latestSession->juz_to] ?? null;
+
+            if ($juzRange) {
+                $totalPages = $juzRange['end_page'] - $juzRange['start_page'] + 1;
+                $pagesInto = max(0, min($latestSession->page_to, $juzRange['end_page']) - $juzRange['start_page'] + 1);
+                $currentJuz = "Juz {$latestSession->juz_to} — {$pagesInto}/{$totalPages} pages";
+            }
+        }
+
         $analytics = [
             'total_sessions' => $sessions->count(),
             'graded_count' => $graded->count(),
@@ -376,8 +399,8 @@ class QuranHomeworkController extends Controller
             'pending_count' => $sessions->where('status', 'pending')->count(),
             'total_verses' => $graded->sum('calculated_total_verses'),
             'pages_memorized' => $newLearningGraded->sum('pages_memorized'),
-            'surahs_memorized' => $newLearningGraded->sum('surahs_memorized'),
-            'juz_memorized' => $newLearningGraded->sum('juz_memorized'),
+            'current_surah_arabic' => $currentSurahArabic,
+            'current_juz' => $currentJuz,
         ];
 
         return Inertia::render('Quran/Homework/StudentReport', [
@@ -392,7 +415,7 @@ class QuranHomeworkController extends Controller
         $user = $request->user();
         if ($user->isGuardian()) {
             $guardian = $user->guardian;
-            if (! $guardian || ! $guardian->students()->where('students.id', $student->id)->exists()) {
+            if (! $guardian || ! $guardian->allStudents()->where('id', $student->id)->exists()) {
                 abort(403, "You can only view your own children's homework.");
             }
         }

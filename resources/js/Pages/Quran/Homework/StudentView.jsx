@@ -25,8 +25,7 @@ const getStatusIcon = (status) => {
 
 /**
  * Read-only history of a student's Homework entries — what's been assigned
- * and graded so far. Deliberately minimal: no self-logging here, that's
- * QuranHomePractice's job.
+ * and graded so far.
  */
 export default function StudentView({ student, homework }) {
     const { auth } = usePage().props;
