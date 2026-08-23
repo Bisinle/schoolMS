@@ -29,7 +29,7 @@ export default function Edit({ practice, students, surahs }) {
             const surah = surahs.find(s => s.id == data.surah_from);
             setSelectedSurahFrom(surah);
             if (surah) {
-                const options = Array.from({ length: surah.total_verses }, (_, i) => i + 1);
+                const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
                 setVerseFromOptions(options);
             }
         }
@@ -38,7 +38,7 @@ export default function Edit({ practice, students, surahs }) {
             const surah = surahs.find(s => s.id == data.surah_to);
             setSelectedSurahTo(surah);
             if (surah) {
-                const options = Array.from({ length: surah.total_verses }, (_, i) => i + 1);
+                const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
                 setVerseToOptions(options);
             }
         }
@@ -65,7 +65,7 @@ export default function Edit({ practice, students, surahs }) {
         setSelectedSurahFrom(surah);
 
         if (surah) {
-            const options = Array.from({ length: surah.total_verses }, (_, i) => i + 1);
+            const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
             setVerseFromOptions(options);
         }
     };
@@ -85,7 +85,7 @@ export default function Edit({ practice, students, surahs }) {
         setSelectedSurahTo(surah);
 
         if (surah) {
-            const options = Array.from({ length: surah.total_verses }, (_, i) => i + 1);
+            const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
             setVerseToOptions(options);
         }
     };

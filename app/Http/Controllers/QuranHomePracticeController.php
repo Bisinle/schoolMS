@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\QuranHomePractice;
 use App\Models\Student;
-use App\Services\QuranApiService;
+use App\External\QuranApiClient;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -12,7 +12,7 @@ class QuranHomePracticeController extends Controller
 {
     protected $quranApiService;
 
-    public function __construct(QuranApiService $quranApiService)
+    public function __construct(QuranApiClient $quranApiService)
     {
         $this->quranApiService = $quranApiService;
     }

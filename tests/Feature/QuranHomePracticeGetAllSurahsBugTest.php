@@ -13,7 +13,7 @@ class QuranHomePracticeGetAllSurahsBugTest extends TestCase
     use RefreshDatabase;
 
     /**
-     * QuranApiService has no getAllSurahs() method (only getSurahs()), so the
+     * QuranApiClient has no getAllSurahs() method (only getSurahs()), so the
      * create form currently crashes with a fatal error instead of rendering.
      */
     public function test_create_form_loads_without_crashing(): void
