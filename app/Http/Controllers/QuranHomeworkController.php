@@ -7,6 +7,7 @@ use App\Models\QuranHomework;
 use App\Models\QuranSchedule;
 use App\Models\Student;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class QuranHomeworkController extends Controller
@@ -68,7 +69,7 @@ class QuranHomeworkController extends Controller
         $this->authorize('create', QuranHomework::class);
 
         $validated = $request->validate([
-            'student_id' => 'required|exists:students,id',
+            'student_id' => ['required', Rule::exists('students', 'id')->where('school_id', $request->user()->school_id)],
             'reading_type' => 'required|in:new_learning,revision,subac',
             'surah_to' => 'required|integer|min:1|max:114',
             'verse_to' => 'required|integer|min:1',

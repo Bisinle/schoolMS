@@ -7,6 +7,7 @@ use App\Services\QuranTrackingCalculator;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Validation\Rule;
 
 class QuranSchedule extends Model
 {
@@ -207,7 +208,7 @@ class QuranSchedule extends Model
     public static function validationRules()
     {
         return [
-            'student_id' => 'required|exists:students,id',
+            'student_id' => ['required', Rule::exists('students', 'id')->where('school_id', auth()->user()->school_id)],
             'surah_from' => 'required|integer|min:1|max:114',
             'verse_from' => 'required|integer|min:1',
             'surah_to' => 'required|integer|min:1|max:114',
