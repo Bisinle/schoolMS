@@ -29,6 +29,10 @@ export default function Index({ auth, schedules, students, filters }) {
         }
 
         const status = schedule.status_badge;
+        if (status == null) {
+            return { color: 'bg-gray-100 text-gray-800', label: 'Not available' };
+        }
+
         const badges = {
             completed: { color: 'bg-green-100 text-green-800', label: 'Completed' },
             on_track: { color: 'bg-blue-100 text-blue-800', label: 'On Track' },
@@ -189,17 +193,19 @@ export default function Index({ auth, schedules, students, filters }) {
                                                 <p className="text-xs text-gray-500">Progress</p>
                                                 <p className="font-semibold text-gray-900 flex items-center gap-1">
                                                     <TrendingUp className="w-3.5 h-3.5 text-orange" />
-                                                    {schedule.progress_percentage}%
+                                                    {schedule.progress_percentage != null ? `${schedule.progress_percentage}%` : 'N/A'}
                                                 </p>
                                             </div>
                                             <div>
                                                 <p className="text-xs text-gray-500">Days Elapsed</p>
-                                                <p className="font-semibold text-gray-900">{schedule.days_elapsed} days</p>
+                                                <p className="font-semibold text-gray-900">
+                                                    {schedule.days_elapsed != null ? `${schedule.days_elapsed} days` : 'N/A'}
+                                                </p>
                                             </div>
                                             <div>
                                                 <p className="text-xs text-gray-500">Days Remaining</p>
                                                 <p className="font-semibold text-gray-900">
-                                                    {schedule.days_remaining !== null ? `${schedule.days_remaining} days` : 'No deadline'}
+                                                    {schedule.days_remaining != null ? `${schedule.days_remaining} days` : 'No deadline'}
                                                 </p>
                                             </div>
                                         </div>

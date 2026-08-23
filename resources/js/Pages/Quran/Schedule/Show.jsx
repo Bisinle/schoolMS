@@ -50,6 +50,10 @@ export default function Show({ auth, schedule, homeworkRecords }) {
         }
 
         const status = schedule.status_badge;
+        if (status == null) {
+            return { color: 'bg-gray-100 text-gray-800', label: 'Not available' };
+        }
+
         const badges = {
             completed: { color: 'bg-green-100 text-green-800', label: 'Completed' },
             on_track: { color: 'bg-blue-100 text-blue-800', label: 'On Track' },
@@ -218,7 +222,7 @@ export default function Show({ auth, schedule, homeworkRecords }) {
                                 <div className="flex items-center gap-2">
                                     <TrendingUp className="w-5 h-5 text-orange" />
                                     <p className="font-semibold text-gray-900">
-                                        {schedule.progress_percentage}% Complete
+                                        {schedule.progress_percentage != null ? `${schedule.progress_percentage}% Complete` : 'Not available'}
                                     </p>
                                 </div>
                             </div>
@@ -227,7 +231,9 @@ export default function Show({ auth, schedule, homeworkRecords }) {
                                 <label className="block text-sm font-medium text-gray-600 mb-1">Days Elapsed</label>
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-5 h-5 text-orange" />
-                                    <p className="font-semibold text-gray-900">{schedule.days_elapsed} days</p>
+                                    <p className="font-semibold text-gray-900">
+                                        {schedule.days_elapsed != null ? `${schedule.days_elapsed} days` : 'Not available'}
+                                    </p>
                                 </div>
                             </div>
 
@@ -236,7 +242,7 @@ export default function Show({ auth, schedule, homeworkRecords }) {
                                 <div className="flex items-center gap-2">
                                     <Clock className="w-5 h-5 text-orange" />
                                     <p className="font-semibold text-gray-900">
-                                        {schedule.days_remaining !== null ? `${schedule.days_remaining} days` : 'No deadline'}
+                                        {schedule.days_remaining != null ? `${schedule.days_remaining} days` : 'No deadline'}
                                     </p>
                                 </div>
                             </div>

@@ -1,6 +1,6 @@
 import { BottomSheetMenuItem, BottomSheetSection } from './BottomSheet';
 import {
-    Book,
+    BookOpen,
     FileText,
     FolderOpen,
     Shield,
@@ -28,10 +28,10 @@ export default function GuardianMoreMenu({ isMadrasah = false, badges = {} }) {
                         href="/quran"
                     />
                     <BottomSheetMenuItem
-                        icon={Book}
-                        label="Tracking"
-                        href="/guardian/quran-tracking"
-                        badge={badges.quranTracking}
+                        icon={BookOpen}
+                        label="Homework"
+                        href="/guardian/quran-homework"
+                        badge={badges.quranHomework}
                     />
                     <BottomSheetMenuItem
                         icon={Home}

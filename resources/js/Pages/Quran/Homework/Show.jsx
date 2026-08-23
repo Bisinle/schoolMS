@@ -73,6 +73,11 @@ export default function QuranHomeworkShow({ homework, auth }) {
         assessment_notes: '',
     });
 
+    // The backend only creates/updates an assessment record (mistakes_count, assessment_notes)
+    // when at least one star rating is set — mistakes/notes submitted alone are silently dropped.
+    // Disable those two fields until a rating is set so a teacher can't lose input that way.
+    const hasStarRating = Boolean(gradeForm.data.fluency_rating) || Boolean(gradeForm.data.tajweed_rating);
+
     const submitGrade = (e) => {
         e.preventDefault();
         gradeForm.post(`/quran-homework/${homework.id}/grade`);
@@ -348,9 +353,15 @@ export default function QuranHomeworkShow({ homework, auth }) {
                                                 value={gradeForm.data.mistakes_count}
                                                 onChange={(e) => gradeForm.setData('mistakes_count', e.target.value)}
                                                 min="0"
-                                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
+                                                disabled={!hasStarRating}
+                                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                                                 placeholder="0"
                                             />
+                                            {!hasStarRating && (
+                                                <p className="mt-1.5 text-xs text-amber-700">
+                                                    Set a fluency or tajweed rating above to enable this field — mistakes and notes are only saved together with a star rating.
+                                                </p>
+                                            )}
                                         </div>
 
                                         {/* Assessment Notes */}
@@ -363,9 +374,15 @@ export default function QuranHomeworkShow({ homework, auth }) {
                                                 value={gradeForm.data.assessment_notes}
                                                 onChange={(e) => gradeForm.setData('assessment_notes', e.target.value)}
                                                 rows="3"
-                                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all"
+                                                disabled={!hasStarRating}
+                                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
                                                 placeholder="Specific feedback on fluency, tajweed, or areas for improvement..."
                                             />
+                                            {!hasStarRating && (
+                                                <p className="mt-1.5 text-xs text-amber-700">
+                                                    Set a fluency or tajweed rating above to enable this field — mistakes and notes are only saved together with a star rating.
+                                                </p>
+                                            )}
                                         </div>
 
                                         <div className="flex justify-end">

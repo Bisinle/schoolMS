@@ -221,11 +221,6 @@ export default function AdminMoreMenu({ isMadrasah = false, badges = {} }) {
                                 href="/quran"
                             />
                             <BottomSheetMenuItem
-                                icon={Book}
-                                label="Tracking"
-                                href="/quran-tracking"
-                            />
-                            <BottomSheetMenuItem
                                 icon={BookOpen}
                                 label="Homework"
                                 href="/quran-homework"

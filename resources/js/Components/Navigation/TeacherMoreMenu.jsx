@@ -75,12 +75,6 @@ export default function TeacherMoreMenu({ isMadrasah = false, badges = {} }) {
                         href="/quran"
                     />
                     <BottomSheetMenuItem
-                        icon={Book}
-                        label="Tracking"
-                        href="/quran-tracking"
-                        badge={badges.quranTracking}
-                    />
-                    <BottomSheetMenuItem
                         icon={BookOpen}
                         label="Homework"
                         href="/quran-homework"
