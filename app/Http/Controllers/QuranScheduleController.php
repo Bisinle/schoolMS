@@ -29,10 +29,6 @@ class QuranScheduleController extends Controller
             $query->where('student_id', $request->student_id);
         }
 
-        if ($request->filled('schedule_type')) {
-            $query->where('schedule_type', $request->schedule_type);
-        }
-
         if ($request->filled('status')) {
             if ($request->status === 'active') {
                 $query->where('is_active', true);
@@ -49,7 +45,7 @@ class QuranScheduleController extends Controller
         return Inertia::render('Quran/Schedule/Index', [
             'schedules' => $schedules,
             'students' => $students,
-            'filters' => $request->only(['student_id', 'schedule_type', 'status']),
+            'filters' => $request->only(['student_id', 'status']),
         ]);
     }
 

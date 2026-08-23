@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\QuranTracking;
 use App\Models\QuranHomework;
 use App\Models\QuranSchedule;
 use App\Models\QuranHomePractice;
@@ -20,16 +19,16 @@ class QuranController extends Controller
 
         // Overall statistics
         $stats = [
-            'totalSessions' => QuranTracking::count(),
-            'studentsTracked' => QuranTracking::distinct('student_id')->count('student_id'),
-            'pagesMemorized' => QuranTracking::where('reading_type', 'new_learning')->sum('pages_memorized'),
-            'juzMemorized' => QuranTracking::where('reading_type', 'new_learning')->sum('juz_memorized'),
-            
+            'totalSessions' => QuranHomework::count(),
+            'studentsTracked' => QuranHomework::distinct('student_id')->count('student_id'),
+            'pagesMemorized' => QuranHomework::where('reading_type', 'new_learning')->sum('pages_memorized'),
+            'juzMemorized' => QuranHomework::where('reading_type', 'new_learning')->sum('juz_memorized'),
+
             // Module-specific stats
             'tracking' => [
-                'total' => QuranTracking::count(),
-                'thisMonth' => QuranTracking::whereMonth('date', now()->month)
-                    ->whereYear('date', now()->year)
+                'total' => QuranHomework::count(),
+                'thisMonth' => QuranHomework::whereMonth('assigned_date', now()->month)
+                    ->whereYear('assigned_date', now()->year)
                     ->count(),
             ],
             'homework' => [
@@ -53,18 +52,18 @@ class QuranController extends Controller
         ];
 
         // Recent sessions (last 10)
-        $recentSessions = QuranTracking::with(['student', 'teacher'])
-            ->orderBy('date', 'desc')
+        $recentSessions = QuranHomework::with(['student', 'teacher'])
+            ->orderBy('assigned_date', 'desc')
             ->take(10)
             ->get()
-            ->map(function ($tracking) {
+            ->map(function ($homework) {
                 return [
-                    'id' => $tracking->id,
-                    'student_name' => $tracking->student->full_name,
-                    'teacher_name' => $tracking->teacher->name ?? 'N/A',
-                    'date' => $tracking->date->format('M d, Y'),
-                    'reading_type' => $tracking->reading_type_label,
-                    'pages_memorized' => $tracking->pages_memorized,
+                    'id' => $homework->id,
+                    'student_name' => $homework->student->full_name,
+                    'teacher_name' => $homework->teacher->name ?? 'N/A',
+                    'date' => $homework->assigned_date->format('M d, Y'),
+                    'reading_type' => $homework->reading_type_label,
+                    'pages_memorized' => $homework->pages_memorized,
                 ];
             });
 
