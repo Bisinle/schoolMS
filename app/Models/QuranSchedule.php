@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class QuranSchedule extends Model
 {
-    use HasFactory, BelongsToSchool;
+    use BelongsToSchool, HasFactory;
 
     protected $fillable = [
         'student_id',
@@ -37,6 +37,23 @@ class QuranSchedule extends Model
     ];
 
     protected $appends = ['target_total_pages', 'current_progress', 'progress_percentage', 'days_elapsed', 'days_remaining', 'status_badge'];
+
+    /**
+     * Per-instance memo for the two genuinely expensive computed attributes.
+     *
+     * target_total_pages costs two Quran API/cache lookups and current_progress
+     * costs a SQL SUM, yet progress_percentage reads both and status_badge reads
+     * progress_percentage — so serializing one schedule recomputed each of them
+     * several times over. Multiplied across a paginated index or a students list
+     * that eager-loads a schedule per student, that turned into hundreds of
+     * redundant queries and API calls per page load.
+     *
+     * Keyed by attribute name and checked with array_key_exists, because
+     * target_total_pages legitimately computes to null.
+     *
+     * @var array<string, mixed>
+     */
+    private array $computedMemo = [];
 
     public function student()
     {
@@ -104,14 +121,16 @@ class QuranSchedule extends Model
      */
     public function getTargetTotalPagesAttribute()
     {
+        if (array_key_exists('target_total_pages', $this->computedMemo)) {
+            return $this->computedMemo['target_total_pages'];
+        }
+
         $calculator = app(QuranTrackingCalculator::class);
         $pages = $calculator->derivePagesFromVerses($this->surah_from, $this->verse_from, $this->surah_to, $this->verse_to);
 
-        if (! $pages) {
-            return null;
-        }
-
-        return $calculator->computePages($pages[0], $pages[1]);
+        return $this->computedMemo['target_total_pages'] = $pages
+            ? $calculator->computePages($pages[0], $pages[1])
+            : null;
     }
 
     public function getProgressPercentageAttribute()
@@ -127,7 +146,25 @@ class QuranSchedule extends Model
 
     public function getCurrentProgressAttribute()
     {
-        return $this->homework()->where('status', 'graded')->sum('pages_memorized');
+        if (array_key_exists('current_progress', $this->computedMemo)) {
+            return $this->computedMemo['current_progress'];
+        }
+
+        return $this->computedMemo['current_progress'] = $this->homework()
+            ->where('status', 'graded')
+            ->sum('pages_memorized');
+    }
+
+    /**
+     * Drop the memoized computed attributes. Eloquent rebuilds the model on
+     * refresh()/fresh(), but an in-place reload of the same instance would
+     * otherwise keep serving pre-reload progress figures.
+     */
+    public function refresh()
+    {
+        $this->computedMemo = [];
+
+        return parent::refresh();
     }
 
     public function getStatusBadgeAttribute()

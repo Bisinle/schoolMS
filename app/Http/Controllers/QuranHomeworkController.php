@@ -53,7 +53,7 @@ class QuranHomeworkController extends Controller
         // Schedule (or the previous entry) — never freely chosen — so a
         // student without one isn't offered here.
         $students = $this->studentsForUser($user)
-            ->filter(fn ($student) => $student->activeQuranSchedule !== null)
+            ->filter(fn ($student) => (bool) $student->active_quran_schedule_exists)
             ->values();
 
         return Inertia::render('Quran/Homework/Create', [
@@ -475,8 +475,13 @@ class QuranHomeworkController extends Controller
             $query = Student::query();
         }
 
+        // withExists rather than with: callers only need a boolean "does this
+        // student have an active schedule". Eager-loading the schedule itself
+        // serialized six computed accessors (two Quran API lookups and a SQL
+        // SUM each) per student, for data the frontend never reads.
         return $query->where('status', 'active')
-            ->with(['grade', 'activeQuranSchedule'])
+            ->with('grade')
+            ->withExists('activeQuranSchedule')
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
