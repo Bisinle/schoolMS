@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\QuranHomePractice;
 use App\Models\QuranHomework;
 use App\Models\QuranSchedule;
-use App\Models\QuranHomePractice;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -73,4 +73,3 @@ class QuranController extends Controller
         ]);
     }
 }
-

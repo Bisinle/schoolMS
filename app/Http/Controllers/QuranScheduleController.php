@@ -80,7 +80,7 @@ class QuranScheduleController extends Controller
 
         if ($existingActive) {
             return back()->withErrors([
-                'student_id' => 'This student already has an active schedule. Please deactivate it first.'
+                'student_id' => 'This student already has an active schedule. Please deactivate it first.',
             ]);
         }
 
@@ -148,7 +148,7 @@ class QuranScheduleController extends Controller
 
             if ($existingActive) {
                 return back()->withErrors([
-                    'student_id' => 'This student already has an active schedule.'
+                    'student_id' => 'This student already has an active schedule.',
                 ]);
             }
         }
@@ -198,4 +198,3 @@ class QuranScheduleController extends Controller
             ->with('success', 'Schedule deleted successfully!');
     }
 }
-
