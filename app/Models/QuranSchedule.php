@@ -36,6 +36,8 @@ class QuranSchedule extends Model
         'verse_to' => 'integer',
     ];
 
+    protected $appends = ['target_total_pages', 'current_progress', 'progress_percentage', 'days_elapsed', 'days_remaining', 'status_badge'];
+
     public function student()
     {
         return $this->belongsTo(Student::class);
