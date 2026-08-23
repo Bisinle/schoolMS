@@ -1,31 +1,42 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Plus, BookOpen, Eye, Edit, Trash2, Calendar, User, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Plus, BookOpen, Eye, Edit, Trash2, Calendar, User, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
 import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
-import { Badge } from '@/Components/UI';
 import { useState } from 'react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
+const STATUS_BADGES = {
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'graded': 'bg-green-100 text-green-800',
+    'absent': 'bg-red-100 text-red-800',
+    'not_prepared': 'bg-pink-100 text-pink-800',
+};
+
+const STATUS_LABELS = {
+    'pending': 'Pending',
+    'graded': 'Graded',
+    'absent': 'Absent',
+    'not_prepared': 'Not Prepared',
+};
+
+const READING_TYPE_BADGES = {
+    'new_learning': 'bg-blue-100 text-blue-800',
+    'revision': 'bg-green-100 text-green-800',
+    'subac': 'bg-purple-100 text-purple-800',
+};
+
+const getStatusIcon = (status) => {
+    if (status === 'graded') return CheckCircle;
+    if (status === 'absent') return XCircle;
+    if (status === 'not_prepared') return AlertTriangle;
+    return Clock;
+};
+
 // Mobile Homework Item Component
 function MobileHomeworkItem({ homework, auth }) {
-    const getStatusBadge = (status) => {
-        const variants = {
-            'completed': 'success',
-            'overdue': 'danger',
-            'pending': 'warning',
-        };
-        return variants[status] || 'secondary';
-    };
-
-    const getStatusIcon = (status) => {
-        if (status === 'completed') return CheckCircle;
-        if (status === 'overdue') return AlertCircle;
-        return Clock;
-    };
-
-    const StatusIcon = getStatusIcon(homework.status_badge);
+    const StatusIcon = getStatusIcon(homework.status);
 
     // Define swipe actions
     const primaryActions = [
@@ -36,9 +47,9 @@ function MobileHomeworkItem({ homework, auth }) {
     ];
 
     const secondaryActions = auth.user.role === 'admin' || auth.user.role === 'teacher' ? [
-        { 
-            icon: Trash2, 
-            label: 'Delete', 
+        {
+            icon: Trash2,
+            label: 'Delete',
             onClick: () => {
                 if (confirm('Are you sure you want to delete this homework?')) {
                     router.delete(`/quran-homework/${homework.id}`);
@@ -63,14 +74,12 @@ function MobileHomeworkItem({ homework, auth }) {
                 <div className="flex items-center gap-2 flex-wrap mt-2">
                     <div className="flex items-center gap-1.5 text-xs text-gray-600 bg-gray-50 px-2.5 py-1 rounded-lg">
                         <Calendar className="w-3.5 h-3.5" />
-                        Due: {new Date(homework.due_date).toLocaleDateString()}
+                        Assigned: {new Date(homework.assigned_date).toLocaleDateString()}
                     </div>
-                    <Badge
-                        variant={getStatusBadge(homework.status_badge)}
-                        value={homework.status_badge}
-                        size="sm"
-                        icon={StatusIcon}
-                    />
+                    <span className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGES[homework.status] || 'bg-gray-100 text-gray-800'}`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {STATUS_LABELS[homework.status] || homework.status_label}
+                    </span>
                 </div>
             </div>
         </div>
@@ -86,7 +95,7 @@ function MobileHomeworkItem({ homework, auth }) {
                     </div>
                     <div className="flex-1 min-w-0">
                         <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                            {homework.homework_type_label}
+                            {homework.reading_type_label}
                         </div>
                         <div className="text-sm font-bold text-gray-900">
                             Surah {homework.surah_from} - {homework.surah_to}
@@ -97,13 +106,6 @@ function MobileHomeworkItem({ homework, auth }) {
                     </div>
                 </div>
             </div>
-
-            {homework.teacher_instructions && (
-                <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                    <div className="text-xs font-semibold text-blue-900 mb-1">Instructions:</div>
-                    <div className="text-xs text-blue-800">{homework.teacher_instructions}</div>
-                </div>
-            )}
 
             <div className="flex items-center gap-2 text-xs text-gray-500">
                 <User className="w-3.5 h-3.5" />
@@ -131,7 +133,7 @@ export default function Index({ homework, students, filters: initialFilters = {}
         initialFilters: {
             status: initialFilters.status || '',
             student_id: initialFilters.student_id || '',
-            homework_type: initialFilters.homework_type || '',
+            reading_type: initialFilters.reading_type || '',
         },
     });
 
@@ -152,24 +154,6 @@ export default function Index({ homework, students, filters: initialFilters = {}
                 }
             });
         }
-    };
-
-    const getStatusBadge = (status) => {
-        const badges = {
-            'completed': 'bg-green-100 text-green-800',
-            'overdue': 'bg-red-100 text-red-800',
-            'pending': 'bg-yellow-100 text-yellow-800',
-        };
-        return badges[status] || 'bg-gray-100 text-gray-800';
-    };
-
-    const getTypeBadge = (type) => {
-        const badges = {
-            'memorize': 'bg-purple-100 text-purple-800',
-            'revise': 'bg-blue-100 text-blue-800',
-            'read': 'bg-green-100 text-green-800',
-        };
-        return badges[type] || 'bg-gray-100 text-gray-800';
     };
 
     return (
@@ -205,8 +189,9 @@ export default function Index({ homework, students, filters: initialFilters = {}
                             options={[
                                 { value: '', label: 'All Statuses' },
                                 { value: 'pending', label: 'Pending' },
-                                { value: 'completed', label: 'Completed' },
-                                { value: 'overdue', label: 'Overdue' },
+                                { value: 'graded', label: 'Graded' },
+                                { value: 'absent', label: 'Absent' },
+                                { value: 'not_prepared', label: 'Not Prepared' },
                             ]}
                         />
                         <FilterSelect
@@ -222,14 +207,14 @@ export default function Index({ homework, students, filters: initialFilters = {}
                             ]}
                         />
                         <FilterSelect
-                            label="Type"
-                            value={filters.homework_type}
-                            onChange={(e) => updateFilter('homework_type', e.target.value)}
+                            label="Reading Type"
+                            value={filters.reading_type}
+                            onChange={(e) => updateFilter('reading_type', e.target.value)}
                             options={[
                                 { value: '', label: 'All Types' },
-                                { value: 'memorize', label: 'Memorization' },
-                                { value: 'revise', label: 'Revision' },
-                                { value: 'read', label: 'Reading' },
+                                { value: 'new_learning', label: 'New Learning' },
+                                { value: 'revision', label: 'Revision' },
+                                { value: 'subac', label: 'Subac' },
                             ]}
                         />
                     </FilterBar>
@@ -269,7 +254,7 @@ export default function Index({ homework, students, filters: initialFilters = {}
                                         Assignment
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                        Due Date
+                                        Assigned Date
                                     </th>
                                     <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
                                         Status
@@ -281,7 +266,9 @@ export default function Index({ homework, students, filters: initialFilters = {}
                             </thead>
                             <tbody className="bg-white divide-y divide-gray-200">
                                 {homework.data.length > 0 ? (
-                                    homework.data.map((hw) => (
+                                    homework.data.map((hw) => {
+                                        const StatusIcon = getStatusIcon(hw.status);
+                                        return (
                                         <tr key={hw.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="text-sm font-medium text-gray-900">
@@ -292,8 +279,8 @@ export default function Index({ homework, students, filters: initialFilters = {}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getTypeBadge(hw.homework_type)}`}>
-                                                    {hw.homework_type_label}
+                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${READING_TYPE_BADGES[hw.reading_type] || 'bg-gray-100 text-gray-800'}`}>
+                                                    {hw.reading_type_label}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4">
@@ -306,12 +293,13 @@ export default function Index({ homework, students, filters: initialFilters = {}
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="text-sm text-gray-900">
-                                                    {new Date(hw.due_date).toLocaleDateString()}
+                                                    {new Date(hw.assigned_date).toLocaleDateString()}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4">
-                                                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getStatusBadge(hw.status_badge)}`}>
-                                                    {hw.status_badge}
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGES[hw.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                    <StatusIcon className="w-3.5 h-3.5" />
+                                                    {STATUS_LABELS[hw.status] || hw.status_label}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -337,7 +325,8 @@ export default function Index({ homework, students, filters: initialFilters = {}
                                                 </div>
                                             </td>
                                         </tr>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <tr>
                                         <td colSpan="6" className="px-6 py-12 text-center">
@@ -383,4 +372,3 @@ export default function Index({ homework, students, filters: initialFilters = {}
         </AuthenticatedLayout>
     );
 }
-

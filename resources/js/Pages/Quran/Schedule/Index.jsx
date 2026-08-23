@@ -1,7 +1,7 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Plus, Calendar, User, TrendingUp, CheckCircle, AlertCircle, Power, PowerOff } from 'lucide-react';
+import { Plus, Calendar, User, TrendingUp, Power, PowerOff, BookOpen } from 'lucide-react';
 import ProgressBar from '@/Components/UI/ProgressBar';
 
 export default function Index({ auth, schedules, students, filters }) {
@@ -68,7 +68,7 @@ export default function Index({ auth, schedules, students, filters }) {
 
                     {/* Filters */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {/* Student Filter */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -76,9 +76,9 @@ export default function Index({ auth, schedules, students, filters }) {
                                 </label>
                                 <select
                                     value={filters.student_id || ''}
-                                    onChange={(e) => router.get('/quran-schedule', { 
-                                        ...filters, 
-                                        student_id: e.target.value 
+                                    onChange={(e) => router.get('/quran-schedule', {
+                                        ...filters,
+                                        student_id: e.target.value
                                     })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-orange"
                                 >
@@ -91,26 +91,6 @@ export default function Index({ auth, schedules, students, filters }) {
                                 </select>
                             </div>
 
-                            {/* Schedule Type Filter */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">
-                                    Schedule Type
-                                </label>
-                                <select
-                                    value={filters.schedule_type || ''}
-                                    onChange={(e) => router.get('/quran-schedule', { 
-                                        ...filters, 
-                                        schedule_type: e.target.value 
-                                    })}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-orange"
-                                >
-                                    <option value="">All Types</option>
-                                    <option value="daily">Daily</option>
-                                    <option value="weekly">Weekly</option>
-                                    <option value="monthly">Monthly</option>
-                                </select>
-                            </div>
-
                             {/* Status Filter */}
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -118,9 +98,9 @@ export default function Index({ auth, schedules, students, filters }) {
                                 </label>
                                 <select
                                     value={filters.status || ''}
-                                    onChange={(e) => router.get('/quran-schedule', { 
-                                        ...filters, 
-                                        status: e.target.value 
+                                    onChange={(e) => router.get('/quran-schedule', {
+                                        ...filters,
+                                        status: e.target.value
                                     })}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-orange"
                                 >
@@ -173,15 +153,25 @@ export default function Index({ auth, schedules, students, filters }) {
                                             </div>
                                         </div>
 
+                                        {/* Verse Range */}
+                                        <div className="mb-4 flex items-center gap-2 text-sm text-gray-700 bg-gray-50 rounded-lg px-3 py-2 w-fit">
+                                            <BookOpen className="w-4 h-4 text-orange" />
+                                            Surah {schedule.surah_from}:{schedule.verse_from} → Surah {schedule.surah_to}:{schedule.verse_to}
+                                        </div>
+
                                         {/* Progress Bar */}
                                         {schedule.target_total_pages && (
                                             <div className="mb-4">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-xs font-medium text-gray-600">Memorization Progress</span>
+                                                    <span className="text-xs font-bold text-gray-900">
+                                                        {schedule.current_progress} / {schedule.target_total_pages} pages
+                                                    </span>
+                                                </div>
                                                 <ProgressBar
-                                                    current={schedule.current_progress}
-                                                    target={schedule.target_total_pages}
-                                                    label="Memorization Progress"
-                                                    showPercentage={true}
-                                                    showStatus={true}
+                                                    value={schedule.current_progress}
+                                                    max={schedule.target_total_pages}
+                                                    color="orange"
                                                     size="md"
                                                 />
                                             </div>
@@ -190,14 +180,16 @@ export default function Index({ auth, schedules, students, filters }) {
                                         {/* Schedule Details */}
                                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
                                             <div>
-                                                <p className="text-xs text-gray-500">Schedule Type</p>
-                                                <p className="font-semibold text-gray-900">{schedule.schedule_type_label}</p>
+                                                <p className="text-xs text-gray-500">Total Target</p>
+                                                <p className="font-semibold text-gray-900">
+                                                    {schedule.target_total_pages ? `${schedule.target_total_pages} pages` : 'N/A'}
+                                                </p>
                                             </div>
                                             <div>
-                                                <p className="text-xs text-gray-500">Target per Period</p>
-                                                <p className="font-semibold text-gray-900">
-                                                    {schedule.target_pages_per_period || schedule.target_verses_per_period || 'N/A'}
-                                                    {schedule.target_pages_per_period ? ' pages' : ' verses'}
+                                                <p className="text-xs text-gray-500">Progress</p>
+                                                <p className="font-semibold text-gray-900 flex items-center gap-1">
+                                                    <TrendingUp className="w-3.5 h-3.5 text-orange" />
+                                                    {schedule.progress_percentage}%
                                                 </p>
                                             </div>
                                             <div>
@@ -284,5 +276,3 @@ export default function Index({ auth, schedules, students, filters }) {
         </AuthenticatedLayout>
     );
 }
-
-

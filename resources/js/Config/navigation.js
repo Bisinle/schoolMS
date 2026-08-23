@@ -65,7 +65,6 @@ export const getNavigation = (role, isMadrasah = false) => {
                     icon: Book,
                     submenu: [
                         { name: "Dashboard", href: "/quran", icon: LayoutDashboard },
-                        { name: "Tracking", href: "/quran-tracking", icon: Book },
                         { name: "Homework", href: "/quran-homework", icon: BookOpen },
                         { name: "Schedules", href: "/quran-schedule", icon: Calendar },
                     ]
@@ -128,7 +127,6 @@ export const getNavigation = (role, isMadrasah = false) => {
                     icon: Book,
                     submenu: [
                         { name: "Dashboard", href: "/quran", icon: LayoutDashboard },
-                        { name: "Tracking", href: "/quran-tracking", icon: Book },
                         { name: "Homework", href: "/quran-homework", icon: BookOpen },
                         { name: "Schedules", href: "/quran-schedule", icon: Calendar },
                     ]
@@ -154,7 +152,7 @@ export const getNavigation = (role, isMadrasah = false) => {
                     icon: Book,
                     submenu: [
                         { name: "Dashboard", href: "/quran", icon: LayoutDashboard },
-                        { name: "Tracking", href: "/guardian/quran-tracking", icon: Book },
+                        { name: "Homework", href: "/guardian/quran-homework", icon: BookOpen },
                         { name: "Home Practice", href: "/quran-home-practice", icon: Home },
                     ]
                 },

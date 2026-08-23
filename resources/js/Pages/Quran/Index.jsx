@@ -5,14 +5,6 @@ import { Book, BookOpen, Calendar, Home, Users, TrendingUp, Award, Clock } from 
 export default function QuranDashboard({ auth, stats, recentSessions }) {
     const modules = [
         {
-            name: 'Quran Tracking',
-            href: '/quran-tracking',
-            icon: Book,
-            description: 'Track student Quran memorization and recitation',
-            color: 'from-orange-500 to-orange-600',
-            stats: stats?.tracking || null,
-        },
-        {
             name: 'Quran Homework',
             href: '/quran-homework',
             icon: BookOpen,

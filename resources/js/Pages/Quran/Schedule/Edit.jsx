@@ -1,24 +1,187 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
-import { Save, Loader2, AlertCircle } from 'lucide-react';
+import { Save, Loader2, AlertCircle, BookOpen } from 'lucide-react';
+import axios from 'axios';
+import QuranPageText from '../Shared/QuranPageText';
+import QuranPageTextViewer from '../Shared/QuranPageTextViewer';
+
+const SURAH_NUMBERS = Array.from({ length: 114 }, (_, i) => i + 1);
 
 export default function Edit({ schedule, students }) {
+    const [surahFromDetail, setSurahFromDetail] = useState(null);
+    const [surahToDetail, setSurahToDetail] = useState(null);
+    const [loadingSurahFrom, setLoadingSurahFrom] = useState(false);
+    const [loadingSurahTo, setLoadingSurahTo] = useState(false);
+    const [surahFromError, setSurahFromError] = useState(false);
+    const [surahToError, setSurahToError] = useState(false);
+    const [verseFromOptions, setVerseFromOptions] = useState([]);
+    const [verseToOptions, setVerseToOptions] = useState([]);
+    const [fullscreenPage, setFullscreenPage] = useState(null);
+
+    const [pageFrom, setPageFrom] = useState(null);
+    const [pageTo, setPageTo] = useState(null);
+    const [calculatingPageRange, setCalculatingPageRange] = useState(false);
+    const [pageRangeError, setPageRangeError] = useState(false);
+
     const { data, setData, put, processing, errors } = useForm({
         student_id: schedule.student_id || '',
-        schedule_type: schedule.schedule_type || 'weekly',
-        target_pages_per_period: schedule.target_pages_per_period || '',
-        target_verses_per_period: schedule.target_verses_per_period || '',
+        surah_from: schedule.surah_from || '',
+        verse_from: schedule.verse_from || '',
+        surah_to: schedule.surah_to || '',
+        verse_to: schedule.verse_to || '',
         start_date: schedule.start_date || '',
-        expected_completion_date: schedule.expected_completion_date || '',
-        target_total_pages: schedule.target_total_pages || '',
+        end_date: schedule.end_date || '',
         notes: schedule.notes || '',
     });
+
+    // Resolve the existing surah_from/surah_to details on mount so the verse
+    // dropdowns have the right bounds without the teacher re-selecting them.
+    useEffect(() => {
+        if (data.surah_from) {
+            setLoadingSurahFrom(true);
+            axios.get(`/api/quran/surah/${data.surah_from}`)
+                .then((response) => {
+                    setSurahFromDetail(response.data);
+                    setVerseFromOptions(Array.from({ length: response.data.verses_count }, (_, i) => i + 1));
+                    setLoadingSurahFrom(false);
+                })
+                .catch(() => {
+                    setSurahFromError(true);
+                    setLoadingSurahFrom(false);
+                });
+        }
+        if (data.surah_to) {
+            setLoadingSurahTo(true);
+            axios.get(`/api/quran/surah/${data.surah_to}`)
+                .then((response) => {
+                    setSurahToDetail(response.data);
+                    let options = Array.from({ length: response.data.verses_count }, (_, i) => i + 1);
+                    if (data.surah_from == data.surah_to && data.verse_from) {
+                        options = options.filter(v => v > parseInt(data.verse_from));
+                    }
+                    setVerseToOptions(options);
+                    setLoadingSurahTo(false);
+                })
+                .catch(() => {
+                    setSurahToError(true);
+                    setLoadingSurahTo(false);
+                });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         put(`/quran-schedule/${schedule.id}`);
     };
+
+    const handleSurahFromChange = (e) => {
+        const surahNumber = e.target.value;
+        setData('surah_from', surahNumber);
+        setData('verse_from', '');
+        setData('verse_to', '');
+
+        if (!surahNumber) {
+            setSurahFromDetail(null);
+            setVerseFromOptions([]);
+            return;
+        }
+
+        setLoadingSurahFrom(true);
+        setSurahFromError(false);
+
+        axios.get(`/api/quran/surah/${surahNumber}`)
+            .then((response) => {
+                setSurahFromDetail(response.data);
+                setVerseFromOptions(Array.from({ length: response.data.verses_count }, (_, i) => i + 1));
+                setLoadingSurahFrom(false);
+            })
+            .catch(() => {
+                setSurahFromError(true);
+                setLoadingSurahFrom(false);
+            });
+    };
+
+    const handleSurahToChange = (e) => {
+        const surahNumber = e.target.value;
+        setData('surah_to', surahNumber);
+        setData('verse_to', '');
+
+        if (!surahNumber) {
+            setSurahToDetail(null);
+            setVerseToOptions([]);
+            return;
+        }
+
+        setLoadingSurahTo(true);
+        setSurahToError(false);
+
+        axios.get(`/api/quran/surah/${surahNumber}`)
+            .then((response) => {
+                setSurahToDetail(response.data);
+
+                let options = Array.from({ length: response.data.verses_count }, (_, i) => i + 1);
+                if (data.surah_from == surahNumber && data.verse_from) {
+                    options = options.filter(v => v > parseInt(data.verse_from));
+                }
+                setVerseToOptions(options);
+                setLoadingSurahTo(false);
+            })
+            .catch(() => {
+                setSurahToError(true);
+                setLoadingSurahTo(false);
+            });
+    };
+
+    const handleVerseFromChange = (e) => {
+        const verseNumber = parseInt(e.target.value);
+        setData('verse_from', verseNumber);
+
+        if (data.surah_from && data.surah_to && data.surah_from == data.surah_to && surahToDetail) {
+            const options = Array.from({ length: surahToDetail.verses_count }, (_, i) => i + 1)
+                .filter(v => v > verseNumber);
+            setVerseToOptions(options);
+
+            if (data.verse_to && data.verse_to <= verseNumber) {
+                setData('verse_to', '');
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (!(data.surah_from && data.surah_to && data.verse_from && data.verse_to)) {
+            setPageFrom(null);
+            setPageTo(null);
+            return;
+        }
+
+        setCalculatingPageRange(true);
+        setPageRangeError(false);
+
+        const timeoutId = setTimeout(() => {
+            axios
+                .get('/api/quran/page-range', {
+                    params: {
+                        surah_from: data.surah_from,
+                        surah_to: data.surah_to,
+                        verse_from: data.verse_from,
+                        verse_to: data.verse_to,
+                    },
+                })
+                .then((response) => {
+                    setPageFrom(response.data.page_from);
+                    setPageTo(response.data.page_to);
+                    setCalculatingPageRange(false);
+                })
+                .catch(() => {
+                    setPageRangeError(true);
+                    setCalculatingPageRange(false);
+                });
+        }, 350);
+
+        return () => clearTimeout(timeoutId);
+    }, [data.surah_from, data.surah_to, data.verse_from, data.verse_to]);
 
     return (
         <AuthenticatedLayout header="Edit Quran Schedule">
@@ -47,7 +210,7 @@ export default function Edit({ schedule, students }) {
                         </div>
                     )}
 
-                    {/* Form - Same structure as Create.jsx */}
+                    {/* Form */}
                     <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
                         {/* Student Selection */}
                         <div>
@@ -69,50 +232,151 @@ export default function Edit({ schedule, students }) {
                             {errors.student_id && <p className="mt-1 text-sm text-red-600">{errors.student_id}</p>}
                         </div>
 
-                        {/* Schedule Type */}
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">
-                                Schedule Type <span className="text-red-500">*</span>
-                            </label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {[
-                                    { value: 'daily', label: 'Daily', color: 'green' },
-                                    { value: 'weekly', label: 'Weekly', color: 'blue' },
-                                    { value: 'monthly', label: 'Monthly', color: 'purple' },
-                                ].map((type) => (
-                                    <button
-                                        key={type.value}
-                                        type="button"
-                                        onClick={() => setData('schedule_type', type.value)}
-                                        className={`px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
-                                            data.schedule_type === type.value
-                                                ? `bg-${type.color}-500 text-white shadow-md`
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
+                        {/* Verse Range */}
+                        <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-6 border border-orange-200/50">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4">Memorization Range</h3>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* From Surah */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                        From Surah <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={data.surah_from}
+                                        onChange={handleSurahFromChange}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
                                     >
-                                        {type.label}
-                                    </button>
-                                ))}
+                                        <option value="">Select Surah</option>
+                                        {SURAH_NUMBERS.map((n) => (
+                                            <option key={n} value={n}>Surah {n}</option>
+                                        ))}
+                                    </select>
+                                    {loadingSurahFrom && <p className="mt-1 text-xs text-gray-500">Loading surah details…</p>}
+                                    {surahFromDetail && (
+                                        <p className="mt-1 text-xs text-gray-600">
+                                            {surahFromDetail.name_simple} ({surahFromDetail.name_arabic}) — {surahFromDetail.verses_count} verses
+                                        </p>
+                                    )}
+                                    {surahFromError && <p className="mt-1 text-xs text-red-600">Could not load this surah's details.</p>}
+                                    {errors.surah_from && <p className="mt-1 text-sm text-red-600">{errors.surah_from}</p>}
+                                </div>
+
+                                {/* From Verse */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                        From Verse <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={data.verse_from}
+                                        onChange={handleVerseFromChange}
+                                        disabled={!surahFromDetail}
+                                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent ${!surahFromDetail ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                    >
+                                        <option value="">Select verse</option>
+                                        {verseFromOptions.map((v) => (
+                                            <option key={v} value={v}>Verse {v}</option>
+                                        ))}
+                                    </select>
+                                    {errors.verse_from && <p className="mt-1 text-sm text-red-600">{errors.verse_from}</p>}
+                                </div>
+
+                                {/* To Surah */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                        To Surah <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={data.surah_to}
+                                        onChange={handleSurahToChange}
+                                        disabled={!data.surah_from}
+                                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent ${!data.surah_from ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                    >
+                                        <option value="">Select Surah</option>
+                                        {SURAH_NUMBERS.map((n) => (
+                                            <option key={n} value={n}>Surah {n}</option>
+                                        ))}
+                                    </select>
+                                    {loadingSurahTo && <p className="mt-1 text-xs text-gray-500">Loading surah details…</p>}
+                                    {surahToDetail && (
+                                        <p className="mt-1 text-xs text-gray-600">
+                                            {surahToDetail.name_simple} ({surahToDetail.name_arabic}) — {surahToDetail.verses_count} verses
+                                        </p>
+                                    )}
+                                    {surahToError && <p className="mt-1 text-xs text-red-600">Could not load this surah's details.</p>}
+                                    {errors.surah_to && <p className="mt-1 text-sm text-red-600">{errors.surah_to}</p>}
+                                </div>
+
+                                {/* To Verse */}
+                                <div>
+                                    <label className="block text-sm font-bold text-gray-700 mb-2">
+                                        To Verse <span className="text-red-500">*</span>
+                                    </label>
+                                    <select
+                                        value={data.verse_to}
+                                        onChange={(e) => setData('verse_to', e.target.value)}
+                                        disabled={!surahToDetail}
+                                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent ${!surahToDetail ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                    >
+                                        <option value="">Select verse</option>
+                                        {verseToOptions.map((v) => (
+                                            <option key={v} value={v}>Verse {v}</option>
+                                        ))}
+                                    </select>
+                                    {errors.verse_to && <p className="mt-1 text-sm text-red-600">{errors.verse_to}</p>}
+                                </div>
                             </div>
-                            {errors.schedule_type && <p className="mt-1 text-sm text-red-600">{errors.schedule_type}</p>}
                         </div>
 
-                        {/* Targets */}
-                        <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-6 border border-orange-200/50">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Targets per {data.schedule_type === 'daily' ? 'Day' : data.schedule_type === 'weekly' ? 'Week' : 'Month'}</h3>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Target Pages</label>
-                                    <input type="number" min="1" value={data.target_pages_per_period} onChange={(e) => setData('target_pages_per_period', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent" placeholder="e.g., 5" />
-                                    {errors.target_pages_per_period && <p className="mt-1 text-sm text-red-600">{errors.target_pages_per_period}</p>}
+                        {/* Page Preview */}
+                        {pageFrom && pageTo && (
+                            <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6">
+                                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                                    <BookOpen className="w-5 h-5 text-indigo-600" />
+                                    Quran Page Preview
+                                </h3>
+
+                                <div dir="rtl" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div dir="ltr">
+                                        <QuranPageText
+                                            pageNumber={parseInt(pageFrom)}
+                                            title={`Starting Page ${pageFrom}`}
+                                            onExpand={() => setFullscreenPage(parseInt(pageFrom))}
+                                            className="w-full"
+                                        />
+                                    </div>
+                                    {pageFrom !== pageTo && (
+                                        <div dir="ltr">
+                                            <QuranPageText
+                                                pageNumber={parseInt(pageTo)}
+                                                title={`Ending Page ${pageTo}`}
+                                                onExpand={() => setFullscreenPage(parseInt(pageTo))}
+                                                className="w-full"
+                                            />
+                                        </div>
+                                    )}
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">Target Verses (Optional)</label>
-                                    <input type="number" min="1" value={data.target_verses_per_period} onChange={(e) => setData('target_verses_per_period', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent" placeholder="e.g., 20" />
-                                    {errors.target_verses_per_period && <p className="mt-1 text-sm text-red-600">{errors.target_verses_per_period}</p>}
+
+                                <div className="mt-4 p-4 bg-white rounded-lg border border-indigo-200">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-600">Total Pages:</span>
+                                        <span className="font-bold text-indigo-600 text-lg">
+                                            {Math.abs(pageTo - pageFrom) + 1} {Math.abs(pageTo - pageFrom) + 1 === 1 ? 'page' : 'pages'}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
+                        {pageRangeError && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                <p className="text-sm text-red-600">
+                                    Could not calculate the page range for this verse selection.
+                                </p>
+                            </div>
+                        )}
+                        {calculatingPageRange && (
+                            <p className="text-xs text-gray-500">Calculating page range…</p>
+                        )}
 
                         {/* Dates */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -122,17 +386,10 @@ export default function Edit({ schedule, students }) {
                                 {errors.start_date && <p className="mt-1 text-sm text-red-600">{errors.start_date}</p>}
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">Expected Completion Date (Optional)</label>
-                                <input type="date" value={data.expected_completion_date} onChange={(e) => setData('expected_completion_date', e.target.value)} min={data.start_date} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent" />
-                                {errors.expected_completion_date && <p className="mt-1 text-sm text-red-600">{errors.expected_completion_date}</p>}
+                                <label className="block text-sm font-bold text-gray-700 mb-2">End Date (Optional)</label>
+                                <input type="date" value={data.end_date} onChange={(e) => setData('end_date', e.target.value)} min={data.start_date} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent" />
+                                {errors.end_date && <p className="mt-1 text-sm text-red-600">{errors.end_date}</p>}
                             </div>
-                        </div>
-
-                        {/* Target Total Pages */}
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">Target Total Pages (Optional)</label>
-                            <input type="number" min="1" max="604" value={data.target_total_pages} onChange={(e) => setData('target_total_pages', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent" placeholder="e.g., 100" />
-                            {errors.target_total_pages && <p className="mt-1 text-sm text-red-600">{errors.target_total_pages}</p>}
                         </div>
 
                         {/* Notes */}
@@ -153,7 +410,10 @@ export default function Edit({ schedule, students }) {
                     </form>
                 </div>
             </div>
+
+            {fullscreenPage && (
+                <QuranPageTextViewer pageNumber={fullscreenPage} onClose={() => setFullscreenPage(null)} />
+            )}
         </AuthenticatedLayout>
     );
 }
-

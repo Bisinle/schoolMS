@@ -1,10 +1,31 @@
 import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { Calendar, User, Edit, Trash2, Power, PowerOff, TrendingUp, BookOpen, Clock } from 'lucide-react';
+import { Calendar, User, Edit, Trash2, Power, PowerOff, TrendingUp, BookOpen, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import ProgressBar from '@/Components/UI/ProgressBar';
 
-export default function Show({ auth, schedule, trackingRecords }) {
+const STATUS_BADGES = {
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'graded': 'bg-green-100 text-green-800',
+    'absent': 'bg-red-100 text-red-800',
+    'not_prepared': 'bg-pink-100 text-pink-800',
+};
+
+const STATUS_LABELS = {
+    'pending': 'Pending',
+    'graded': 'Graded',
+    'absent': 'Absent',
+    'not_prepared': 'Not Prepared',
+};
+
+const getStatusIcon = (status) => {
+    if (status === 'graded') return CheckCircle;
+    if (status === 'absent') return XCircle;
+    if (status === 'not_prepared') return AlertTriangle;
+    return Clock;
+};
+
+export default function Show({ auth, schedule, homeworkRecords }) {
     const handleActivate = () => {
         if (confirm('Activate this schedule? This will deactivate any other active schedules for this student.')) {
             router.post(`/quran-schedule/${schedule.id}/activate`);
@@ -113,14 +134,20 @@ export default function Show({ auth, schedule, trackingRecords }) {
 
                         {/* Progress Bar */}
                         {schedule.target_total_pages && (
-                            <ProgressBar
-                                current={schedule.current_progress}
-                                target={schedule.target_total_pages}
-                                label="Overall Memorization Progress"
-                                showPercentage={true}
-                                showStatus={true}
-                                size="lg"
-                            />
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-medium text-gray-700">Overall Memorization Progress</span>
+                                    <span className="text-sm font-bold text-gray-900">
+                                        {schedule.current_progress} / {schedule.target_total_pages} pages ({schedule.progress_percentage}%)
+                                    </span>
+                                </div>
+                                <ProgressBar
+                                    value={schedule.current_progress}
+                                    max={schedule.target_total_pages}
+                                    color="orange"
+                                    size="lg"
+                                />
+                            </div>
                         )}
                     </div>
 
@@ -145,25 +172,21 @@ export default function Show({ auth, schedule, trackingRecords }) {
                     {/* Schedule Details Card */}
                     <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl shadow-sm border border-orange-200/50 p-6 mb-6">
                         <h2 className="text-lg font-bold text-gray-900 mb-4">Schedule Details</h2>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Schedule Type</label>
-                                <p className="text-lg font-bold text-gray-900">{schedule.schedule_type_label}</p>
-                            </div>
 
-                            <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Target per Period</label>
-                                <p className="text-lg font-bold text-gray-900">
-                                    {schedule.target_pages_per_period || schedule.target_verses_per_period || 'N/A'}
-                                    {schedule.target_pages_per_period ? ' pages' : ' verses'}
-                                </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-3">
+                                <label className="block text-sm font-medium text-gray-600 mb-1">Memorization Range</label>
+                                <div dir="rtl" className="flex items-center justify-end gap-2">
+                                    <p dir="ltr" className="text-lg font-bold text-gray-900">
+                                        Surah {schedule.surah_from}:{schedule.verse_from} → Surah {schedule.surah_to}:{schedule.verse_to}
+                                    </p>
+                                </div>
                             </div>
 
                             <div>
                                 <label className="block text-sm font-medium text-gray-600 mb-1">Total Target</label>
                                 <p className="text-lg font-bold text-gray-900">
-                                    {schedule.target_total_pages ? `${schedule.target_total_pages} pages` : 'Not set'}
+                                    {schedule.target_total_pages ? `${schedule.target_total_pages} pages` : 'Not available'}
                                 </p>
                             </div>
 
@@ -178,12 +201,12 @@ export default function Show({ auth, schedule, trackingRecords }) {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-gray-600 mb-1">Expected Completion</label>
+                                <label className="block text-sm font-medium text-gray-600 mb-1">End Date</label>
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-5 h-5 text-orange" />
                                     <p className="font-semibold text-gray-900">
-                                        {schedule.expected_completion_date
-                                            ? new Date(schedule.expected_completion_date).toLocaleDateString()
+                                        {schedule.end_date
+                                            ? new Date(schedule.end_date).toLocaleDateString()
                                             : 'Open-ended'
                                         }
                                     </p>
@@ -228,55 +251,60 @@ export default function Show({ auth, schedule, trackingRecords }) {
                         )}
                     </div>
 
-                    {/* Tracking Records */}
+                    {/* Homework Records */}
                     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h2 className="text-lg font-bold text-gray-900 mb-4">
-                            Recent Tracking Records
+                            Homework Entries
                             <span className="ml-2 text-sm font-normal text-gray-500">
-                                (Since schedule start)
+                                (Chained from this schedule)
                             </span>
                         </h2>
 
-                        {trackingRecords.length === 0 ? (
+                        {homeworkRecords.length === 0 ? (
                             <p className="text-gray-500 text-center py-8">
-                                No tracking records found since this schedule started.
+                                No homework entries have been assigned from this schedule yet.
                             </p>
                         ) : (
                             <div className="space-y-3">
-                                {trackingRecords.map((record) => (
-                                    <div key={record.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-gradient-to-br from-orange to-orange-dark rounded-full flex items-center justify-center">
-                                                <BookOpen className="w-5 h-5 text-white" />
-                                            </div>
-                                            <div>
-                                                <p className="font-semibold text-gray-900">
-                                                    {record.reading_type_label}
-                                                </p>
-                                                <p className="text-sm text-gray-600">
-                                                    Surah {record.surah_from}:{record.verse_from} -
-                                                    Surah {record.surah_to}:{record.verse_to}
-                                                </p>
-                                                {record.pages_memorized > 0 && (
-                                                    <p className="text-xs text-gray-500">
-                                                        {record.pages_memorized} pages memorized
+                                {homeworkRecords.map((record) => {
+                                    const StatusIcon = getStatusIcon(record.status);
+                                    return (
+                                        <Link
+                                            key={record.id}
+                                            href={`/quran-homework/${record.id}`}
+                                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 bg-gradient-to-br from-orange to-orange-dark rounded-full flex items-center justify-center">
+                                                    <BookOpen className="w-5 h-5 text-white" />
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-900">
+                                                        {record.reading_type_label}
                                                     </p>
-                                                )}
+                                                    <p className="text-sm text-gray-600">
+                                                        Surah {record.surah_from}:{record.verse_from} -
+                                                        Surah {record.surah_to}:{record.verse_to}
+                                                    </p>
+                                                    {record.status === 'graded' && record.pages_memorized > 0 && (
+                                                        <p className="text-xs text-gray-500">
+                                                            {record.pages_memorized} pages memorized
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div className="text-right">
-                                            <p className="text-sm font-medium text-gray-900">
-                                                {new Date(record.date).toLocaleDateString()}
-                                            </p>
-                                            <Link
-                                                href={`/quran-tracking/${record.id}`}
-                                                className="text-xs text-orange hover:text-orange-dark"
-                                            >
-                                                View Details →
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))}
+                                            <div className="text-right">
+                                                <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-semibold rounded-full ${STATUS_BADGES[record.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                    <StatusIcon className="w-3.5 h-3.5" />
+                                                    {STATUS_LABELS[record.status] || record.status_label}
+                                                </span>
+                                                <p className="text-sm font-medium text-gray-900 mt-1">
+                                                    {new Date(record.assigned_date).toLocaleDateString()}
+                                                </p>
+                                            </div>
+                                        </Link>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>
@@ -295,5 +323,3 @@ export default function Show({ auth, schedule, trackingRecords }) {
         </AuthenticatedLayout>
     );
 }
-
-

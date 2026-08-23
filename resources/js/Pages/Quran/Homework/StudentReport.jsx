@@ -1,17 +1,46 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User, Eye, Star, AlertCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User, Eye, Star, AlertCircle, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
+
+const STATUS_BADGES = {
+    'pending': 'bg-yellow-100 text-yellow-800',
+    'graded': 'bg-green-100 text-green-800',
+    'absent': 'bg-red-100 text-red-800',
+    'not_prepared': 'bg-pink-100 text-pink-800',
+};
+
+const STATUS_LABELS = {
+    'pending': 'Pending',
+    'graded': 'Graded',
+    'absent': 'Absent',
+    'not_prepared': 'Not Prepared',
+};
+
+const getStatusIcon = (status) => {
+    if (status === 'graded') return CheckCircle;
+    if (status === 'absent') return XCircle;
+    if (status === 'not_prepared') return AlertTriangle;
+    return Clock;
+};
+
+const READING_TYPE_BADGES = {
+    'new_learning': 'bg-green-100 text-green-800',
+    'revision': 'bg-blue-100 text-blue-800',
+    'subac': 'bg-orange-100 text-orange-800',
+};
 
 // Mobile Session Card Component
-function MobileSessionCard({ session, getReadingTypeBadge, getDifficultyBadge }) {
+function MobileSessionCard({ session }) {
+    const StatusIcon = getStatusIcon(session.status);
+
     return (
         <div className="border-b border-gray-200 p-4 hover:bg-gray-50 transition-colors">
             <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Calendar className="w-4 h-4" />
-                    {new Date(session.date).toLocaleDateString()}
+                    {new Date(session.assigned_date).toLocaleDateString()}
                 </div>
-                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${getReadingTypeBadge(session.reading_type)}`}>
+                <span className={`px-2.5 py-1 text-xs font-semibold rounded-full ${READING_TYPE_BADGES[session.reading_type] || 'bg-gray-100 text-gray-800'}`}>
                     {session.reading_type_label}
                 </span>
             </div>
@@ -27,13 +56,14 @@ function MobileSessionCard({ session, getReadingTypeBadge, getDifficultyBadge })
 
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${getDifficultyBadge(session.difficulty)}`}>
-                        {session.difficulty_label}
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${STATUS_BADGES[session.status] || 'bg-gray-100 text-gray-800'}`}>
+                        <StatusIcon className="w-3 h-3" />
+                        {STATUS_LABELS[session.status] || session.status_label}
                     </span>
                     <span className="text-xs text-gray-500">• {session.teacher.name}</span>
                 </div>
                 <Link
-                    href={`/quran-tracking/${session.id}`}
+                    href={`/quran-homework/${session.id}`}
                     className="px-3 py-1.5 bg-orange text-white text-xs font-medium rounded-md hover:bg-orange-dark transition-colors flex items-center gap-1"
                 >
                     <Eye className="w-3 h-3" />
@@ -44,29 +74,18 @@ function MobileSessionCard({ session, getReadingTypeBadge, getDifficultyBadge })
     );
 }
 
-export default function StudentReport({ student, sessions, analytics, sessionsByMonth, sessionsByType, sessionsByDifficulty, assessmentAnalytics }) {
+export default function StudentReport({ student, sessions, analytics }) {
     const { auth } = usePage().props;
     const isGuardian = auth.user.role === 'guardian';
 
-    const getReadingTypeBadge = (type) => {
-        const badges = {
-            'new_learning': 'bg-green-100 text-green-800',
-            'revision': 'bg-blue-100 text-blue-800',
-            'subac': 'bg-orange-100 text-orange-800',
-        };
-        return badges[type] || 'bg-gray-100 text-gray-800';
-    };
+    // The controller sends the raw session list plus a handful of totals in
+    // `analytics` — reading-type and assessment breakdowns are derived here
+    // client-side rather than pre-aggregated server-side.
+    const sessionsByType = sessions.reduce((acc, s) => {
+        acc[s.reading_type] = (acc[s.reading_type] || 0) + 1;
+        return acc;
+    }, { new_learning: 0, revision: 0, subac: 0 });
 
-    const getDifficultyBadge = (difficulty) => {
-        const badges = {
-            'very_well': 'bg-green-100 text-green-800',
-            'middle': 'bg-yellow-100 text-yellow-800',
-            'difficult': 'bg-red-100 text-red-800',
-        };
-        return badges[difficulty] || 'bg-gray-100 text-gray-800';
-    };
-
-    // Calculate percentages for pie charts
     const totalSessions = analytics.total_sessions || 1;
     const typePercentages = {
         new_learning: Math.round((sessionsByType.new_learning / totalSessions) * 100),
@@ -74,14 +93,24 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
         subac: Math.round((sessionsByType.subac / totalSessions) * 100),
     };
 
-    const difficultyPercentages = {
-        very_well: Math.round((sessionsByDifficulty.very_well / totalSessions) * 100),
-        middle: Math.round((sessionsByDifficulty.middle / totalSessions) * 100),
-        difficult: Math.round((sessionsByDifficulty.difficult / totalSessions) * 100),
+    const statusPercentages = {
+        graded: Math.round(((analytics.graded_count || 0) / totalSessions) * 100),
+        pending: Math.round(((analytics.pending_count || 0) / totalSessions) * 100),
+        absent: Math.round(((analytics.absent_count || 0) / totalSessions) * 100),
+        not_prepared: Math.round(((analytics.not_prepared_count || 0) / totalSessions) * 100),
     };
 
+    const assessedSessions = sessions.filter(s => s.assessment);
+    const fluencyRatings = assessedSessions.map(s => s.assessment.fluency_rating).filter(v => v !== null && v !== undefined);
+    const tajweedRatings = assessedSessions.map(s => s.assessment.tajweed_rating).filter(v => v !== null && v !== undefined);
+    const mistakeCounts = assessedSessions.map(s => s.assessment.mistakes_count).filter(v => v !== null && v !== undefined);
+    const avgFluency = fluencyRatings.length ? (fluencyRatings.reduce((a, b) => a + b, 0) / fluencyRatings.length).toFixed(1) : null;
+    const avgTajweed = tajweedRatings.length ? (tajweedRatings.reduce((a, b) => a + b, 0) / tajweedRatings.length).toFixed(1) : null;
+    const totalMistakes = mistakeCounts.reduce((a, b) => a + b, 0);
+    const avgMistakes = mistakeCounts.length ? (totalMistakes / mistakeCounts.length).toFixed(1) : 0;
+
     return (
-        <AuthenticatedLayout header={`Quran Tracking Report - ${student.first_name} ${student.last_name}`}>
+        <AuthenticatedLayout header={`Quran Homework Report - ${student.first_name} ${student.last_name}`}>
             <Head title={`Quran Report - ${student.first_name} ${student.last_name}`} />
 
             <div className="py-6 sm:py-8">
@@ -89,17 +118,17 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                     {/* Header */}
                     <div className="mb-6 sm:mb-8">
                         <Link
-                            href={isGuardian ? "/guardian/quran-tracking" : "/quran-tracking"}
+                            href={isGuardian ? "/guardian/quran-homework" : "/quran-homework"}
                             className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors mb-4"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back to Quran Tracking
+                            Back to Quran Homework
                         </Link>
                         <div className="flex items-center space-x-3">
                             <BookOpen className="w-8 h-8 text-orange" />
                             <div>
                                 <h2 className="text-2xl font-bold text-gray-900">
-                                    Quran Tracking Report
+                                    Quran Homework Report
                                 </h2>
                                 <p className="text-sm text-gray-600">
                                     {student.first_name} {student.last_name} - {student.grade ? student.grade.name : 'N/A'}
@@ -115,12 +144,22 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                                 <Calendar className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
                                 <div className="text-center sm:text-right">
                                     <div className="text-2xl sm:text-3xl font-bold">{analytics.total_sessions}</div>
-                                    <div className="text-xs sm:text-sm opacity-90">Sessions</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Assignments</div>
                                 </div>
                             </div>
                         </div>
 
                         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
+                            <div className="flex flex-col sm:flex-row items-center justify-between">
+                                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
+                                <div className="text-center sm:text-right">
+                                    <div className="text-2xl sm:text-3xl font-bold">{analytics.graded_count}</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Graded</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
                             <div className="flex flex-col sm:flex-row items-center justify-between">
                                 <Book className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
                                 <div className="text-center sm:text-right">
@@ -130,22 +169,12 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                             </div>
                         </div>
 
-                        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
-                            <div className="flex flex-col sm:flex-row items-center justify-between">
-                                <BookOpen className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
-                                <div className="text-center sm:text-right">
-                                    <div className="text-2xl sm:text-3xl font-bold">{analytics.total_pages}</div>
-                                    <div className="text-xs sm:text-sm opacity-90">Pages</div>
-                                </div>
-                            </div>
-                        </div>
-
                         <div className="bg-gradient-to-br from-orange to-orange-dark rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-6 text-white">
                             <div className="flex flex-col sm:flex-row items-center justify-between">
                                 <Award className="w-6 h-6 sm:w-8 sm:h-8 opacity-80 mb-2 sm:mb-0" />
                                 <div className="text-center sm:text-right">
                                     <div className="text-2xl sm:text-3xl font-bold">{analytics.pages_memorized}</div>
-                                    <div className="text-xs sm:text-sm opacity-90">Memorized</div>
+                                    <div className="text-xs sm:text-sm opacity-90">Pages Memorized</div>
                                 </div>
                             </div>
                         </div>
@@ -166,12 +195,12 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                                         <span className="text-sm font-bold text-green-600">{typePercentages.new_learning}%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div 
+                                        <div
                                             className="bg-green-500 h-3 rounded-full transition-all duration-500"
                                             style={{ width: `${typePercentages.new_learning}%` }}
                                         ></div>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">{sessionsByType.new_learning} sessions</div>
+                                    <div className="text-xs text-gray-500 mt-1">{sessionsByType.new_learning} assignments</div>
                                 </div>
 
                                 <div>
@@ -180,12 +209,12 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                                         <span className="text-sm font-bold text-blue-600">{typePercentages.revision}%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div 
+                                        <div
                                             className="bg-blue-500 h-3 rounded-full transition-all duration-500"
                                             style={{ width: `${typePercentages.revision}%` }}
                                         ></div>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">{sessionsByType.revision} sessions</div>
+                                    <div className="text-xs text-gray-500 mt-1">{sessionsByType.revision} assignments</div>
                                 </div>
 
                                 <div>
@@ -199,58 +228,60 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                                             style={{ width: `${typePercentages.subac}%` }}
                                         ></div>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">{sessionsByType.subac} sessions</div>
+                                    <div className="text-xs text-gray-500 mt-1">{sessionsByType.subac} assignments</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Difficulty Distribution */}
+                        {/* Status Distribution */}
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                             <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
                                 <Target className="w-5 h-5 mr-2 text-orange" />
-                                Performance Level Distribution
+                                Status Distribution
                             </h3>
                             <div className="space-y-4">
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-medium text-gray-700">Very Well</span>
-                                        <span className="text-sm font-bold text-green-600">{difficultyPercentages.very_well}%</span>
+                                        <span className="text-sm font-medium text-gray-700">Graded</span>
+                                        <span className="text-sm font-bold text-green-600">{statusPercentages.graded}%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div
-                                            className="bg-green-500 h-3 rounded-full transition-all duration-500"
-                                            style={{ width: `${difficultyPercentages.very_well}%` }}
-                                        ></div>
+                                        <div className="bg-green-500 h-3 rounded-full transition-all duration-500" style={{ width: `${statusPercentages.graded}%` }}></div>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">{sessionsByDifficulty.very_well} sessions</div>
+                                    <div className="text-xs text-gray-500 mt-1">{analytics.graded_count} assignments</div>
                                 </div>
 
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-medium text-gray-700">Middle</span>
-                                        <span className="text-sm font-bold text-yellow-600">{difficultyPercentages.middle}%</span>
+                                        <span className="text-sm font-medium text-gray-700">Pending</span>
+                                        <span className="text-sm font-bold text-yellow-600">{statusPercentages.pending}%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div
-                                            className="bg-yellow-500 h-3 rounded-full transition-all duration-500"
-                                            style={{ width: `${difficultyPercentages.middle}%` }}
-                                        ></div>
+                                        <div className="bg-yellow-500 h-3 rounded-full transition-all duration-500" style={{ width: `${statusPercentages.pending}%` }}></div>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">{sessionsByDifficulty.middle} sessions</div>
+                                    <div className="text-xs text-gray-500 mt-1">{analytics.pending_count} assignments</div>
                                 </div>
 
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
-                                        <span className="text-sm font-medium text-gray-700">Difficult</span>
-                                        <span className="text-sm font-bold text-red-600">{difficultyPercentages.difficult}%</span>
+                                        <span className="text-sm font-medium text-gray-700">Absent</span>
+                                        <span className="text-sm font-bold text-red-600">{statusPercentages.absent}%</span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-3">
-                                        <div
-                                            className="bg-red-500 h-3 rounded-full transition-all duration-500"
-                                            style={{ width: `${difficultyPercentages.difficult}%` }}
-                                        ></div>
+                                        <div className="bg-red-500 h-3 rounded-full transition-all duration-500" style={{ width: `${statusPercentages.absent}%` }}></div>
                                     </div>
-                                    <div className="text-xs text-gray-500 mt-1">{sessionsByDifficulty.difficult} sessions</div>
+                                    <div className="text-xs text-gray-500 mt-1">{analytics.absent_count} assignments</div>
+                                </div>
+
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-sm font-medium text-gray-700">Not Prepared</span>
+                                        <span className="text-sm font-bold text-pink-600">{statusPercentages.not_prepared}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-200 rounded-full h-3">
+                                        <div className="bg-pink-500 h-3 rounded-full transition-all duration-500" style={{ width: `${statusPercentages.not_prepared}%` }}></div>
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1">{analytics.not_prepared_count} assignments</div>
                                 </div>
                             </div>
                         </div>
@@ -282,117 +313,71 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                     </div>
 
                     {/* Assessment Analytics */}
-                    {assessmentAnalytics && (
+                    {assessedSessions.length > 0 && (
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8">
                             <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center">
                                 <Star className="w-5 h-5 mr-2 text-orange" />
                                 Assessment Analytics
                             </h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                                {/* Sessions with Assessment */}
                                 <div className="text-center p-6 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl">
                                     <div className="text-4xl font-bold text-indigo-600 mb-2">
-                                        {assessmentAnalytics.sessions_with_assessment}
+                                        {assessedSessions.length}
                                     </div>
-                                    <div className="text-sm text-gray-700 font-medium">Assessed Sessions</div>
+                                    <div className="text-sm text-gray-700 font-medium">Assessed Assignments</div>
                                     <div className="text-xs text-gray-500 mt-1">
                                         Out of {analytics.total_sessions} total
                                     </div>
                                 </div>
 
-                                {/* Average Fluency Rating */}
-                                {assessmentAnalytics.avg_fluency_rating && (
+                                {avgFluency && (
                                     <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
                                         <div className="flex items-center justify-center gap-2 mb-2">
                                             <Star className="w-6 h-6 fill-blue-600 text-blue-600" />
-                                            <div className="text-4xl font-bold text-blue-600">
-                                                {assessmentAnalytics.avg_fluency_rating}
-                                            </div>
+                                            <div className="text-4xl font-bold text-blue-600">{avgFluency}</div>
                                         </div>
                                         <div className="text-sm text-gray-700 font-medium">Avg Fluency</div>
                                         <div className="text-xs text-gray-500 mt-1">Out of 5 stars</div>
                                     </div>
                                 )}
 
-                                {/* Average Tajweed Rating */}
-                                {assessmentAnalytics.avg_tajweed_rating && (
+                                {avgTajweed && (
                                     <div className="text-center p-6 bg-gradient-to-br from-teal-50 to-teal-100 rounded-xl">
                                         <div className="flex items-center justify-center gap-2 mb-2">
                                             <Star className="w-6 h-6 fill-teal-600 text-teal-600" />
-                                            <div className="text-4xl font-bold text-teal-600">
-                                                {assessmentAnalytics.avg_tajweed_rating}
-                                            </div>
+                                            <div className="text-4xl font-bold text-teal-600">{avgTajweed}</div>
                                         </div>
                                         <div className="text-sm text-gray-700 font-medium">Avg Tajweed</div>
                                         <div className="text-xs text-gray-500 mt-1">Out of 5 stars</div>
                                     </div>
                                 )}
 
-                                {/* Total Mistakes */}
                                 <div className="text-center p-6 bg-gradient-to-br from-red-50 to-red-100 rounded-xl">
                                     <div className="flex items-center justify-center gap-2 mb-2">
                                         <AlertCircle className={`w-6 h-6 ${
-                                            assessmentAnalytics.total_mistakes === 0
-                                                ? 'text-green-600'
-                                                : assessmentAnalytics.avg_mistakes_per_session <= 2
-                                                ? 'text-yellow-600'
-                                                : 'text-red-600'
+                                            totalMistakes === 0 ? 'text-green-600' : avgMistakes <= 2 ? 'text-yellow-600' : 'text-red-600'
                                         }`} />
                                         <div className={`text-4xl font-bold ${
-                                            assessmentAnalytics.total_mistakes === 0
-                                                ? 'text-green-600'
-                                                : assessmentAnalytics.avg_mistakes_per_session <= 2
-                                                ? 'text-yellow-600'
-                                                : 'text-red-600'
+                                            totalMistakes === 0 ? 'text-green-600' : avgMistakes <= 2 ? 'text-yellow-600' : 'text-red-600'
                                         }`}>
-                                            {assessmentAnalytics.total_mistakes}
+                                            {totalMistakes}
                                         </div>
                                     </div>
                                     <div className="text-sm text-gray-700 font-medium">Total Mistakes</div>
                                     <div className="text-xs text-gray-500 mt-1">
-                                        Avg: {assessmentAnalytics.avg_mistakes_per_session} per session
+                                        Avg: {avgMistakes} per assignment
                                     </div>
                                 </div>
                             </div>
-
-                            {/* Performance Insight */}
-                            {(assessmentAnalytics.avg_fluency_rating || assessmentAnalytics.avg_tajweed_rating) && (
-                                <div className="mt-6 p-4 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
-                                    <div className="flex items-start gap-3">
-                                        <TrendingUp className="w-5 h-5 text-orange mt-0.5" />
-                                        <div>
-                                            <div className="font-semibold text-gray-900 mb-1">Performance Insight</div>
-                                            <div className="text-sm text-gray-700">
-                                                {(() => {
-                                                    const avgRating = (
-                                                        (assessmentAnalytics.avg_fluency_rating || 0) +
-                                                        (assessmentAnalytics.avg_tajweed_rating || 0)
-                                                    ) / 2;
-
-                                                    if (avgRating >= 4.5) {
-                                                        return "Excellent performance! The student demonstrates outstanding mastery of Quran recitation.";
-                                                    } else if (avgRating >= 3.5) {
-                                                        return "Very good progress! The student is performing well with consistent improvement.";
-                                                    } else if (avgRating >= 2.5) {
-                                                        return "Good effort! Continue practicing to improve fluency and tajweed.";
-                                                    } else {
-                                                        return "Keep practicing! Focus on improving fluency and tajweed rules.";
-                                                    }
-                                                })()}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
                         </div>
                     )}
 
-                    {/* All Sessions Table */}
+                    {/* All Assignments Table */}
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                         <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-gray-100">
                             <h3 className="text-base sm:text-lg font-bold text-gray-900 flex items-center">
                                 <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-orange" />
-                                All Sessions ({sessions.length})
+                                All Assignments ({sessions.length})
                             </h3>
                         </div>
 
@@ -401,37 +386,27 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                             <table className="min-w-full divide-y divide-gray-200">
                                 <thead className="bg-gray-50">
                                     <tr>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                            Date
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                            Type
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                            Surah & Verses
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                            Performance
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                            Teacher
-                                        </th>
-                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                            Actions
-                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Date</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Type</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Surah & Verses</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Teacher</th>
+                                        <th className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="bg-white divide-y divide-gray-200">
-                                    {sessions.map((session) => (
+                                    {sessions.map((session) => {
+                                        const StatusIcon = getStatusIcon(session.status);
+                                        return (
                                         <tr key={session.id} className="hover:bg-gray-50 transition-colors">
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center text-sm text-gray-900">
                                                     <Calendar className="w-4 h-4 text-gray-400 mr-2" />
-                                                    {new Date(session.date).toLocaleDateString()}
+                                                    {new Date(session.assigned_date).toLocaleDateString()}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex px-3 py-1 text-xs leading-5 font-bold rounded-full ${getReadingTypeBadge(session.reading_type)}`}>
+                                                <span className={`inline-flex px-3 py-1 text-xs leading-5 font-bold rounded-full ${READING_TYPE_BADGES[session.reading_type] || 'bg-gray-100 text-gray-800'}`}>
                                                     {session.reading_type_label}
                                                 </span>
                                             </td>
@@ -446,8 +421,9 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex px-3 py-1 text-xs leading-5 font-bold rounded-full ${getDifficultyBadge(session.difficulty)}`}>
-                                                    {session.difficulty_label}
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs leading-5 font-bold rounded-full ${STATUS_BADGES[session.status] || 'bg-gray-100 text-gray-800'}`}>
+                                                    <StatusIcon className="w-3.5 h-3.5" />
+                                                    {STATUS_LABELS[session.status] || session.status_label}
                                                 </span>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
@@ -455,14 +431,15 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <Link
-                                                    href={`/quran-tracking/${session.id}`}
+                                                    href={`/quran-homework/${session.id}`}
                                                     className="text-orange hover:text-orange-dark transition-colors"
                                                 >
                                                     View Details
                                                 </Link>
                                             </td>
                                         </tr>
-                                    ))}
+                                        );
+                                    })}
                                 </tbody>
                             </table>
                         </div>
@@ -470,12 +447,7 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
                         {/* Mobile List View */}
                         <div className="md:hidden">
                             {sessions.map((session) => (
-                                <MobileSessionCard
-                                    key={session.id}
-                                    session={session}
-                                    getReadingTypeBadge={getReadingTypeBadge}
-                                    getDifficultyBadge={getDifficultyBadge}
-                                />
+                                <MobileSessionCard key={session.id} session={session} />
                             ))}
                         </div>
                     </div>
@@ -484,4 +456,3 @@ export default function StudentReport({ student, sessions, analytics, sessionsBy
         </AuthenticatedLayout>
     );
 }
-

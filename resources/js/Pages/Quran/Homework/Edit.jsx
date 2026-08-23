@@ -2,71 +2,40 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ArrowLeft, Save, BookOpen, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import axios from 'axios';
 
-export default function Edit({ homework, students, surahs }) {
-    const [selectedSurahFrom, setSelectedSurahFrom] = useState(null);
+export default function QuranHomeworkEdit({ homework, surahs }) {
     const [selectedSurahTo, setSelectedSurahTo] = useState(null);
-    const [verseFromOptions, setVerseFromOptions] = useState([]);
     const [verseToOptions, setVerseToOptions] = useState([]);
+    const [calculatingPageRange, setCalculatingPageRange] = useState(false);
+    const [pageRangeError, setPageRangeError] = useState(false);
 
     const { data, setData, put, processing, errors } = useForm({
-        student_id: homework.student_id || '',
-        assigned_date: homework.assigned_date || '',
-        due_date: homework.due_date || '',
-        homework_type: homework.homework_type || 'memorize',
-        surah_from: homework.surah_from || '',
         surah_to: homework.surah_to || '',
-        verse_from: homework.verse_from || '',
         verse_to: homework.verse_to || '',
         page_from: homework.page_from || '',
         page_to: homework.page_to || '',
-        teacher_instructions: homework.teacher_instructions || '',
+        reading_type: homework.reading_type || 'new_learning',
+        notes: homework.notes || '',
     });
 
-    // Initialize surah selections on mount
+    // Initialize the To surah's verse options on mount.
     useEffect(() => {
-        if (data.surah_from) {
-            const surah = surahs.find(s => s.id == data.surah_from);
-            setSelectedSurahFrom(surah);
-            if (surah) {
-                const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
-                setVerseFromOptions(options);
-            }
-        }
         if (data.surah_to) {
-            const surah = surahs.find(s => s.id == data.surah_to);
-            setSelectedSurahTo(surah);
-            if (surah) {
-                const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
+            const surahTo = surahs.find(s => s.id == data.surah_to);
+            setSelectedSurahTo(surahTo);
+            if (surahTo) {
+                const options = Array.from({ length: surahTo.verses_count }, (_, i) => i + 1)
+                    .filter(v => !(homework.surah_from == surahTo.id) || v > homework.verse_from);
                 setVerseToOptions(options);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         put(`/quran-homework/${homework.id}`);
-    };
-
-    const handleSurahFromChange = (e) => {
-        const surahNumber = e.target.value;
-        setData('surah_from', surahNumber);
-        setData('verse_from', '');
-        setData('verse_to', '');
-
-        if (!surahNumber) {
-            setSelectedSurahFrom(null);
-            setVerseFromOptions([]);
-            return;
-        }
-
-        const surah = surahs.find(s => s.id == surahNumber);
-        setSelectedSurahFrom(surah);
-
-        if (surah) {
-            const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
-            setVerseFromOptions(options);
-        }
     };
 
     const handleSurahToChange = (e) => {
@@ -84,10 +53,11 @@ export default function Edit({ homework, students, surahs }) {
         setSelectedSurahTo(surah);
 
         if (surah) {
-            // If same surah and verse_from is selected, filter options
-            if (data.surah_from == surahNumber && data.verse_from) {
+            // If continuing within the same surah the From point starts in,
+            // only verses after the From verse are valid To choices.
+            if (homework.surah_from == surahNumber) {
                 const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1)
-                    .filter(v => v > parseInt(data.verse_from));
+                    .filter(v => v > homework.verse_from);
                 setVerseToOptions(options);
             } else {
                 const options = Array.from({ length: surah.verses_count }, (_, i) => i + 1);
@@ -96,301 +66,264 @@ export default function Edit({ homework, students, surahs }) {
         }
     };
 
-    const handleVerseFromChange = (e) => {
-        const verseNumber = parseInt(e.target.value);
-        setData('verse_from', verseNumber);
-
-        // If same surah, update verse_to options to only show verses after verse_from
-        if (data.surah_from && data.surah_to && data.surah_from == data.surah_to && selectedSurahTo) {
-            const options = Array.from({ length: selectedSurahTo.verses_count }, (_, i) => i + 1)
-                .filter(v => v > verseNumber);
-            setVerseToOptions(options);
-
-            // Reset verse_to if it's now invalid
-            if (data.verse_to && data.verse_to <= verseNumber) {
-                setData('verse_to', '');
-            }
+    // Re-derive page_from/page_to whenever the verse selection changes, the
+    // same way Create does — the observer won't recompute these on update
+    // once they're already set, so the frontend must keep them accurate.
+    useEffect(() => {
+        if (!(data.surah_to && data.verse_to)) {
+            return;
         }
-    };
+
+        setCalculatingPageRange(true);
+        setPageRangeError(false);
+
+        const timeoutId = setTimeout(() => {
+            axios
+                .get('/api/quran/page-range', {
+                    params: {
+                        surah_from: homework.surah_from,
+                        surah_to: data.surah_to,
+                        verse_from: homework.verse_from,
+                        verse_to: data.verse_to,
+                    },
+                })
+                .then((response) => {
+                    setData((prevData) => ({
+                        ...prevData,
+                        page_from: response.data.page_from,
+                        page_to: response.data.page_to,
+                    }));
+                    setCalculatingPageRange(false);
+                })
+                .catch(() => {
+                    setPageRangeError(true);
+                    setCalculatingPageRange(false);
+                });
+        }, 350);
+
+        return () => clearTimeout(timeoutId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [data.surah_to, data.verse_to]);
 
     return (
         <AuthenticatedLayout header="Edit Quran Homework">
             <Head title="Edit Quran Homework" />
 
             <div className="py-6 sm:py-8">
-                <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
                     {/* Header */}
-                    <div className="mb-6 flex items-center justify-between">
+                    <div className="mb-6 sm:mb-8">
+                        <Link
+                            href="/quran-homework"
+                            className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors mb-4"
+                        >
+                            <ArrowLeft className="w-4 h-4 mr-2" />
+                            Back to Quran Homework
+                        </Link>
                         <div className="flex items-center space-x-3">
                             <BookOpen className="w-8 h-8 text-orange" />
                             <div>
-                                <h2 className="text-2xl font-bold text-gray-900">Edit Homework</h2>
-                                <p className="text-sm text-gray-600">Update homework assignment details</p>
+                                <h2 className="text-2xl font-bold text-gray-900">Edit Quran Homework</h2>
+                                <p className="text-sm text-gray-600">
+                                    {homework.student.first_name} {homework.student.last_name}
+                                </p>
                             </div>
                         </div>
-                        <Link
-                            href="/quran-homework"
-                            className="inline-flex items-center px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition-colors"
-                        >
-                            <ArrowLeft className="w-4 h-4 mr-2" />
-                            Back
-                        </Link>
                     </div>
 
-                    {/* Completion Warning */}
-                    {homework.completed && (
-                        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                            <p className="text-sm text-yellow-800">
-                                <strong>Note:</strong> This homework has been completed. Editing may affect completion records.
-                            </p>
-                        </div>
-                    )}
-
-                    {/* Form - Same as Create.jsx */}
-                    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
-                        {/* Student Selection */}
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">
-                                Student <span className="text-red-500">*</span>
-                            </label>
-                            <select
-                                value={data.student_id}
-                                onChange={(e) => setData('student_id', e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                            >
-                                <option value="">Select a student</option>
-                                {students.map((student) => (
-                                    <option key={student.id} value={student.id}>
-                                        {student.first_name} {student.last_name} ({student.admission_number}) - {student.grade?.name}
-                                    </option>
-                                ))}
-                            </select>
-                            {errors.student_id && <p className="mt-1 text-sm text-red-600">{errors.student_id}</p>}
-                        </div>
-
-                        {/* Homework Type */}
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">
-                                Homework Type <span className="text-red-500">*</span>
-                            </label>
-                            <div className="grid grid-cols-3 gap-3">
-                                {[
-                                    { value: 'memorize', label: 'Memorization', color: 'purple' },
-                                    { value: 'revise', label: 'Revision', color: 'blue' },
-                                    { value: 'read', label: 'Reading', color: 'green' },
-                                ].map((type) => (
-                                    <button
-                                        key={type.value}
-                                        type="button"
-                                        onClick={() => setData('homework_type', type.value)}
-                                        className={`px-4 py-3 rounded-lg font-semibold text-sm transition-all ${
-                                            data.homework_type === type.value
-                                                ? `bg-${type.color}-500 text-white shadow-md`
-                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        {type.label}
-                                    </button>
-                                ))}
-                            </div>
-                            {errors.homework_type && <p className="mt-1 text-sm text-red-600">{errors.homework_type}</p>}
-                        </div>
-
-                        {/* Dates */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">
-                                    Assigned Date <span className="text-red-500">*</span>
+                    {/* Form */}
+                    <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 sm:p-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {/* Reading Type */}
+                            <div className="md:col-span-2">
+                                <label htmlFor="reading_type" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Reading Type <span className="text-red-500">*</span>
                                 </label>
-                                <input
-                                    type="date"
-                                    value={data.assigned_date}
-                                    onChange={(e) => setData('assigned_date', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                />
-                                {errors.assigned_date && <p className="mt-1 text-sm text-red-600">{errors.assigned_date}</p>}
+                                <select
+                                    id="reading_type"
+                                    value={data.reading_type}
+                                    onChange={(e) => setData('reading_type', e.target.value)}
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                        errors.reading_type ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                >
+                                    <option value="new_learning">New Learning</option>
+                                    <option value="revision">Revision</option>
+                                    <option value="subac">Subac</option>
+                                </select>
+                                {errors.reading_type && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.reading_type}</p>
+                                )}
                             </div>
+
+                            {/* From (read-only — chained, not editable) */}
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">
-                                    Due Date <span className="text-red-500">*</span>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Starting From
                                 </label>
-                                <input
-                                    type="date"
-                                    value={data.due_date}
-                                    onChange={(e) => setData('due_date', e.target.value)}
-                                    min={data.assigned_date}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                />
-                                {errors.due_date && <p className="mt-1 text-sm text-red-600">{errors.due_date}</p>}
+                                <div className="px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-700">
+                                    {homework.surah_name || `Surah ${homework.surah_from}`}, Verse {homework.verse_from}
+                                </div>
+                                <p className="mt-1 text-xs text-gray-500">
+                                    Chained to the Schedule / previous entry — not editable here.
+                                </p>
+                            </div>
+
+                            {/* To Surah */}
+                            <div>
+                                <label htmlFor="surah_to" className="block text-sm font-medium text-gray-700 mb-2">
+                                    To Surah <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="surah_to"
+                                    value={data.surah_to}
+                                    onChange={handleSurahToChange}
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                        errors.surah_to ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                >
+                                    <option value="">Select Surah</option>
+                                    {surahs.map((surah) => (
+                                        <option key={surah.id} value={surah.id}>
+                                            {surah.id}. {surah.name_arabic} - {surah.verses_count} verses
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.surah_to && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.surah_to}</p>
+                                )}
+                            </div>
+
+                            {/* To Verse */}
+                            <div>
+                                <label htmlFor="verse_to" className="block text-sm font-medium text-gray-700 mb-2">
+                                    To Verse <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    id="verse_to"
+                                    value={data.verse_to}
+                                    onChange={(e) => setData('verse_to', e.target.value)}
+                                    disabled={!selectedSurahTo}
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                        errors.verse_to ? 'border-red-500' : 'border-gray-300'
+                                    } ${!selectedSurahTo ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                                >
+                                    <option value="">Select verse</option>
+                                    {verseToOptions.map((verse) => (
+                                        <option key={verse} value={verse}>
+                                            Verse {verse}
+                                        </option>
+                                    ))}
+                                </select>
+                                {errors.verse_to && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.verse_to}</p>
+                                )}
                             </div>
                         </div>
 
-                        {/* Surah Range - Same as Create */}
-                        <div className="bg-gradient-to-br from-orange-50 to-orange-100/50 rounded-xl p-6 border border-orange-200/50">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4">Surah & Verse Range</h3>
+                        {/* Verse Range Validation Error */}
+                        {errors.verse_range && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-6">
+                                <p className="text-sm text-red-600">{errors.verse_range}</p>
+                            </div>
+                        )}
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {/* From Surah */}
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                                        From Surah <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={data.surah_from}
-                                        onChange={handleSurahFromChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                    >
-                                        <option value="">Select Surah</option>
-                                        {surahs.map((surah) => (
-                                            <option key={surah.id} value={surah.id}>
-                                                {surah.id}. {surah.name_arabic} ({surah.name_simple})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.surah_from && <p className="mt-1 text-sm text-red-600">{errors.surah_from}</p>}
-                                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                            {/* Page From / Page To — dir="rtl" mirrors the pair so From (earlier in
+                                the Mushaf) renders on the right and To on the left, matching how a
+                                physical Mushaf opens; dir="ltr" on each field keeps its own label/
+                                number left-aligned. */}
+                            <div className="md:col-span-2">
+                                <div dir="rtl" className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {/* Page From */}
+                                    <div dir="ltr">
+                                        <label htmlFor="page_from" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Page From
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="page_from"
+                                            value={data.page_from}
+                                            disabled
+                                            readOnly
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                                        />
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            {calculatingPageRange ? 'Calculating from verse selection…' : 'Auto-calculated from verse selection'}
+                                        </p>
+                                    </div>
 
-                                {/* To Surah */}
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                                        To Surah <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={data.surah_to}
-                                        onChange={handleSurahToChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                    >
-                                        <option value="">Select Surah</option>
-                                        {surahs.map((surah) => (
-                                            <option key={surah.id} value={surah.id}>
-                                                {surah.id}. {surah.name_arabic} ({surah.name_simple})
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.surah_to && <p className="mt-1 text-sm text-red-600">{errors.surah_to}</p>}
-                                </div>
-
-                                {/* From Verse */}
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                                        From Verse <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={data.verse_from}
-                                        onChange={handleVerseFromChange}
-                                        disabled={!selectedSurahFrom}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent disabled:bg-gray-100"
-                                    >
-                                        <option value="">Select Verse</option>
-                                        {verseFromOptions.map((verse) => (
-                                            <option key={verse} value={verse}>
-                                                Verse {verse}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.verse_from && <p className="mt-1 text-sm text-red-600">{errors.verse_from}</p>}
-                                </div>
-
-                                {/* To Verse */}
-                                <div>
-                                    <label className="block text-sm font-bold text-gray-700 mb-2">
-                                        To Verse <span className="text-red-500">*</span>
-                                    </label>
-                                    <select
-                                        value={data.verse_to}
-                                        onChange={(e) => setData('verse_to', e.target.value)}
-                                        disabled={!selectedSurahTo}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent disabled:bg-gray-100"
-                                    >
-                                        <option value="">Select Verse</option>
-                                        {verseToOptions.map((verse) => (
-                                            <option key={verse} value={verse}>
-                                                Verse {verse}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {errors.verse_to && <p className="mt-1 text-sm text-red-600">{errors.verse_to}</p>}
+                                    {/* Page To */}
+                                    <div dir="ltr">
+                                        <label htmlFor="page_to" className="block text-sm font-medium text-gray-700 mb-2">
+                                            Page To
+                                        </label>
+                                        <input
+                                            type="number"
+                                            id="page_to"
+                                            value={data.page_to}
+                                            disabled
+                                            readOnly
+                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
+                                        />
+                                        <p className="mt-1 text-xs text-gray-500">
+                                            {calculatingPageRange ? 'Calculating from verse selection…' : 'Auto-calculated from verse selection'}
+                                        </p>
+                                    </div>
                                 </div>
                             </div>
-
-                            {/* Verse Range Validation Error */}
-                            {errors.verse_range && (
-                                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                                    <p className="text-sm text-red-600">{errors.verse_range}</p>
+                            {pageRangeError && (
+                                <div className="md:col-span-2">
+                                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                                        <p className="text-sm text-red-600">
+                                            Could not calculate the page range for this verse selection. Please try a different range.
+                                        </p>
+                                    </div>
                                 </div>
                             )}
-                        </div>
 
-                        {/* Optional Page Range */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">
-                                    From Page (Optional)
+                            {/* Notes */}
+                            <div className="md:col-span-2">
+                                <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-2">
+                                    Notes (Optional)
                                 </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="604"
-                                    value={data.page_from}
-                                    onChange={(e) => setData('page_from', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                    placeholder="1-604"
+                                <textarea
+                                    id="notes"
+                                    value={data.notes}
+                                    onChange={(e) => setData('notes', e.target.value)}
+                                    rows="3"
+                                    className={`w-full px-4 py-2.5 border rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent transition-all ${
+                                        errors.notes ? 'border-red-500' : 'border-gray-300'
+                                    }`}
+                                    placeholder="Add any instructions or notes for this assignment..."
                                 />
-                                {errors.page_from && <p className="mt-1 text-sm text-red-600">{errors.page_from}</p>}
+                                {errors.notes && (
+                                    <p className="mt-1 text-sm text-red-600">{errors.notes}</p>
+                                )}
                             </div>
-                            <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-2">
-                                    To Page (Optional)
-                                </label>
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="604"
-                                    value={data.page_to}
-                                    onChange={(e) => setData('page_to', e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                    placeholder="1-604"
-                                />
-                                {errors.page_to && <p className="mt-1 text-sm text-red-600">{errors.page_to}</p>}
-                            </div>
-                        </div>
-
-                        {/* Teacher Instructions */}
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">
-                                Instructions (Optional)
-                            </label>
-                            <textarea
-                                value={data.teacher_instructions}
-                                onChange={(e) => setData('teacher_instructions', e.target.value)}
-                                rows="4"
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
-                                placeholder="Add any special instructions for the student..."
-                            />
-                            {errors.teacher_instructions && <p className="mt-1 text-sm text-red-600">{errors.teacher_instructions}</p>}
                         </div>
 
                         {/* Submit Button */}
-                        <div className="flex items-center justify-end gap-3 pt-4 border-t border-gray-200">
+                        <div className="mt-8 flex justify-end gap-3">
                             <Link
                                 href="/quran-homework"
-                                className="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-lg hover:bg-gray-200 transition-colors"
+                                className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                             >
                                 Cancel
                             </Link>
                             <button
                                 type="submit"
                                 disabled={processing}
-                                className="inline-flex items-center px-6 py-2 bg-orange text-white font-bold rounded-lg hover:bg-orange-dark transition-colors shadow-sm disabled:opacity-50"
+                                className="inline-flex items-center px-6 py-2.5 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {processing ? (
                                     <>
-                                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                                         Updating...
                                     </>
                                 ) : (
                                     <>
-                                        <Save className="w-4 h-4 mr-2" />
+                                        <Save className="w-5 h-5 mr-2" />
                                         Update Homework
                                     </>
                                 )}
@@ -402,4 +335,3 @@ export default function Edit({ homework, students, surahs }) {
         </AuthenticatedLayout>
     );
 }
-
