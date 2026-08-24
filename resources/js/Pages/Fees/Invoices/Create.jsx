@@ -4,6 +4,7 @@ import { ArrowLeft, AlertCircle, Check, ChevronDown, Receipt, Plus, Eye, CheckCi
 import { Combobox } from '@headlessui/react';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { markBusy, clearBusy } from '@/Utils/appBusy';
 
 export default function CreateInvoice({ auth, guardians = [], activeTerm, tuitionFees, transportRoutes, universalFees, preselectedGuardianId = null }) {
     const { data, setData, post, processing, errors } = useForm({
@@ -16,6 +17,15 @@ export default function CreateInvoice({ auth, guardians = [], activeTerm, tuitio
     const [preview, setPreview] = useState(null);
     const [loadingPreview, setLoadingPreview] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
+
+    // Protects this in-progress invoice preview from being silently
+    // discarded by an automatic service-worker-triggered reload.
+    useEffect(() => {
+        if (showPreview) {
+            markBusy('invoice-preview');
+            return () => clearBusy('invoice-preview');
+        }
+    }, [showPreview]);
 
     const handleSubmit = (e) => {
         e.preventDefault();

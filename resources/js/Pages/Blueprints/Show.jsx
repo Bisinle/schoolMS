@@ -39,7 +39,8 @@ export default function BlueprintsShow({ auth, blueprint }) {
                         // Refresh generation status
                         fetch(`/blueprints/${blueprint.id}/generation-status`)
                             .then(res => res.json())
-                            .then(data => setGenerationStatus(data));
+                            .then(data => setGenerationStatus(data))
+                            .catch(err => console.error('Failed to refresh generation status:', err));
                     }
                 });
                 setConfirmModal(prev => ({ ...prev, show: false }));
@@ -62,7 +63,8 @@ export default function BlueprintsShow({ auth, blueprint }) {
                         // Refresh generation status
                         fetch(`/blueprints/${blueprint.id}/generation-status`)
                             .then(res => res.json())
-                            .then(data => setGenerationStatus(data));
+                            .then(data => setGenerationStatus(data))
+                            .catch(err => console.error('Failed to refresh generation status:', err));
                     }
                 });
                 setConfirmModal(prev => ({ ...prev, show: false }));
