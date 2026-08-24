@@ -66,31 +66,23 @@ class UniqueIdentifierService
         $year = date('y');
         $prefix = 'EMP';
 
-        // Get the latest number from both teachers and admin users for this year and school
-        $latestTeacher = Teacher::where('school_id', $schoolId)
-            ->where('employee_number', 'LIKE', "{$prefix}-{$year}-%")
-            ->orderByRaw("CAST(SUBSTRING_INDEX(employee_number, '-', -1) AS UNSIGNED) DESC")
-            ->first();
+        // Get the highest counter from both tables. Deliberately not using
+        // SQL string functions here (the previous ORDER BY relied on
+        // MySQL-only SUBSTRING_INDEX, which SQLite doesn't have) — pluck
+        // the small, school+year-scoped set of matching identifiers and
+        // find the max counter in PHP instead, portable across drivers.
+        $teacherCounter = self::highestCounter(
+            Teacher::where('school_id', $schoolId)
+                ->where('employee_number', 'LIKE', "{$prefix}-{$year}-%")
+                ->pluck('employee_number')
+        );
 
-        $latestAdmin = User::where('school_id', $schoolId)
-            ->where('role', 'admin')
-            ->where('employee_number', 'LIKE', "{$prefix}-{$year}-%")
-            ->orderByRaw("CAST(SUBSTRING_INDEX(employee_number, '-', -1) AS UNSIGNED) DESC")
-            ->first();
-
-        // Get the highest counter from both tables
-        $teacherCounter = 0;
-        $adminCounter = 0;
-
-        if ($latestTeacher) {
-            $parts = explode('-', $latestTeacher->employee_number);
-            $teacherCounter = isset($parts[2]) ? (int)$parts[2] : 0;
-        }
-
-        if ($latestAdmin) {
-            $parts = explode('-', $latestAdmin->employee_number);
-            $adminCounter = isset($parts[2]) ? (int)$parts[2] : 0;
-        }
+        $adminCounter = self::highestCounter(
+            User::where('school_id', $schoolId)
+                ->where('role', 'admin')
+                ->where('employee_number', 'LIKE', "{$prefix}-{$year}-%")
+                ->pluck('employee_number')
+        );
 
         // Use the highest counter + 1
         $nextCounter = max($teacherCounter, $adminCounter) + 1;
@@ -116,22 +108,20 @@ class UniqueIdentifierService
     ): string {
         // Get current year (last 2 digits)
         $year = date('y');
-        
-        // Get the latest number for this year and school
-        $latestRecord = $model::where('school_id', $schoolId)
-            ->where($field, 'LIKE', "{$prefix}-{$year}-%")
-            ->orderByRaw("CAST(SUBSTRING_INDEX({$field}, '-', -1) AS UNSIGNED) DESC")
-            ->first();
 
-        if ($latestRecord) {
-            // Extract the counter from the latest record
-            $parts = explode('-', $latestRecord->$field);
-            $counter = isset($parts[2]) ? (int)$parts[2] : 0;
-            $nextCounter = $counter + 1;
-        } else {
-            // First record for this year
-            $nextCounter = 1;
-        }
+        // Get the highest counter for this year and school. Deliberately
+        // not using SQL string functions here (the previous ORDER BY
+        // relied on MySQL-only SUBSTRING_INDEX, which SQLite doesn't
+        // have) — pluck the small, school+year-scoped set of matching
+        // identifiers and find the max counter in PHP instead, portable
+        // across drivers.
+        $counter = self::highestCounter(
+            $model::where('school_id', $schoolId)
+                ->where($field, 'LIKE', "{$prefix}-{$year}-%")
+                ->pluck($field)
+        );
+
+        $nextCounter = $counter + 1;
 
         // Format: PREFIX-YY-COUNTER
         return sprintf(
@@ -140,6 +130,21 @@ class UniqueIdentifierService
             $year,
             str_pad($nextCounter, $padding, '0', STR_PAD_LEFT)
         );
+    }
+
+    /**
+     * Given a collection of identifiers in PREFIX-YY-COUNTER format,
+     * return the highest COUNTER value found (0 if the collection is
+     * empty or no identifier has a valid counter segment).
+     */
+    private static function highestCounter($identifiers): int
+    {
+        return $identifiers->reduce(function (int $carry, string $identifier) {
+            $parts = explode('-', $identifier);
+            $counter = isset($parts[2]) ? (int) $parts[2] : 0;
+
+            return max($carry, $counter);
+        }, 0);
     }
 
     /**
