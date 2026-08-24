@@ -71,7 +71,8 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
                                     ...prev,
                                     [id]: data
                                 }));
-                            });
+                            })
+                            .catch(err => console.error('Failed to refresh generation status:', err));
                     }
                 });
                 setConfirmModal(prev => ({ ...prev, show: false }));
@@ -99,7 +100,8 @@ export default function BlueprintsIndex({ auth, blueprints, levels, filters }) {
                                     ...prev,
                                     [id]: data
                                 }));
-                            });
+                            })
+                            .catch(err => console.error('Failed to refresh generation status:', err));
                     }
                 });
                 setConfirmModal(prev => ({ ...prev, show: false }));

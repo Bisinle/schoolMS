@@ -2,10 +2,16 @@ const CACHE_NAME = 'schoolms-__CACHE_VERSION__';
 const STATIC_CACHE = 'schoolms-static-__CACHE_VERSION__';
 const DYNAMIC_CACHE = 'schoolms-dynamic-__CACHE_VERSION__';
 const IMAGE_CACHE = 'schoolms-images-__CACHE_VERSION__';
+const OFFLINE_URL = '/offline.html';
 
-// Core files to cache immediately
+// Core files to cache immediately, including the minimal, fully
+// self-contained offline fallback page (no external JS/CSS/image
+// references) served on a navigation-mode fetch failure instead of a
+// frozen app shell whose hashed asset references may have already been
+// deleted by a later deploy.
 const urlsToCache = [
   '/',
+  OFFLINE_URL,
   '/manifest.json',
   '/images/icon-192x192.png',
   '/images/icon-512x512.png',
@@ -37,7 +43,6 @@ self.addEventListener('install', (event) => {
         console.error('Cache addAll failed:', error);
       })
   );
-  // Don't auto-skip waiting - let the user decide via update notification
 });
 
 // Activate service worker
@@ -116,20 +121,22 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy for HTML and API calls
+  // Network-first strategy for dynamic HTML/API calls. Navigation-mode
+  // requests are never written to DYNAMIC_CACHE or replayed from it on
+  // failure — an authenticated Inertia page cached here could be shown
+  // to a parent as if it were live, stale data. Non-navigation dynamic
+  // GETs (the existing component-local data-fetch pattern this app
+  // already uses) keep the prior behavior, which the audit confirmed
+  // already works correctly.
   event.respondWith(
     fetch(request)
       .then((response) => {
-        // Don't cache redirects or errors
         if (!response || response.status !== 200 || response.type === 'error') {
           return response;
         }
 
-        // Clone the response
-        const responseToCache = response.clone();
-
-        // Cache successful responses (except login/logout)
-        if (!url.pathname.match(/\/(login|logout|csrf-token)/)) {
+        if (request.mode !== 'navigate' && !url.pathname.match(/\/(login|logout|csrf-token)/)) {
+          const responseToCache = response.clone();
           caches.open(DYNAMIC_CACHE).then((cache) => {
             cache.put(request, responseToCache);
           });
@@ -138,23 +145,13 @@ self.addEventListener('fetch', (event) => {
         return response;
       })
       .catch(() => {
-        // If network fails, try cache
-        return caches.match(request).then((response) => {
-          if (response) {
-            return response;
-          }
+        if (request.mode === 'navigate') {
+          return caches.match(OFFLINE_URL);
+        }
 
-          // Return offline page for navigation requests
-          if (request.mode === 'navigate') {
-            return caches.match('/').then((cachedHome) => {
-              return cachedHome || new Response('Offline - Please check your connection', {
-                status: 503,
-                statusText: 'Service Unavailable',
-                headers: new Headers({
-                  'Content-Type': 'text/html'
-                })
-              });
-            });
+        return caches.match(request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
           }
 
           return new Response('Offline - content not available', {

@@ -1,8 +1,9 @@
-import { Fragment, useState, useRef } from 'react';
+import { Fragment, useState, useRef, useEffect } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { X, Download, Upload, FileSpreadsheet, AlertCircle, CheckCircle, ArrowLeft, Loader2 } from 'lucide-react';
 import { router } from '@inertiajs/react';
 import axios from 'axios';
+import { markBusy, clearBusy } from '@/Utils/appBusy';
 
 // Status config for preview table rows
 const STATUS = {
@@ -20,6 +21,15 @@ export default function StudentImportModal({ show = false, onClose }) {
     const [previewRows, setPreviewRows] = useState([]);
     const [uploadErrors, setUploadErrors] = useState([]);
     const fileInputRef = useRef(null);
+
+    // Protects this in-progress import preview from being silently
+    // discarded by an automatic service-worker-triggered reload.
+    useEffect(() => {
+        if (step === 'preview' || step === 'importing') {
+            markBusy('bulk-import-students');
+            return () => clearBusy('bulk-import-students');
+        }
+    }, [step]);
 
     const readyCount     = previewRows.filter(r => r.status === 'ready').length;
     const duplicateCount = previewRows.filter(r => r.status === 'duplicate').length;
