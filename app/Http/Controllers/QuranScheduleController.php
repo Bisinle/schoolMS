@@ -67,9 +67,11 @@ class QuranScheduleController extends Controller
      */
     public function store(Request $request)
     {
-        $this->authorize('create', QuranSchedule::class);
-
         $validated = $request->validate(QuranSchedule::validationRules());
+
+        $student = Student::findOrFail($validated['student_id']);
+
+        $this->authorize('create', [QuranSchedule::class, $student]);
 
         $user = auth()->user();
 

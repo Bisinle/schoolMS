@@ -66,8 +66,6 @@ class QuranHomeworkController extends Controller
 
     public function store(Request $request)
     {
-        $this->authorize('create', QuranHomework::class);
-
         $validated = $request->validate([
             'student_id' => ['required', Rule::exists('students', 'id')->where('school_id', $request->user()->school_id)],
             'reading_type' => 'required|in:new_learning,revision,subac',
@@ -77,6 +75,10 @@ class QuranHomeworkController extends Controller
             'page_to' => 'nullable|integer|min:1|max:604',
             'notes' => 'nullable|string|max:1000',
         ]);
+
+        $student = Student::findOrFail($validated['student_id']);
+
+        $this->authorize('create', [QuranHomework::class, $student]);
 
         $schedule = QuranSchedule::where('student_id', $validated['student_id'])
             ->where('is_active', true)

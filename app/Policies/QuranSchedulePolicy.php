@@ -3,6 +3,7 @@
 namespace App\Policies;
 
 use App\Models\QuranSchedule;
+use App\Models\Student;
 use App\Models\User;
 
 class QuranSchedulePolicy
@@ -36,10 +37,28 @@ class QuranSchedulePolicy
 
     /**
      * Determine whether the user can create schedules.
+     *
+     * A teacher may only create for a student in a grade they're assigned
+     * to via grade_teacher; an admin may create for any student in the
+     * school (the controller's own student_id validation already scopes to
+     * the school). This is grade-scoping only — see the same note on
+     * QuranHomeworkPolicy::create().
      */
-    public function create(User $user): bool
+    public function create(User $user, ?Student $student = null): bool
     {
-        return in_array($user->role, ['admin', 'teacher']);
+        if (! in_array($user->role, ['admin', 'teacher'])) {
+            return false;
+        }
+
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        if (! $student || ! $user->teacher) {
+            return false;
+        }
+
+        return $user->teacher->grades->contains('id', $student->grade_id);
     }
 
     /**

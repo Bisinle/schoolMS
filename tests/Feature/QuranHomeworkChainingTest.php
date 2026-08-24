@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Grade;
 use App\Models\QuranHomework;
 use App\Models\QuranSchedule;
 use App\Models\School;
@@ -40,8 +41,10 @@ class QuranHomeworkChainingTest extends TestCase
 
         $school = School::factory()->create();
         $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
-        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
-        $student = Student::factory()->create(['school_id' => $school->id]);
+        $teacher = Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $grade = Grade::factory()->create(['school_id' => $school->id, 'name' => 'Grade 2', 'level' => 'primary']);
+        $teacher->grades()->attach($grade->id);
+        $student = Student::factory()->create(['school_id' => $school->id, 'grade_id' => $grade->id]);
 
         $schedule = QuranSchedule::factory()->create([
             'school_id' => $school->id,
@@ -80,8 +83,10 @@ class QuranHomeworkChainingTest extends TestCase
 
         $school = School::factory()->create();
         $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
-        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
-        $student = Student::factory()->create(['school_id' => $school->id]);
+        $teacher = Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $grade = Grade::factory()->create(['school_id' => $school->id, 'name' => 'Grade 2', 'level' => 'primary']);
+        $teacher->grades()->attach($grade->id);
+        $student = Student::factory()->create(['school_id' => $school->id, 'grade_id' => $grade->id]);
 
         $schedule = QuranSchedule::factory()->create([
             'school_id' => $school->id,
@@ -138,8 +143,10 @@ class QuranHomeworkChainingTest extends TestCase
 
         $school = School::factory()->create();
         $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
-        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
-        $student = Student::factory()->create(['school_id' => $school->id]);
+        $teacher = Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $grade = Grade::factory()->create(['school_id' => $school->id, 'name' => 'Grade 2', 'level' => 'primary']);
+        $teacher->grades()->attach($grade->id);
+        $student = Student::factory()->create(['school_id' => $school->id, 'grade_id' => $grade->id]);
 
         $schedule = QuranSchedule::factory()->create([
             'school_id' => $school->id,
@@ -184,8 +191,10 @@ class QuranHomeworkChainingTest extends TestCase
 
         $school = School::factory()->create();
         $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
-        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
-        $student = Student::factory()->create(['school_id' => $school->id]);
+        $teacher = Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $grade = Grade::factory()->create(['school_id' => $school->id, 'name' => 'Grade 2', 'level' => 'primary']);
+        $teacher->grades()->attach($grade->id);
+        $student = Student::factory()->create(['school_id' => $school->id, 'grade_id' => $grade->id]);
 
         $response = $this->actingAs($teacherUser)->post(route('quran-homework.store'), [
             'student_id' => $student->id,
