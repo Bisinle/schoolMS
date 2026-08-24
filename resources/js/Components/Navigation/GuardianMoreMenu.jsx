@@ -1,10 +1,9 @@
 import { BottomSheetMenuItem, BottomSheetSection } from './BottomSheet';
 import {
-    Book,
+    BookOpen,
     FileText,
     FolderOpen,
     Shield,
-    Home,
     LayoutDashboard,
 } from 'lucide-react';
 
@@ -28,16 +27,10 @@ export default function GuardianMoreMenu({ isMadrasah = false, badges = {} }) {
                         href="/quran"
                     />
                     <BottomSheetMenuItem
-                        icon={Book}
-                        label="Tracking"
-                        href="/guardian/quran-tracking"
-                        badge={badges.quranTracking}
-                    />
-                    <BottomSheetMenuItem
-                        icon={Home}
-                        label="Home Practice"
-                        href="/quran-home-practice"
-                        badge={badges.quranHomePractice}
+                        icon={BookOpen}
+                        label="Homework"
+                        href="/guardian/quran-homework"
+                        badge={badges.quranHomework}
                     />
                 </BottomSheetSection>
             )}

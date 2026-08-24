@@ -29,10 +29,6 @@ class QuranScheduleController extends Controller
             $query->where('student_id', $request->student_id);
         }
 
-        if ($request->filled('schedule_type')) {
-            $query->where('schedule_type', $request->schedule_type);
-        }
-
         if ($request->filled('status')) {
             if ($request->status === 'active') {
                 $query->where('is_active', true);
@@ -49,7 +45,7 @@ class QuranScheduleController extends Controller
         return Inertia::render('Quran/Schedule/Index', [
             'schedules' => $schedules,
             'students' => $students,
-            'filters' => $request->only(['student_id', 'schedule_type', 'status']),
+            'filters' => $request->only(['student_id', 'status']),
         ]);
     }
 
@@ -73,6 +69,10 @@ class QuranScheduleController extends Controller
     {
         $validated = $request->validate(QuranSchedule::validationRules());
 
+        $student = Student::findOrFail($validated['student_id']);
+
+        $this->authorize('create', [QuranSchedule::class, $student]);
+
         $user = auth()->user();
 
         // Check if student already has an active schedule
@@ -82,7 +82,7 @@ class QuranScheduleController extends Controller
 
         if ($existingActive) {
             return back()->withErrors([
-                'student_id' => 'This student already has an active schedule. Please deactivate it first.'
+                'student_id' => 'This student already has an active schedule. Please deactivate it first.',
             ]);
         }
 
@@ -101,24 +101,17 @@ class QuranScheduleController extends Controller
      */
     public function show(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('view', $quranSchedule);
 
         $quranSchedule->load(['student.grade', 'teacher']);
 
-        // Get student's tracking records since schedule start
-        $trackingRecords = $quranSchedule->student->quranTracking()
-            ->where('date', '>=', $quranSchedule->start_date)
-            ->orderBy('date', 'desc')
+        $homeworkRecords = $quranSchedule->homework()
+            ->orderBy('assigned_date', 'desc')
             ->get();
 
         return Inertia::render('Quran/Schedule/Show', [
             'schedule' => $quranSchedule,
-            'trackingRecords' => $trackingRecords,
+            'homeworkRecords' => $homeworkRecords,
         ]);
     }
 
@@ -127,12 +120,9 @@ class QuranScheduleController extends Controller
      */
     public function edit(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
+        $this->authorize('update', $quranSchedule);
 
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $user = auth()->user();
 
         $students = Student::where('school_id', $user->school_id)->get();
 
@@ -147,12 +137,7 @@ class QuranScheduleController extends Controller
      */
     public function update(Request $request, QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('update', $quranSchedule);
 
         $validated = $request->validate(QuranSchedule::validationRules());
 
@@ -165,7 +150,7 @@ class QuranScheduleController extends Controller
 
             if ($existingActive) {
                 return back()->withErrors([
-                    'student_id' => 'This student already has an active schedule.'
+                    'student_id' => 'This student already has an active schedule.',
                 ]);
             }
         }
@@ -181,12 +166,7 @@ class QuranScheduleController extends Controller
      */
     public function deactivate(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('update', $quranSchedule);
 
         $quranSchedule->deactivate();
 
@@ -199,12 +179,7 @@ class QuranScheduleController extends Controller
      */
     public function activate(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('update', $quranSchedule);
 
         $quranSchedule->activate();
 
@@ -217,12 +192,7 @@ class QuranScheduleController extends Controller
      */
     public function destroy(QuranSchedule $quranSchedule)
     {
-        $user = auth()->user();
-
-        // Authorization check
-        if ($user->role === 'teacher' && $quranSchedule->teacher_id !== $user->id) {
-            abort(403, 'Unauthorized access.');
-        }
+        $this->authorize('delete', $quranSchedule);
 
         $quranSchedule->delete();
 
@@ -230,4 +200,3 @@ class QuranScheduleController extends Controller
             ->with('success', 'Schedule deleted successfully!');
     }
 }
-

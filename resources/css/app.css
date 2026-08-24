@@ -2,6 +2,23 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Official Uthmani Hafs webfont, hosted by Quran Foundation for exactly this
+ * purpose (see https://api-docs.quran.foundation/docs/tutorials/fonts/font-rendering/).
+ * Same font quran.com itself uses for text_uthmani — correct tashkeel/diacritic
+ * rendering isn't reliable with generic serif fallbacks.
+ */
+@font-face {
+    font-family: 'UthmanicHafs';
+    src: url('https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.woff2') format('woff2'),
+         url('https://verses.quran.foundation/fonts/quran/hafs/uthmanic_hafs/UthmanicHafs1Ver18.ttf') format('truetype');
+    font-display: swap;
+}
+
+.font-uthmani {
+    font-family: 'UthmanicHafs', 'Traditional Arabic', serif;
+}
+
 /* Custom Scrollbar Styles */
 @layer utilities {
     /* Webkit browsers (Chrome, Safari, Edge) */

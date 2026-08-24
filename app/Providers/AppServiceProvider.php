@@ -7,7 +7,8 @@ use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Grade;
 use App\Models\GuardianInvoice;
-use App\Models\QuranTracking;
+use App\Models\QuranHomework;
+use App\Models\QuranSchedule;
 use Illuminate\Support\Facades\Gate;
 use App\Models\Student;
 use App\Models\Guardian;
@@ -21,7 +22,7 @@ use App\Models\TimetableSlot;
 use App\Models\AccidentReport;
 use App\Models\IncidentReport;
 use App\Models\Policy;
-use App\Observers\QuranTrackingObserver;
+use App\Observers\QuranHomeworkObserver;
 use App\Policies\AttendancePolicy;
 use App\Policies\ExamPolicy;
 use App\Policies\ExamResultPolicy;
@@ -39,6 +40,8 @@ use App\Policies\TimetableSlotPolicy;
 use App\Policies\AccidentReportPolicy;
 use App\Policies\IncidentReportPolicy;
 use App\Policies\PolicyPolicy;
+use App\Policies\QuranHomeworkPolicy;
+use App\Policies\QuranSchedulePolicy;
 use App\External\QuranApiClient;
 use App\External\QuranComApiClient;
 use Illuminate\Support\Facades\Vite;
@@ -67,7 +70,7 @@ class AppServiceProvider extends ServiceProvider
         $this->createGoogleCalendarCredentials();
 
         // Register model observers
-        QuranTracking::observe(QuranTrackingObserver::class);
+        QuranHomework::observe(QuranHomeworkObserver::class);
 
         Gate::policy(Student::class, StudentPolicy::class);
         Gate::policy(Guardian::class, GuardianPolicy::class);
@@ -90,6 +93,10 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(AccidentReport::class, AccidentReportPolicy::class);
         Gate::policy(IncidentReport::class, IncidentReportPolicy::class);
         Gate::policy(Policy::class, PolicyPolicy::class);
+
+        // Quran Policies - Added in restructure Phase 1
+        Gate::policy(QuranHomework::class, QuranHomeworkPolicy::class);
+        Gate::policy(QuranSchedule::class, QuranSchedulePolicy::class);
 
         Vite::prefetch(concurrency: 3);
     }

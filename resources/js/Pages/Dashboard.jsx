@@ -16,7 +16,7 @@ export default function Dashboard({
     currentTerm,
     documentStats,
     quranStats,
-    quranTrackingData,
+    quranHomeworkData,
     // Admin specific
     studentsByGrade,
     studentsByGender,
@@ -116,7 +116,7 @@ export default function Dashboard({
                     students={students}
                     documentStats={documentStats}
                     quranStats={quranStats}
-                    quranTrackingData={quranTrackingData}
+                    quranHomeworkData={quranHomeworkData}
                 />
             )}
         </AuthenticatedLayout>

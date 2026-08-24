@@ -2,17 +2,19 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class QuranAssessment extends Model
 {
-    use HasFactory;
+    use HasFactory, BelongsToSchool;
 
     protected $table = 'quran_assessments';
 
     protected $fillable = [
-        'quran_tracking_id',
+        'quran_homework_id',
+        'school_id',
         'fluency_rating',
         'tajweed_rating',
         'mistakes_count',
@@ -25,48 +27,36 @@ class QuranAssessment extends Model
         'mistakes_count' => 'integer',
     ];
 
-    /**
-     * Get the quran tracking record that owns this assessment.
-     */
-    public function quranTracking()
+    public function homework()
     {
-        return $this->belongsTo(QuranTracking::class);
+        return $this->belongsTo(QuranHomework::class, 'quran_homework_id');
     }
 
-    /**
-     * Get average rating (average of fluency and tajweed).
-     */
     public function getAverageRatingAttribute()
     {
         $ratings = array_filter([$this->fluency_rating, $this->tajweed_rating]);
-        
+
         if (empty($ratings)) {
             return null;
         }
-        
+
         return round(array_sum($ratings) / count($ratings), 1);
     }
 
-    /**
-     * Check if assessment has any ratings.
-     */
     public function hasRatings()
     {
         return $this->fluency_rating !== null || $this->tajweed_rating !== null;
     }
 
-    /**
-     * Get performance level based on average rating.
-     */
     public function getPerformanceLevelAttribute()
     {
         $avg = $this->average_rating;
-        
+
         if ($avg === null) {
             return null;
         }
-        
-        return match(true) {
+
+        return match (true) {
             $avg >= 4.5 => 'Excellent',
             $avg >= 3.5 => 'Very Good',
             $avg >= 2.5 => 'Good',
@@ -75,4 +65,3 @@ class QuranAssessment extends Model
         };
     }
 }
-

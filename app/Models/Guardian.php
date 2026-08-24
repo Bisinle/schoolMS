@@ -49,11 +49,7 @@ class Guardian extends Model
             'deactivation_reason' => $reason ?? 'Guardian deactivated',
         ];
 
-        // Collect IDs from both relationship paths to avoid missing students
-        // linked only via the legacy guardian_id column vs the pivot table.
-        $legacyIds = $this->students()->pluck('students.id');
-        $pivotIds  = $this->studentsMany()->allRelatedIds();
-        $allIds    = $legacyIds->merge($pivotIds)->unique()->values();
+        $allIds = $this->allStudentIds();
 
         if ($allIds->isNotEmpty()) {
             Student::whereIn('id', $allIds)->update($studentPayload);
@@ -90,6 +86,35 @@ class Guardian extends Model
         return $this->belongsToMany(Student::class, 'guardian_student')
             ->withPivot(['relationship', 'is_primary', 'can_receive_invoices', 'can_pickup', 'emergency_contact'])
             ->withTimestamps();
+    }
+
+    /**
+     * IDs of every student linked to this guardian via either relationship
+     * path — the legacy students() (guardian_id column, first-guardian-only)
+     * or studentsMany() (the guardian_student pivot, which supports a
+     * second/non-primary guardian). Use this (or allStudents() below)
+     * instead of students()/studentsMany() directly wherever "this
+     * guardian's children" needs to be complete, not just the primary case.
+     *
+     * Same merge precedent as deactivate() above, which independently
+     * arrived at merging both paths for the same reason.
+     */
+    public function allStudentIds()
+    {
+        $legacyIds = $this->students()->pluck('students.id');
+        $pivotIds = $this->studentsMany()->allRelatedIds();
+
+        return $legacyIds->merge($pivotIds)->unique()->values();
+    }
+
+    /**
+     * Query builder for every student linked to this guardian via either
+     * relationship path — see allStudentIds(). Chain further where/with/get
+     * calls on this exactly as you would on students()/studentsMany().
+     */
+    public function allStudents()
+    {
+        return Student::whereIn('id', $this->allStudentIds());
     }
 
     // Get students where this guardian is primary
@@ -148,12 +173,6 @@ class Guardian extends Model
     public function feeAdjustments()
     {
         return $this->hasMany(GuardianFeeAdjustment::class);
-    }
-
-    // Quran tracking relationships
-    public function quranHomePractice()
-    {
-        return $this->hasMany(QuranHomePractice::class);
     }
 
     // Helper to get current term invoice

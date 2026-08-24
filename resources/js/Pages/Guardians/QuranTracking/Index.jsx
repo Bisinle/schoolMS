@@ -17,9 +17,10 @@ export default function Index({ students }) {
     // Helper to get difficulty badge variant
     const getDifficultyBadge = (difficulty) => {
         const variants = {
-            'very_well': 'success',
-            'middle': 'warning',
-            'difficult': 'danger',
+            'excellent': 'success',
+            'very_good': 'success',
+            'moderate': 'warning',
+            'poor': 'danger',
         };
         return variants[difficulty] || 'secondary';
     };
@@ -44,7 +45,7 @@ export default function Index({ students }) {
                             <div key={student.id}>
                                 {/* Mobile Layout - Clickable Card */}
                                 <Link
-                                    href={`/quran-tracking/student/${student.id}/report`}
+                                    href={`/quran-homework/student/${student.id}/report`}
                                     className="sm:hidden block bg-white rounded-lg shadow-sm border border-gray-200 hover:border-orange-300 hover:shadow-md active:scale-[0.99] transition-all"
                                 >
                                     {/* Student Header - Mobile */}
@@ -209,7 +210,7 @@ export default function Index({ students }) {
 
                                     {/* Action Button */}
                                     <Link
-                                        href={`/quran-tracking/student/${student.id}/report`}
+                                        href={`/quran-homework/student/${student.id}/report`}
                                         className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-orange-500 to-orange-500 text-white font-semibold rounded-lg hover:from-orange-600 hover:to-orange-600 transition-all shadow-sm"
                                     >
                                         <ChevronRight className="w-5 h-5" />
