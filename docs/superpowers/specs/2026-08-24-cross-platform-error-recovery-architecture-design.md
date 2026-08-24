@@ -33,9 +33,11 @@ New handling added to `bootstrap/app.php`'s `->withExceptions()`, extending the 
 | `AccessDeniedHttpException` (`abort(403)`) | 403 | `Inertia::render('Errors/GenericError', [...])` — no retry action, "Access Denied" + dashboard link only |
 | `ThrottleRequestsException` | 429 | `Errors/GenericError`, retry action |
 | `HttpException` where status is 502/503 | 502/503 | `Errors/GenericError`, retry action |
-| `Throwable` (catch-all) | 500 | `Errors/GenericError`, retry action, **no stack trace or exception message ever exposed** |
+| `Throwable` (catch-all) | 500 | `Errors/GenericError`, retry action, **no stack trace or exception message ever exposed** — **only when `config('app.debug')` is `false`** |
 
 One shared `resources/js/Pages/Errors/GenericError.jsx`, parameterized by `status`/`title`/`message`/which actions to render (`retry`, `dashboard`), rather than 4 near-duplicate files mirroring `404.jsx`. `404.jsx` itself is untouched.
+
+**Debug-mode gate, scoped only to the `Throwable` catch-all:** Laravel's registered `$exceptions->render()` callbacks run before the framework's default rendering and win outright if they return a Response — they don't defer to `config('app.debug')` on their own; that check only lives inside Laravel's own fallback path. An unconditional catch-all would therefore also intercept local development, silently replacing Laravel's debug page (stack trace, source context) with `GenericError` whenever `APP_DEBUG=true` — a real dev-workflow regression, not a security concern, and not something to introduce by accident. So the `Throwable` handler checks `config('app.debug')` first: `true` → return nothing, falling through to Laravel's own default rendering (which handles the debug page correctly); `false` → render `GenericError` as designed. The other five handlers (404, 419, 403, 429, 502/503) stay unconditional — a friendly page for those in local dev isn't a problem, and 502/503 come from an explicit `HttpException` status deliberately raised, not an uncaught bug, so there's no debug page to preserve there either.
 
 ### 2. Frontend recovery architecture
 
