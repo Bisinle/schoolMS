@@ -22,6 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+/.worktrees
 /GUARDIAN_FEE_PREFERENCE_SYSTEM_EXPLAINED.md
 /GUARDIAN_FEE_SYSTEM_QUICK_REFERENCE.md
 /Student_Bulk_Import.md
