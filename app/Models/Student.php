@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 use App\Models\Traits\BelongsToSchool;
 
 class Student extends Model
 {
     use HasFactory, BelongsToSchool;
+
+    protected $appends = ['profile_picture_url'];
 
     protected $fillable = [
         'school_id',
@@ -34,6 +38,13 @@ class Student extends Model
             'enrollment_date' => 'date',
             'deactivated_at'  => 'datetime',
         ];
+    }
+
+    protected function profilePictureUrl(): Attribute
+    {
+        return Attribute::get(fn () => $this->profile_picture
+            ? Storage::disk('r2_private')->temporaryUrl($this->profile_picture, now()->addMinutes(30))
+            : null);
     }
 
     // ── Deactivation helpers ──────────────────────────────────────────────────

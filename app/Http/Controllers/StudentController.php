@@ -9,6 +9,7 @@ use App\Services\UniqueIdentifierService;
 use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -126,8 +127,14 @@ class StudentController extends Controller
 
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
-            $validated['profile_picture'] = $request->file('profile_picture')
-                ->store('students/profiles', 'public');
+            try {
+                $validated['profile_picture'] = $request->file('profile_picture')
+                    ->store('students/profiles', 'r2_private');
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'profile_picture' => 'Failed to upload profile picture. Please try again.',
+                ]);
+            }
         }
 
         // Auto-generate admission number
@@ -257,12 +264,18 @@ class StudentController extends Controller
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
             // Delete old profile picture if exists
-            if ($student->profile_picture && Storage::disk('public')->exists($student->profile_picture)) {
-                Storage::disk('public')->delete($student->profile_picture);
+            if ($student->profile_picture && Storage::disk('r2_private')->exists($student->profile_picture)) {
+                Storage::disk('r2_private')->delete($student->profile_picture);
             }
 
-            $validated['profile_picture'] = $request->file('profile_picture')
-                ->store('students/profiles', 'public');
+            try {
+                $validated['profile_picture'] = $request->file('profile_picture')
+                    ->store('students/profiles', 'r2_private');
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'profile_picture' => 'Failed to upload profile picture. Please try again.',
+                ]);
+            }
         }
 
         // Update grade name for class_name field

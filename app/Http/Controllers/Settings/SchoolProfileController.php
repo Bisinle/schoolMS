@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\School;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class SchoolProfileController extends Controller
@@ -44,12 +45,18 @@ class SchoolProfileController extends Controller
         // Handle logo upload
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
-            if ($school->logo_path && Storage::disk('public')->exists($school->logo_path)) {
-                Storage::disk('public')->delete($school->logo_path);
+            if ($school->logo_path && Storage::disk('r2_public')->exists($school->logo_path)) {
+                Storage::disk('r2_public')->delete($school->logo_path);
             }
 
             // Store new logo
-            $logoPath = $request->file('logo')->store('logos', 'public');
+            try {
+                $logoPath = $request->file('logo')->store('logos', 'r2_public');
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'logo' => 'Failed to upload logo. Please try again.',
+                ]);
+            }
             $validated['logo_path'] = $logoPath;
         }
 
@@ -69,8 +76,8 @@ class SchoolProfileController extends Controller
     {
         $school = School::find(auth()->user()->school_id);
 
-        if ($school->logo_path && Storage::disk('public')->exists($school->logo_path)) {
-            Storage::disk('public')->delete($school->logo_path);
+        if ($school->logo_path && Storage::disk('r2_public')->exists($school->logo_path)) {
+            Storage::disk('r2_public')->delete($school->logo_path);
             $school->update(['logo_path' => null]);
         }
 

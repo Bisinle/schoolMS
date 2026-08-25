@@ -14,7 +14,7 @@ const MobileStudentItem = React.memo(({ student, index, currentMark, rubric, isS
                 {/* Avatar */}
                 <Avatar
                     name={`${student.first_name} ${student.last_name}`}
-                    imagePath={student.profile_picture}
+                    imageUrl={student.profile_picture_url}
                     size="md"
                 />
 

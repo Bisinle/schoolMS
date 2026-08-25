@@ -5,7 +5,7 @@ import { Building2, Upload, X, Save } from "lucide-react";
 
 export default function SchoolProfileIndex({ school }) {
     const [previewLogo, setPreviewLogo] = useState(
-        school.logo_path ? `/storage/${school.logo_path}` : null
+        school.logo_path ? school.logo_url : null
     );
 
     const { data, setData, post, processing, errors } = useForm({
@@ -23,7 +23,7 @@ export default function SchoolProfileIndex({ school }) {
 
     useEffect(() => {
         if (school.logo_path && !data.logo) {
-            setPreviewLogo(`/storage/${school.logo_path}`);
+            setPreviewLogo(school.logo_url);
         }
     }, [school.logo_path]);
 

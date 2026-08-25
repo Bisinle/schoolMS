@@ -38,7 +38,7 @@ export default function TopBar({ header, auth, setSidebarOpen, showHamburger = t
                     <div className="hidden md:flex items-center space-x-3">
                         <Avatar
                             name={auth.user.name}
-                            imagePath={auth.user.profile_picture}
+                            imageUrl={auth.user.profile_picture_url}
                             size="sm"
                         />
                         <div className="flex flex-col">

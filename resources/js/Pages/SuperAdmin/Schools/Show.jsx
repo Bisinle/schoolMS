@@ -67,7 +67,7 @@ export default function Show({ school }) {
                                     <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white shadow-xl flex items-center justify-center overflow-hidden">
                                         {school.logo_path ? (
                                             <img
-                                                src={`/storage/${school.logo_path}`}
+                                                src={school.logo_url}
                                                 alt={`${school.name} logo`}
                                                 className="w-full h-full object-cover"
                                             />

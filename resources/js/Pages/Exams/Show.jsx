@@ -319,7 +319,7 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, unmarkedS
                                             <div className="flex items-center gap-2 mb-1">
                                                 <Avatar
                                                     name={`${result.student?.first_name} ${result.student?.last_name}`}
-                                                    imagePath={result.student?.profile_picture}
+                                                    imageUrl={result.student?.profile_picture_url}
                                                     size="sm"
                                                 />
                                                 <div className="flex-1 min-w-0">

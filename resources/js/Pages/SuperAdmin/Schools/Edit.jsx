@@ -25,7 +25,7 @@ export default function Edit({ school }) {
     });
 
     const [previewLogo, setPreviewLogo] = useState(
-        school.logo_path ? `/storage/${school.logo_path}` : null
+        school.logo_path ? school.logo_url : null
     );
 
     const handleLogoChange = (e) => {
@@ -42,7 +42,7 @@ export default function Edit({ school }) {
 
     const handleRemoveLogo = () => {
         setData('logo', null);
-        setPreviewLogo(school.logo_path ? `/storage/${school.logo_path}` : null);
+        setPreviewLogo(school.logo_path ? school.logo_url : null);
     };
 
     const handleSubmit = (e) => {

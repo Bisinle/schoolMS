@@ -138,7 +138,7 @@ function MobileUserItem({
             {/* Avatar */}
             <Avatar
                 name={user.name}
-                imagePath={user.profile_picture}
+                imageUrl={user.profile_picture_url}
                 size="md"
                 className="flex-shrink-0"
             />
@@ -688,7 +688,7 @@ export default function Index({
                                                 <div className="flex items-center">
                                                     <Avatar
                                                         name={user.name}
-                                                        imagePath={user.profile_picture}
+                                                        imageUrl={user.profile_picture_url}
                                                         size="md"
                                                     />
                                                     <div className="ml-3">

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Mail\SchoolAdminWelcomeMail;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SchoolController extends Controller
 {
@@ -92,7 +93,13 @@ class SchoolController extends Controller
         // Handle logo upload
         $logoPath = null;
         if ($request->hasFile('logo')) {
-            $logoPath = $request->file('logo')->store('logos', 'public');
+            try {
+                $logoPath = $request->file('logo')->store('logos', 'r2_public');
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'logo' => 'Failed to upload logo. Please try again.',
+                ]);
+            }
         }
 
         DB::beginTransaction();
@@ -219,12 +226,18 @@ class SchoolController extends Controller
         // Handle logo upload
         if ($request->hasFile('logo')) {
             // Delete old logo if exists
-            if ($school->logo_path && Storage::disk('public')->exists($school->logo_path)) {
-                Storage::disk('public')->delete($school->logo_path);
+            if ($school->logo_path && Storage::disk('r2_public')->exists($school->logo_path)) {
+                Storage::disk('r2_public')->delete($school->logo_path);
             }
 
             // Store new logo
-            $validated['logo_path'] = $request->file('logo')->store('logos', 'public');
+            try {
+                $validated['logo_path'] = $request->file('logo')->store('logos', 'r2_public');
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'logo' => 'Failed to upload logo. Please try again.',
+                ]);
+            }
         }
 
         // Remove logo from validated data if not uploaded

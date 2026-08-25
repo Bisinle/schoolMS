@@ -49,7 +49,7 @@ function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate
                         {/* Avatar */}
                         <Avatar
                             name={`${student.first_name} ${student.last_name}`}
-                            imagePath={student.profile_picture}
+                            imageUrl={student.profile_picture_url}
                             size="md"
                         />
 
@@ -432,7 +432,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                                 <div className={`flex items-center gap-3 ${inactive ? 'opacity-60' : ''}`}>
                                                     <Avatar
                                                         name={`${student.first_name} ${student.last_name}`}
-                                                        imagePath={student.profile_picture}
+                                                        imageUrl={student.profile_picture_url}
                                                         size="sm"
                                                     />
                                                     <span className={inactive ? 'line-through text-gray-400' : ''}>

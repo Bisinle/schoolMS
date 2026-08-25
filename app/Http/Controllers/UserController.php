@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Arr;
 
 class UserController extends Controller
@@ -145,8 +146,14 @@ class UserController extends Controller
 
             // Handle profile picture upload
             if ($request->hasFile('profile_picture')) {
-                $validated['profile_picture'] = $request->file('profile_picture')
-                    ->store('users/profiles', 'public');
+                try {
+                    $validated['profile_picture'] = $request->file('profile_picture')
+                        ->store('users/profiles', 'r2_private');
+                } catch (\Throwable $e) {
+                    throw ValidationException::withMessages([
+                        'profile_picture' => 'Failed to upload profile picture. Please try again.',
+                    ]);
+                }
             }
 
             \Log::info('Validation passed successfully', [
@@ -272,12 +279,18 @@ class UserController extends Controller
         // Handle profile picture upload
         if ($request->hasFile('profile_picture')) {
             // Delete old profile picture if exists
-            if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
-                Storage::disk('public')->delete($user->profile_picture);
+            if ($user->profile_picture && Storage::disk('r2_private')->exists($user->profile_picture)) {
+                Storage::disk('r2_private')->delete($user->profile_picture);
             }
 
-            $validated['profile_picture'] = $request->file('profile_picture')
-                ->store('users/profiles', 'public');
+            try {
+                $validated['profile_picture'] = $request->file('profile_picture')
+                    ->store('users/profiles', 'r2_private');
+            } catch (\Throwable $e) {
+                throw ValidationException::withMessages([
+                    'profile_picture' => 'Failed to upload profile picture. Please try again.',
+                ]);
+            }
         }
 
         $result = $this->userService->updateUser($user, $validated, Auth::user());

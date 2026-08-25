@@ -131,7 +131,7 @@ export default function Edit({ auth, user, roles }) {
                                         value={data.profile_picture}
                                         onChange={(file) => setData('profile_picture', file)}
                                         error={errors.profile_picture}
-                                        currentImage={user.profile_picture}
+                                        currentImage={user.profile_picture_url}
                                         required={false}
                                     />
                                 </div>

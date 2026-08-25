@@ -48,7 +48,7 @@ console.log(student);
                             <div className="relative">
                                 <Avatar
                                     name={`${student.first_name} ${student.last_name}`}
-                                    imagePath={student.profile_picture}
+                                    imageUrl={student.profile_picture_url}
                                     size="2xl"
                                     className="border-4 border-white shadow-lg"
                                 />

@@ -239,7 +239,7 @@ export default function Sidebar({
                         <div className="flex items-center">
                             <Avatar
                                 name={auth.user.name}
-                                imagePath={auth.user.profile_picture}
+                                imageUrl={auth.user.profile_picture_url}
                                 size="md"
                                 className="flex-shrink-0"
                             />

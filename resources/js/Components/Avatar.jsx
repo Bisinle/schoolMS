@@ -2,7 +2,7 @@ import { useState } from 'react';
 
 export default function Avatar({
     name,
-    imagePath = null,
+    imageUrl = null,
     size = 'md',
     className = ''
 }) {
@@ -52,8 +52,8 @@ export default function Avatar({
     const colorClass = getColorClass(name);
     const sizeClass = sizes[size] || sizes.md;
 
-    // Show initials if no image path or if image failed to load
-    if (!imagePath || imageError) {
+    // Show initials if no image URL or if image failed to load
+    if (!imageUrl || imageError) {
         return (
             <div
                 className={`${sizeClass} ${colorClass} rounded-full flex items-center justify-center text-white font-bold ${className}`}
@@ -66,7 +66,7 @@ export default function Avatar({
     // Show image with error handling
     return (
         <img
-            src={`/storage/${imagePath}`}
+            src={imageUrl}
             alt={name || 'User'}
             className={`${sizeClass} rounded-full object-cover border-2 border-gray-200 ${className}`}
             onError={() => setImageError(true)}

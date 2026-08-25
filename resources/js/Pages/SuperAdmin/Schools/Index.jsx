@@ -375,7 +375,7 @@ export default function Index({ schools, filters }) {
                                                         <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white font-bold shadow-lg overflow-hidden">
                                                             {school.logo_path ? (
                                                                 <img
-                                                                    src={`/storage/${school.logo_path}`}
+                                                                    src={school.logo_url}
                                                                     alt={`${school.name} logo`}
                                                                     className="w-full h-full object-cover"
                                                                 />

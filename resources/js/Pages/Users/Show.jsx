@@ -127,7 +127,7 @@ export default function Show({ auth, user, recentActivity, roles, flash }) {
                                 <div className="relative">
                                     <Avatar
                                         name={user.name}
-                                        imagePath={user.profile_picture}
+                                        imageUrl={user.profile_picture_url}
                                         size="2xl"
                                         className="border-4 border-gray-100 shadow-lg"
                                     />

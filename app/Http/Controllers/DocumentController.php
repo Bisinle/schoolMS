@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class DocumentController extends Controller
@@ -163,7 +164,13 @@ class DocumentController extends Controller
         $filePath = "documents/{$entityFolder}/{$storedFilename}";
 
         // Store file
-        $file->storeAs('documents/' . $entityFolder, $storedFilename);
+        try {
+            $file->storeAs('documents/' . $entityFolder, $storedFilename, 'r2_private');
+        } catch (\Throwable $e) {
+            throw ValidationException::withMessages([
+                'file' => 'Failed to upload file. Please try again.',
+            ]);
+        }
 
         // Create document record
         Document::create([
@@ -225,8 +232,8 @@ class DocumentController extends Controller
         $this->authorize('delete', $document);
 
         // Delete physical file
-        if (Storage::exists($document->file_path)) {
-            Storage::delete($document->file_path);
+        if (Storage::disk('r2_private')->exists($document->file_path)) {
+            Storage::disk('r2_private')->delete($document->file_path);
         }
 
         $document->delete();
@@ -270,11 +277,11 @@ class DocumentController extends Controller
     {
         $this->authorize('download', $document);
 
-        if (!Storage::exists($document->file_path)) {
+        if (!Storage::disk('r2_private')->exists($document->file_path)) {
             abort(404, 'File not found.');
         }
 
-        return Storage::download($document->file_path, $document->original_filename);
+        return Storage::disk('r2_private')->download($document->file_path, $document->original_filename);
     }
 
     /**
@@ -284,7 +291,7 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        if (!Storage::exists($document->file_path)) {
+        if (!Storage::disk('r2_private')->exists($document->file_path)) {
             abort(404, 'File not found.');
         }
 
@@ -295,7 +302,7 @@ class DocumentController extends Controller
             return $this->download($document);
         }
 
-        return Storage::response($document->file_path, null, [
+        return Storage::disk('r2_private')->response($document->file_path, null, [
             'Content-Type'        => $mimeType,
             'Content-Disposition' => 'inline; filename="' . $document->original_filename . '"',
         ]);

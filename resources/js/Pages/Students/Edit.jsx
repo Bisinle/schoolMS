@@ -186,7 +186,7 @@ export default function StudentsEdit({ student, guardians, studentGuardians, gra
                                     value={data.profile_picture}
                                     onChange={(file) => setData('profile_picture', file)}
                                     error={errors.profile_picture}
-                                    currentImage={student.profile_picture}
+                                    currentImage={student.profile_picture_url}
                                     required={false}
                                 />
                             </FormField>

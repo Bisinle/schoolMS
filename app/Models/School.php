@@ -2,13 +2,17 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
 class School extends Model
 {
     use HasFactory, SoftDeletes;
+
+    protected $appends = ['logo_url'];
 
     protected $fillable = [
         'name',
@@ -39,6 +43,13 @@ class School extends Model
         'trial_ends_at' => 'datetime',
         'current_student_count' => 'integer',
     ];
+
+    protected function logoUrl(): Attribute
+    {
+        return Attribute::get(fn () => $this->logo_path
+            ? Storage::disk('r2_public')->url($this->logo_path)
+            : null);
+    }
 
     /**
      * Relationships

@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 use App\Enums\UserRole;
 use App\Notifications\CustomResetPassword;
 use Lab404\Impersonate\Models\Impersonate;
@@ -17,6 +19,8 @@ class User extends Authenticatable
 
     // NOTE: User model does NOT use BelongsToSchool trait to avoid circular reference
     // The global scope would cause infinite recursion when checking auth()->user()->school_id
+
+    protected $appends = ['profile_picture_url'];
 
     protected $fillable = [
         'school_id',
@@ -48,6 +52,13 @@ class User extends Authenticatable
             'is_active' => 'boolean',
             'must_change_password' => 'boolean',
         ];
+    }
+
+    protected function profilePictureUrl(): Attribute
+    {
+        return Attribute::get(fn () => $this->profile_picture
+            ? Storage::disk('r2_private')->temporaryUrl($this->profile_picture, now()->addMinutes(30))
+            : null);
     }
 
     // Relationships
