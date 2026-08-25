@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Traits\BelongsToSchool;
 
@@ -42,9 +43,22 @@ class Student extends Model
 
     protected function profilePictureUrl(): Attribute
     {
-        return Attribute::get(fn () => $this->profile_picture
-            ? Storage::disk('r2_private')->temporaryUrl($this->profile_picture, now()->addMinutes(30))
-            : null);
+        return Attribute::get(function () {
+            if (!$this->profile_picture) {
+                return null;
+            }
+
+            try {
+                return Storage::disk('r2_private')->temporaryUrl($this->profile_picture, now()->addMinutes(30));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to build student profile picture URL', [
+                    'student_id' => $this->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return null;
+            }
+        });
     }
 
     // ── Deactivation helpers ──────────────────────────────────────────────────

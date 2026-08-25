@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Enums\UserRole;
 use App\Notifications\CustomResetPassword;
@@ -56,9 +57,22 @@ class User extends Authenticatable
 
     protected function profilePictureUrl(): Attribute
     {
-        return Attribute::get(fn () => $this->profile_picture
-            ? Storage::disk('r2_private')->temporaryUrl($this->profile_picture, now()->addMinutes(30))
-            : null);
+        return Attribute::get(function () {
+            if (!$this->profile_picture) {
+                return null;
+            }
+
+            try {
+                return Storage::disk('r2_private')->temporaryUrl($this->profile_picture, now()->addMinutes(30));
+            } catch (\Throwable $e) {
+                Log::warning('Failed to build user profile picture URL', [
+                    'user_id' => $this->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return null;
+            }
+        });
     }
 
     // Relationships

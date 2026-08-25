@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class School extends Model
@@ -46,9 +47,22 @@ class School extends Model
 
     protected function logoUrl(): Attribute
     {
-        return Attribute::get(fn () => $this->logo_path
-            ? Storage::disk('r2_public')->url($this->logo_path)
-            : null);
+        return Attribute::get(function () {
+            if (!$this->logo_path) {
+                return null;
+            }
+
+            try {
+                return Storage::disk('r2_public')->url($this->logo_path);
+            } catch (\Throwable $e) {
+                Log::warning('Failed to build school logo URL', [
+                    'school_id' => $this->id,
+                    'error' => $e->getMessage(),
+                ]);
+
+                return null;
+            }
+        });
     }
 
     /**
