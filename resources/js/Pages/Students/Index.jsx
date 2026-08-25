@@ -89,10 +89,12 @@ function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate
                             <div className="flex-1 min-w-0">
                                 <p className="text-xs text-gray-500 mb-0.5">Date of Birth</p>
                                 <p className="text-sm font-medium text-gray-900">
-                                    {(() => {
-                                        const [y, m, d] = student.date_of_birth.slice(0, 10).split('-').map(Number);
-                                        return new Date(y, m - 1, d).toLocaleDateString();
-                                    })()}
+                                    {student.date_of_birth
+                                        ? (() => {
+                                              const [y, m, d] = student.date_of_birth.slice(0, 10).split('-').map(Number);
+                                              return new Date(y, m - 1, d).toLocaleDateString();
+                                          })()
+                                        : 'N/A'}
                                 </p>
                             </div>
                         </div>
