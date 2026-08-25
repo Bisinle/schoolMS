@@ -75,7 +75,7 @@ export default function Index({ auth, reports, filters }) {
         return colors[status] || colors.submitted;
     };
 
-    const canCreate = ['admin', 'teacher', 'nurse', 'receptionist'].includes(auth.user.role);
+    const canCreate = ['admin', 'teacher'].includes(auth.user.role);
 
     return (
         <AuthenticatedLayout user={auth.user}>

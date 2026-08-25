@@ -160,34 +160,6 @@ export const getNavigation = (role, isMadrasah = false) => {
             { name: "Documents", href: "/documents", icon: FolderOpen },
             { name: "Policies", href: "/policies", icon: Shield },
         ],
-        accountant: [
-            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Policies", href: "/policies", icon: Shield },
-        ],
-        receptionist: [
-            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Policies", href: "/policies", icon: Shield },
-            { name: "Accident Reports", href: "/accident-reports", icon: AlertTriangle },
-            { name: "Incident Reports", href: "/incident-reports", icon: AlertOctagon },
-        ],
-        nurse: [
-            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Policies", href: "/policies", icon: Shield },
-            { name: "Accident Reports", href: "/accident-reports", icon: AlertTriangle },
-            { name: "Incident Reports", href: "/incident-reports", icon: AlertOctagon },
-        ],
-        it_staff: [
-            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Policies", href: "/policies", icon: Shield },
-        ],
-        maid: [
-            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Policies", href: "/policies", icon: Shield },
-        ],
-        cook: [
-            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-            { name: "Policies", href: "/policies", icon: Shield },
-        ],
     };
 
     return navigationConfig[role] || [];

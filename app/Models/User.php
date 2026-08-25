@@ -187,36 +187,6 @@ class User extends Authenticatable
         return $this->role === 'guardian';
     }
 
-    public function isAccountant(): bool
-    {
-        return $this->role === 'accountant';
-    }
-
-    public function isReceptionist(): bool
-    {
-        return $this->role === 'receptionist';
-    }
-
-    public function isNurse(): bool
-    {
-        return $this->role === 'nurse';
-    }
-
-    public function isIT(): bool
-    {
-        return $this->role === 'it_staff';
-    }
-
-    public function isMaid(): bool
-    {
-        return $this->role === 'maid';
-    }
-
-    public function isCook(): bool
-    {
-        return $this->role === 'cook';
-    }
-
     // Scopes
     public function scopeActive($query)
     {

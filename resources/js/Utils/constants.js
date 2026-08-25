@@ -95,24 +95,12 @@ export const ROLE_OPTIONS = [
     { value: 'admin', label: 'Admin' },
     { value: 'teacher', label: 'Teacher' },
     { value: 'guardian', label: 'Guardian' },
-    { value: 'accountant', label: 'Accountant' },
-    { value: 'receptionist', label: 'Receptionist' },
-    { value: 'nurse', label: 'Nurse' },
-    { value: 'it_staff', label: 'IT Staff' },
-    { value: 'maid', label: 'Maid' },
-    { value: 'cook', label: 'Cook' },
 ];
 
 export const ROLE_VALUES = {
     ADMIN: 'admin',
     TEACHER: 'teacher',
     GUARDIAN: 'guardian',
-    ACCOUNTANT: 'accountant',
-    RECEPTIONIST: 'receptionist',
-    NURSE: 'nurse',
-    IT_STAFF: 'it_staff',
-    MAID: 'maid',
-    COOK: 'cook',
 };
 
 /**

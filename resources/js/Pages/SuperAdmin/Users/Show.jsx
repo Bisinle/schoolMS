@@ -32,10 +32,6 @@ export default function Show({ user }) {
             admin: 'from-purple-500 to-purple-600',
             teacher: 'from-blue-500 to-blue-600',
             guardian: 'from-green-500 to-green-600',
-            accountant: 'from-yellow-500 to-yellow-600',
-            receptionist: 'from-pink-500 to-pink-600',
-            nurse: 'from-red-500 to-red-600',
-            it_staff: 'from-gray-500 to-gray-600',
         };
         return colors[role] || 'from-gray-500 to-gray-600';
     };

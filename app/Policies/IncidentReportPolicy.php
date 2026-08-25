@@ -31,7 +31,7 @@ class IncidentReportPolicy
     public function create(User $user): bool
     {
         // All staff members can create incident reports
-        return in_array($user->role, ['admin', 'teacher', 'nurse', 'receptionist']);
+        return in_array($user->role, ['admin', 'teacher']);
     }
 
     /**

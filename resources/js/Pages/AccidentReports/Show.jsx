@@ -62,7 +62,7 @@ export default function Show({ auth, report }) {
     };
 
     const canEdit = (auth.user.id === report.reported_by || auth.user.role === 'admin') && report.status !== 'closed';
-    const canReview = ['admin', 'nurse'].includes(auth.user.role);
+    const canReview = auth.user.role === 'admin';
     const canDelete = auth.user.role === 'admin';
 
     return (

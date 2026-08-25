@@ -89,7 +89,7 @@ export default function Index({ auth, reports, filters }) {
         return labels[type] || type;
     };
 
-    const canCreate = ['admin', 'teacher', 'nurse', 'receptionist'].includes(auth.user.role);
+    const canCreate = ['admin', 'teacher'].includes(auth.user.role);
     const canEdit = (report) => {
         return auth.user.role === 'admin' || report.reporter_id === auth.user.id;
     };

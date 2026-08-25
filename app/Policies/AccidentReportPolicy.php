@@ -31,7 +31,7 @@ class AccidentReportPolicy
     public function create(User $user): bool
     {
         // All staff members can create accident reports
-        return in_array($user->role, ['admin', 'teacher', 'nurse', 'receptionist']);
+        return in_array($user->role, ['admin', 'teacher']);
     }
 
     /**
@@ -60,8 +60,8 @@ class AccidentReportPolicy
             return false;
         }
 
-        // Only admins and nurses can review
-        return in_array($user->role, ['admin', 'nurse']);
+        // Only admins can review
+        return $user->role === 'admin';
     }
 
     /**
