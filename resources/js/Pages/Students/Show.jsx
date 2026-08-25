@@ -103,7 +103,10 @@ console.log(student);
                                 label="Date of Birth"
                                 value={
                                     student.date_of_birth
-                                        ? new Date(student.date_of_birth).toLocaleDateString()
+                                        ? (() => {
+                                              const [y, m, d] = student.date_of_birth.slice(0, 10).split('-').map(Number);
+                                              return new Date(y, m - 1, d).toLocaleDateString();
+                                          })()
                                         : 'N/A'
                                 }
                             />
