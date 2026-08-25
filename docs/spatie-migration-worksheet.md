@@ -14,7 +14,7 @@ migration currently stands.
 - [x] **Phase 0** — Branch + worksheet skeleton
 - [x] **Phase 1** — Role cleanup: delete `accountant, receptionist, nurse, it_staff, maid, cook`
 - [x] **Phase 2** — Reverse-engineer current permissions for `super_admin, admin, teacher, guardian`
-- [ ] **Phase 3** — Design the permission taxonomy
+- [x] **Phase 3** — Design the permission taxonomy
 - [ ] **Phase 4** — Install, migrate, seed `spatie/laravel-permission` (inert — old system still live)
 - [ ] **Phase 5** — Migrate backend: routes, policies, model
 - [ ] **Phase 6** — Migrate frontend
@@ -87,7 +87,123 @@ the granularity Phase 3's permission taxonomy will need anyway.
 
 ## Permission taxonomy (Phase 3)
 
-*Not started.*
+**Naming scheme:** `{module}.{action}`, dot notation (Spatie's standard convention).
+Multi-word module names are kebab-case (`exam-results`, `report-comments`,
+`timetable-periods`, `accident-reports`, `incident-reports`). Actions are `view`,
+`create`, `update`, `delete` where the module has real CRUD granularity; a single
+`.manage` permission where Phase 2 found the current code has no finer split
+(e.g. Settings, Fees, Timetable Templates) — inventing a split the codebase doesn't
+currently have would misrepresent "what exists today," which is this whole
+migration's point. A few modules get custom action names matching real custom
+Policy methods (`.review`, `.verify`, `.reject`, `.update-status`, `.manage-lock`).
+
+Derived directly from the Phase 2 table plus the three decisions above — dead
+Policy grants (decision on disagreements #2/#3) are **not** included below; the
+Exams ownership-fix (decision #1) **is** included as the new intended behavior.
+
+`super_admin` gets its own small, separate namespace (`super-admin.*`) rather than
+being forced into the same per-module grid — per Phase 2's structural finding, it
+doesn't participate in the school-level module system at all.
+
+### School-level permissions
+
+| Permission | `admin` | `teacher` | `guardian` | Ownership/state scoping (stays as in-Policy logic, not a Spatie role/permission concept) |
+|---|---|---|---|---|
+| `students.view` | ✅ | ✅ | ❌ | — |
+| `students.create` | ✅ | ❌ | ❌ | — |
+| `students.update` | ✅ | ❌ | ❌ | — |
+| `students.delete` | ✅ | ❌ | ❌ | — |
+| `teachers.view` | ✅ | ❌ | ❌ | — |
+| `teachers.create` | ✅ | ❌ | ❌ | — |
+| `teachers.update` | ✅ | ❌ | ❌ | — |
+| `teachers.delete` | ✅ | ❌ | ❌ | — |
+| `guardians.view` | ✅ | ✅ | ❌ | — |
+| `guardians.create` | ✅ | ❌ | ❌ | — |
+| `guardians.update` | ✅ | ❌ | ❌ | — |
+| `guardians.delete` | ✅ | ❌ | ❌ | — |
+| `users.view` | ✅ | ❌ | ❌ | School-scoped (admin only ever sees their own school's users — existing tenant isolation, not a new permission concept) |
+| `users.create` | ✅ | ❌ | ❌ | " |
+| `users.update` | ✅ | ❌ | ❌ | " |
+| `users.delete` | ✅ | ❌ | ❌ | " |
+| `users.reset-password` | ✅ | ❌ | ❌ | " |
+| `users.toggle-status` | ✅ | ❌ | ❌ | " |
+| `fees.manage` | ✅ | ❌ | ❌ | Covers dashboard/transport/tuition/universal/invoices/payments — Phase 2 found no finer split in current code |
+| `fees.view-own-invoices` | ❌ | ❌ | ✅ | Guardian scoped to their own invoices only — separate route/capability from `fees.manage`, not a restricted view of it |
+| `settings.manage` | ✅ | ❌ | ❌ | Covers profile/academic years/terms/preferences/headteacher_signature — no finer split in current code |
+| `attendance.view` | ✅ (all) | ✅ (scoped) | ❌ | Teacher scoped to `$user->teacher->grades` |
+| `attendance.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
+| `attendance.delete` | ✅ | ❌ | ❌ | **Admin-only-but-inert** — no route currently calls this at all (Phase 2 disagreement #6, deferred, carried forward as-is) |
+| `attendance.view-own-children` | ❌ | ❌ | ✅ | Guardian scoped to `$user->guardian->students`; separate route (`/guardian/attendance`) from `attendance.view` |
+| `grades.view` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades, single-record only (list view unscoped per Phase 2) |
+| `grades.create` | ✅ | ❌ | ❌ | — |
+| `grades.update` | ✅ | ❌ | ❌ | — |
+| `grades.delete` | ✅ | ❌ | ❌ | — |
+| `subjects.view` | ✅ | ✅ | ❌ | Unscoped — no per-teacher filtering exists today |
+| `subjects.create` | ✅ | ❌ | ❌ | — |
+| `subjects.update` | ✅ | ❌ | ❌ | — |
+| `subjects.delete` | ✅ | ❌ | ❌ | — |
+| `exams.view` | ✅ (all) | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
+| `exams.create` | ✅ | ✅ | ❌ | — |
+| `exams.update` | ✅ (all) | ✅ **(scoped — Decision 1)** | ❌ | **Changed behavior, deliberate:** teacher scoped to exams where `created_by === $user->id` (`exams.created_by` column already exists). Implementation lands in Phase 5, not before. |
+| `exams.delete` | ✅ | ❌ | ❌ | — |
+| `exam-results.view` | ✅ (all) | ✅ (scoped) | ❌ | Teacher scoped to assigned grades. Guardian dropped per decision on disagreements #2/#3 — guardians see results via `reports.view` instead |
+| `exam-results.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
+| `exam-results.update` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
+| `exam-results.delete` | ✅ | ❌ | ❌ | **Admin-only-but-inert** — no route calls this (same deferred disagreement #6) |
+| `timetable-periods.view` | ✅ | ✅ | ❌ | — |
+| `timetable-periods.manage` | ✅ | ❌ | ❌ | Create/update/delete |
+| `timetable-rooms.view` | ✅ | ✅ | ❌ | — |
+| `timetable-rooms.manage` | ✅ | ❌ | ❌ | — |
+| `timetable-slots.view` | ✅ (all) | ✅ (scoped) | ❌ | Teacher scoped to `$timetableSlot->teacher_id === $user->teacher->id` |
+| `timetable-slots.manage` | ✅ | ❌ | ❌ | — |
+| `timetable-templates.manage` | ✅ | ❌ | ❌ | Reproduced as-is (Phase 2 disagreement #5, decision: no view tier, faithful reproduction, "worth a second look later" as a separate product decision) |
+| `timetable-dashboard.view` | ✅ | ❌ | ❌ | Covers Dashboard + Blueprints, no finer split |
+| `timetable.view-own` | ❌ | ✅ | ❌ | Teacher's own generated schedule (`/my-timetable`) |
+| `timetable-availability.manage` | ✅ | ✅ | ❌ | **Scoping unverified** (Phase 2 flagged this — whether a teacher can edit another teacher's availability record wasn't confirmed against controller internals). Carried forward as an open unknown, not asserted as scoped or unscoped. |
+| `reports.view` | ✅ (all) | ✅ (scoped) | ✅ (scoped) | Teacher scoped to assigned grades; guardian scoped to own children |
+| `report-comments.create` | ✅ | ✅ | ❌ | — |
+| `report-comments.update` | ✅ (always) | ✅ (scoped) | ❌ | Teacher scoped to own comment AND `canEditTeacherComment()` (not locked) — ownership + state |
+| `report-comments.delete` | ✅ | ❌ | ❌ | — |
+| `report-comments.manage-lock` | ✅ | ❌ | ❌ | — |
+| `reports.headteacher-comment` | ✅ | ❌ | ❌ | The pre-existing "headteacher = admin" conflation, unrelated to this migration's scope — carried forward as-is, see `head-teacher-role-audit-report.md` §1.4 |
+| `documents.view` | ✅ (all) | ✅ (scoped) | ✅ (scoped) | Teacher scoped to own Teacher-entity docs; guardian scoped to own + linked students' docs |
+| `documents.create` | ✅ | ✅ | ✅ | All authenticated roles |
+| `documents.verify` | ✅ | ❌ | ❌ | — |
+| `documents.reject` | ✅ | ❌ | ❌ | — |
+| `documents.delete` | ✅ (any) | ✅ (scoped) | ✅ (scoped) | Non-admin: uploader-only AND status is pending/rejected — ownership + state |
+| `accident-reports.view` | ✅ | ✅ | ✅ | Reachable for guardian but no nav link exists (Phase 2 disagreement #4, deferred) |
+| `accident-reports.create` | ✅ | ✅ | ❌ | — |
+| `accident-reports.review` | ✅ | ❌ | ❌ | — |
+| `accident-reports.update` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to own report AND status ≠ closed |
+| `accident-reports.delete` | ✅ | ❌ | ❌ | — |
+| `incident-reports.view` | ✅ | ✅ | ✅ | Same nav-link gap as accident-reports.view |
+| `incident-reports.create` | ✅ | ✅ | ❌ | — |
+| `incident-reports.update-status` | ✅ | ✅ | ❌ | — |
+| `incident-reports.update` | ✅ | ✅ (scoped) | ❌ | Same ownership + state pattern as accident-reports.update |
+| `incident-reports.delete` | ✅ | ❌ | ❌ | — |
+
+### Super-admin namespace (separate — does not participate in the grid above)
+
+| Permission | `super_admin` |
+|---|---|
+| `super-admin.schools.manage` | ✅ |
+| `super-admin.users.manage` | ✅ (cross-school — a structurally different capability from school-level `users.*`, not a superset of it in the same table) |
+| `super-admin.settings.manage` | ✅ |
+
+### Summary: every ownership/state-scoped permission (18 total)
+
+These stay as in-Policy scoping logic even after Spatie is in place — Spatie
+governs *whether a role has the permission at all*, not *which records* a
+permission-holder can touch. Listed together here so Phase 5 has a checklist of
+every Policy that needs to keep its scoping logic when rewritten to call
+`$user->can(...)`:
+
+`attendance.view` (teacher), `attendance.create` (teacher), `attendance.view-own-children` (guardian),
+`grades.view` (teacher), `exams.view` (teacher), `exams.update` (teacher — new),
+`exam-results.view` / `.create` / `.update` (teacher), `timetable-slots.view` (teacher),
+`timetable-availability.manage` (teacher — unverified), `reports.view` (teacher + guardian),
+`report-comments.update` (teacher), `documents.view` / `.delete` (teacher + guardian),
+`accident-reports.update` / `incident-reports.update` (teacher), `fees.view-own-invoices` (guardian)
 
 ---
 
@@ -171,6 +287,42 @@ the granularity Phase 3's permission taxonomy will need anyway.
    currently moot (nothing to restrict). Flagging in case a later phase assumes
    these delete paths are live/tested when they may not be exercised anywhere
    today.
+
+### Decisions on the above (made by you, 2026-08-26 — recorded before Phase 3 started)
+
+- **Disagreement #1 (Exams) → Decision: deliberate fix, not faithful reproduction.**
+  Teacher gets `exams.update`, scoped to exams they created themselves — same "own
+  records only" ownership pattern already used for Attendance/Grades. Feasibility
+  confirmed: `exams.created_by` already exists as a column with a `creator()`
+  relationship (`app/Models/Exam.php:45`, migration `database/migrations/*_create_exams_table.php`),
+  so this needs no schema change. **This is an explicit, on-the-record exception**
+  to the "reproduce current behavior exactly" non-negotiable — called out here so
+  it isn't mistaken for scope creep later. Implementation happens in Phase 5 (policy
+  rewrite), not now — Phase 3 will encode `exams.update` as owned-by-creator for
+  teacher in the taxonomy table.
+- **Disagreements #2 and #3 (dead Policy grants: Student/Guardian self-view,
+  Timetable Template teacher-view, Exam Results guardian-view) → Decision: do NOT
+  carry into the new taxonomy.** These are Policy branches no current route can
+  reach — genuinely unreachable, not just rarely used. Consciously dropped, not an
+  oversight: the new permission set will match what's actually reachable today
+  (route + policy agreeing), not what a stray unreachable Policy branch technically
+  allows. If any of these capabilities are wanted later, they should be added back
+  deliberately with a real route/page, not inherited by accident through faithful
+  reproduction. Phase 3's taxonomy table will simply not include these grants for
+  guardian/teacher.
+- **Disagreement #5 (Timetable's inconsistent read/write split) → Decision:
+  reproduce as-is, do not change.** Plausibly intentional (Templates locked down
+  tighter than Periods/Rooms/Slots) rather than a bug — unlike Exams, there's no
+  internal contradiction (no policy comment claiming the opposite of what the code
+  does), just an inconsistency in how tight each sub-resource's access is. Flagged
+  as "worth a second look later" — a separate product decision to revisit once
+  there's time to confirm intent, out of scope for this migration.
+- **Disagreement #4 (Accident/Incident Reports missing guardian nav link) →
+  Deferred, no action.** Pure frontend/UX gap, unrelated to permission modeling.
+  Left for a separate, later task.
+- **Disagreement #6 (Attendance/Exam Results unreachable `delete` checks) →
+  Deferred, no action.** No route uses them either way — seed as admin-only-but-
+  inert in Phase 3/5, matching current (non-)behavior exactly. Nothing to decide.
 
 ---
 
@@ -272,3 +424,41 @@ walled off from the school-level route group and operates in its own parallel
 namespace (mainly super-admin-level Users/Schools management). The Spatie
 taxonomy should probably treat it differently rather than trying to force it into
 the same per-module permission grid as admin/teacher/guardian.
+
+### Phase 2 decisions (resolved before Phase 3 started)
+
+You resolved all six Phase 2 disagreements before taxonomy work began — full
+detail recorded in the Risks section above, summary:
+- **Exams:** deliberate fix, not reproduction — teacher gets `exams.update` scoped
+  to their own created exams. Explicitly on the record as an intentional behavior
+  change, confirmed feasible (`exams.created_by` already exists).
+- **Dead Policy grants** (Student/Guardian self-view, Timetable Template
+  teacher-view, Exam Results guardian-view): consciously dropped from the new
+  taxonomy, not carried forward — they're unreachable via any current route, so
+  "faithful reproduction" doesn't apply to them.
+- **Timetable's inconsistent read/write split:** reproduced as-is, flagged as
+  worth a second look later as a separate product decision.
+- **Accident/Incident Reports missing guardian nav link, unreachable
+  Attendance/Exam-Results delete checks:** both deferred, no action — unrelated to
+  permission modeling / no route exercises them anyway.
+
+### Phase 3 — Permission taxonomy design
+
+Derived the full permission set directly from Phase 2's table plus the decisions
+above — no new codebase exploration needed, this was synthesis over
+already-gathered facts. `{module}.{action}` dot-notation naming, kebab-case for
+multi-word modules. Used a single `.manage` permission (rather than inventing a
+finer split) wherever Phase 2 found the current code genuinely has no view/write
+distinction (Settings, Fees, Timetable Templates) — matching what actually exists
+today was prioritized over a "nicer-looking" but fictional taxonomy.
+
+75 permissions total: 72 school-level (in the main grid) + 3 in a separate
+`super-admin.*` namespace, reflecting Phase 2's finding that super_admin doesn't
+participate in the same per-module system at all.
+
+18 permissions carry ownership/state scoping that must stay as in-Policy logic
+after the Spatie migration — Spatie will only govern *whether a role has a
+permission*, never *which records* — listed as an explicit checklist at the end of
+the taxonomy section so Phase 5 has something concrete to work against per Policy
+file, rather than having to rediscover which permissions need scoping logic by
+re-reading Phase 2's prose.
