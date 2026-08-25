@@ -14,7 +14,11 @@ migration currently stands.
 - [x] **Phase 0** — Branch + worksheet skeleton
 - [x] **Phase 1** — Role cleanup: delete `accountant, receptionist, nurse, it_staff, maid, cook`
 - [x] **Phase 2** — Reverse-engineer current permissions for `super_admin, admin, teacher, guardian`
-- [x] **Phase 3** — Design the permission taxonomy
+  (extended 2026-08-26 to 4 modules missed from the original checklist — see Phase log)
+- [x] **Phase 3** — Design the permission taxonomy — ⚠️ **88 permissions in the
+  table; 2 of them (`quran-homework.update`, `quran-schedule.view`) have a
+  disputed cell pending your decision, and Impersonation isn't represented at
+  all yet (permission names depend on decisions not yet made) — see Risks section**
 - [ ] **Phase 4** — Install, migrate, seed `spatie/laravel-permission` (inert — old system still live)
 - [ ] **Phase 5** — Migrate backend: routes, policies, model
 - [ ] **Phase 6** — Migrate frontend
@@ -82,6 +86,33 @@ the granularity Phase 3's permission taxonomy will need anyway.
 | Accident Reports — review | N/A (blocked) | ✅ exclusively | ❌ | ❌ | **Today's Phase 1 change**, verified current: `role === 'admin'` (`AccidentReportPolicy.php:56-65`); frontend `canReview` in `Show.jsx` matches |
 | Incident Reports — updateStatus | N/A (blocked) | ✅ | ✅ | ❌ | **Unchanged by Phase 1**, confirmed directly: `['admin','teacher']` (`IncidentReportPolicy.php:56-65`); frontend `Show.jsx:87` matches |
 | Accident/Incident Reports — update-own/delete | N/A (blocked) | ✅ both | ✅ update-own only, if not closed | ❌ | `update`: reporter-or-admin, not closed; `delete`: admin-only both (`AccidentReportPolicy.php:40-51`, `IncidentReportPolicy.php:40-51`) |
+
+**Follow-up pass (2026-08-26):** the four rows below cover modules missed from the
+original 13-module checklist (that list came from the Head Teacher audit's scope,
+which wasn't actually a complete map of the app). Same method, same verification
+standard as the rows above — not a lower bar.
+
+| Quran dashboard — view | N/A (blocked) | ✅ school-wide stats | ✅ own teaching load, scoped | ✅ own children, scoped | Route `role:admin,teacher,guardian` (`web.php:434-436`); `QuranController::index` branches per role, each with its own scoped query (`teacherStats`/`guardianStats`) — genuinely scoped in the controller, verified, not just role-gated |
+| Quran homework — view (list) | N/A (blocked) | ✅ | ✅ | ❌ (no route) | Route `role:admin,teacher` only (`web.php:439-441`) |
+| Quran homework — view (single/report) | N/A (blocked) | ✅ | ✅ | ✅ own children only | Route `role:admin,teacher,guardian` (`web.php:461-464`); `QuranHomeworkPolicy::view` itself is role-only, but `QuranHomeworkController::show/studentReport/studentHomework` each add their own inline guardian-ownership `abort(403)` check — scoping lives in the Controller here, not the Policy, unlike every other module in this worksheet |
+| Quran homework — create | N/A (blocked) | ✅ any | ✅ grade-scoped | ❌ | `QuranHomeworkPolicy::create` — teacher scoped via `$user->teacher->grades->contains($student->grade_id)`, explicitly commented as intentional |
+| Quran homework — update/delete/grade/mark-ungraded | N/A (blocked) | ✅ | ⚠️ **unscoped — flagged, see disagreements** | ❌ | `QuranHomeworkPolicy::update`/`delete` — no grade-scoping at all; any teacher at the school can edit/delete/grade any other teacher's homework record. `grade()`/`markUngraded()` controller actions reuse the same `update` gate |
+| Quran schedule — view (list/single) | N/A (blocked) | ✅ school-wide | ✅ own only, scoped via `teacher_id` | ⚠️ **unscoped — live data-exposure, see disagreements** | Route `role:admin,teacher,guardian` (`web.php:469`); admin/teacher correctly scoped, but guardian branch (`QuranSchedulePolicy` + `QuranScheduleController::index`) has **zero scoping to the guardian's own children** |
+| Quran schedule — create/update/delete | N/A (blocked) | ✅ any | ✅ create: grade-scoped; update/delete: own-schedule-only via `teacher_id` | ❌ | `QuranSchedulePolicy` — internally consistent, `delete` reuses `update` gate |
+| Policies & Regulations — view | N/A (blocked) | ✅ | ✅ | ✅ | `PolicyPolicy::view` — all authenticated, additionally scoped to same school (tenant isolation, not role) |
+| Policies & Regulations — acknowledge | N/A (blocked) | ✅ | ✅ | ✅ | Distinct action from view; state-gated — only if `status === 'published' && requires_acknowledgment` |
+| Policies & Regulations — create/edit/delete/publish/revisions | N/A (blocked) | ✅ | ❌ | ❌ | All identically admin-only — route and Policy agree exactly, no disagreements found for this module. `delete` has an extra state guard: cannot delete a published policy |
+| Document Categories — view | N/A (blocked) | ✅ | ⚠️ **dead grant — see note below table** | ⚠️ **dead grant** | `DocumentCategoryPolicy::viewAny`/`view` explicitly grant teacher/guardian, but the entire route group (`web.php:499-507`) is `role:admin` only — same "Policy allows, no route reaches it" shape as the already-decided disagreements #2/#3 |
+| Document Categories — create/edit/delete | N/A (blocked) | ✅ | ❌ | ❌ | `delete` has a state guard: blocked if any documents currently use the category |
+| Impersonation | — see dedicated Risks section below, not finalized in this table — | | | | Three separate, only-partially-related code paths found (one entirely dead). Deliberately not summarized as a single row here — doing so would misrepresent how fragmented this actually is. Full write-up in Risks. |
+
+**Note on Document Categories' dead grant:** teachers/guardians aren't actually
+blind to category *names* — `DocumentController::create()` (the existing, already-
+taxonomized `documents.*` upload flow) reads `DocumentCategory::active()->get()`
+directly for any authenticated role, entirely bypassing `DocumentCategoryPolicy`.
+So dropping this dead Policy grant (consistent with the established precedent)
+doesn't remove any capability teachers/guardians currently rely on — they never
+reached it through this Policy to begin with.
 
 ---
 
@@ -158,7 +189,7 @@ doesn't participate in the school-level module system at all.
 | `timetable-slots.manage` | ✅ | ❌ | ❌ | — |
 | `timetable-templates.manage` | ✅ | ❌ | ❌ | Reproduced as-is (Phase 2 disagreement #5, decision: no view tier, faithful reproduction, "worth a second look later" as a separate product decision) |
 | `timetable-dashboard.view` | ✅ | ❌ | ❌ | Covers Dashboard + Blueprints, no finer split |
-| `timetable.view-own` | ❌ | ✅ | ❌ | Teacher's own generated schedule (`/my-timetable`) |
+| `timetable-schedule.view-own` | ❌ | ✅ | ❌ | Teacher's own generated schedule (`/my-timetable`). **Renamed 2026-08-26** from `timetable.view-own`, which broke the `{module}.{action}` pattern — this name matches the sibling `timetable-*` permissions and the feature's own UI label ("My Timetable") |
 | `timetable-availability.manage` | ✅ | ✅ | ❌ | **Scoping unverified** (Phase 2 flagged this — whether a teacher can edit another teacher's availability record wasn't confirmed against controller internals). Carried forward as an open unknown, not asserted as scoped or unscoped. |
 | `reports.view` | ✅ (all) | ✅ (scoped) | ✅ (scoped) | Teacher scoped to assigned grades; guardian scoped to own children |
 | `report-comments.create` | ✅ | ✅ | ❌ | — |
@@ -178,9 +209,26 @@ doesn't participate in the school-level module system at all.
 | `accident-reports.delete` | ✅ | ❌ | ❌ | — |
 | `incident-reports.view` | ✅ | ✅ | ✅ | Same nav-link gap as accident-reports.view |
 | `incident-reports.create` | ✅ | ✅ | ❌ | — |
-| `incident-reports.update-status` | ✅ | ✅ | ❌ | — |
+| `incident-reports.review` | ✅ | ✅ | ❌ | **Renamed 2026-08-26** from `incident-reports.update-status` — unified with `accident-reports.review` since both represent the same underlying action (examining/closing out a report); "review" was kept over "update-status" as the more specific term, matching `AccidentReportPolicy`'s own method name/comments |
 | `incident-reports.update` | ✅ | ✅ (scoped) | ❌ | Same ownership + state pattern as accident-reports.update |
 | `incident-reports.delete` | ✅ | ❌ | ❌ | — |
+| `quran-dashboard.view` | ✅ | ✅ | ✅ | **Follow-up pass addition (2026-08-26).** All three genuinely scoped in the controller (school-wide/own-teaching-load/own-children respectively) — see ownership-scoping summary below |
+| `quran-homework.view` | ✅ | ✅ | ❌ | Covers the list view and general single-record view. Guardian's access to a specific homework record is a *separate* permission below, not a restricted view of this one |
+| `quran-homework.view-own` | ❌ | ❌ | ✅ | Guardian, own children only, via student-report/student-homework routes — scoping lives in the Controller, not a Policy, unlike everywhere else in this taxonomy |
+| `quran-homework.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
+| `quran-homework.update` | ✅ | ⚠️ **PENDING DECISION** | ❌ | Covers update/delete/grade/mark-ungraded (Policy reuses one gate for all). **Not finalized** — disagreement #8: currently unscoped for teacher, contradicts the frontend's own stricter check. Needs your call before this row is real |
+| `quran-schedule.view` | ✅ | ✅ (scoped) | ⚠️ **PENDING DECISION** | Teacher correctly scoped via `teacher_id`. **Not finalized for guardian** — disagreement #7: currently unscoped, live data-exposure to other families' children. Needs your call before this row is real |
+| `quran-schedule.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
+| `quran-schedule.update` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to own schedules via `teacher_id`; delete reuses this gate |
+| `policies.view` | ✅ | ✅ | ✅ | **Follow-up pass addition.** All authenticated; tenant-scoped only (not a role distinction) |
+| `policies.acknowledge` | ✅ | ✅ | ✅ | State-gated: only if published + requires acknowledgment |
+| `policies.manage` | ✅ | ❌ | ❌ | Create/update/delete/publish/revisions — route and Policy agree exactly, no disagreements. `delete` has a state guard (cannot delete a published policy) |
+| `document-categories.view` | ✅ | ❌ | ❌ | **Follow-up pass addition.** Teacher/guardian Policy grant dropped per disagreement #9 — dead code, no route reaches it, same precedent as disagreements #2/#3 |
+| `document-categories.manage` | ✅ | ❌ | ❌ | Create/update/delete; `delete` has a state guard (blocked if any documents use the category) |
+
+**Impersonation: deliberately not in this table yet.** See the dedicated
+Impersonation section in Risks above — permission names depend on decisions not
+yet made, adding rows here would misrepresent them as settled.
 
 ### Super-admin namespace (separate — does not participate in the grid above)
 
@@ -190,7 +238,7 @@ doesn't participate in the school-level module system at all.
 | `super-admin.users.manage` | ✅ (cross-school — a structurally different capability from school-level `users.*`, not a superset of it in the same table) |
 | `super-admin.settings.manage` | ✅ |
 
-### Summary: every ownership/state-scoped permission (18 total)
+### Summary: every ownership/state-scoped permission (23 confirmed, 2 pending)
 
 These stay as in-Policy scoping logic even after Spatie is in place — Spatie
 governs *whether a role has the permission at all*, not *which records* a
@@ -203,7 +251,14 @@ every Policy that needs to keep its scoping logic when rewritten to call
 `exam-results.view` / `.create` / `.update` (teacher), `timetable-slots.view` (teacher),
 `timetable-availability.manage` (teacher — unverified), `reports.view` (teacher + guardian),
 `report-comments.update` (teacher), `documents.view` / `.delete` (teacher + guardian),
-`accident-reports.update` / `incident-reports.update` (teacher), `fees.view-own-invoices` (guardian)
+`accident-reports.update` / `incident-reports.update` (teacher), `fees.view-own-invoices` (guardian),
+`quran-dashboard.view` (teacher + guardian — follow-up pass), `quran-homework.view-own` (guardian),
+`quran-homework.create` (teacher), `quran-schedule.create` (teacher), `quran-schedule.update` (teacher)
+
+**Not counted above — pending your decision, not yet confirmed as scoped:**
+`quran-homework.update` (teacher scoping proposed but disputed, disagreement #8),
+`quran-schedule.view` (guardian scoping currently absent entirely — disagreement
+#7, the live data-exposure issue)
 
 ---
 
@@ -287,6 +342,131 @@ every Policy that needs to keep its scoping logic when rewritten to call
    currently moot (nothing to restrict). Flagging in case a later phase assumes
    these delete paths are live/tested when they may not be exercised anywhere
    today.
+
+### Follow-up pass disagreements (2026-08-26, from extending Phase 2/3 to the 4 missed modules)
+
+7. ⚠️ **Live guardian data-exposure on Quran Schedules — reachable today, not a
+   dead branch, involves specific children's data.** `QuranSchedulePolicy`'s
+   guardian branch and `QuranScheduleController::index`'s query both have zero
+   scoping to the guardian's own children. Any guardian who navigates to
+   `/quran-schedule` (no nav link exists — undiscoverable via UI, but the route
+   and Policy both permit it) sees **every** Quran schedule for **every** student
+   in the school, and can open any individual one. The equivalent Homework
+   guardian-scoping is done correctly (inline controller checks) — Schedule is the
+   odd one out. This is structurally the same "policy/route allows, no nav link"
+   shape as #4 above, but materially different in stakes: #4 is about incident
+   reports being reachable-but-undiscoverable; this is about one guardian being
+   able to see another family's child's Quran schedule if they simply guess or
+   are given the URL. **Flagging this as higher-priority than a routine
+   disagreement** — recommend treating it as a real scoping bug to fix, not
+   something to reproduce faithfully, but that's your call to make, not mine to
+   assume.
+8. **Quran Homework `update`/`delete`/`grade`/`mark-ungraded` is unscoped for
+   teacher, while `create` on the same Policy is explicitly grade-scoped with a
+   code comment.** Same asymmetric shape as the already-decided Exams
+   disagreement (create scoped one way, a sibling action not scoped the same
+   way) — but this is a *different* module/Policy, so the earlier Exams decision
+   doesn't automatically apply here without your say-so. Additional signal this
+   is unintentional: `Quran/Homework/Show.jsx:28` has its own frontend check
+   (`auth.user.role === 'admin' || auth.user.id === homework.teacher_id`) that
+   *does* correctly restrict the Edit UI to the teacher's own homework — the
+   frontend and backend disagree, and the frontend's stricter behavior looks like
+   the actually-intended rule. Needs the same kind of decision Exams got:
+   reproduce as-is (teacher can edit any homework record), or fix to match what
+   the frontend already assumes (teacher scoped to own)?
+9. **Document Categories: `DocumentCategoryPolicy` grants teacher/guardian view
+   access no route can reach** — structurally identical to the already-decided
+   dead-grant pattern (disagreements #2/#3). Applying that same precedent here
+   (drop from the taxonomy) rather than re-asking, since the reasoning you gave
+   for #2/#3 generalizes directly — noting it here so it's visible this was an
+   applied precedent, not a fresh unilateral call.
+
+### Impersonation (2026-08-26) — NOT in the Phase 3 taxonomy yet, needs your decision first
+
+Per your explicit instruction, nothing below was resolved unilaterally. This
+module has more going on than "reproduce current behavior" assumes at first
+glance — it's actually **three separate, only-partially-related code paths**, one
+of which is entirely dead. All verified directly against the actual package
+source and this app's code, not inferred.
+
+**Path A — the general-purpose route, `Route::impersonate()`.** Registers
+`route('impersonate', {id})` / `route('impersonate.leave')` (`web.php:497`, a
+package macro), used by `ImpersonateButton.jsx`/`ImpersonationBanner.jsx` on the
+regular Users pages. Real package logic, read directly from
+`vendor/lab404/laravel-impersonate/src/Controllers/ImpersonateController.php`:
+checks `canImpersonate()` (our `User.php:165` — `isSuperAdmin() || isAdmin()`) and
+`canBeImpersonated()` (`User.php:174` — `!isSuperAdmin()`), and — package-enforced,
+not our own code, easy to miss when reproducing behavior — blocks self-
+impersonation and blocks starting a second impersonation while already
+impersonating someone. **But** this whole route group sits inside
+`Route::middleware(['auth','school.admin','school.active'])` (`web.php:100`), and
+`school.admin` blocks `super_admin` entirely — so even though `canImpersonate()`
+says super_admin can impersonate, **super_admin can never reach this route**.
+
+**Path B — the super-admin-specific route**, `super-admin.schools.impersonate`
+(`routes/super-admin.php:26`) → `SuperAdmin\SchoolController::impersonate()`. This
+is how super_admin *actually* impersonates: from Super Admin → Schools, picks a
+school, and the controller does
+`$school->users()->where('role','admin')->first()` then calls the same underlying
+`impersonate()` package method directly — bypassing the package's own controller
+entirely, so none of Path A's guard checks (self-impersonation, nested-
+impersonation) apply here. Two consequences: super_admin can only ever
+impersonate **the first admin user found for a school** (not any arbitrary user,
+and not deterministic if a school has more than one admin — no explicit
+`orderBy`), a materially different capability shape than Path A's "any user."
+
+**Path C — completely dead code.** `ImpersonationController.php`
+(`start`/`stop`/`logs`), `ImpersonationLogPolicy` (every method hardcoded `return
+false`), and the `Admin/ImpersonationLogs` Inertia page. Verified, not assumed:
+zero routes reference `ImpersonationController` anywhere; `ImpersonationLog::
+create()` is called in exactly one place in the whole codebase — inside this dead
+controller; the package's own `TakeImpersonation`/`LeaveImpersonation` events (the
+natural hook for logging the *real* paths A/B) have zero listeners anywhere.
+**Net effect: there is currently no audit trail at all for either live
+impersonation path**, despite a complete-looking logging subsystem existing.
+
+**Decisions needed from you before this module's permissions can go in the
+taxonomy:**
+
+1. Is an audit log supposed to exist? Given this is described as actively used
+   for QA and there's a whole unused subsystem built for exactly this, it looks
+   like it might be an oversight — but that's not assumed here. Should Phase 5+
+   wire the real paths (A/B) into `ImpersonationLog` using the dead code as a
+   starting point, or is "no log" acceptable and Path C should just be deleted as
+   dead code?
+2. Should super_admin's `canImpersonate() === true` be treated like the other
+   "dead grant, drop it" cases from disagreements #2/#3/#9? It doesn't cleanly
+   fit that precedent — unlike those, super_admin's impersonation capability
+   **is** reachable, just through Path B specifically (narrower: first-admin-only,
+   not any user), not Path A. Does the taxonomy need a distinct permission
+   representing this narrower capability, or should it just be represented as
+   part of the same permission as admin's Path A capability?
+3. Three frontend spots (`Users/Index.jsx` desktop + mobile, `Users/Show.jsx`) all
+   have `!user.roles?.some(role => role.name === 'admin')` guarding the
+   Impersonate button — but `user.roles` (plural, `.name` property) doesn't exist
+   on the current flat `role`-string User model, so this always evaluates
+   `undefined` → always `true`. **The button shows for admin targets too**,
+   contradicting its own comment ("Only for non-admin users"). Not a backend
+   security hole — the package's server-side `canBeImpersonated()` already
+   permits admin targets regardless — just a frontend intent that silently never
+   worked. Notably, `user.roles.some(role => role.name === ...)` is exactly the
+   shape Spatie's own `HasRoles` trait produces, so this may have been written
+   ahead of this migration and simply never functioned — Phase 6 might make it
+   "just start working" as a side effect. Fix now, leave for Phase 6 to naturally
+   resolve, or something else?
+4. `lab404/laravel-impersonate` ships a `ProtectFromImpersonation` middleware
+   specifically to block sensitive actions (e.g. password changes) while
+   impersonating — not used anywhere in this app. Not asserting this is wrong,
+   just flagging it exists unwired: today, an admin impersonating a user can
+   perform any action that user's role permits, including sensitive ones, with no
+   extra guard. Relevant to how strictly "reproduce current behavior exactly"
+   should be read for this module.
+5. Path B's target selection (first admin user, no explicit `orderBy`) — flagging
+   as possibly unintentional nondeterminism, not fixing.
+
+No permission names proposed for Impersonation yet — the shape depends on how #2
+resolves. Once decided, this section gets replaced with the finalized taxonomy
+rows and moved out of Risks.
 
 ### Decisions on the above (made by you, 2026-08-26 — recorded before Phase 3 started)
 
@@ -462,3 +642,46 @@ permission*, never *which records* — listed as an explicit checklist at the en
 the taxonomy section so Phase 5 has something concrete to work against per Policy
 file, rather than having to rediscover which permissions need scoping logic by
 re-reading Phase 2's prose.
+
+### Phase 2/3 follow-up pass — 4 missed modules (2026-08-26)
+
+The original 13-module checklist came from the Head Teacher audit's scope, which
+turned out not to be a full map of the app. Before Phase 4, extended Phase 2 and
+Phase 3 to cover four real modules that were missed: Quran, Policies &
+Regulations, Document Categories, Impersonation. Same method and verification
+standard as the original pass, not a lighter-touch add-on.
+
+**Policies & Regulations, Document Categories:** clean extensions, no surprises
+beyond one dead-grant instance (Document Categories) matching an already-decided
+precedent, applied directly rather than re-litigated.
+
+**Quran:** found two new disagreements, one materially more urgent than anything
+in the original pass — `QuranSchedulePolicy`/`QuranScheduleController` have zero
+scoping for guardians, meaning any guardian who reaches `/quran-schedule` (no nav
+link, but the route and Policy both allow it) can see every Quran schedule for
+every student in the school, not just their own children. This is live and
+reachable today, not a dead branch like the earlier "policy allows, no route
+reaches it" pattern — flagged prominently rather than filed as a routine
+disagreement, and not resolved unilaterally. Second: Quran Homework's
+update/delete/grade actions are unscoped for teachers while create is scoped,
+mirroring the already-decided Exams asymmetry — but this is a different Policy in
+a different module, so that decision doesn't automatically carry over; the
+frontend already has its own (currently non-enforced) ownership check here,
+suggesting the intended rule.
+
+**Impersonation:** turned out to be three separate, only-partially-related code
+paths (a general-purpose route, a super-admin-specific one with different
+semantics, and an entirely dead logging subsystem that's never actually
+populated). Per your explicit instruction, none of the five things this surfaced
+were resolved — written up in full in the Risks section, nothing added to the
+taxonomy table yet.
+
+**Two renames applied**, both purely cosmetic/naming, no behavior change:
+`timetable.view-own` → `timetable-schedule.view-own` (pattern consistency);
+`incident-reports.update-status` → `incident-reports.review` (unified with
+`accident-reports.review`, same underlying action).
+
+**Running total: 88 permissions** (85 school-level + 3 super-admin), of which 2
+have a disputed cell pending decision and Impersonation isn't represented yet.
+23 permissions now carry ownership/state scoping (up from 18), with 2 more
+proposed-but-disputed pending the Quran decisions above.
