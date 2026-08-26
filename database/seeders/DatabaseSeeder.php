@@ -41,6 +41,10 @@ class DatabaseSeeder extends Seeder
             SchoolSeeder::class,
             SchoolSettingSeeder::class,
             UserSeeder::class,
+            // Spatie roles/permissions (Phase 4 of the migration in
+            // docs/spatie-migration-worksheet.md) — inert, nothing reads
+            // these yet. Safe to re-run, no dependency on any other seeder.
+            RolePermissionSeeder::class,
         ]);
         $this->command->newLine();
 

@@ -21,7 +21,10 @@ migration currently stands.
   in code ahead of Phase 5, since both were live security/scoping bugs, not just
   taxonomy disputes. Impersonation is now fully represented too (`users.impersonate`
   + `super-admin.schools.impersonate`) — see Risks section and Phase log for both.
-- [ ] **Phase 4** — Install, migrate, seed `spatie/laravel-permission` (inert — old system still live)
+- [x] **Phase 4** — Install, migrate, seed `spatie/laravel-permission` — ✅ **90
+  permissions / 4 roles seeded (86 school-level + 4 super-admin permissions;
+  admin 82, teacher 39, guardian 13, super_admin 4), completely inert — see
+  Phase log**
 - [ ] **Phase 5** — Migrate backend: routes, policies, model
 - [ ] **Phase 6** — Migrate frontend
 - [ ] **Phase 7** — Verification pass
@@ -229,10 +232,6 @@ doesn't participate in the school-level module system at all.
 | `document-categories.view` | ✅ | ❌ | ❌ | **Follow-up pass addition.** Teacher/guardian Policy grant dropped per disagreement #9 — dead code, no route reaches it, same precedent as disagreements #2/#3 |
 | `document-categories.manage` | ✅ | ❌ | ❌ | Create/update/delete; `delete` has a state guard (blocked if any documents use the category) |
 
-**Impersonation: deliberately not in this table yet.** See the dedicated
-Impersonation section in Risks above — permission names depend on decisions not
-yet made, adding rows here would misrepresent them as settled.
-
 ### Super-admin namespace (separate — does not participate in the grid above)
 
 | Permission | `super_admin` |
@@ -240,7 +239,7 @@ yet made, adding rows here would misrepresent them as settled.
 | `super-admin.schools.manage` | ✅ |
 | `super-admin.users.manage` | ✅ (cross-school — a structurally different capability from school-level `users.*`, not a superset of it in the same table) |
 | `super-admin.settings.manage` | ✅ |
-| `super-admin.schools.impersonate` | ✅ | Path B (`SuperAdmin\SchoolController::impersonate()`). Deliberately a distinct permission from `users.impersonate`, not folded into it (2026-08-26 decision, resolving open question #2) — the capability shape genuinely differs: super_admin can only impersonate an **admin** of a chosen school (via the new admin-picker, see Phase log), bypasses the package's own guard checks entirely (self-impersonation/nested-impersonation protections are Path A-only), and is reached through the Super Admin → Schools UI, not the Users pages |
+| `super-admin.schools.impersonate` | ✅ (Path B, `SuperAdmin\SchoolController::impersonate()`. Deliberately a distinct permission from `users.impersonate`, not folded into it (2026-08-26 decision, resolving open question #2) — the capability shape genuinely differs: super_admin can only impersonate an **admin** of a chosen school, via the admin-picker, bypasses the package's own guard checks entirely, and is reached through the Super Admin → Schools UI, not the Users pages) |
 
 ### Summary: every ownership/state-scoped permission (25 confirmed, 0 pending)
 
@@ -820,5 +819,67 @@ references a deleted class), `pnpm run build` clean. Full suite via `php8.4`:
 same 31 pre-existing failures, no new ones.
 
 Committed separately from Phase 4 work, per instruction.
-23 permissions now carry ownership/state scoping (up from 18), with 2 more
-proposed-but-disputed pending the Quran decisions above.
+
+### Phase 4 — Install, migrate, seed (2026-08-26)
+
+`composer require spatie/laravel-permission` (needed `--ignore-platform-req=php`,
+same pre-existing `phpoffice/phpspreadsheet` vs. PHP 8.5 conflict as the R2
+migration's `league/flysystem-aws-s3-v3` install earlier this session — nothing
+new). Installed 8.3.0. Published `config/permission.php` and the package's
+migration (`database/migrations/2026_08_26_094248_create_permission_tables.php`,
+5 tables: `permissions`, `roles`, `model_has_permissions`, `model_has_roles`,
+`role_has_permissions`) unmodified from package defaults.
+
+**Environment gap hit while running the migration, worth recording:** this
+machine's `.env` has `CACHE_STORE=redis` / `REDIS_CLIENT=phpredis`, but the
+native `Redis` PHP extension isn't installed for either `php8.4` or the default
+`php` — Redis itself is reachable (confirmed earlier this session), just the
+PHP extension isn't there. The package's migration calls
+`PermissionRegistrar::forgetCachedPermissions()` as its last step, which
+needs a working cache driver — that call threw, and the artisan command
+reported the migration as failed. **But MySQL's DDL auto-commits outside
+transactions**, so the five tables had actually already been created despite
+the reported failure — Laravel's `migrations` table just hadn't recorded it
+yet. Caught this before moving on (`Schema::hasTable()` checks showed the
+tables existed while `migrate:status` still showed the migration as Pending),
+dropped the five orphaned tables to get back to a clean state, then re-ran
+with `CACHE_STORE=array php8.4 artisan migrate` — an env-var override for
+that one command only, `.env` itself untouched — which completed cleanly and
+is correctly recorded as Ran. The same override was needed for the seeder run
+below, for the same reason (Spatie's Role/Permission model events also clear
+the cache on every write).
+
+**Seeded via a new `RolePermissionSeeder`** (`database/seeders/RolePermissionSeeder.php`),
+registered in `DatabaseSeeder.php`'s Step 1 (Core Setup) alongside
+`SchoolSeeder`/`UserSeeder`. Its permission list and per-role assignments are
+a mechanical transcription of the taxonomy tables above — generated by a
+script that parsed the worksheet's markdown tables directly (kept in this
+session's scratchpad, not committed) rather than hand-typed, specifically to
+rule out transcription error given how much is riding on this being an exact
+match. `firstOrCreate`/`syncPermissions` throughout, so it's safe to re-run
+(verified: ran it twice, counts identical both times).
+
+Verified counts after seeding, queried directly from the database, not
+estimated: **90 permissions, 4 roles** — `admin` 82, `teacher` 39, `guardian`
+13, `super_admin` 4, matching the taxonomy table exactly. `model_has_roles`
+has **zero rows** — no actual user was assigned to any Spatie role, confirming
+this is genuinely inert.
+
+**Confirms the non-negotiable:** no controller, policy, middleware, route, or
+JSX file was touched this phase — `git status` shows exactly `composer.json`,
+`composer.lock`, `config/permission.php` (new), the migration (new), the
+seeder (new), and `DatabaseSeeder.php`'s one new line. The `User` model does
+**not** have Spatie's `HasRoles` trait yet (that's Phase 5) — nothing in the
+app can call `$user->hasPermissionTo(...)` meaningfully yet, and nothing
+tries to. Every route, middleware check, Policy, and JSX permission check is
+running exactly as it was before this phase. Full suite via `php8.4`: 131
+passed, 31 failed — the same pre-existing failures as every run this session,
+no regressions.
+
+**Also fixed in passing:** two small worksheet issues introduced by the
+Impersonation-finalization edits earlier today — a stray leftover sentence
+("Impersonation: deliberately not in this table yet") that contradicted the
+rows added right above it, and a malformed `super-admin.schools.impersonate`
+table row with one extra `|`-delimited cell that broke that table's column
+count. Both caught while re-reading the file before writing this seeder,
+fixed alongside it.
