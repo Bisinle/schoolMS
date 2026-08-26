@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\CheckMadrasahSchool;
 use App\Http\Middleware\CheckSchoolActive;
+use App\Http\Middleware\CheckUserActive;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SchoolAdminMiddleware;
 use App\Http\Middleware\SuperAdminMiddleware;
@@ -37,6 +38,8 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
+            'user.active' => CheckUserActive::class,
             'school.active' => CheckSchoolActive::class,
             'super.admin' => SuperAdminMiddleware::class,
             'school.admin' => SchoolAdminMiddleware::class,

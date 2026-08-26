@@ -12,8 +12,7 @@ class AccidentReportPolicy
      */
     public function viewAny(User $user): bool
     {
-        // All authenticated users can view accident reports from their school
-        return true;
+        return $user->can('accident-reports.view');
     }
 
     /**
@@ -21,8 +20,7 @@ class AccidentReportPolicy
      */
     public function view(User $user, AccidentReport $accidentReport): bool
     {
-        // Users can view reports from their school
-        return $user->school_id === $accidentReport->school_id;
+        return $user->can('accident-reports.view') && $user->school_id === $accidentReport->school_id;
     }
 
     /**
@@ -30,24 +28,22 @@ class AccidentReportPolicy
      */
     public function create(User $user): bool
     {
-        // All staff members can create accident reports
-        return in_array($user->role, ['admin', 'teacher']);
+        return $user->can('accident-reports.create');
     }
 
     /**
      * Determine whether the user can update the accident report.
+     *
+     * Only the reporter or admin can update, and only if not yet closed.
      */
     public function update(User $user, AccidentReport $accidentReport): bool
     {
-        // Must be from same school
-        if ($user->school_id !== $accidentReport->school_id) {
+        if (! $user->can('accident-reports.update') || $user->school_id !== $accidentReport->school_id) {
             return false;
         }
 
-        // Only the reporter or admin can update
-        // And only if not yet closed
         return $accidentReport->status !== 'closed' &&
-               ($user->id === $accidentReport->reported_by || $user->role === 'admin');
+               ($user->id === $accidentReport->reported_by || $user->isAdmin());
     }
 
     /**
@@ -55,13 +51,7 @@ class AccidentReportPolicy
      */
     public function review(User $user, AccidentReport $accidentReport): bool
     {
-        // Must be from same school
-        if ($user->school_id !== $accidentReport->school_id) {
-            return false;
-        }
-
-        // Only admins can review
-        return $user->role === 'admin';
+        return $user->can('accident-reports.review') && $user->school_id === $accidentReport->school_id;
     }
 
     /**
@@ -69,13 +59,6 @@ class AccidentReportPolicy
      */
     public function delete(User $user, AccidentReport $accidentReport): bool
     {
-        // Must be from same school
-        if ($user->school_id !== $accidentReport->school_id) {
-            return false;
-        }
-
-        // Only admins can delete
-        return $user->role === 'admin';
+        return $user->can('accident-reports.delete') && $user->school_id === $accidentReport->school_id;
     }
 }
-

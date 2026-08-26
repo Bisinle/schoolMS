@@ -25,7 +25,14 @@ migration currently stands.
   permissions / 4 roles seeded (86 school-level + 4 super-admin permissions;
   admin 82, teacher 39, guardian 13, super_admin 4), completely inert — see
   Phase log**
-- [ ] **Phase 5** — Migrate backend: routes, policies, model
+- [x] **Phase 5** — Migrate backend: routes, policies, model — ✅ **Live.**
+  `User` now uses Spatie's `HasRoles`; all 55 `role:...` route-middleware
+  usages replaced with `permission:...`; all 22 Policy classes rewritten to
+  check real permissions. **97 permissions now (93 school-level + 4
+  super-admin)** — 7 new ones surfaced while mapping routes/Policies to
+  permissions, see Phase log. Full suite: 131 passed, 31 failed — same
+  pre-existing failures as every prior run this session, zero regressions
+  from this phase's ~80-file change.
 - [ ] **Phase 6** — Migrate frontend
 - [ ] **Phase 7** — Verification pass
 
@@ -155,6 +162,7 @@ doesn't participate in the school-level module system at all.
 | `teachers.delete` | ✅ | ❌ | ❌ | — |
 | `guardians.view` | ✅ | ✅ | ❌ | — |
 | `guardians.create` | ✅ | ❌ | ❌ | — |
+| `guardians.view-inactive` | ✅ | ❌ | ❌ | **Phase 5 addition.** `/guardians/inactive` is grouped with the admin-only create/import routes today, not with the admin+teacher `guardians.view` index — despite being a view action. Kept as its own permission rather than folded into `guardians.view` (which would newly grant teacher access to it) or into `guardians.create` (semantically wrong name for a GET listing) — preserves exact current admin-only access under an honest name |
 | `guardians.update` | ✅ | ❌ | ❌ | — |
 | `guardians.delete` | ✅ | ❌ | ❌ | — |
 | `users.view` | ✅ | ❌ | ❌ | School-scoped (admin only ever sees their own school's users — existing tenant isolation, not a new permission concept) |
@@ -171,10 +179,15 @@ doesn't participate in the school-level module system at all.
 | `attendance.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
 | `attendance.delete` | ✅ | ❌ | ❌ | **Admin-only-but-inert** — no route currently calls this at all (Phase 2 disagreement #6, deferred, carried forward as-is) |
 | `attendance.view-own-children` | ❌ | ❌ | ✅ | Guardian scoped to `$user->guardian->students`; separate route (`/guardian/attendance`) from `attendance.view` |
+| `guardian-children.view` | ❌ | ❌ | ✅ | **Phase 5 addition.** `/guardian/children` (`GuardianChildrenController::index`) — guardian's own children-summary dashboard, missed by the original taxonomy pass since it isn't Policy-backed (route-middleware-only, `role:guardian`) |
 | `grades.view` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades, single-record only (list view unscoped per Phase 2) |
 | `grades.create` | ✅ | ❌ | ❌ | — |
 | `grades.update` | ✅ | ❌ | ❌ | — |
 | `grades.delete` | ✅ | ❌ | ❌ | — |
+| `streams.view` | ✅ | ❌ | ❌ | **Phase 5 addition (2026-08-26).** `StreamPolicy`/`StreamController`/`/streams` routes — missed by both the original Phase 2/3 pass and the follow-up pass, surfaced while mapping routes to permissions for Phase 5. No ambiguity: every Policy method is a plain `isAdmin()` check, route middleware is `role:admin` throughout, no scoping/ownership logic anywhere — the cleanest module found all migration |
+| `streams.create` | ✅ | ❌ | ❌ | " |
+| `streams.update` | ✅ | ❌ | ❌ | Covers update and `unlink` (Policy reuses the `update` gate for both) |
+| `streams.delete` | ✅ | ❌ | ❌ | " |
 | `subjects.view` | ✅ | ✅ | ❌ | Unscoped — no per-teacher filtering exists today |
 | `subjects.create` | ✅ | ❌ | ❌ | — |
 | `subjects.update` | ✅ | ❌ | ❌ | — |
@@ -198,13 +211,13 @@ doesn't participate in the school-level module system at all.
 | `timetable-schedule.view-own` | ❌ | ✅ | ❌ | Teacher's own generated schedule (`/my-timetable`). **Renamed 2026-08-26** from `timetable.view-own`, which broke the `{module}.{action}` pattern — this name matches the sibling `timetable-*` permissions and the feature's own UI label ("My Timetable") |
 | `timetable-availability.manage` | ✅ | ✅ | ❌ | **Scoping unverified** (Phase 2 flagged this — whether a teacher can edit another teacher's availability record wasn't confirmed against controller internals). Carried forward as an open unknown, not asserted as scoped or unscoped. |
 | `reports.view` | ✅ (all) | ✅ (scoped) | ✅ (scoped) | Teacher scoped to assigned grades; guardian scoped to own children |
-| `report-comments.create` | ✅ | ✅ | ❌ | — |
-| `report-comments.update` | ✅ (always) | ✅ (scoped) | ❌ | Teacher scoped to own comment AND `canEditTeacherComment()` (not locked) — ownership + state |
-| `report-comments.delete` | ✅ | ❌ | ❌ | — |
-| `report-comments.manage-lock` | ✅ | ❌ | ❌ | — |
+| `report-comments.create` | ✅ (always) | ✅ (scoped) | ❌ | **Corrected 2026-08-26 (Phase 5 finding).** Original rows were reverse-engineered from `ReportCommentPolicy`/`ReportCommentController` — turns out that whole pair is dead code, zero routes reference `ReportCommentController`. The real, live route (`ReportController::saveComment`) has its own separate inline logic: teacher scoped to being the **class teacher** for the student's grade specifically (`grades.is_class_teacher` pivot flag — tighter than "assigned to the grade"), not the ownership pattern the dead Policy claimed. One save action handles both create and edit (upsert) — no separate `.update` permission, since the real code never distinguishes the two. **Also surfaces a live gap, not fixed here:** this save path does not check whether the comment is locked before overwriting it — the "locked" protection the dead Policy claimed (`canEditTeacherComment()`) is not actually enforced on this path today |
+| `report-comments.lock` | ✅ (always) | ✅ (scoped) | ❌ | **Renamed/corrected from `report-comments.manage-lock`, same finding as above.** Real code (`ReportController::lockComment`): teacher can lock their own class's teacher-type comment; headteacher-type comments are admin-only. Genuinely different accessors than `.unlock` below, which the old single `manage-lock` permission didn't distinguish |
+| `report-comments.unlock` | ✅ | ❌ | ❌ | `ReportController::unlockComment` — admin-only unconditionally, regardless of comment type (checked first, before anything else in the method) |
 | `reports.headteacher-comment` | ✅ | ❌ | ❌ | The pre-existing "headteacher = admin" conflation, unrelated to this migration's scope — carried forward as-is, see `head-teacher-role-audit-report.md` §1.4 |
 | `documents.view` | ✅ (all) | ✅ (scoped) | ✅ (scoped) | Teacher scoped to own Teacher-entity docs; guardian scoped to own + linked students' docs |
 | `documents.create` | ✅ | ✅ | ✅ | All authenticated roles |
+| `documents.update` | ✅ | ❌ | ❌ | **Phase 5 addition.** `DocumentPolicy::update()` (edit/update actions) was missing from the original taxonomy — plain `isAdmin()` check, no scoping, no ambiguity |
 | `documents.verify` | ✅ | ❌ | ❌ | — |
 | `documents.reject` | ✅ | ❌ | ❌ | — |
 | `documents.delete` | ✅ (any) | ✅ (scoped) | ✅ (scoped) | Non-admin: uploader-only AND status is pending/rejected — ownership + state |
@@ -223,7 +236,8 @@ doesn't participate in the school-level module system at all.
 | `quran-homework.view-own` | ❌ | ❌ | ✅ | Guardian, own children only, via student-report/student-homework routes — scoping lives in the Controller, not a Policy, unlike everywhere else in this taxonomy |
 | `quran-homework.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
 | `quran-homework.update` | ✅ | ✅ (scoped) | ❌ | Covers update/delete/grade/mark-ungraded (Policy reuses one gate for all). **Resolved 2026-08-26** (disagreement #8) — teacher scoped to `teacher_id`, matching the frontend's own stricter check that was previously unenforced. Implemented ahead of Phase 5, see Phase log |
-| `quran-schedule.view` | ✅ | ✅ (scoped) | ✅ (scoped) | Teacher scoped via `teacher_id`. **Resolved 2026-08-26** (disagreement #7) — guardian now scoped via `Guardian::allStudents()`, closing a live cross-family data-exposure. Implemented ahead of Phase 5 as an urgent security fix, see Phase log |
+| `quran-schedule.view-all` | ✅ | ✅ | ❌ | **Phase 5 addition, found while mapping routes.** `/quran-schedule` (list/index) is `role:admin,teacher` today — guardian was never included. `QuranSchedulePolicy::viewAny()` technically returns true for guardian too, but the controller's `index()` never calls it (dead grant, same pattern as disagreements #2/#3/#9) — dropped, not carried forward. Kept as a distinct permission from `.view` below so the index listing doesn't inherit guardian access via the single-record ability |
+| `quran-schedule.view` | ✅ | ✅ (scoped) | ✅ (scoped) | Single-record view (`/quran-schedule/{id}`). Teacher scoped via `teacher_id`. **Resolved 2026-08-26** (disagreement #7) — guardian now scoped via `Guardian::allStudents()`, closing a live cross-family data-exposure. Implemented ahead of Phase 5 as an urgent security fix, see Phase log |
 | `quran-schedule.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
 | `quran-schedule.update` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to own schedules via `teacher_id`; delete reuses this gate |
 | `policies.view` | ✅ | ✅ | ✅ | **Follow-up pass addition.** All authenticated; tenant-scoped only (not a role distinction) |
@@ -241,7 +255,7 @@ doesn't participate in the school-level module system at all.
 | `super-admin.settings.manage` | ✅ |
 | `super-admin.schools.impersonate` | ✅ (Path B, `SuperAdmin\SchoolController::impersonate()`. Deliberately a distinct permission from `users.impersonate`, not folded into it (2026-08-26 decision, resolving open question #2) — the capability shape genuinely differs: super_admin can only impersonate an **admin** of a chosen school, via the admin-picker, bypasses the package's own guard checks entirely, and is reached through the Super Admin → Schools UI, not the Users pages) |
 
-### Summary: every ownership/state-scoped permission (25 confirmed, 0 pending)
+### Summary: every ownership/state-scoped permission (26 confirmed, 0 pending)
 
 These stay as in-Policy scoping logic even after Spatie is in place — Spatie
 governs *whether a role has the permission at all*, not *which records* a
@@ -253,7 +267,9 @@ every Policy that needs to keep its scoping logic when rewritten to call
 `grades.view` (teacher), `exams.view` (teacher), `exams.update` (teacher — new),
 `exam-results.view` / `.create` / `.update` (teacher), `timetable-slots.view` (teacher),
 `timetable-availability.manage` (teacher — unverified), `reports.view` (teacher + guardian),
-`report-comments.update` (teacher), `documents.view` / `.delete` (teacher + guardian),
+`report-comments.create` (teacher, class-teacher only — corrected 2026-08-26),
+`report-comments.lock` (teacher, class-teacher only — corrected 2026-08-26),
+`documents.view` / `.delete` (teacher + guardian),
 `accident-reports.update` / `incident-reports.update` (teacher), `fees.view-own-invoices` (guardian),
 `quran-dashboard.view` (teacher + guardian — follow-up pass), `quran-homework.view-own` (guardian),
 `quran-homework.create` (teacher), `quran-schedule.create` (teacher), `quran-schedule.update` (teacher),
@@ -380,6 +396,21 @@ every Policy that needs to keep its scoping logic when rewritten to call
    (drop from the taxonomy) rather than re-asking, since the reasoning you gave
    for #2/#3 generalizes directly — noting it here so it's visible this was an
    applied precedent, not a fresh unilateral call.
+
+10. **Report Comments: the taxonomy's original source was dead code.** Found
+    while mapping routes to permissions for Phase 5. `ReportCommentPolicy` and
+    `ReportCommentController` are a complete, unused pair — zero routes
+    reference the controller. The real, live route
+    (`ReportController::saveComment`/`lockComment`/`unlockComment`) has its own
+    separate inline authorization logic that differs materially: teacher
+    access is scoped to being the specific **class teacher** for the grade
+    (not just "assigned to the grade"), locking is teacher-capable (not
+    admin-only as the dead Policy claimed), and — a live gap, not fixed —
+    `saveComment` never checks whether a comment is locked before overwriting
+    it, so the lock feature doesn't actually block edits through that path.
+    Taxonomy corrected to match real behavior (`report-comments.create`,
+    `.lock`, `.unlock`), not fixing the lock-bypass gap itself — flagging it
+    here rather than silently fixing or silently leaving it undocumented.
 
 ### Decisions on #7 and #8 (made by you, 2026-08-26 — implemented same day)
 
@@ -883,3 +914,92 @@ rows added right above it, and a malformed `super-admin.schools.impersonate`
 table row with one extra `|`-delimited cell that broke that table's column
 count. Both caught while re-reading the file before writing this seeder,
 fixed alongside it.
+
+### Phase 5 — Migrate backend: routes, policies, model (2026-08-26)
+
+**Approach confirmed with you before starting:** route-level middleware
+migrates to Spatie's `permission:module.action` (matching each route to the
+specific permission it represents, per Phase 2's findings), not a thinner
+`role:` middleware just backed by Spatie roles — chosen because it actually
+uses the taxonomy's granularity rather than making the route layer's
+migration cosmetic.
+
+**Infrastructure:**
+- `User` model: added `Spatie\Permission\Traits\HasRoles`.
+- New `App\Http\Middleware\CheckUserActive` — extracted verbatim from
+  `RoleMiddleware`'s deactivated-user-logout check (confirmed the *only*
+  place in the app enforcing `is_active`) — stacked alongside
+  `permission:...` on every route that used to carry `role:...`, so removing
+  `role:` middleware doesn't silently drop that enforcement.
+- New `permission` and `user.active` middleware aliases registered in
+  `bootstrap/app.php`, alongside the existing `role` alias (left registered
+  but now unused at the route layer — not deleted this phase, since
+  `RoleMiddleware`/`isAdmin()`-style User helpers are still used for
+  in-Policy scoping logic throughout).
+- New `App\Observers\UserObserver` — keeps a user's Spatie role in sync with
+  their `role` column on every create/update (`role` stays the source of
+  truth; nothing stops writing it). Needed for real app code going forward,
+  and turned out to also be required to make the test suite pass at all —
+  see below.
+- New `Database\Seeders\UserRoleBackfillSeeder` — assigns every existing
+  user to their matching Spatie role. Run against the real dev DB: 28/28
+  users backfilled, zero mismatches against the `role` column, idempotent
+  (re-run confirmed no duplicates). Wired into `DatabaseSeeder.php` after
+  `UserSeeder`/`RolePermissionSeeder` for future fresh-seeds.
+- `tests/TestCase.php`: added `$seed = true` / `$seeder = RolePermissionSeeder::class`
+  so the 97 permissions/4 roles exist in the test database too — without
+  this, every permission-gated route/Policy failed for test-factory users
+  (68 failures on the first attempt, before this and the Observer were
+  added — see below).
+
+**Route middleware (routes/web.php):** all 55 `role:...` usages replaced.
+Modules with no `role:` middleware at all (Documents, Accident/Incident
+Reports, Policies' public routes) were left untouched — they're entirely
+Policy-gated today and adding route-level gating where none existed would be
+a scope/behavior change, not a faithful migration.
+
+**Eight new permissions added, net seven after the report-comments
+restructuring** (90 → 97; all documented inline in the taxonomy tables
+above, not summarized twice here) — `streams.view/create/update/delete`
+(a whole missed module, 4), `guardians.view-inactive`, `guardian-children.view`,
+`quran-schedule.view-all`, and `documents.update` (a Policy method the
+original taxonomy pass missed) — 8 additions, net against report-comments'
+4→3 restructuring (disagreement #10) for +7 overall. None of these change
+real access — they make already-current, narrower-than-their-nearest-neighbor
+access explicit under its own name instead of silently widening or misnaming it.
+
+**One route-mapping mistake I made and caught myself, before you saw it:**
+first pass gated `quran-homework.student-report`/`.student` (admin+teacher+guardian
+today) with `quran-homework.view-own` alone (guardian-only) — would have
+403'd admin and teacher. Caught by the full-suite run immediately after the
+route pass (`QuranHomeworkStudentReportTest` failing 403 instead of 200),
+fixed before moving on. Flagging this not to bury it — it's exactly the
+failure mode running the suite after each stage was meant to catch, and it
+worked.
+
+**Policies (22 files), one real bug found via structural inspection (per
+your "trust Phase 2, spot-check" instruction — not exhaustive tracing):**
+tracing `ReportController`'s comment actions against `ReportCommentPolicy`
+surfaced that the whole Policy + a second controller (`ReportCommentController`)
+are dead code (zero routes) — see disagreement #10 above, taxonomy corrected
+to match the real inline logic. Two smaller dead-Policy-branch drops, same
+established precedent as disagreements #2/#3/#9 (no route ever reached
+them): `GuardianInvoicePolicy::view()`'s unconditional "teacher can view any
+invoice" branch, and `TimetableSlotPolicy::update()`'s "teacher can edit a
+draft template's slots" branch (that route has always been admin-only).
+`ExamPolicy::update()` now implements the already-decided scoped-teacher-update
+(Decision 1) for real, gated on `exams.created_by`.
+
+**Verification:** `php -l` clean on all ~80 touched files. Ran the full
+suite after each stage, not just at the end — route migration alone
+(before the Observer/test-seeding fix) produced 68 failures, diagnosed as
+missing Spatie role/permission data in the test database, fixed by adding
+`UserObserver` and seeding `RolePermissionSeeder` in `tests/TestCase.php`,
+which brought it back to the baseline 31. Final full-suite state after all
+of Phase 5: **131 passed, 31 failed** — the identical 8 pre-existing,
+unrelated failing test files as every run this session. `pnpm run build`
+clean (no frontend files touched this phase).
+
+**Not yet done, deliberately Phase 6's job:** frontend permission checks
+(JSX still checks `auth.user.role`, not real permissions) and the broken
+`user.roles?.some(...)` Impersonate-button check flagged earlier.

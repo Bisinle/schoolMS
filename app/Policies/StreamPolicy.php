@@ -12,7 +12,7 @@ class StreamPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->can('streams.view');
     }
 
     /**
@@ -20,7 +20,7 @@ class StreamPolicy
      */
     public function view(User $user, Stream $stream): bool
     {
-        return $user->isAdmin();
+        return $user->can('streams.view');
     }
 
     /**
@@ -28,7 +28,7 @@ class StreamPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->can('streams.create');
     }
 
     /**
@@ -36,7 +36,7 @@ class StreamPolicy
      */
     public function update(User $user, Stream $stream): bool
     {
-        return $user->isAdmin();
+        return $user->can('streams.update');
     }
 
     /**
@@ -44,6 +44,6 @@ class StreamPolicy
      */
     public function delete(User $user, Stream $stream): bool
     {
-        return $user->isAdmin();
+        return $user->can('streams.delete');
     }
 }

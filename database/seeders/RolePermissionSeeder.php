@@ -8,18 +8,17 @@ use Spatie\Permission\Models\Role;
 use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Phase 4 of the Spatie migration (docs/spatie-migration-worksheet.md):
- * seeds the roles and permissions from the finalized taxonomy table, and
- * nothing else. Deliberately does NOT touch the User model (no HasRoles
- * trait yet), does NOT assign any actual user to a Spatie role, and is
- * never called from anywhere the app runs today -- the old role-string +
- * Policy system stays the sole thing actually governing access until
- * Phase 5 rewires policies/middleware to consult this instead.
+ * Seeds the roles and permissions from the finalized taxonomy table in
+ * docs/spatie-migration-worksheet.md. Originally written for Phase 4, when
+ * this was still inert; as of Phase 5, route middleware and Policies
+ * actually consult this seeded data at runtime, and User::observe()
+ * (UserObserver) keeps every user's Spatie role in sync with their `role`
+ * column going forward.
  *
  * Idempotent: firstOrCreate/syncPermissions throughout, safe to re-run.
  *
- * Permission list source of truth is the worksheet's taxonomy table (90
- * permissions: 86 school-level + 4 super-admin) -- this seeder is a
+ * Permission list source of truth is the worksheet's taxonomy table (97
+ * permissions: 93 school-level + 4 super-admin) -- this seeder is a
  * direct, mechanical transcription of it, not an independent judgment
  * call. If the taxonomy changes, regenerate this file's arrays from the
  * table rather than hand-editing them out of sync.
@@ -52,7 +51,7 @@ class RolePermissionSeeder extends Seeder
     }
 
     /**
-     * Every permission in the taxonomy (90 total) -- must be created before
+     * Every permission in the taxonomy (97 total) -- must be created before
      * any role can be given one of them.
      */
     private const ALL_PERMISSIONS = [
@@ -66,6 +65,7 @@ class RolePermissionSeeder extends Seeder
         'teachers.delete',
         'guardians.view',
         'guardians.create',
+        'guardians.view-inactive',
         'guardians.update',
         'guardians.delete',
         'users.view',
@@ -82,10 +82,15 @@ class RolePermissionSeeder extends Seeder
         'attendance.create',
         'attendance.delete',
         'attendance.view-own-children',
+        'guardian-children.view',
         'grades.view',
         'grades.create',
         'grades.update',
         'grades.delete',
+        'streams.view',
+        'streams.create',
+        'streams.update',
+        'streams.delete',
         'subjects.view',
         'subjects.create',
         'subjects.update',
@@ -110,12 +115,12 @@ class RolePermissionSeeder extends Seeder
         'timetable-availability.manage',
         'reports.view',
         'report-comments.create',
-        'report-comments.update',
-        'report-comments.delete',
-        'report-comments.manage-lock',
+        'report-comments.lock',
+        'report-comments.unlock',
         'reports.headteacher-comment',
         'documents.view',
         'documents.create',
+        'documents.update',
         'documents.verify',
         'documents.reject',
         'documents.delete',
@@ -134,6 +139,7 @@ class RolePermissionSeeder extends Seeder
         'quran-homework.view-own',
         'quran-homework.create',
         'quran-homework.update',
+        'quran-schedule.view-all',
         'quran-schedule.view',
         'quran-schedule.create',
         'quran-schedule.update',
@@ -159,6 +165,7 @@ class RolePermissionSeeder extends Seeder
         'teachers.delete',
         'guardians.view',
         'guardians.create',
+        'guardians.view-inactive',
         'guardians.update',
         'guardians.delete',
         'users.view',
@@ -177,6 +184,10 @@ class RolePermissionSeeder extends Seeder
         'grades.create',
         'grades.update',
         'grades.delete',
+        'streams.view',
+        'streams.create',
+        'streams.update',
+        'streams.delete',
         'subjects.view',
         'subjects.create',
         'subjects.update',
@@ -200,12 +211,12 @@ class RolePermissionSeeder extends Seeder
         'timetable-availability.manage',
         'reports.view',
         'report-comments.create',
-        'report-comments.update',
-        'report-comments.delete',
-        'report-comments.manage-lock',
+        'report-comments.lock',
+        'report-comments.unlock',
         'reports.headteacher-comment',
         'documents.view',
         'documents.create',
+        'documents.update',
         'documents.verify',
         'documents.reject',
         'documents.delete',
@@ -223,6 +234,7 @@ class RolePermissionSeeder extends Seeder
         'quran-homework.view',
         'quran-homework.create',
         'quran-homework.update',
+        'quran-schedule.view-all',
         'quran-schedule.view',
         'quran-schedule.create',
         'quran-schedule.update',
@@ -253,7 +265,7 @@ class RolePermissionSeeder extends Seeder
         'timetable-availability.manage',
         'reports.view',
         'report-comments.create',
-        'report-comments.update',
+        'report-comments.lock',
         'documents.view',
         'documents.create',
         'documents.delete',
@@ -268,6 +280,7 @@ class RolePermissionSeeder extends Seeder
         'quran-homework.view',
         'quran-homework.create',
         'quran-homework.update',
+        'quran-schedule.view-all',
         'quran-schedule.view',
         'quran-schedule.create',
         'quran-schedule.update',
@@ -278,6 +291,7 @@ class RolePermissionSeeder extends Seeder
     private const GUARDIAN_PERMISSIONS = [
         'fees.view-own-invoices',
         'attendance.view-own-children',
+        'guardian-children.view',
         'reports.view',
         'documents.view',
         'documents.create',

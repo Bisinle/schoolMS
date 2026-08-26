@@ -9,10 +9,14 @@ class ExamResultPolicy
 {
     /**
      * Determine if the user can view any exam results.
+     *
+     * Guardian dropped here (2026-08-26, Phase 5) per the decision on Phase 2
+     * disagreement #3: guardian's grant here was dead code (no route ever
+     * reached it — guardians see results via the separate Reports module).
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher', 'guardian']);
+        return $user->can('exam-results.view');
     }
 
     /**
@@ -20,21 +24,17 @@ class ExamResultPolicy
      */
     public function view(User $user, ExamResult $examResult): bool
     {
-        // Admins can view all results
+        if (! $user->can('exam-results.view')) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return true;
         }
 
-        // Teachers can view results for their assigned grades
         if ($user->isTeacher()) {
             $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
             return in_array($examResult->exam->grade_id, $teacherGradeIds);
-        }
-
-        // Guardians can view their children's results
-        if ($user->isGuardian()) {
-            $childrenIds = $user->guardian->students->pluck('id')->toArray();
-            return in_array($examResult->student_id, $childrenIds);
         }
 
         return false;
@@ -45,7 +45,7 @@ class ExamResultPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isTeacher();
+        return $user->can('exam-results.create');
     }
 
     /**
@@ -53,12 +53,14 @@ class ExamResultPolicy
      */
     public function update(User $user, ExamResult $examResult): bool
     {
-        // Admins can update any result
+        if (! $user->can('exam-results.update')) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return true;
         }
 
-        // Teachers can update results for their assigned grades
         if ($user->isTeacher()) {
             $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
             return in_array($examResult->exam->grade_id, $teacherGradeIds);
@@ -72,7 +74,6 @@ class ExamResultPolicy
      */
     public function delete(User $user, ExamResult $examResult): bool
     {
-        // Only admins can delete results
-        return $user->isAdmin();
+        return $user->can('exam-results.delete');
     }
 }

@@ -108,23 +108,22 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     //^ Grade Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:grades.view'])->group(function () {
         Route::get('/grades', [GradeController::class, 'index'])->name('grades.index');
     });
 
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:grades.create'])->group(function () {
         Route::get('/grades/create', [GradeController::class, 'create'])->name('grades.create');
         Route::post('/grades', [GradeController::class, 'store'])->name('grades.store');
     });
 
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:grades.view'])->group(function () {
         Route::get('/grades/{grade}', [GradeController::class, 'show'])->name('grades.show');
     });
 
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:grades.update'])->group(function () {
         Route::get('/grades/{grade}/edit', [GradeController::class, 'edit'])->name('grades.edit');
         Route::put('/grades/{grade}', [GradeController::class, 'update'])->name('grades.update');
-        Route::delete('/grades/{grade}', [GradeController::class, 'destroy'])->name('grades.destroy');
         Route::post('/grades/{grade}/restore', [GradeController::class, 'restore'])->name('grades.restore');
         Route::get('/grades/{grade}/curriculum', [GradeController::class, 'manageCurriculum'])->name('grades.curriculum.manage');
         Route::post('/grades/{grade}/curriculum', [GradeController::class, 'updateCurriculum'])->name('grades.curriculum.update');
@@ -133,12 +132,16 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::patch('/grades/{grade}/update-teacher/{teacher}', [GradeController::class, 'updateTeacherAssignment'])->name('grades.update-teacher');
     });
 
+    Route::middleware(['user.active', 'permission:grades.delete'])->group(function () {
+        Route::delete('/grades/{grade}', [GradeController::class, 'destroy'])->name('grades.destroy');
+    });
+
     //^ Student Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:students.view'])->group(function () {
         Route::get('/students', [StudentController::class, 'index'])->name('students.index');
     });
 
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:students.create'])->group(function () {
         Route::get('/students/create', [StudentController::class, 'create'])->name('students.create');
         Route::post('/students', [StudentController::class, 'store'])->name('students.store');
         Route::get('/students/import/template', [StudentImportController::class, 'downloadTemplate'])->name('students.import.template');
@@ -146,158 +149,229 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::post('/students/import', [StudentImportController::class, 'import'])->name('students.import');
     });
 
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:students.view'])->group(function () {
         Route::get('/students/{student}', [StudentController::class, 'show'])->name('students.show');
     });
 
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:students.update'])->group(function () {
         Route::get('/students/{student}/edit', [StudentController::class, 'edit'])->name('students.edit');
         Route::put('/students/{student}', [StudentController::class, 'update'])->name('students.update');
-        Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
         Route::patch('/students/{student}/deactivate', [StudentController::class, 'deactivate'])->name('students.deactivate');
         Route::patch('/students/{student}/reactivate', [StudentController::class, 'reactivate'])->name('students.reactivate');
     });
 
+    Route::middleware(['user.active', 'permission:students.delete'])->group(function () {
+        Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('students.destroy');
+    });
+
     //^ Guardian Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:guardians.view'])->group(function () {
         Route::get('/guardians', [GuardianController::class, 'index'])->name('guardians.index');
     });
 
-    Route::middleware(['role:admin'])->group(function () {
-        Route::get('/guardians/create', [GuardianController::class, 'create'])->name('guardians.create');
+    Route::middleware(['user.active', 'permission:guardians.view-inactive'])->group(function () {
         Route::get('/guardians/inactive', [GuardianController::class, 'inactive'])->name('guardians.inactive');
+    });
+
+    Route::middleware(['user.active', 'permission:guardians.create'])->group(function () {
+        Route::get('/guardians/create', [GuardianController::class, 'create'])->name('guardians.create');
         Route::post('/guardians', [GuardianController::class, 'store'])->name('guardians.store');
         Route::get('/guardians/import/template', [GuardianImportController::class, 'downloadTemplate'])->name('guardians.import.template');
         Route::post('/guardians/import/preview', [GuardianImportController::class, 'preview'])->name('guardians.import.preview');
         Route::post('/guardians/import', [GuardianImportController::class, 'import'])->name('guardians.import');
     });
 
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:guardians.view'])->group(function () {
         Route::get('/guardians/{guardian}', [GuardianController::class, 'show'])->name('guardians.show');
     });
 
-    Route::middleware(['role:guardian'])->group(function () {
+    Route::middleware(['user.active', 'permission:guardian-children.view'])->group(function () {
         Route::get('/guardian/children', [GuardianChildrenController::class, 'index'])->name('guardian.children');
-        Route::get('/guardian/attendance', [GuardianAttendanceController::class, 'index'])->name('guardian.attendance');
-
-        // Guardian Quran Tracking (read-only, madrasah only)
-        Route::middleware(['madrasah.only'])->group(function () {
-            Route::get('/guardian/quran-homework', [GuardianQuranHomeworkController::class, 'index'])->name('guardian.quran-homework');
-        });
     });
 
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:attendance.view-own-children'])->group(function () {
+        Route::get('/guardian/attendance', [GuardianAttendanceController::class, 'index'])->name('guardian.attendance');
+    });
+
+    // Guardian Quran Tracking (read-only, madrasah only)
+    Route::middleware(['user.active', 'permission:quran-homework.view-own', 'madrasah.only'])->group(function () {
+        Route::get('/guardian/quran-homework', [GuardianQuranHomeworkController::class, 'index'])->name('guardian.quran-homework');
+    });
+
+    Route::middleware(['user.active', 'permission:guardians.update'])->group(function () {
         Route::get('/guardians/{guardian}/edit', [GuardianController::class, 'edit'])->name('guardians.edit');
         Route::put('/guardians/{guardian}', [GuardianController::class, 'update'])->name('guardians.update');
-        Route::delete('/guardians/{guardian}', [GuardianController::class, 'destroy'])->name('guardians.destroy');
         Route::patch('/guardians/{guardian}/deactivate', [GuardianController::class, 'deactivate'])->name('guardians.deactivate');
         Route::patch('/guardians/{guardian}/reactivate', [GuardianController::class, 'reactivate'])->name('guardians.reactivate');
     });
 
+    Route::middleware(['user.active', 'permission:guardians.delete'])->group(function () {
+        Route::delete('/guardians/{guardian}', [GuardianController::class, 'destroy'])->name('guardians.destroy');
+    });
+
     //^ Teacher Routes
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:teachers.view'])->group(function () {
         Route::get('/teachers', [TeacherController::class, 'index'])->name('teachers.index');
+        Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');
+    });
+
+    Route::middleware(['user.active', 'permission:teachers.create'])->group(function () {
         Route::get('/teachers/create', [TeacherController::class, 'create'])->name('teachers.create');
         Route::post('/teachers', [TeacherController::class, 'store'])->name('teachers.store');
-        Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');
+    });
+
+    Route::middleware(['user.active', 'permission:teachers.update'])->group(function () {
         Route::get('/teachers/{teacher}/edit', [TeacherController::class, 'edit'])->name('teachers.edit');
         Route::put('/teachers/{teacher}', [TeacherController::class, 'update'])->name('teachers.update');
+    });
+
+    Route::middleware(['user.active', 'permission:teachers.delete'])->group(function () {
         Route::delete('/teachers/{teacher}', [TeacherController::class, 'destroy'])->name('teachers.destroy');
     });
 
     //^ USER MANAGEMENT ROUTES
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:users.view'])->group(function () {
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    });
+
+    Route::middleware(['user.active', 'permission:users.create'])->group(function () {
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
-        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
+    });
+
+    Route::middleware(['user.active', 'permission:users.update'])->group(function () {
         Route::get('/users/{user}/edit', [UserController::class, 'edit'])->name('users.edit');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+    });
+
+    Route::middleware(['user.active', 'permission:users.delete'])->group(function () {
         Route::delete('/users/{user}', [UserController::class, 'destroy'])->name('users.destroy');
+    });
+
+    Route::middleware(['user.active', 'permission:users.reset-password'])->group(function () {
         Route::post('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
+    });
+
+    Route::middleware(['user.active', 'permission:users.toggle-status'])->group(function () {
         Route::post('/users/{user}/toggle-status', [UserController::class, 'toggleStatus'])->name('users.toggle-status');
     });
 
     //^ Attendance Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:attendance.view'])->group(function () {
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
-        Route::post('/attendance/mark', [AttendanceController::class, 'mark'])->name('attendance.mark');
         Route::get('/attendance/reports', [AttendanceController::class, 'reports'])->name('attendance.reports');
+    });
+
+    Route::middleware(['user.active', 'permission:attendance.create'])->group(function () {
+        Route::post('/attendance/mark', [AttendanceController::class, 'mark'])->name('attendance.mark');
     });
 
     Route::get('/attendance/student/{student}', [AttendanceController::class, 'studentHistory'])->name('attendance.student-history');
 
     //^ Subjects Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:subjects.view'])->group(function () {
         Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
-    });
-
-    Route::middleware(['role:admin'])->group(function () {
-        Route::get('/subjects/create', [SubjectController::class, 'create'])->name('subjects.create');
-        Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
-        Route::get('/subjects/{subject}/edit', [SubjectController::class, 'edit'])->name('subjects.edit');
-        Route::put('/subjects/{subject}', [SubjectController::class, 'update'])->name('subjects.update');
-        Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy'])->name('subjects.destroy');
-        Route::post('/subjects/{subject}/assign-grades', [SubjectController::class, 'assignGrades'])->name('subjects.assign-grades');
-    });
-
-    Route::middleware(['role:admin,teacher'])->group(function () {
         Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
     });
 
+    Route::middleware(['user.active', 'permission:subjects.create'])->group(function () {
+        Route::get('/subjects/create', [SubjectController::class, 'create'])->name('subjects.create');
+        Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
+    });
+
+    Route::middleware(['user.active', 'permission:subjects.update'])->group(function () {
+        Route::get('/subjects/{subject}/edit', [SubjectController::class, 'edit'])->name('subjects.edit');
+        Route::put('/subjects/{subject}', [SubjectController::class, 'update'])->name('subjects.update');
+        Route::post('/subjects/{subject}/assign-grades', [SubjectController::class, 'assignGrades'])->name('subjects.assign-grades');
+    });
+
+    Route::middleware(['user.active', 'permission:subjects.delete'])->group(function () {
+        Route::delete('/subjects/{subject}', [SubjectController::class, 'destroy'])->name('subjects.destroy');
+    });
+
     //^ Stream Routes
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:streams.view'])->group(function () {
         Route::get('/streams', [StreamController::class, 'index'])->name('streams.index');
+        Route::get('/streams/{stream}', [StreamController::class, 'show'])->name('streams.show');
+    });
+
+    Route::middleware(['user.active', 'permission:streams.create'])->group(function () {
         Route::get('/streams/create', [StreamController::class, 'create'])->name('streams.create');
         Route::post('/streams', [StreamController::class, 'store'])->name('streams.store');
-        Route::get('/streams/{stream}', [StreamController::class, 'show'])->name('streams.show');
+    });
+
+    Route::middleware(['user.active', 'permission:streams.update'])->group(function () {
         Route::get('/streams/{stream}/edit', [StreamController::class, 'edit'])->name('streams.edit');
         Route::put('/streams/{stream}', [StreamController::class, 'update'])->name('streams.update');
-        Route::delete('/streams/{stream}', [StreamController::class, 'destroy'])->name('streams.destroy');
         Route::post('/streams/{stream}/unlink', [StreamController::class, 'unlink'])->name('streams.unlink');
     });
 
+    Route::middleware(['user.active', 'permission:streams.delete'])->group(function () {
+        Route::delete('/streams/{stream}', [StreamController::class, 'destroy'])->name('streams.destroy');
+    });
+
     //^ Exams Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:exams.view'])->group(function () {
         Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
+        Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
+    });
+
+    Route::middleware(['user.active', 'permission:exams.create'])->group(function () {
         Route::get('/exams/create', [ExamController::class, 'create'])->name('exams.create');
         Route::post('/exams', [ExamController::class, 'store'])->name('exams.store');
-        Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
+    });
+
+    Route::middleware(['user.active', 'permission:exams.update'])->group(function () {
         Route::get('/exams/{exam}/edit', [ExamController::class, 'edit'])->name('exams.edit');
         Route::put('/exams/{exam}', [ExamController::class, 'update'])->name('exams.update');
     });
 
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:exams.delete'])->group(function () {
         Route::delete('/exams/{exam}', [ExamController::class, 'destroy'])->name('exams.destroy');
     });
 
     //^ Exam Results Routes
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    Route::middleware(['user.active', 'permission:exam-results.view'])->group(function () {
         Route::get('/exams/{exam}/results', [ExamResultController::class, 'index'])->name('exam-results.index');
+    });
+
+    Route::middleware(['user.active', 'permission:exam-results.create'])->group(function () {
         Route::post('/exams/{exam}/results', [ExamResultController::class, 'store'])->name('exam-results.store');
+    });
+
+    Route::middleware(['user.active', 'permission:exam-results.update'])->group(function () {
         Route::put('/exam-results/{examResult}', [ExamResultController::class, 'update'])->name('exam-results.update');
     });
 
     //^ Reports Routes
-    Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+    Route::middleware(['user.active', 'permission:reports.view'])->group(function () {
         Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
         Route::get('/reports/generate', [ReportController::class, 'generate'])->name('reports.generate');
     });
 
-    Route::middleware(['role:admin,teacher'])->group(function () {
+    // saveComment/lockComment route-level gate is intentionally coarse
+    // (admin OR teacher, matching the old role:admin,teacher exactly) —
+    // ReportController's own inline logic (untouched, see worksheet Phase 2
+    // disagreement #10) does the real per-comment-type, class-teacher-scoped
+    // enforcement that a route permission can't express.
+    Route::middleware(['user.active', 'permission:report-comments.create|reports.headteacher-comment'])->group(function () {
         Route::post('/reports/students/{student}/comments', [ReportController::class, 'saveComment'])->name('reports.saveComment');
         Route::post('/reports/students/{student}/comments/lock', [ReportController::class, 'lockComment'])->name('reports.lockComment');
+    });
+
+    Route::middleware(['user.active', 'permission:report-comments.unlock'])->group(function () {
         Route::post('/reports/students/{student}/comments/unlock', [ReportController::class, 'unlockComment'])->name('reports.unlockComment');
     });
 
     //^ School Settings Routes
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:settings.manage'])->group(function () {
         Route::get('/settings/academic', [SchoolSettingController::class, 'academic'])->name('settings.academic');
         Route::post('/settings/academic', [SchoolSettingController::class, 'updateAcademic'])->name('settings.academic.update');
     });
 
     //^ Blueprint Routes (Admin only)
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:timetable-dashboard.view'])->group(function () {
         Route::get('/blueprints', [LevelDayBlueprintController::class, 'index'])->name('blueprints.index');
         Route::get('/blueprints/create', [LevelDayBlueprintController::class, 'create'])->name('blueprints.create');
         Route::post('/blueprints', [LevelDayBlueprintController::class, 'store'])->name('blueprints.store');
@@ -320,17 +394,17 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     //^ Timetable Routes
     Route::prefix('timetables')->group(function () {
         // Teacher's Personal Timetable (Teachers only - strict data partitioning)
-        Route::middleware(['role:teacher'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-schedule.view-own'])->group(function () {
             Route::get('/my-timetable', [TeacherTimetableController::class, 'index'])->name('timetables.my-timetable');
         });
 
         // Timetable Dashboard (Admin only)
-        Route::middleware(['role:admin'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-dashboard.view'])->group(function () {
             Route::get('/dashboard', [TimetableTemplateController::class, 'dashboard'])->name('timetables.dashboard');
         });
 
         // Timetable Templates (Admin only - teachers should not access templates)
-        Route::middleware(['role:admin'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-templates.manage'])->group(function () {
             Route::get('/templates', [TimetableTemplateController::class, 'index'])->name('timetables.templates.index');
             Route::get('/templates/create', [TimetableTemplateController::class, 'create'])->name('timetables.templates.create');
             Route::get('/templates/grade/{grade}/select-stream', [TimetableTemplateController::class, 'selectStream'])->name('timetables.templates.select-stream');
@@ -353,67 +427,49 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         });
 
         // Timetable Periods (Admin only for create/edit/delete, Teachers can view)
-        Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-periods.view'])->group(function () {
             Route::get('/periods', [TimetablePeriodController::class, 'index'])->name('timetables.periods.index');
-        });
-
-        Route::middleware(['role:admin'])->group(function () {
-            Route::get('/periods/create', [TimetablePeriodController::class, 'create'])->name('timetables.periods.create');
-            Route::post('/periods', [TimetablePeriodController::class, 'store'])->name('timetables.periods.store');
-        });
-
-        Route::middleware(['role:admin,teacher'])->group(function () {
             Route::get('/periods/{period}', [TimetablePeriodController::class, 'show'])->name('timetables.periods.show');
         });
 
-        Route::middleware(['role:admin'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-periods.manage'])->group(function () {
+            Route::get('/periods/create', [TimetablePeriodController::class, 'create'])->name('timetables.periods.create');
+            Route::post('/periods', [TimetablePeriodController::class, 'store'])->name('timetables.periods.store');
             Route::get('/periods/{period}/edit', [TimetablePeriodController::class, 'edit'])->name('timetables.periods.edit');
             Route::put('/periods/{period}', [TimetablePeriodController::class, 'update'])->name('timetables.periods.update');
             Route::delete('/periods/{period}', [TimetablePeriodController::class, 'destroy'])->name('timetables.periods.destroy');
         });
 
         // Rooms (Admin only for create/edit/delete, Teachers can view)
-        Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-rooms.view'])->group(function () {
             Route::get('/rooms', [RoomController::class, 'index'])->name('timetables.rooms.index');
-        });
-
-        Route::middleware(['role:admin'])->group(function () {
-            Route::get('/rooms/create', [RoomController::class, 'create'])->name('timetables.rooms.create');
-            Route::post('/rooms', [RoomController::class, 'store'])->name('timetables.rooms.store');
-        });
-
-        Route::middleware(['role:admin,teacher'])->group(function () {
             Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('timetables.rooms.show');
         });
 
-        Route::middleware(['role:admin'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-rooms.manage'])->group(function () {
+            Route::get('/rooms/create', [RoomController::class, 'create'])->name('timetables.rooms.create');
+            Route::post('/rooms', [RoomController::class, 'store'])->name('timetables.rooms.store');
             Route::get('/rooms/{room}/edit', [RoomController::class, 'edit'])->name('timetables.rooms.edit');
             Route::put('/rooms/{room}', [RoomController::class, 'update'])->name('timetables.rooms.update');
             Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('timetables.rooms.destroy');
         });
 
         // Timetable Slots (Admin only for create/edit/delete, Teachers can view)
-        Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-slots.view'])->group(function () {
             Route::get('/slots', [TimetableSlotController::class, 'index'])->name('timetables.slots.index');
-        });
-
-        Route::middleware(['role:admin'])->group(function () {
-            Route::get('/slots/create', [TimetableSlotController::class, 'create'])->name('timetables.slots.create');
-            Route::post('/slots', [TimetableSlotController::class, 'store'])->name('timetables.slots.store');
-        });
-
-        Route::middleware(['role:admin,teacher'])->group(function () {
             Route::get('/slots/{slot}', [TimetableSlotController::class, 'show'])->name('timetables.slots.show');
         });
 
-        Route::middleware(['role:admin'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-slots.manage'])->group(function () {
+            Route::get('/slots/create', [TimetableSlotController::class, 'create'])->name('timetables.slots.create');
+            Route::post('/slots', [TimetableSlotController::class, 'store'])->name('timetables.slots.store');
             Route::get('/slots/{slot}/edit', [TimetableSlotController::class, 'edit'])->name('timetables.slots.edit');
             Route::put('/slots/{slot}', [TimetableSlotController::class, 'update'])->name('timetables.slots.update');
             Route::delete('/slots/{slot}', [TimetableSlotController::class, 'destroy'])->name('timetables.slots.destroy');
         });
 
         // Teacher Availability (Teachers can manage their own, Admins can manage all)
-        Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::middleware(['user.active', 'permission:timetable-availability.manage'])->group(function () {
             Route::get('/availability', [TeacherAvailabilityController::class, 'index'])->name('timetables.availability.index');
             Route::get('/availability/create', [TeacherAvailabilityController::class, 'create'])->name('timetables.availability.create');
             Route::post('/availability', [TeacherAvailabilityController::class, 'store'])->name('timetables.availability.store');
@@ -432,20 +488,13 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     //^ Quran Module Routes (Madrasah schools only)
     Route::middleware(['madrasah.only'])->group(function () {
         // Quran Dashboard (all roles)
-        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+        Route::middleware(['user.active', 'permission:quran-dashboard.view'])->group(function () {
             Route::get('/quran', [QuranController::class, 'index'])->name('quran.index');
         });
 
         // Admin and Teacher only routes (must come BEFORE wildcard routes)
-        Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::middleware(['user.active', 'permission:quran-homework.view'])->group(function () {
             Route::get('/quran-homework', [QuranHomeworkController::class, 'index'])->name('quran-homework.index');
-            Route::get('/quran-homework/create', [QuranHomeworkController::class, 'create'])->name('quran-homework.create');
-            Route::post('/quran-homework', [QuranHomeworkController::class, 'store'])->name('quran-homework.store');
-            Route::get('/quran-homework/{quranHomework}/edit', [QuranHomeworkController::class, 'edit'])->name('quran-homework.edit');
-            Route::put('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'update'])->name('quran-homework.update');
-            Route::delete('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'destroy'])->name('quran-homework.destroy');
-            Route::post('/quran-homework/{quranHomework}/grade', [QuranHomeworkController::class, 'grade'])->name('quran-homework.grade');
-            Route::post('/quran-homework/{quranHomework}/mark-ungraded', [QuranHomeworkController::class, 'markUngraded'])->name('quran-homework.mark-ungraded');
 
             Route::get('/api/quran/surah/{surahNumber}', [QuranHomeworkController::class, 'getSurahDetails'])->name('api.quran.surah');
             Route::get('/api/quran/page/{pageNumber}/image', [QuranHomeworkController::class, 'getPageImage'])->name('api.quran.page-image');
@@ -457,18 +506,37 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::get('/api/quran/homework/next-from/{student}', [QuranHomeworkController::class, 'nextFrom'])->name('api.quran.homework.next-from');
         });
 
+        Route::middleware(['user.active', 'permission:quran-homework.create'])->group(function () {
+            Route::get('/quran-homework/create', [QuranHomeworkController::class, 'create'])->name('quran-homework.create');
+            Route::post('/quran-homework', [QuranHomeworkController::class, 'store'])->name('quran-homework.store');
+        });
+
+        Route::middleware(['user.active', 'permission:quran-homework.update'])->group(function () {
+            Route::get('/quran-homework/{quranHomework}/edit', [QuranHomeworkController::class, 'edit'])->name('quran-homework.edit');
+            Route::put('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'update'])->name('quran-homework.update');
+            Route::delete('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'destroy'])->name('quran-homework.destroy');
+            Route::post('/quran-homework/{quranHomework}/grade', [QuranHomeworkController::class, 'grade'])->name('quran-homework.grade');
+            Route::post('/quran-homework/{quranHomework}/mark-ungraded', [QuranHomeworkController::class, 'markUngraded'])->name('quran-homework.mark-ungraded');
+        });
+
         // Read-only routes (admin, teacher, guardian) - wildcard routes come AFTER specific routes
-        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+        Route::middleware(['user.active', 'permission:quran-homework.view|quran-homework.view-own'])->group(function () {
             Route::get('/quran-homework/student/{student}/report', [QuranHomeworkController::class, 'studentReport'])->name('quran-homework.student-report');
             Route::get('/quran-homework/student/{student}', [QuranHomeworkController::class, 'studentHomework'])->name('quran-homework.student');
             Route::get('/quran-homework/{quranHomework}', [QuranHomeworkController::class, 'show'])->name('quran-homework.show');
         });
 
         // Quran Schedule Routes (admin and teacher only)
-        Route::middleware(['role:admin,teacher'])->group(function () {
+        Route::middleware(['user.active', 'permission:quran-schedule.view-all'])->group(function () {
             Route::get('/quran-schedule', [QuranScheduleController::class, 'index'])->name('quran-schedule.index');
+        });
+
+        Route::middleware(['user.active', 'permission:quran-schedule.create'])->group(function () {
             Route::get('/quran-schedule/create', [QuranScheduleController::class, 'create'])->name('quran-schedule.create');
             Route::post('/quran-schedule', [QuranScheduleController::class, 'store'])->name('quran-schedule.store');
+        });
+
+        Route::middleware(['user.active', 'permission:quran-schedule.update'])->group(function () {
             Route::get('/quran-schedule/{quranSchedule}/edit', [QuranScheduleController::class, 'edit'])->name('quran-schedule.edit');
             Route::put('/quran-schedule/{quranSchedule}', [QuranScheduleController::class, 'update'])->name('quran-schedule.update');
             Route::post('/quran-schedule/{quranSchedule}/activate', [QuranScheduleController::class, 'activate'])->name('quran-schedule.activate');
@@ -476,8 +544,9 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::delete('/quran-schedule/{quranSchedule}', [QuranScheduleController::class, 'destroy'])->name('quran-schedule.destroy');
         });
 
-        // Quran Schedule read-only routes (admin, teacher, guardian)
-        Route::middleware(['role:admin,teacher,guardian'])->group(function () {
+        // Quran Schedule read-only routes (admin, teacher, guardian) — the
+        // Policy applies guardian's own-children scoping on top of this.
+        Route::middleware(['user.active', 'permission:quran-schedule.view'])->group(function () {
             Route::get('/quran-schedule/{quranSchedule}', [QuranScheduleController::class, 'show'])->name('quran-schedule.show');
         });
     });
@@ -497,30 +566,36 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::impersonate();
 
     //^ Document Categories Routes (Admin only)
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:document-categories.view'])->group(function () {
         Route::get('/document-categories', [DocumentCategoryController::class, 'index'])->name('document-categories.index');
+        Route::get('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'show'])->name('document-categories.show');
+    });
+
+    Route::middleware(['user.active', 'permission:document-categories.manage'])->group(function () {
         Route::get('/document-categories/create', [DocumentCategoryController::class, 'create'])->name('document-categories.create');
         Route::post('/document-categories', [DocumentCategoryController::class, 'store'])->name('document-categories.store');
-        Route::get('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'show'])->name('document-categories.show');
         Route::get('/document-categories/{documentCategory}/edit', [DocumentCategoryController::class, 'edit'])->name('document-categories.edit');
         Route::put('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'update'])->name('document-categories.update');
         Route::delete('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'destroy'])->name('document-categories.destroy');
     });
 
     //^ Document Verification Routes (Admin only)
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:documents.verify'])->group(function () {
         Route::post('/documents/{document}/verify', [DocumentController::class, 'verify'])->name('documents.verify');
+    });
+
+    Route::middleware(['user.active', 'permission:documents.reject'])->group(function () {
         Route::post('/documents/{document}/reject', [DocumentController::class, 'reject'])->name('documents.reject');
     });
 
     //^ Admin Password Management
-    Route::middleware(['role:admin'])->prefix('admin')->group(function () {
+    Route::middleware(['user.active', 'permission:users.reset-password'])->prefix('admin')->group(function () {
         Route::post('/users/{user}/reset-password', [AdminPasswordController::class, 'generateTemporaryPassword'])
             ->name('admin.users.reset-password');
     });
 
     //^ Settings Routes (Admin only)
-    Route::middleware(['role:admin'])->prefix('admin/settings')->group(function () {
+    Route::middleware(['user.active', 'permission:settings.manage'])->prefix('admin/settings')->group(function () {
         // School Profile
         Route::get('/profile', [SchoolProfileController::class, 'index'])->name('settings.profile');
         Route::put('/profile', [SchoolProfileController::class, 'update'])->name('settings.profile.update');
@@ -546,7 +621,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     });
 
     //^ Fee Management Routes (Admin only)
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:fees.manage'])->group(function () {
         // Fee Management Dashboard
         Route::get('/fees', [FeeManagementController::class, 'index'])->name('fees.index');
 
@@ -604,7 +679,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     });
 
     //^ Guardian Invoice Routes (Guardians can view their own invoices)
-    Route::middleware(['role:guardian'])->group(function () {
+    Route::middleware(['user.active', 'permission:fees.view-own-invoices'])->group(function () {
         Route::get('/guardian/invoices', [InvoiceController::class, 'index'])->name('guardian.invoices');
         Route::get('/guardian/invoices/{invoice}', [InvoiceController::class, 'show'])->name('guardian.invoices.show');
         Route::get('/guardian/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('guardian.invoices.pdf');
@@ -692,7 +767,7 @@ Route::middleware(['auth'])->prefix('policies')->name('policies.')->group(functi
     Route::get('/', [PolicyController::class, 'index'])->name('index');
 
     // Admin-only routes
-    Route::middleware(['role:admin'])->group(function () {
+    Route::middleware(['user.active', 'permission:policies.manage'])->group(function () {
         Route::get('/create', [PolicyController::class, 'create'])->name('create');
         Route::post('/', [PolicyController::class, 'store'])->name('store');
         Route::get('/{policy}/edit', [PolicyController::class, 'edit'])->name('edit');

@@ -9,11 +9,14 @@ class DocumentCategoryPolicy
 {
     /**
      * Determine if the user can view any document categories.
+     *
+     * Teacher/guardian branch dropped here (2026-08-26, Phase 5) per the
+     * decision on Phase 2 disagreement #9: dead grant, no route ever
+     * reached it, same precedent as disagreements #2/#3.
      */
     public function viewAny(User $user): bool
     {
-        // Admin can view categories, teachers/guardians can view active categories
-        return $user->isAdmin() || $user->isTeacher() || $user->isGuardian();
+        return $user->can('document-categories.view');
     }
 
     /**
@@ -21,7 +24,7 @@ class DocumentCategoryPolicy
      */
     public function view(User $user, DocumentCategory $category): bool
     {
-        return $user->isAdmin() || $user->isTeacher() || $user->isGuardian();
+        return $user->can('document-categories.view');
     }
 
     /**
@@ -29,7 +32,7 @@ class DocumentCategoryPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->can('document-categories.manage');
     }
 
     /**
@@ -37,7 +40,7 @@ class DocumentCategoryPolicy
      */
     public function update(User $user, DocumentCategory $category): bool
     {
-        return $user->isAdmin();
+        return $user->can('document-categories.manage');
     }
 
     /**
@@ -46,6 +49,6 @@ class DocumentCategoryPolicy
     public function delete(User $user, DocumentCategory $category): bool
     {
         // Admin can delete if no documents are using this category
-        return $user->isAdmin() && $category->documents()->count() === 0;
+        return $user->can('document-categories.manage') && $category->documents()->count() === 0;
     }
 }

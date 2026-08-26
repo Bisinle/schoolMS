@@ -12,7 +12,7 @@ class SubjectPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher']);
+        return $user->can('subjects.view');
     }
 
     /**
@@ -20,7 +20,7 @@ class SubjectPolicy
      */
     public function view(User $user, Subject $subject): bool
     {
-        return in_array($user->role, ['admin', 'teacher']);
+        return $user->can('subjects.view');
     }
 
     /**
@@ -28,7 +28,7 @@ class SubjectPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->can('subjects.create');
     }
 
     /**
@@ -36,7 +36,7 @@ class SubjectPolicy
      */
     public function update(User $user, Subject $subject): bool
     {
-        return $user->isAdmin();
+        return $user->can('subjects.update');
     }
 
     /**
@@ -44,6 +44,6 @@ class SubjectPolicy
      */
     public function delete(User $user, Subject $subject): bool
     {
-        return $user->isAdmin();
+        return $user->can('subjects.delete');
     }
 }

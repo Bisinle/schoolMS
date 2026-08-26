@@ -12,11 +12,13 @@ use Illuminate\Support\Facades\Storage;
 use App\Enums\UserRole;
 use App\Notifications\CustomResetPassword;
 use Lab404\Impersonate\Models\Impersonate;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
     use Impersonate;
+    use HasRoles;
 
     // NOTE: User model does NOT use BelongsToSchool trait to avoid circular reference
     // The global scope would cause infinite recursion when checking auth()->user()->school_id

@@ -12,8 +12,7 @@ class PolicyPolicy
      */
     public function viewAny(User $user): bool
     {
-        // All authenticated users can view policies
-        return true;
+        return $user->can('policies.view');
     }
 
     /**
@@ -22,7 +21,7 @@ class PolicyPolicy
     public function view(User $user, Policy $policy): bool
     {
         // Users can view policies from their school
-        return $user->school_id === $policy->school_id;
+        return $user->can('policies.view') && $user->school_id === $policy->school_id;
     }
 
     /**
@@ -30,8 +29,7 @@ class PolicyPolicy
      */
     public function create(User $user): bool
     {
-        // Only admins can create policies
-        return $user->role === 'admin';
+        return $user->can('policies.manage');
     }
 
     /**
@@ -39,18 +37,17 @@ class PolicyPolicy
      */
     public function update(User $user, Policy $policy): bool
     {
-        // Only admins from the same school can update
-        return $user->role === 'admin' && $user->school_id === $policy->school_id;
+        return $user->can('policies.manage') && $user->school_id === $policy->school_id;
     }
 
     /**
      * Determine whether the user can delete the policy.
+     *
+     * Cannot delete published policies.
      */
     public function delete(User $user, Policy $policy): bool
     {
-        // Only admins from the same school can delete
-        // Cannot delete published policies
-        return $user->role === 'admin' 
+        return $user->can('policies.manage')
             && $user->school_id === $policy->school_id
             && $policy->status !== 'published';
     }
@@ -60,8 +57,7 @@ class PolicyPolicy
      */
     public function publish(User $user, Policy $policy): bool
     {
-        // Only admins from the same school can publish
-        return $user->role === 'admin' && $user->school_id === $policy->school_id;
+        return $user->can('policies.manage') && $user->school_id === $policy->school_id;
     }
 
     /**
@@ -69,10 +65,9 @@ class PolicyPolicy
      */
     public function acknowledge(User $user, Policy $policy): bool
     {
-        // Users from the same school can acknowledge published policies
-        return $user->school_id === $policy->school_id 
+        return $user->can('policies.acknowledge')
+            && $user->school_id === $policy->school_id
             && $policy->status === 'published'
             && $policy->requires_acknowledgment;
     }
 }
-

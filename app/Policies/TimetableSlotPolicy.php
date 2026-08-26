@@ -7,19 +7,17 @@ use App\Models\User;
 
 class TimetableSlotPolicy
 {
-    /**
-     * Determine whether the user can view any models.
-     */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher']);
+        return $user->can('timetable-slots.view');
     }
 
-    /**
-     * Determine whether the user can view the model.
-     */
     public function view(User $user, TimetableSlot $timetableSlot): bool
     {
+        if (! $user->can('timetable-slots.view')) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return true;
         }
@@ -32,59 +30,37 @@ class TimetableSlotPolicy
         return false;
     }
 
-    /**
-     * Determine whether the user can create models.
-     */
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->can('timetable-slots.manage');
     }
 
     /**
      * Determine whether the user can update the model.
+     *
+     * The previous teacher-can-edit-a-draft-template's-slots branch was
+     * dropped here (2026-08-26, Phase 5) — confirmed dead: the update route
+     * has always been role:admin-only (now permission:timetable-slots.manage,
+     * admin-only per the taxonomy), so no teacher could ever reach an action
+     * that checks this ability.
      */
     public function update(User $user, TimetableSlot $timetableSlot): bool
     {
-        // Admins can update slots even when published
-        // Teachers can only update slots in draft templates
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        if ($user->isTeacher()) {
-            return $timetableSlot->timetableTemplate->isDraft();
-        }
-
-        return false;
+        return $user->can('timetable-slots.manage');
     }
 
-    /**
-     * Determine whether the user can delete the model.
-     */
     public function delete(User $user, TimetableSlot $timetableSlot): bool
     {
-        // Admins can delete slots even when published
-        // Teachers cannot delete slots
-        if ($user->isAdmin()) {
-            return true;
-        }
-
-        return false;
+        return $user->can('timetable-slots.manage');
     }
 
-    /**
-     * Determine whether the user can restore the model.
-     */
     public function restore(User $user, TimetableSlot $timetableSlot): bool
     {
-        return $user->isAdmin();
+        return $user->can('timetable-slots.manage');
     }
 
-    /**
-     * Determine whether the user can permanently delete the model.
-     */
     public function forceDelete(User $user, TimetableSlot $timetableSlot): bool
     {
-        return $user->isAdmin();
+        return $user->can('timetable-slots.manage');
     }
 }

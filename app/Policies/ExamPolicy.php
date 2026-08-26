@@ -12,7 +12,7 @@ class ExamPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher']);
+        return $user->can('exams.view');
     }
 
     /**
@@ -20,12 +20,14 @@ class ExamPolicy
      */
     public function view(User $user, Exam $exam): bool
     {
-        // Admins can view all exams
+        if (! $user->can('exams.view')) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return true;
         }
 
-        // Teachers can view exams for their assigned grades
         if ($user->isTeacher()) {
             $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
             return in_array($exam->grade_id, $teacherGradeIds);
@@ -39,17 +41,28 @@ class ExamPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdmin() || $user->isTeacher();
+        return $user->can('exams.create');
     }
 
     /**
      * Determine if the user can update exams.
+     *
+     * Decision 1 (2026-08-26, resolving Phase 2 disagreement #1): teacher
+     * gets scoped update access to exams they created themselves
+     * (exams.created_by), rather than the previous admin-only restriction
+     * that contradicted teacher already being allowed to create() them.
      */
     public function update(User $user, Exam $exam): bool
     {
-        // Only admins can update exams
-        // Teachers can only VIEW exams, not edit them
-        return $user->isAdmin();
+        if (! $user->can('exams.update')) {
+            return false;
+        }
+
+        if ($user->isAdmin()) {
+            return true;
+        }
+
+        return $exam->created_by === $user->id;
     }
 
     /**
@@ -57,7 +70,6 @@ class ExamPolicy
      */
     public function delete(User $user, Exam $exam): bool
     {
-        // Only admins can delete exams
-        return $user->isAdmin();
+        return $user->can('exams.delete');
     }
 }

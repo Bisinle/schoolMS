@@ -45,6 +45,9 @@ class DatabaseSeeder extends Seeder
             // docs/spatie-migration-worksheet.md) — inert, nothing reads
             // these yet. Safe to re-run, no dependency on any other seeder.
             RolePermissionSeeder::class,
+            // Backfills every user onto their matching Spatie role (Phase 5)
+            // — must run after both UserSeeder and RolePermissionSeeder.
+            UserRoleBackfillSeeder::class,
         ]);
         $this->command->newLine();
 

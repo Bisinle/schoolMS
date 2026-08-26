@@ -9,34 +9,26 @@ class GuardianPolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher']);
+        return $user->can('guardians.view');
     }
 
     public function view(User $user, Guardian $guardian): bool
     {
-        if ($user->isAdmin() || $user->isTeacher()) {
-            return true;
-        }
-
-        if ($user->isGuardian()) {
-            return $user->guardian && $user->guardian->id === $guardian->id;
-        }
-
-        return false;
+        return $user->can('guardians.view');
     }
 
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->can('guardians.create');
     }
 
     public function update(User $user, Guardian $guardian): bool
     {
-        return $user->isAdmin();
+        return $user->can('guardians.update');
     }
 
     public function delete(User $user, Guardian $guardian): bool
     {
-        return $user->isAdmin();
+        return $user->can('guardians.delete');
     }
 }
