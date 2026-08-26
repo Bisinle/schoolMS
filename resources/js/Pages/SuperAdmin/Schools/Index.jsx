@@ -3,6 +3,7 @@ import { Head, Link, router } from '@inertiajs/react';
 import { Plus, Search, Eye, Edit, Trash2, School, Users, TrendingUp, RefreshCw, ChevronDown, ChevronUp, Power, UserCog, Mail, Phone, MapPin, Calendar, GraduationCap } from 'lucide-react';
 import { useState } from 'react';
 import { useSwipeable } from 'react-swipeable';
+import axios from 'axios';
 import SwipeActionButton from '@/Components/SwipeActionButton';
 import ConfirmationModal from '@/Components/ConfirmationModal';
 
@@ -238,6 +239,9 @@ function MobileSchoolItem({ school, onDelete, onImpersonate }) {
 export default function Index({ schools, filters }) {
     const [search, setSearch] = useState(filters.search || '');
     const [impersonateSchool, setImpersonateSchool] = useState(null);
+    const [impersonateAdmins, setImpersonateAdmins] = useState([]);
+    const [impersonateAdminsLoading, setImpersonateAdminsLoading] = useState(false);
+    const [selectedAdminId, setSelectedAdminId] = useState(null);
     const [deleteSchool, setDeleteSchool] = useState(null);
 
     const handleSearch = (e) => {
@@ -259,11 +263,31 @@ export default function Index({ schools, filters }) {
 
     const handleImpersonate = (school) => {
         setImpersonateSchool(school);
+        setImpersonateAdmins([]);
+        setSelectedAdminId(null);
+        setImpersonateAdminsLoading(true);
+
+        axios.get(route('super-admin.schools.admins', school.id))
+            .then((response) => {
+                setImpersonateAdmins(response.data);
+                setSelectedAdminId(response.data[0]?.id ?? null);
+            })
+            .finally(() => setImpersonateAdminsLoading(false));
+    };
+
+    const closeImpersonateModal = () => {
+        setImpersonateSchool(null);
+        setImpersonateAdmins([]);
+        setSelectedAdminId(null);
     };
 
     const confirmImpersonate = () => {
-        if (impersonateSchool) {
-            router.post(route('super-admin.schools.impersonate', impersonateSchool.id));
+        if (impersonateSchool && selectedAdminId) {
+            router.post(route('super-admin.schools.impersonate', impersonateSchool.id), {
+                user_id: selectedAdminId,
+            }, {
+                onSuccess: () => closeImpersonateModal(),
+            });
         }
     };
 
@@ -501,6 +525,29 @@ export default function Index({ schools, filters }) {
                                 <p className="text-sm text-gray-600">Domain: {impersonateSchool.domain}</p>
                             </div>
 
+                            <div className="mb-6">
+                                <label className="block text-sm font-bold text-gray-700 mb-2">
+                                    Impersonate as
+                                </label>
+                                {impersonateAdminsLoading ? (
+                                    <p className="text-sm text-gray-500">Loading admins…</p>
+                                ) : impersonateAdmins.length === 0 ? (
+                                    <p className="text-sm text-red-600 font-semibold">No admin found for this school.</p>
+                                ) : (
+                                    <select
+                                        value={selectedAdminId ?? ''}
+                                        onChange={(e) => setSelectedAdminId(Number(e.target.value))}
+                                        className="w-full rounded-xl border-2 border-gray-200 px-4 py-3 text-sm font-semibold text-gray-900 focus:border-purple-500 focus:ring-purple-500"
+                                    >
+                                        {impersonateAdmins.map((admin) => (
+                                            <option key={admin.id} value={admin.id}>
+                                                {admin.name} ({admin.email})
+                                            </option>
+                                        ))}
+                                    </select>
+                                )}
+                            </div>
+
                             <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-6">
                                 <p className="text-sm text-yellow-800 font-semibold">
                                     ⚠️ You will have full admin access to this school's data
@@ -510,12 +557,13 @@ export default function Index({ schools, filters }) {
                             <div className="flex flex-col gap-3">
                                 <button
                                     onClick={confirmImpersonate}
-                                    className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-black shadow-xl active:scale-95 transition-all text-base"
+                                    disabled={!selectedAdminId}
+                                    className="w-full px-6 py-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl font-black shadow-xl active:scale-95 transition-all text-base disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     Confirm & Login
                                 </button>
                                 <button
-                                    onClick={() => setImpersonateSchool(null)}
+                                    onClick={closeImpersonateModal}
                                     className="w-full px-6 py-4 bg-gray-100 text-gray-700 rounded-xl font-bold active:bg-gray-200 transition-colors text-base"
                                 >
                                     Cancel

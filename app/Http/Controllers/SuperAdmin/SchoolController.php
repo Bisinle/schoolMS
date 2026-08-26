@@ -367,20 +367,39 @@ class SchoolController extends Controller
         }
     }
 
-    public function impersonate(School $school)
+    /**
+     * Admin users super_admin can choose to impersonate for this school —
+     * backs the picker in the impersonation modal (2026-08-26: previously
+     * impersonate() always took school->users()->where('role','admin')->first(),
+     * with no explicit ordering and no way to pick a specific admin when a
+     * school has more than one).
+     */
+    public function admins(School $school)
     {
-        // Find the school admin
-        $admin = $school->users()->where('role', 'admin')->first();
+        return response()->json(
+            $school->users()->where('role', 'admin')->orderBy('name')->get(['id', 'name', 'email'])
+        );
+    }
+
+    public function impersonate(Request $request, School $school)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|integer',
+        ]);
+
+        // Scoped through the school's own relation, not User::findOrFail(),
+        // so a submitted user_id belonging to another school or a non-admin
+        // user is rejected rather than impersonated.
+        $admin = $school->users()->where('role', 'admin')->where('id', $validated['user_id'])->first();
 
         if (!$admin) {
-            return back()->withErrors(['error' => 'No admin found for this school.']);
+            return back()->withErrors(['error' => 'That user is not an admin of this school.']);
         }
 
-        // Impersonate the school admin
         auth()->user()->impersonate($admin);
 
         return redirect()->route('dashboard')
-            ->with('success', "Now viewing as {$school->name} admin");
+            ->with('success', "Now viewing as {$admin->name} ({$school->name} admin)");
     }
 }
 

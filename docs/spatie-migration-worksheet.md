@@ -741,9 +741,35 @@ security bug:
   missing `AcademicTermFactory` class) — not investigated further, flagged only.
   Every Quran-related test file passes (94/94), including all new regression
   tests for the two fixes above.
-- **Impersonation (disagreement set, Priority 3)** — not yet implemented as of
-  this entry; see the Impersonation section above for the two confirmed items
-  awaiting implementation (Path A untouched, Path B gets an admin picker) and
-  the one still-open item (Path C logging).
+- **Impersonation — Path A/B decisions implemented (2026-08-26).** Path A (the
+  general `Route::impersonate()` flow) is untouched, as decided. Path B
+  (`SuperAdmin\SchoolController::impersonate()`) previously always took
+  `$school->users()->where('role','admin')->first()` — no explicit ordering,
+  no way to pick a specific admin when a school had more than one. Now:
+  - New `GET super-admin/schools/{school}/admins` endpoint
+    (`SchoolController::admins()`) returns that school's admin users
+    (`id`, `name`, `email`).
+  - `impersonate()` now requires a `user_id`, validated against
+    `$school->users()->where('role','admin')` (rejects a user_id from another
+    school or a non-admin, even if supplied directly) — no longer takes the
+    first admin found.
+  - Both trigger points (`SuperAdmin/Schools/Index.jsx`'s modal — desktop and
+    mobile share one handler — and `Schools/Show.jsx`'s `ConfirmationModal`)
+    now show a picker when a school has more than one admin, defaulting to
+    the first so the common single-admin case needs no extra click. Index.jsx
+    fetches the list via the new endpoint on open; Show.jsx reuses `school.users`
+    (already eager-loaded by `show()`) filtered client-side, no extra request.
+  - `ConfirmationModal.jsx` gained one new optional prop, `confirmDisabled`
+    (default `false`) — purely additive, all 36 other call sites unaffected —
+    used here to disable "Confirm & Login" until an admin is selected.
+  - New `tests/Feature/SuperAdmin/SchoolImpersonationTest.php` (5 tests):
+    admins-endpoint scoping, impersonating a specifically-selected second
+    admin (the actual behavior change), rejecting a cross-school user_id,
+    rejecting a non-admin user_id, requiring user_id at all.
+  - **Path C (the dead logging subsystem) is still untouched and still open**
+    — not part of this decision, awaiting your answer to open question #1
+    above before anything there changes.
+  - Full suite via `php8.4`: 131 passed, 31 failed (same 31 pre-existing,
+    unrelated failures as every prior run this session — no new regressions).
 23 permissions now carry ownership/state scoping (up from 18), with 2 more
 proposed-but-disputed pending the Quran decisions above.
