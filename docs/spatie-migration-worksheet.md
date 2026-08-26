@@ -15,12 +15,12 @@ migration currently stands.
 - [x] **Phase 1** — Role cleanup: delete `accountant, receptionist, nurse, it_staff, maid, cook`
 - [x] **Phase 2** — Reverse-engineer current permissions for `super_admin, admin, teacher, guardian`
   (extended 2026-08-26 to 4 modules missed from the original checklist — see Phase log)
-- [x] **Phase 3** — Design the permission taxonomy — ⚠️ **88 permissions in the
-  table; `quran-schedule.view` and `quran-homework.update` are now resolved and
-  implemented in code ahead of Phase 5 (2026-08-26 — see Risks section and Phase
-  log), since both were live security/scoping bugs, not just taxonomy disputes.
-  Impersonation still isn't represented at all yet (permission names depend on
-  decisions not yet made) — see Risks section**
+- [x] **Phase 3** — Design the permission taxonomy — ✅ **90 permissions in the
+  table (86 school-level + 4 super-admin), fully resolved as of 2026-08-26.**
+  `quran-schedule.view` and `quran-homework.update` were resolved and implemented
+  in code ahead of Phase 5, since both were live security/scoping bugs, not just
+  taxonomy disputes. Impersonation is now fully represented too (`users.impersonate`
+  + `super-admin.schools.impersonate`) — see Risks section and Phase log for both.
 - [ ] **Phase 4** — Install, migrate, seed `spatie/laravel-permission` (inert — old system still live)
 - [ ] **Phase 5** — Migrate backend: routes, policies, model
 - [ ] **Phase 6** — Migrate frontend
@@ -160,6 +160,7 @@ doesn't participate in the school-level module system at all.
 | `users.delete` | ✅ | ❌ | ❌ | " |
 | `users.reset-password` | ✅ | ❌ | ❌ | " |
 | `users.toggle-status` | ✅ | ❌ | ❌ | " |
+| `users.impersonate` | ✅ | ❌ | ❌ | Path A (`Route::impersonate()`, `Users/Index.jsx`+`Show.jsx`). School-scoped by the package's own guard checks (`canBeImpersonated()` blocks admin targets, blocks self, blocks nested impersonation). **Not reachable by `super_admin`** despite `canImpersonate()` returning true for that role — `school.admin` middleware blocks super_admin from this whole route group; super_admin's real impersonation path is `super-admin.schools.impersonate` below, a structurally different capability |
 | `fees.manage` | ✅ | ❌ | ❌ | Covers dashboard/transport/tuition/universal/invoices/payments — Phase 2 found no finer split in current code |
 | `fees.view-own-invoices` | ❌ | ❌ | ✅ | Guardian scoped to their own invoices only — separate route/capability from `fees.manage`, not a restricted view of it |
 | `settings.manage` | ✅ | ❌ | ❌ | Covers profile/academic years/terms/preferences/headteacher_signature — no finer split in current code |
@@ -239,6 +240,7 @@ yet made, adding rows here would misrepresent them as settled.
 | `super-admin.schools.manage` | ✅ |
 | `super-admin.users.manage` | ✅ (cross-school — a structurally different capability from school-level `users.*`, not a superset of it in the same table) |
 | `super-admin.settings.manage` | ✅ |
+| `super-admin.schools.impersonate` | ✅ | Path B (`SuperAdmin\SchoolController::impersonate()`). Deliberately a distinct permission from `users.impersonate`, not folded into it (2026-08-26 decision, resolving open question #2) — the capability shape genuinely differs: super_admin can only impersonate an **admin** of a chosen school (via the new admin-picker, see Phase log), bypasses the package's own guard checks entirely (self-impersonation/nested-impersonation protections are Path A-only), and is reached through the Super Admin → Schools UI, not the Users pages |
 
 ### Summary: every ownership/state-scoped permission (25 confirmed, 0 pending)
 
@@ -403,13 +405,18 @@ every Policy that needs to keep its scoping logic when rewritten to call
   teachers are blocked from update/delete/grade/mark-ungraded, while admin and
   the owning teacher are unaffected.
 
-### Impersonation (2026-08-26) — NOT in the Phase 3 taxonomy yet, needs your decision first
+### Impersonation (2026-08-26, resolved 2026-08-26) — now in the Phase 3 taxonomy
 
-Per your explicit instruction, nothing below was resolved unilaterally. This
-module has more going on than "reproduce current behavior" assumes at first
-glance — it's actually **three separate, only-partially-related code paths**, one
-of which is entirely dead. All verified directly against the actual package
-source and this app's code, not inferred.
+Per your explicit instruction, nothing below was resolved unilaterally — every
+open question here was written up for your decision, none assumed. This module
+turned out to have more going on than "reproduce current behavior" assumes at
+first glance: **three separate, only-partially-related code paths**, one of which
+was entirely dead. All verified directly against the actual package source and
+this app's code, not inferred. **As of 2026-08-26, the two questions that blocked
+finalizing the taxonomy (logging, and how to represent super_admin's capability)
+are both resolved** — see "Decisions" below. The write-up of all three paths is
+kept as-found for the historical record; where a path has since changed, that's
+called out inline.
 
 **Path A — the general-purpose route, `Route::impersonate()`.** Registers
 `route('impersonate', {id})` / `route('impersonate.leave')` (`web.php:497`, a
@@ -436,6 +443,10 @@ impersonation) apply here. Two consequences: super_admin can only ever
 impersonate **the first admin user found for a school** (not any arbitrary user,
 and not deterministic if a school has more than one admin — no explicit
 `orderBy`), a materially different capability shape than Path A's "any user."
+**Superseded 2026-08-26** (commit `cb8fe79`): `impersonate()` now requires an
+explicit `user_id`, validated against the school's own admin users, and both
+frontend trigger points show a picker when a school has more than one admin —
+the nondeterminism (open question #5 below) no longer applies.
 
 **Path C — completely dead code.** `ImpersonationController.php`
 (`start`/`stop`/`logs`), `ImpersonationLogPolicy` (every method hardcoded `return
@@ -446,49 +457,54 @@ controller; the package's own `TakeImpersonation`/`LeaveImpersonation` events (t
 natural hook for logging the *real* paths A/B) have zero listeners anywhere.
 **Net effect: there is currently no audit trail at all for either live
 impersonation path**, despite a complete-looking logging subsystem existing.
+**Deleted 2026-08-26** (see "Decisions" below) — this whole paragraph now
+describes code that no longer exists in the repo.
 
-**Decisions needed from you before this module's permissions can go in the
-taxonomy:**
+**Five open questions were raised. Two blocked finalizing the taxonomy and are
+now resolved; the other three don't require a permission row and stay open
+without blocking Phase 4:**
 
-1. Is an audit log supposed to exist? Given this is described as actively used
-   for QA and there's a whole unused subsystem built for exactly this, it looks
-   like it might be an oversight — but that's not assumed here. Should Phase 5+
-   wire the real paths (A/B) into `ImpersonationLog` using the dead code as a
-   starting point, or is "no log" acceptable and Path C should just be deleted as
-   dead code?
-2. Should super_admin's `canImpersonate() === true` be treated like the other
-   "dead grant, drop it" cases from disagreements #2/#3/#9? It doesn't cleanly
-   fit that precedent — unlike those, super_admin's impersonation capability
-   **is** reachable, just through Path B specifically (narrower: first-admin-only,
-   not any user), not Path A. Does the taxonomy need a distinct permission
-   representing this narrower capability, or should it just be represented as
-   part of the same permission as admin's Path A capability?
-3. Three frontend spots (`Users/Index.jsx` desktop + mobile, `Users/Show.jsx`) all
-   have `!user.roles?.some(role => role.name === 'admin')` guarding the
-   Impersonate button — but `user.roles` (plural, `.name` property) doesn't exist
-   on the current flat `role`-string User model, so this always evaluates
-   `undefined` → always `true`. **The button shows for admin targets too**,
-   contradicting its own comment ("Only for non-admin users"). Not a backend
-   security hole — the package's server-side `canBeImpersonated()` already
-   permits admin targets regardless — just a frontend intent that silently never
-   worked. Notably, `user.roles.some(role => role.name === ...)` is exactly the
-   shape Spatie's own `HasRoles` trait produces, so this may have been written
-   ahead of this migration and simply never functioned — Phase 6 might make it
-   "just start working" as a side effect. Fix now, leave for Phase 6 to naturally
-   resolve, or something else?
-4. `lab404/laravel-impersonate` ships a `ProtectFromImpersonation` middleware
-   specifically to block sensitive actions (e.g. password changes) while
-   impersonating — not used anywhere in this app. Not asserting this is wrong,
-   just flagging it exists unwired: today, an admin impersonating a user can
-   perform any action that user's role permits, including sensitive ones, with no
-   extra guard. Relevant to how strictly "reproduce current behavior exactly"
-   should be read for this module.
-5. Path B's target selection (first admin user, no explicit `orderBy`) — flagging
-   as possibly unintentional nondeterminism, not fixing.
+1. ✅ **RESOLVED (2026-08-26).** Is an audit log supposed to exist? — **No.**
+   Your call: only super_admin will ever use impersonation long-term, so
+   there's no practical value in tracking "who impersonated who" — it would
+   just be super_admin tracking itself. `ImpersonationController.php`,
+   `ImpersonationLogPolicy`, `ImpersonationLog` (model + factory), the
+   `StoreImpersonationLogRequest`/`UpdateImpersonationLogRequest` FormRequest
+   stubs, and `ImpersonationLogSeeder` are all deleted rather than wired up.
+   One detail this surfaced: the `impersonation_logs` **table itself was
+   already dropped** by a prior migration
+   (`2025_11_11_050143_drop_impersonation_logs_table.php`, one day after
+   `2025_11_10_150136_create_impersonation_logs_table.php` created it) — so
+   there was no live table and nothing to check for data. Deliberately did
+   **not** touch either historical migration file (immutable migration
+   history, standard practice) — the net effect on a fresh install is
+   identical either way, since the drop migration already runs right after
+   the create one.
+2. ✅ **RESOLVED (2026-08-26).** Does super_admin's narrower Path B capability
+   need a distinct permission? — **Yes.** Added as `super-admin.schools.impersonate`
+   in the super-admin namespace (see the taxonomy table above), separate from
+   admin's `users.impersonate`. This wasn't explicitly re-asked in your latest
+   message, which focused on the logging decision — applying the same
+   reasoning the super-admin namespace already uses for `super-admin.users.manage`
+   ("a structurally different capability... not a superset of it in the same
+   table"), since Path B's shape genuinely differs from Path A's (admin-only
+   targets, different guard behavior, different trigger UI). **Flagging this
+   inference explicitly in case it's not what you intended** — easy to
+   rename/re-shape later since Phase 4's seeding is inert.
+3. **Still open, not blocking.** The broken `user.roles?.some(...)` frontend
+   check (`Users/Index.jsx` desktop + mobile, `Users/Show.jsx`) — not touched.
+   No permission row needed for this (it's a UI bug, not an access decision),
+   so it doesn't block Phase 4. Left for Phase 6 to naturally resolve, per the
+   leaning already noted when this was first raised.
+4. **Still open, not blocking.** `ProtectFromImpersonation` middleware remains
+   unwired. No permission row needed, doesn't block Phase 4.
+5. ✅ **Resolved as a side effect of the Path B admin-picker fix** (commit
+   `cb8fe79`, see above) — target selection is now explicit, not first-found.
 
-No permission names proposed for Impersonation yet — the shape depends on how #2
-resolves. Once decided, this section gets replaced with the finalized taxonomy
-rows and moved out of Risks.
+The taxonomy now includes both `users.impersonate` (admin, Path A) and
+`super-admin.schools.impersonate` (super_admin, Path B) in the tables above —
+this section stays here as the historical record of how those rows were
+derived, rather than being deleted.
 
 ### Decisions on the above (made by you, 2026-08-26 — recorded before Phase 3 started)
 
@@ -703,10 +719,11 @@ taxonomy table yet.
 `incident-reports.update-status` → `incident-reports.review` (unified with
 `accident-reports.review`, same underlying action).
 
-**Running total: 88 permissions** (85 school-level + 3 super-admin). Both disputed
-cells (`quran-schedule.view`, `quran-homework.update`) were resolved and
-implemented in code the same day — see the next entry below. Impersonation isn't
-represented yet.
+**Running total at this point: 88 permissions** (85 school-level + 3 super-admin).
+Both disputed cells (`quran-schedule.view`, `quran-homework.update`) were resolved
+and implemented in code the same day — see the next entries below. Impersonation
+wasn't represented yet — see the final entry below for that resolution, bringing
+the total to **90 permissions** (86 school-level + 4 super-admin).
 
 ### Urgent fix + confirmed follow-up items, implemented ahead of Phase 5 (2026-08-26)
 
@@ -766,10 +783,42 @@ security bug:
     admins-endpoint scoping, impersonating a specifically-selected second
     admin (the actual behavior change), rejecting a cross-school user_id,
     rejecting a non-admin user_id, requiring user_id at all.
-  - **Path C (the dead logging subsystem) is still untouched and still open**
-    — not part of this decision, awaiting your answer to open question #1
-    above before anything there changes.
   - Full suite via `php8.4`: 131 passed, 31 failed (same 31 pre-existing,
     unrelated failures as every prior run this session — no new regressions).
+
+### Impersonation Path C removed, taxonomy finalized (2026-08-26)
+
+Confirmed decision: no audit log needed — long-term only super_admin uses
+impersonation, so there's no practical value in tracking "who impersonated
+who." Deleted rather than wired up: `ImpersonationController.php`,
+`ImpersonationLogPolicy`, `ImpersonationLog` model, `ImpersonationLogFactory`,
+`StoreImpersonationLogRequest`, `UpdateImpersonationLogRequest`,
+`ImpersonationLogSeeder` — a full-codebase search confirmed all seven were
+completely unreferenced outside each other. One thing this surfaced: the
+`impersonation_logs` **table had already been dropped** by an existing
+migration (`2025_11_11_050143_drop_impersonation_logs_table.php`, applied the
+day after the table was created) — so there was no live data to check and no
+new migration was needed; the two historical migration files were
+deliberately left untouched (immutable migration history).
+
+Taxonomy finalized: added `users.impersonate` (admin, Path A) to the
+school-level table and `super-admin.schools.impersonate` (super_admin, Path B)
+to the super-admin namespace — kept as two distinct permissions rather than
+one, since the capabilities genuinely differ in shape (see the Impersonation
+section above for the full reasoning, including one inference flagged for
+your review: representing Path B as its own permission wasn't explicitly
+re-confirmed in your latest message, which focused on the logging decision —
+applied the same "structurally different capability" reasoning already used
+for `super-admin.users.manage`).
+
+**New total: 90 permissions (86 school-level + 4 super-admin)**, verified by
+recount (`awk`/`grep -c`), not estimated.
+
+Verification: `php -l` clean on all touched PHP files, `composer dump-autoload`
+clean, `php8.4 artisan route:list` boots without error (confirms nothing still
+references a deleted class), `pnpm run build` clean. Full suite via `php8.4`:
+same 31 pre-existing failures, no new ones.
+
+Committed separately from Phase 4 work, per instruction.
 23 permissions now carry ownership/state scoping (up from 18), with 2 more
 proposed-but-disputed pending the Quran decisions above.
