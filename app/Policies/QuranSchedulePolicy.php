@@ -21,6 +21,14 @@ class QuranSchedulePolicy
      *
      * Formalizes the controller's previous inline check: a teacher may only
      * view schedules they're assigned to; admins may view any in their school.
+     *
+     * Guardian scoping (2026-08-26 security fix): previously any guardian
+     * could view any schedule in the school by ID (no ownership check at
+     * all). Scoped to the guardian's own children via
+     * Guardian::allStudents(), the same merged legacy-column + pivot lookup
+     * already used for guardian scoping elsewhere in this module (see
+     * QuranController::guardianStats() and QuranHomeworkController's inline
+     * guardian checks).
      */
     public function view(User $user, QuranSchedule $quranSchedule): bool
     {
@@ -32,7 +40,12 @@ class QuranSchedulePolicy
             return $quranSchedule->teacher_id === $user->id;
         }
 
-        return in_array($user->role, ['admin', 'guardian']);
+        if ($user->role === 'guardian') {
+            return $user->guardian
+                && $user->guardian->allStudents()->where('id', $quranSchedule->student_id)->exists();
+        }
+
+        return $user->role === 'admin';
     }
 
     /**

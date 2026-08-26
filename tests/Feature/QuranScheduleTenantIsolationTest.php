@@ -114,4 +114,67 @@ class QuranScheduleTenantIsolationTest extends TestCase
 
         $this->assertDatabaseMissing('quran_schedules', ['student_id' => $studentA->id]);
     }
+
+    /**
+     * A guardian must not be able to view another child's schedule by
+     * guessing/enumerating its ID. Before the 2026-08-26 fix,
+     * QuranSchedulePolicy::view() granted any guardian access to any
+     * schedule in the school with no ownership check at all.
+     */
+    public function test_guardian_cannot_view_another_childs_schedule(): void
+    {
+        $this->withoutVite();
+
+        $school = School::factory()->create();
+
+        $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
+        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+
+        $otherGuardianUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian']);
+        $otherGuardian = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $otherGuardianUser->id]);
+        $otherStudent = Student::factory()->create(['school_id' => $school->id, 'guardian_id' => $otherGuardian->id]);
+
+        $schedule = QuranSchedule::factory()->create([
+            'school_id' => $school->id,
+            'student_id' => $otherStudent->id,
+            'teacher_id' => $teacherUser->id,
+        ]);
+
+        $unrelatedGuardianUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian']);
+        Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $unrelatedGuardianUser->id]);
+
+        $response = $this->actingAs($unrelatedGuardianUser)
+            ->get(route('quran-schedule.show', $schedule->id));
+
+        $response->assertStatus(403);
+    }
+
+    /**
+     * A guardian must still be able to view their own child's schedule —
+     * the fix must not overcorrect into blocking legitimate access.
+     */
+    public function test_guardian_can_view_own_childs_schedule(): void
+    {
+        $this->withoutVite();
+
+        $school = School::factory()->create();
+
+        $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher']);
+        Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+
+        $guardianUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian']);
+        $guardian = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $guardianUser->id]);
+        $student = Student::factory()->create(['school_id' => $school->id, 'guardian_id' => $guardian->id]);
+
+        $schedule = QuranSchedule::factory()->create([
+            'school_id' => $school->id,
+            'student_id' => $student->id,
+            'teacher_id' => $teacherUser->id,
+        ]);
+
+        $response = $this->actingAs($guardianUser)
+            ->get(route('quran-schedule.show', $schedule->id));
+
+        $response->assertStatus(200);
+    }
 }
