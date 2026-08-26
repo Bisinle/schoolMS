@@ -16,9 +16,11 @@ migration currently stands.
 - [x] **Phase 2** — Reverse-engineer current permissions for `super_admin, admin, teacher, guardian`
   (extended 2026-08-26 to 4 modules missed from the original checklist — see Phase log)
 - [x] **Phase 3** — Design the permission taxonomy — ⚠️ **88 permissions in the
-  table; 2 of them (`quran-homework.update`, `quran-schedule.view`) have a
-  disputed cell pending your decision, and Impersonation isn't represented at
-  all yet (permission names depend on decisions not yet made) — see Risks section**
+  table; `quran-schedule.view` and `quran-homework.update` are now resolved and
+  implemented in code ahead of Phase 5 (2026-08-26 — see Risks section and Phase
+  log), since both were live security/scoping bugs, not just taxonomy disputes.
+  Impersonation still isn't represented at all yet (permission names depend on
+  decisions not yet made) — see Risks section**
 - [ ] **Phase 4** — Install, migrate, seed `spatie/laravel-permission` (inert — old system still live)
 - [ ] **Phase 5** — Migrate backend: routes, policies, model
 - [ ] **Phase 6** — Migrate frontend
@@ -216,8 +218,8 @@ doesn't participate in the school-level module system at all.
 | `quran-homework.view` | ✅ | ✅ | ❌ | Covers the list view and general single-record view. Guardian's access to a specific homework record is a *separate* permission below, not a restricted view of this one |
 | `quran-homework.view-own` | ❌ | ❌ | ✅ | Guardian, own children only, via student-report/student-homework routes — scoping lives in the Controller, not a Policy, unlike everywhere else in this taxonomy |
 | `quran-homework.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
-| `quran-homework.update` | ✅ | ⚠️ **PENDING DECISION** | ❌ | Covers update/delete/grade/mark-ungraded (Policy reuses one gate for all). **Not finalized** — disagreement #8: currently unscoped for teacher, contradicts the frontend's own stricter check. Needs your call before this row is real |
-| `quran-schedule.view` | ✅ | ✅ (scoped) | ⚠️ **PENDING DECISION** | Teacher correctly scoped via `teacher_id`. **Not finalized for guardian** — disagreement #7: currently unscoped, live data-exposure to other families' children. Needs your call before this row is real |
+| `quran-homework.update` | ✅ | ✅ (scoped) | ❌ | Covers update/delete/grade/mark-ungraded (Policy reuses one gate for all). **Resolved 2026-08-26** (disagreement #8) — teacher scoped to `teacher_id`, matching the frontend's own stricter check that was previously unenforced. Implemented ahead of Phase 5, see Phase log |
+| `quran-schedule.view` | ✅ | ✅ (scoped) | ✅ (scoped) | Teacher scoped via `teacher_id`. **Resolved 2026-08-26** (disagreement #7) — guardian now scoped via `Guardian::allStudents()`, closing a live cross-family data-exposure. Implemented ahead of Phase 5 as an urgent security fix, see Phase log |
 | `quran-schedule.create` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to assigned grades |
 | `quran-schedule.update` | ✅ | ✅ (scoped) | ❌ | Teacher scoped to own schedules via `teacher_id`; delete reuses this gate |
 | `policies.view` | ✅ | ✅ | ✅ | **Follow-up pass addition.** All authenticated; tenant-scoped only (not a role distinction) |
@@ -238,7 +240,7 @@ yet made, adding rows here would misrepresent them as settled.
 | `super-admin.users.manage` | ✅ (cross-school — a structurally different capability from school-level `users.*`, not a superset of it in the same table) |
 | `super-admin.settings.manage` | ✅ |
 
-### Summary: every ownership/state-scoped permission (23 confirmed, 2 pending)
+### Summary: every ownership/state-scoped permission (25 confirmed, 0 pending)
 
 These stay as in-Policy scoping logic even after Spatie is in place — Spatie
 governs *whether a role has the permission at all*, not *which records* a
@@ -253,12 +255,9 @@ every Policy that needs to keep its scoping logic when rewritten to call
 `report-comments.update` (teacher), `documents.view` / `.delete` (teacher + guardian),
 `accident-reports.update` / `incident-reports.update` (teacher), `fees.view-own-invoices` (guardian),
 `quran-dashboard.view` (teacher + guardian — follow-up pass), `quran-homework.view-own` (guardian),
-`quran-homework.create` (teacher), `quran-schedule.create` (teacher), `quran-schedule.update` (teacher)
-
-**Not counted above — pending your decision, not yet confirmed as scoped:**
-`quran-homework.update` (teacher scoping proposed but disputed, disagreement #8),
-`quran-schedule.view` (guardian scoping currently absent entirely — disagreement
-#7, the live data-exposure issue)
+`quran-homework.create` (teacher), `quran-schedule.create` (teacher), `quran-schedule.update` (teacher),
+`quran-homework.update` (teacher, own records only — resolved 2026-08-26, disagreement #8),
+`quran-schedule.view` (guardian, own children only — resolved 2026-08-26, disagreement #7)
 
 ---
 
@@ -380,6 +379,29 @@ every Policy that needs to keep its scoping logic when rewritten to call
    (drop from the taxonomy) rather than re-asking, since the reasoning you gave
    for #2/#3 generalizes directly — noting it here so it's visible this was an
    applied precedent, not a fresh unilateral call.
+
+### Decisions on #7 and #8 (made by you, 2026-08-26 — implemented same day)
+
+- **Disagreement #7 (Quran Schedule guardian data exposure) → Decision: real
+  security bug, fix immediately, do not wait for Phase 5.** `QuranSchedulePolicy::view()`
+  now scopes guardian access to `Guardian::allStudents()` — the same merged
+  legacy-column + pivot lookup already used correctly elsewhere in the Quran
+  module (`QuranController::guardianStats()`, Homework's inline guardian
+  checks). Committed separately from migration-phase work as `30ab72a` on
+  `feature/spatie-permissions`, cherry-picked to `one-db` as `0f45b0f` (not yet
+  pushed — awaiting your push per this session's established pattern). Two new
+  regression tests added to `QuranScheduleTenantIsolationTest.php`. Full suite
+  run (94 Quran-related tests, 121/152 project-wide — see Phase log for the
+  unrelated pre-existing failures) confirms no regressions.
+- **Disagreement #8 (Quran Homework teacher scoping) → Decision: deliberate
+  fix, same pattern as the Exams decision, not faithful reproduction.**
+  `QuranHomeworkPolicy::update()`/`delete()` now scope teacher access to
+  `teacher_id === $user->id`, matching what `Quran/Homework/Show.jsx` already
+  (previously non-functionally) assumed. `grade()` and `markUngraded()` both
+  authorize against `update`, so this one change covers all four actions.
+  New `QuranHomeworkTeacherOwnershipTest.php` (5 tests) confirms non-owning
+  teachers are blocked from update/delete/grade/mark-ungraded, while admin and
+  the owning teacher are unaffected.
 
 ### Impersonation (2026-08-26) — NOT in the Phase 3 taxonomy yet, needs your decision first
 
@@ -681,7 +703,47 @@ taxonomy table yet.
 `incident-reports.update-status` → `incident-reports.review` (unified with
 `accident-reports.review`, same underlying action).
 
-**Running total: 88 permissions** (85 school-level + 3 super-admin), of which 2
-have a disputed cell pending decision and Impersonation isn't represented yet.
+**Running total: 88 permissions** (85 school-level + 3 super-admin). Both disputed
+cells (`quran-schedule.view`, `quran-homework.update`) were resolved and
+implemented in code the same day — see the next entry below. Impersonation isn't
+represented yet.
+
+### Urgent fix + confirmed follow-up items, implemented ahead of Phase 5 (2026-08-26)
+
+Two of the three items from the follow-up pass above were resolved and
+implemented immediately rather than waiting for Phase 5, since one was a live
+security bug:
+
+- **Quran Schedule guardian scoping (disagreement #7)** — fixed as a standalone
+  security commit, deliberately kept separate from migration-phase work.
+  `QuranSchedulePolicy::view()` scoped to `Guardian::allStudents()`. Committed as
+  `30ab72a` on `feature/spatie-permissions`; cherry-picked to `one-db` as
+  `0f45b0f` at your explicit request. Verified with `php8.4 artisan test`
+  (see below) — two new regression tests in `QuranScheduleTenantIsolationTest.php`.
+- **Quran Homework teacher scoping (disagreement #8)** — `QuranHomeworkPolicy::update()`/
+  `delete()` scoped to `teacher_id`, covering `grade()`/`markUngraded()` too
+  (both authorize against `update`). Five new tests in the new
+  `QuranHomeworkTeacherOwnershipTest.php`.
+- **Test suite is now actually runnable in this sandbox.** `pdo_sqlite` was
+  previously missing with no passwordless sudo available; resolved by running
+  the suite under `php8.4` (already installed on this machine with `pdo_sqlite`
+  built in) instead of the default `php` (8.5). Bonus: `php8.4` is arguably the
+  *correct* interpreter for this project anyway — `vendor/composer/platform_check.php`
+  requires PHP ≥8.3 and `phpoffice/phpspreadsheet` requires <8.5, both satisfied
+  by 8.4 with no flags or workarounds. Full run: **121 passed, 31 failed
+  project-wide** (152 total). All 31 failures are pre-existing and unrelated to
+  any work this session — two clusters: (1) default Breeze/Fortify auth-scaffold
+  tests out of sync with this app's customized auth flow (e.g. logout redirects
+  to `/login`, not the stock `/` the test expects), and (2) Timetable test
+  factories/seeders that violate SQLite's stricter constraint checking (a
+  `grades.name` NOT NULL violation, a `school_type` CHECK constraint rejecting
+  `'primary'` instead of the real `islamic_school`/`madrasah` enum values, and a
+  missing `AcademicTermFactory` class) — not investigated further, flagged only.
+  Every Quran-related test file passes (94/94), including all new regression
+  tests for the two fixes above.
+- **Impersonation (disagreement set, Priority 3)** — not yet implemented as of
+  this entry; see the Impersonation section above for the two confirmed items
+  awaiting implementation (Path A untouched, Path B gets an admin picker) and
+  the one still-open item (Path C logging).
 23 permissions now carry ownership/state scoping (up from 18), with 2 more
 proposed-but-disputed pending the Quran decisions above.

@@ -54,19 +54,34 @@ class QuranHomeworkPolicy
 
     /**
      * Determine whether the user can update the homework assignment.
+     *
+     * Teacher scoping (2026-08-26 decision): previously any teacher at the
+     * school could update any other teacher's homework record. Scoped to
+     * teacher_id, the same ownership column QuranSchedulePolicy::update()
+     * already uses — also covers the controller's grade() and
+     * markUngraded() actions, which both authorize against 'update' rather
+     * than a separate ability.
      */
     public function update(User $user, QuranHomework $quranHomework): bool
     {
-        return $user->school_id === $quranHomework->school_id
-            && in_array($user->role, ['admin', 'teacher']);
+        if ($user->school_id !== $quranHomework->school_id) {
+            return false;
+        }
+
+        if ($user->role === 'teacher') {
+            return $quranHomework->teacher_id === $user->id;
+        }
+
+        return $user->role === 'admin';
     }
 
     /**
      * Determine whether the user can delete the homework assignment.
+     *
+     * Same teacher scoping as update() — see note there.
      */
     public function delete(User $user, QuranHomework $quranHomework): bool
     {
-        return $user->school_id === $quranHomework->school_id
-            && in_array($user->role, ['admin', 'teacher']);
+        return $this->update($user, $quranHomework);
     }
 }
