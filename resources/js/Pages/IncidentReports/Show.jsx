@@ -19,8 +19,10 @@ import {
     Mail,
     Image as ImageIcon
 } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function Show({ auth, report, students = [], staff = [], guardians = [] }) {
+    const { can } = usePermissions();
     const [showStatusModal, setShowStatusModal] = useState(false);
     const [showDeleteModal, setShowDeleteModal] = useState(false);
 
@@ -83,9 +85,9 @@ export default function Show({ auth, report, students = [], staff = [], guardian
         return labels[type] || type;
     };
 
-    const canEdit = (auth.user.id === report.reported_by || auth.user.role === 'admin') && report.status !== 'closed';
-    const canUpdateStatus = ['admin', 'teacher'].includes(auth.user.role);
-    const canDelete = auth.user.role === 'admin';
+    const canEdit = can('incident-reports.update') && (auth.user.id === report.reported_by || auth.user.role === 'admin') && report.status !== 'closed';
+    const canUpdateStatus = can('incident-reports.review');
+    const canDelete = can('incident-reports.delete');
 
     return (
         <AuthenticatedLayout user={auth.user}>

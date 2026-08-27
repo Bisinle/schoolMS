@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { AlertOctagon, Plus, Search, Funnel, X, Eye, Edit, Trash2 } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function Index({ auth, reports, filters }) {
+    const { can } = usePermissions();
     const [search, setSearch] = useState(filters.search || '');
     const [showFilters, setShowFilters] = useState(false);
     const [localFilters, setLocalFilters] = useState({
@@ -89,11 +91,13 @@ export default function Index({ auth, reports, filters }) {
         return labels[type] || type;
     };
 
-    const canCreate = ['admin', 'teacher'].includes(auth.user.role);
+    const canCreate = can('incident-reports.create');
     const canEdit = (report) => {
-        return auth.user.role === 'admin' || report.reporter_id === auth.user.id;
+        return can('incident-reports.update') &&
+            report.status !== 'closed' &&
+            (auth.user.role === 'admin' || report.reported_by === auth.user.id);
     };
-    const canDelete = auth.user.role === 'admin';
+    const canDelete = can('incident-reports.delete');
 
     const handleDelete = (e, reportId) => {
         e.preventDefault();

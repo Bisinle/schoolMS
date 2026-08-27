@@ -68,7 +68,12 @@ migration currently stands.
   verified live — applied the Exams-batch ownership-scoping lesson
   proactively (checked each Policy before writing the gate) and caught +
   fixed the same live gap in Schedule/Show.jsx before it needed a
-  follow-up — see Phase log.
+  follow-up; Batch 8 (Documents/Policies/Accident+Incident Reports, 9
+  files) complete, verified live — found and fixed two real pre-existing
+  bugs: Documents' Delete button had zero ownership check (mobile
+  completely unguarded), and IncidentReports/Index.jsx's Edit gate used a
+  nonexistent field name plus was missing the closed-status check — see
+  Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1738,6 +1743,123 @@ created and deleted for this verification):
 - Guardian: no Edit/Delete anywhere; homework back-link correctly
   `/guardian/quran-homework`; schedule back-link correctly `/quran` (no
   `quran-schedule.view-all`).
+
+Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
+same 8 pre-existing failures.
+
+### Phase 6 Batch 8 — Documents / Policies / Accident+Incident Reports (2026-08-28)
+
+Files: `Documents/{Index,Show}.jsx`, `Policies/{Index,Show}.jsx`,
+`AccidentReports/{Index,Show}.jsx`, `IncidentReports/{Index,Show}.jsx`,
+`Reports/Show.jsx` (dead code, converted for consistency — see below).
+
+**Found and fixed two real, pre-existing live bugs before converting
+anything**, both discovered by reading the Policy/controller first per the
+now-established batch process:
+
+1. **`Documents/Index.jsx` and `Documents/Show.jsx`: the Delete button had
+   no ownership check at all**, on both desktop and mobile — mobile's swipe
+   action and expanded-card Delete button were completely unguarded (no
+   condition whatsoever), and desktop only checked
+   `role === 'admin' || status is pending/rejected`, missing
+   `document.uploaded_by === user.id`. `DocumentPolicy::delete()` requires
+   *both* ownership *and* status for a non-admin: `uploaded_by === user.id
+   && status in [pending, rejected]`. Concretely, this meant any teacher
+   could see (and click) Delete on a pending/rejected document that was
+   *about* them but *uploaded by someone else* (e.g. an admin-uploaded
+   verification document sitting on their Teacher record) — the click would
+   403, and on mobile it would show Delete even on `verified`/`expired`
+   docs. Fixed to `can('documents.delete') && (isAdmin ||
+   (doc.uploaded_by === user.id && status in [pending, rejected]))` in both
+   files, matching the Policy exactly. `Documents/Show.jsx`'s Verify/Reject
+   buttons were also split from a single admin-only block into
+   `can('documents.verify')` / `can('documents.reject')` individually
+   (mirroring the Periods/Index.jsx container+individual split from Batch
+   6), since `DocumentPolicy::verify()` itself accepts either permission
+   (existing backend quirk, documented in the Policy — not something to fix
+   here).
+
+2. **`IncidentReports/Index.jsx`'s `canEdit` checked the wrong field name**
+   (`report.reporter_id`, which doesn't exist on the model/serialized JSON)
+   **and was missing the `status !== 'closed'` check** that
+   `IncidentReportPolicy::update()` requires. The real column is
+   `reported_by` (confirmed via the model's `$fillable` and the migration;
+   `IncidentReports/Show.jsx` already used the correct field, making this an
+   isolated regression on the Index page, not a design difference between
+   the two pages). Net effect before the fix: a teacher who filed their own
+   incident report would **never** see the Edit link on the list page
+   (`undefined === user.id` is always false) — an under-permissive bug
+   hiding legitimate access — while an admin would incorrectly see Edit
+   even on closed reports (over-permissive, would 403 on click). Fixed to
+   `can('incident-reports.update') && status !== 'closed' && (isAdmin ||
+   report.reported_by === user.id)`, matching Show.jsx and the Policy.
+   `AccidentReports/Index.jsx`'s equivalent check was already
+   field-correct and status-correct — only needed the `can()` permission
+   wrapper added.
+
+**Everything else was a straightforward role→permission swap**, confirmed
+against each Policy before writing:
+- `Policies/{Index,Show}.jsx`: all `role === 'admin'` occurrences (7 in
+  Index, 3 in Show) → `can('policies.manage')`, matching
+  `PolicyPolicy::{create,update,delete,publish}()` (all gated solely by
+  that one permission; `school_id` scoping is automatic via
+  `BelongsToSchool`, not something the frontend needs to check).
+- `AccidentReports/{Index,Show}.jsx`: `canCreate` → `can('accident-reports.
+  create')`; `canReview`/`canDelete` → `can('accident-reports.review')` /
+  `can('accident-reports.delete')` (teacher holds neither — confirmed
+  against `TEACHER_PERMISSIONS`, so this is a real narrowing for teacher on
+  Review specifically, unlike Incident Reports below); the existing
+  ownership+status Edit check (already correct) got the `can('accident-
+  reports.update')` wrapper added.
+- `IncidentReports/{Index,Show}.jsx`: `canCreate` → `can('incident-reports.
+  create')`; `canUpdateStatus` → `can('incident-reports.review')` (teacher
+  *does* hold this one — confirmed asymmetry vs. accident-reports.review,
+  which teacher lacks); `canDelete` → `can('incident-reports.delete')`.
+- `Documents/Index.jsx`: "Doc Categories" link → `can('document-
+  categories.view')` (teacher/guardian hold neither `document-
+  categories.view` nor `.manage` at all, confirmed against the taxonomy).
+
+**Left deliberately unconverted** (display/data-shape decisions, no
+permission distinguishes them — same reasoning as the Timetable-Availability
+Teacher-column precedent from Batch 6): `Documents/Index.jsx`'s Owner
+column (table + mobile card), owner_search filter, entity_type filter, and
+admin-only colspan — all exist only because a teacher/guardian's document
+list is already scoped to a single owner (their own `accessibleDocuments()`
+query), making an "Owner" breakdown meaningless for them; both roles hold
+identical `documents.view`.
+
+**`Reports/Show.jsx` confirmed dead code** — `ReportController` never
+renders it (only `Reports/Index` and `Reports/ReportCard`); the component
+is a stray, near-duplicate copy of `Exams/Show.jsx`'s "Enter Marks"/"Edit
+Exam" gates (own `export default function ExamsShow(...)`, exam-shaped
+props). Converted anyway for consistency, mirroring the current
+`Exams/Show.jsx` pattern exactly (`can('exam-results.view')` for Enter
+Marks, `can('exams.update') && (isAdmin || exam.created_by === user.id)`
+for Edit Exam) — same precedent as converting `ExamResults/Show.jsx` in
+Batch 5 despite it also being unreachable.
+
+**Verification:** 15 permission strings used, all validated against
+`RolePermissionSeeder::ALL_PERMISSIONS` (zero typos). `pnpm run build`
+clean. Live-browser check (throwaway QA admin/teacher-owner/teacher-
+non-owner/guardian accounts, plus 3 documents, 3 accident reports, 3
+incident reports, and 1 policy with deliberate ownership/status variance —
+created and fully deleted after):
+- Documents: owning teacher saw Delete only on their own pending doc, not
+  their own verified doc (status-blocked) and not the admin-uploaded doc
+  on their record (ownership-blocked) — confirmed on both desktop table
+  and mobile card/swipe. Admin saw Delete on all three regardless of
+  status/uploader, plus Verify/Reject on the two pending ones.
+- Accident/Incident Reports: owning teacher saw Edit only on their own
+  open report, not the other teacher's open report and not their own
+  closed report. Admin bypassed ownership (saw Edit on both open reports)
+  but still respected the closed-status block on both modules — confirming
+  the Policy's `status !== 'closed'` applies even to admins, not just
+  non-owners.
+- Policies: admin saw Publish/Edit/Delete/Revision History on a draft
+  policy; teacher and guardian saw none of it (and the draft policy
+  correctly didn't appear in their list at all — pre-existing backend
+  status scoping, unrelated to this batch).
+- Guardian: view-only across all four modules, no stray affordances.
 
 Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
 same 8 pre-existing failures.

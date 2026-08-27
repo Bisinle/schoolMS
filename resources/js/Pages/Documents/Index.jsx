@@ -20,6 +20,7 @@ import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { Badge } from '@/Components/UI';
+import usePermissions from '@/Hooks/usePermissions';
 
 // Helper to get status badge variant and icon
 function getStatusBadgeConfig(status) {
@@ -36,19 +37,25 @@ function getStatusBadgeConfig(status) {
 function MobileDocumentItem({
     doc,
     auth,
+    can,
     onDelete,
     onDownload,
     getEntityName,
 }) {
+    const canDeleteDoc = can('documents.delete') && (
+        auth.user.role === 'admin' ||
+        (doc.uploaded_by === auth.user.id && ['pending', 'rejected'].includes(doc.status))
+    );
+
     // Define swipe actions
     const primaryActions = [
         { icon: Eye, label: 'View', href: route("documents.show", doc.id) },
         { icon: Download, label: 'Download', onClick: () => onDownload(doc) },
     ];
 
-    const secondaryActions = [
-        { icon: Trash2, label: 'Delete', onClick: () => onDelete(doc) },
-    ];
+    const secondaryActions = canDeleteDoc
+        ? [{ icon: Trash2, label: 'Delete', onClick: () => onDelete(doc) }]
+        : [];
 
     const statusConfig = getStatusBadgeConfig(doc.status);
     const StatusIcon = statusConfig.icon;
@@ -150,13 +157,15 @@ function MobileDocumentItem({
                     <Download className="w-4 h-4" />
                     Download
                 </button>
-                <button
-                    onClick={() => onDelete(doc)}
-                    className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
-                >
-                    <Trash2 className="w-4 h-4" />
-                    Delete Document
-                </button>
+                {canDeleteDoc && (
+                    <button
+                        onClick={() => onDelete(doc)}
+                        className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Document
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -182,6 +191,8 @@ export default function Index({
     auth,
     flash,
 }) {
+    const { can } = usePermissions();
+
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/documents',
@@ -337,7 +348,7 @@ export default function Index({
 
                     {/* Buttons */}
                     <div className="flex flex-col sm:flex-row flex-wrap justify-center sm:justify-end gap-2 w-full sm:w-auto">
-                        {auth.user.role === "admin" && (
+                        {can('document-categories.view') && (
                             <Link
                                 href={route("document-categories.index")}
                                 className="inline-flex items-center justify-center gap-2 px-4 py-3 sm:py-2.5 bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold sm:font-medium rounded-xl shadow-sm hover:shadow-md hover:from-orange-600 hover:to-orange-700 transition-all duration-200 text-sm sm:text-base"
@@ -424,6 +435,7 @@ export default function Index({
                                 key={doc.id}
                                 doc={doc}
                                 auth={auth}
+                                can={can}
                                 onDelete={handleDeleteClick}
                                 onDownload={(doc) =>
                                     window.open(
@@ -564,10 +576,12 @@ export default function Index({
                                                 >
                                                     <Download className="w-4 h-4" />
                                                 </a>
-                                                {(auth.user.role === "admin" ||
-                                                    doc.status === "pending" ||
-                                                    doc.status ===
-                                                        "rejected") && (
+                                                {can('documents.delete') && (
+                                                    auth.user.role === "admin" ||
+                                                    (doc.uploaded_by === auth.user.id &&
+                                                        (doc.status === "pending" ||
+                                                            doc.status === "rejected"))
+                                                ) && (
                                                     <button
                                                         onClick={() =>
                                                             handleDeleteClick(

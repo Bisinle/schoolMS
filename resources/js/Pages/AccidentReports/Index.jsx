@@ -14,8 +14,10 @@ import {
     FileText,
     X
 } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function Index({ auth, reports, filters }) {
+    const { can } = usePermissions();
     const [searchTerm, setSearchTerm] = useState(filters.search || '');
     const [showFilters, setShowFilters] = useState(false);
     const [localFilters, setLocalFilters] = useState({
@@ -75,7 +77,7 @@ export default function Index({ auth, reports, filters }) {
         return colors[status] || colors.submitted;
     };
 
-    const canCreate = ['admin', 'teacher'].includes(auth.user.role);
+    const canCreate = can('accident-reports.create');
 
     return (
         <AuthenticatedLayout user={auth.user}>
@@ -280,7 +282,7 @@ export default function Index({ auth, reports, filters }) {
                                             >
                                                 <Eye className="w-5 h-5" />
                                             </Link>
-                                            {(auth.user.id === report.reported_by || auth.user.role === 'admin') && report.status !== 'closed' && (
+                                            {can('accident-reports.update') && (auth.user.id === report.reported_by || auth.user.role === 'admin') && report.status !== 'closed' && (
                                                 <Link
                                                     href={route('accident-reports.edit', report.id)}
                                                     className="p-2 text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-lg transition"

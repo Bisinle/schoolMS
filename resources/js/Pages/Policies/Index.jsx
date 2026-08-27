@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Plus, Search, Filter, Eye, Edit, Trash2, FileText, CheckCircle, Calendar, Shield } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function Index({ auth, policies, filters }) {
+    const { can } = usePermissions();
+    const canManage = can('policies.manage');
     const [search, setSearch] = useState(filters.search || '');
     const [typeFilter, setTypeFilter] = useState(filters.type || '');
     const [statusFilter, setStatusFilter] = useState(filters.status || '');
@@ -72,13 +75,13 @@ export default function Index({ auth, policies, filters }) {
                                 Policies & Regulations
                             </h1>
                             <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-                                {auth.user.role === 'admin'
+                                {canManage
                                     ? 'Manage school policies, handbooks, and regulations'
                                     : 'View school policies, handbooks, and regulations'
                                 }
                             </p>
                         </div>
-                        {auth.user.role === 'admin' && (
+                        {canManage && (
                             <Link
                                 href={route('policies.create')}
                                 className="inline-flex items-center px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white font-medium rounded-lg transition"
@@ -91,7 +94,7 @@ export default function Index({ auth, policies, filters }) {
 
                     {/* Search and Filters */}
                     <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
-                        <form onSubmit={handleSearch} className={`grid grid-cols-1 gap-4 ${auth.user.role === 'admin' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+                        <form onSubmit={handleSearch} className={`grid grid-cols-1 gap-4 ${canManage ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                             <div className="md:col-span-2">
                                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                     Search
@@ -122,7 +125,7 @@ export default function Index({ auth, policies, filters }) {
                                     ))}
                                 </select>
                             </div>
-                            {auth.user.role === 'admin' && (
+                            {canManage && (
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                                         Status
@@ -141,7 +144,7 @@ export default function Index({ auth, policies, filters }) {
                                     </select>
                                 </div>
                             )}
-                            <div className={`flex justify-end ${auth.user.role === 'admin' ? 'md:col-span-4' : 'md:col-span-3'}`}>
+                            <div className={`flex justify-end ${canManage ? 'md:col-span-4' : 'md:col-span-3'}`}>
                                 <button
                                     type="submit"
                                     className="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition"
@@ -159,7 +162,7 @@ export default function Index({ auth, policies, filters }) {
                                 <FileText className="mx-auto h-12 w-12 text-gray-400" />
                                 <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No policies found</h3>
                                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                                    {auth.user.role === 'admin' ? 'Get started by creating a new policy.' : 'No policies available yet.'}
+                                    {canManage ? 'Get started by creating a new policy.' : 'No policies available yet.'}
                                 </p>
                             </div>
                         ) : (
@@ -236,7 +239,7 @@ export default function Index({ auth, policies, filters }) {
                                                             <Eye className="w-4 h-4" />
                                                             <span>View</span>
                                                         </Link>
-                                                        {auth.user.role === 'admin' && (
+                                                        {canManage && (
                                                             <>
                                                                 <Link
                                                                     href={route('policies.edit', policy.id)}

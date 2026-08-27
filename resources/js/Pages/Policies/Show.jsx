@@ -2,8 +2,12 @@ import React from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { ArrowLeft, Edit, CheckCircle, Clock, User, Calendar, FileText, Trash2 } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function Show({ auth, policy, hasAcknowledged, acknowledgmentStats }) {
+    const { can } = usePermissions();
+    const canManage = can('policies.manage');
+
     const handleAcknowledge = () => {
         if (confirm('By clicking OK, you acknowledge that you have read and understood this policy.')) {
             router.post(route('policies.acknowledge', policy.id), {}, {
@@ -66,7 +70,7 @@ export default function Show({ auth, policy, hasAcknowledged, acknowledgmentStat
 
                         {/* Actions */}
                         <div className="flex items-center space-x-2">
-                            {auth.user.role === 'admin' && (
+                            {canManage && (
                                 <>
                                     {policy.status === 'draft' && (
                                         <button
@@ -231,7 +235,7 @@ export default function Show({ auth, policy, hasAcknowledged, acknowledgmentStat
 
                     {/* Footer Actions */}
                     <div className="mt-6 flex items-center justify-between">
-                        {auth.user.role === 'admin' && (
+                        {canManage && (
                             <Link
                                 href={route('policies.revisions', policy.id)}
                                 className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
@@ -239,7 +243,7 @@ export default function Show({ auth, policy, hasAcknowledged, acknowledgmentStat
                                 View Revision History
                             </Link>
                         )}
-                        <p className={`text-sm text-gray-500 dark:text-gray-400 ${auth.user.role !== 'admin' ? 'ml-auto' : ''}`}>
+                        <p className={`text-sm text-gray-500 dark:text-gray-400 ${!canManage ? 'ml-auto' : ''}`}>
                             Last updated: {new Date(policy.updated_at).toLocaleDateString()}
                         </p>
                     </div>
