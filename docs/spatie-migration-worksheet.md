@@ -54,8 +54,9 @@ migration currently stands.
   drawers) complete, verified live in a real browser against all 3 roles;
   Batch 2 (Users + Impersonation) complete — fixed the live
   always-shows-Impersonate-for-admins bug, verified live; Batch 3
-  (Students/Guardians, 4 files, 16 occurrences) complete, verified live —
-  see Phase log.
+  (Students/Guardians, 4 files, 16 occurrences) complete, verified live;
+  Batch 4 (Grades/Subjects, 4 files, 10 occurrences) complete, verified
+  live — see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1438,5 +1439,37 @@ fixture along the way (a throwaway teacher QA account with no `Teacher`
 model row crashed `StudentController::index()` at
 `$user->teacher->grades` — not a Spatie-migration bug, just missing test
 data; fixed by creating the `Teacher` record, not by touching app code).
+Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
+same 8 pre-existing failures.
+
+### Phase 6 Batch 4 — Grades/Subjects (2026-08-27)
+
+Files: `Grades/Index.jsx`, `Grades/Show.jsx`, `Subjects/Index.jsx` (incl.
+`MobileSubjectItem`), `Subjects/Show.jsx`. 10 `auth.user.role === 'admin'`
+occurrences converted, all gating real actions (no display-only reads).
+
+Mapped every gate against `routes/web.php`'s actual middleware groups
+rather than guessing: `grades.create` (Add Grade, empty-state Add First
+Grade), `grades.update` (Edit, Unarchive, Manage Curriculum, Assign
+Subjects — all four sit in the same `permission:grades.update` route
+group, including `grades.curriculum.manage`/`.update` and
+`grades.restore`), `grades.delete`, and the subjects equivalents. Split
+two more bundled Edit+Delete checks into their correct separate
+permissions (`Grades/Index.jsx`'s card actions,
+`Subjects/Index.jsx`'s desktop table row and its `MobileSubjectItem`'s
+`isAdmin` swipe-action variable, which fed both Edit and Delete off one
+flag).
+
+**Verification:** zero `auth.user.role` occurrences remain in any of the 4
+files; all 6 permission strings (`grades.{create,update,delete}`,
+`subjects.{create,update,delete}`) already confirmed against the taxonomy
+while mapping routes, no new typos introduced. `pnpm run build` clean.
+Live-browser check (throwaway QA admin + teacher, deleted after): admin
+sees Add Grade/Add Subject and every row's View/Edit/Delete on both index
+pages, plus Manage Curriculum/Edit Grade on a Grade Show page and Edit
+Subject on a Subject Show page; teacher sees none of it — `/subjects`'s
+Actions column drops to View-only, `/grades` correctly shows zero grades
+(teacher isn't assigned to any, matches existing grade-scoping, not a
+regression), and both Show pages show only "Back to List" for teacher.
 Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
 same 8 pre-existing failures.

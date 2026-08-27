@@ -1,8 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Edit, BookOpen, Users } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function SubjectsShow({ subject, auth }) {
+    const { can } = usePermissions();
     return (
         <AuthenticatedLayout header={`Subject: ${subject.name}`}>
             <Head title={subject.name} />
@@ -17,7 +19,7 @@ export default function SubjectsShow({ subject, auth }) {
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to List
                     </Link>
-                    {auth.user.role === 'admin' && (
+                    {can('subjects.update') && (
                         <Link
                             href={`/subjects/${subject.id}/edit`}
                             className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"

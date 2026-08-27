@@ -11,9 +11,11 @@ import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Compon
 import { Badge } from '@/Components/UI';
 import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
+import usePermissions from '@/Hooks/usePermissions';
 
 // Mobile List Item Component - Refactored with new components
 function MobileSubjectItem({ subject, auth, onDelete }) {
+    const { can } = usePermissions();
     const getCategoryColor = (category) => {
         const colors = {
             'academic': 'from-blue-500 to-blue-600',
@@ -26,15 +28,13 @@ function MobileSubjectItem({ subject, auth, onDelete }) {
         return colors[category] || 'from-gray-500 to-gray-600';
     };
 
-    const isAdmin = auth.user.role === 'admin';
-
-    // Build swipe actions - only show edit/delete for admins
+    // Build swipe actions
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/subjects/${subject.id}` },
-        ...(isAdmin ? [{ icon: Edit, label: 'Edit', href: `/subjects/${subject.id}/edit` }] : []),
+        ...(can('subjects.update') ? [{ icon: Edit, label: 'Edit', href: `/subjects/${subject.id}/edit` }] : []),
     ];
 
-    const secondaryActions = isAdmin ? [
+    const secondaryActions = can('subjects.delete') ? [
         { icon: Trash2, label: 'Delete', onClick: () => onDelete(subject) },
     ] : [];
 
@@ -123,6 +123,7 @@ function MobileSubjectItem({ subject, auth, onDelete }) {
 }
 
 export default function SubjectsIndex({ subjects, filters: initialFilters = {}, auth }) {
+    const { can } = usePermissions();
     const { school, flash } = usePage().props;
     const error = flash?.error;
     const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
@@ -206,7 +207,7 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                         </FilterBar>
                     </div>
 
-                    {auth.user.role === 'admin' && (
+                    {can('subjects.create') && (
                         <Link
                             href={route('subjects.create')}
                             className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
@@ -318,23 +319,23 @@ export default function SubjectsIndex({ subjects, filters: initialFilters = {}, 
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Link>
-                                                {auth.user.role === 'admin' && (
-                                                    <>
-                                                        <Link
-                                                            href={`/subjects/${subject.id}/edit`}
-                                                            className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
-                                                            title="Edit Subject"
-                                                        >
-                                                            <Edit className="w-4 h-4" />
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => confirmDelete(subject)}
-                                                            className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                                            title="Delete Subject"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </>
+                                                {can('subjects.update') && (
+                                                    <Link
+                                                        href={`/subjects/${subject.id}/edit`}
+                                                        className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                        title="Edit Subject"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Link>
+                                                )}
+                                                {can('subjects.delete') && (
+                                                    <button
+                                                        onClick={() => confirmDelete(subject)}
+                                                        className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                                                        title="Delete Subject"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
                                                 )}
                                             </td>
                                         </tr>
