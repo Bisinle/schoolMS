@@ -51,8 +51,9 @@ migration currently stands.
   adjustments (Users+Impersonation moved to batch 1, written per-batch
   verification checklist required); Batch 0 (Foundation) complete; Batch 1
   (Layouts/Navigation, all 3 tiers: sidebar, mobile bottom bar, mobile More
-  drawers) complete, verified live in a real browser against all 3 roles —
-  see Phase log.
+  drawers) complete, verified live in a real browser against all 3 roles;
+  Batch 2 (Users + Impersonation) complete — fixed the live
+  always-shows-Impersonate-for-admins bug, verified live — see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1344,3 +1345,45 @@ Zero discrepancies found across all 16 checks. Cleanup: browser session
 closed, throwaway QA accounts deleted, dev server stopped, `public/hot`
 left deleted (it's gitignored and was actively wrong — pointed the app at
 a dead Vite server; not a repo change).
+
+### Phase 6 Batch 2 — Users + Impersonation (2026-08-27)
+
+Re-surveyed the actual scope before touching anything: `Users/Index.jsx`,
+`Users/Show.jsx`, `Users/Edit.jsx`, `Users/Create.jsx`,
+`SuperAdmin/Users/{Index,Show}.jsx`, `SuperAdmin/Schools/Show.jsx`,
+`ImpersonateButton.jsx`, `ImpersonationBanner.jsx`. Of these, only
+`Users/Index.jsx` and `Users/Show.jsx` actually needed a code change — the
+rest only ever read a *listed/target* user's `role` field (for badges,
+form defaults, or the "which of this school's admins can I impersonate"
+picker built back in Priority 3), never `auth.user.role`, so they were
+already correctly out of scope.
+
+**Fixed the live Impersonate-button bug** (flagged, not yet fixed, since
+the original handoff): `user.roles?.some(role => role.name === 'admin')`
+read a Spatie `roles` relationship `UserController::index()`/`show()`
+never eager-loads — confirmed again this phase that it's still `undefined`
+regardless of Phase 5 — so the check always evaluated to "can impersonate,"
+including for admin targets. Replaced all 3 occurrences (2 in
+`Users/Index.jsx` — the mobile card's `canImpersonate` and the desktop
+table's inline dropdown check — 1 in `Users/Show.jsx`) with `user.role !==
+'admin'`, using the plain string column that's always present on the
+payload. No backend change needed.
+
+**Verified live**, not just by code inspection: started the app, logged in
+as a throwaway admin QA account (deleted after), opened `/users`, and
+checked the actions dropdown for three targets — a guardian (Zainab Issa:
+"Login As User" present, correct), the real seeded admin
+(`admin@demoschool.com`, a different admin than the one logged in: "Login
+As User" **absent**, correct — this is the case that was silently broken
+before), and confirmed the same on that admin's individual `/users/{id}`
+Show page. Zero occurrences of the old `roles?.some` pattern remain
+anywhere in the codebase (grep-verified).
+
+No `auth.user.role` reads existed in this batch's files at all (confirmed
+by grep before editing), so there was nothing else to convert to
+`can()`/`canAny()` here — Batch 2 ended up being a single, narrowly-scoped
+bug fix rather than a permission-migration batch, which matches what the
+grounding pass already predicted.
+
+**Verification:** `pnpm run build` clean. Full backend suite unaffected (no
+PHP touched): 148 passed / 31 failed, same 8 pre-existing failures.

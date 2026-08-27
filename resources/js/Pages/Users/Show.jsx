@@ -211,8 +211,12 @@ export default function Show({ auth, user, recentActivity, roles, flash }) {
                                         Edit User
                                     </Link>
 
-                                    {/* Login As User Button - Only for non-admin users */}
-                                    {!user.roles?.some(role => role.name === 'admin') && (
+                                    {/* Login As User Button - Only for non-admin users.
+                                        Was `!user.roles?.some(role => role.name === 'admin')`,
+                                        reading a Spatie relationship UserController never
+                                        eager-loads (always undefined, so this always passed) —
+                                        `user.role` is the plain string column, always present. */}
+                                    {user.role !== 'admin' && (
                                         <ImpersonateButton user={user} className="w-full justify-center px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg" />
                                     )}
 

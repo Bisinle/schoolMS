@@ -57,8 +57,13 @@ function MobileUserItem({
         return null; // Don't show current user in mobile list
     }
 
-    // Check if user can be impersonated (not an admin)
-    const canImpersonate = !user.roles?.some((role) => role.name === "admin");
+    // Check if user can be impersonated (not an admin). Was previously
+    // `!user.roles?.some((role) => role.name === "admin")`, which read a
+    // Spatie `roles` relationship UserController never eager-loads — it was
+    // always `undefined`, so this always evaluated true regardless of the
+    // target's actual role. `role` (the plain string column) is always
+    // present on the payload.
+    const canImpersonate = user.role !== "admin";
 
     // Define swipe actions
     const primaryActions = [
@@ -871,13 +876,8 @@ export default function Index({
                                                                             Password
                                                                         </button>
 
-                                                                        {!user.roles?.some(
-                                                                            (
-                                                                                role
-                                                                            ) =>
-                                                                                role.name ===
-                                                                                "admin"
-                                                                        ) && (
+                                                                        {user.role !==
+                                                                            "admin" && (
                                                                             <ImpersonateButton
                                                                                 user={
                                                                                     user
