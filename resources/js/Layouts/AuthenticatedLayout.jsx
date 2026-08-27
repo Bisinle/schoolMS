@@ -9,9 +9,11 @@ import TopBar from "@/Layouts/TopBar";
 import { getNavigation } from "@/Config/navigation";
 import { useImpersonationBanner } from "@/Hooks/useImpersonationBanner";
 import { BottomNavigation, BottomSheet, TeacherMoreMenu, AdminMoreMenu, GuardianMoreMenu } from "@/Components/Navigation";
+import usePermissions from "@/Hooks/usePermissions";
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, school, impersonation } = usePage().props;
+    const { can, canAny } = usePermissions();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [showMoreMenu, setShowMoreMenu] = useState(false);
 
@@ -27,9 +29,11 @@ export default function AuthenticatedLayout({ header, children }) {
             ? school.logo_url
             : null;
 
-    // Get navigation items based on role and school type
+    // Get navigation items based on role and school type, filtered by the
+    // user's real permissions (role still picks which curated screen to
+    // build — see navigation.js's filterByPermission docblock for why).
     const isMadrasah = school?.school_type === "madrasah";
-    const navigation = getNavigation(auth.user.role, isMadrasah);
+    const navigation = getNavigation(auth.user.role, isMadrasah, can, canAny);
 
     // Determine if bottom nav should be shown (mobile only, for teachers, admins, and guardians)
     const showBottomNav = auth.user.role === 'teacher' || auth.user.role === 'admin' || auth.user.role === 'guardian';
@@ -103,6 +107,8 @@ export default function AuthenticatedLayout({ header, children }) {
                 <BottomNavigation
                     role={auth.user.role}
                     isMadrasah={isMadrasah}
+                    can={can}
+                    canAny={canAny}
                     onMoreClick={() => setShowMoreMenu(true)}
                     badges={
                         {
@@ -121,6 +127,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <TeacherMoreMenu
                         isMadrasah={isMadrasah}
+                        can={can}
                         badges={
                             {
                                 // TODO: Add badge counts from backend
@@ -139,6 +146,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <AdminMoreMenu
                         isMadrasah={isMadrasah}
+                        can={can}
                         badges={
                             {
                                 // TODO: Add badge counts from backend
@@ -157,6 +165,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <GuardianMoreMenu
                         isMadrasah={isMadrasah}
+                        can={can}
                         badges={
                             {
                                 // TODO: Add badge counts from backend

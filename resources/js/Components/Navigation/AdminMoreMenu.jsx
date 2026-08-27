@@ -27,8 +27,13 @@ import { BottomSheetMenuItem, BottomSheetSection } from './BottomSheet';
 /**
  * Admin-specific "More" menu content for bottom sheet
  * Organized into logical sections with collapsible submenus
+ *
+ * @param {Object} props
+ * @param {boolean} [props.isMadrasah]
+ * @param {(permission: string) => boolean} [props.can]
+ * @param {Object} [props.badges]
  */
-export default function AdminMoreMenu({ isMadrasah = false, badges = {} }) {
+export default function AdminMoreMenu({ isMadrasah = false, can = () => true, badges = {} }) {
     const [expandedSections, setExpandedSections] = useState({
         timetables: false,
         fees: false,
@@ -46,46 +51,58 @@ export default function AdminMoreMenu({ isMadrasah = false, badges = {} }) {
         <div className="space-y-6">
             {/* People Management Section */}
             <BottomSheetSection title="People Management">
-                <BottomSheetMenuItem
-                    icon={GraduationCap}
-                    label="Teachers"
-                    href="/teachers"
-                    badge={badges.teachers}
-                />
-                <BottomSheetMenuItem
-                    icon={UserCircle}
-                    label="Guardians"
-                    href="/guardians"
-                    badge={badges.guardians}
-                />
-                <BottomSheetMenuItem
-                    icon={UserCog}
-                    label="Users"
-                    href="/users"
-                    badge={badges.users}
-                />
+                {can('teachers.view') && (
+                    <BottomSheetMenuItem
+                        icon={GraduationCap}
+                        label="Teachers"
+                        href="/teachers"
+                        badge={badges.teachers}
+                    />
+                )}
+                {can('guardians.view') && (
+                    <BottomSheetMenuItem
+                        icon={UserCircle}
+                        label="Guardians"
+                        href="/guardians"
+                        badge={badges.guardians}
+                    />
+                )}
+                {can('users.view') && (
+                    <BottomSheetMenuItem
+                        icon={UserCog}
+                        label="Users"
+                        href="/users"
+                        badge={badges.users}
+                    />
+                )}
             </BottomSheetSection>
 
             {/* Academic Section */}
             <BottomSheetSection title="Academic">
-                <BottomSheetMenuItem
-                    icon={BookOpen}
-                    label="Grades"
-                    href="/grades"
-                    badge={badges.grades}
-                />
-                <BottomSheetMenuItem
-                    icon={FileText}
-                    label="Subjects"
-                    href="/subjects"
-                    badge={badges.subjects}
-                />
-                <BottomSheetMenuItem
-                    icon={Calendar}
-                    label="Exams"
-                    href="/exams"
-                    badge={badges.exams}
-                />
+                {can('grades.view') && (
+                    <BottomSheetMenuItem
+                        icon={BookOpen}
+                        label="Grades"
+                        href="/grades"
+                        badge={badges.grades}
+                    />
+                )}
+                {can('subjects.view') && (
+                    <BottomSheetMenuItem
+                        icon={FileText}
+                        label="Subjects"
+                        href="/subjects"
+                        badge={badges.subjects}
+                    />
+                )}
+                {can('exams.view') && (
+                    <BottomSheetMenuItem
+                        icon={Calendar}
+                        label="Exams"
+                        href="/exams"
+                        badge={badges.exams}
+                    />
+                )}
             </BottomSheetSection>
 
             {/* Timetable Section - Collapsible */}
@@ -107,36 +124,48 @@ export default function AdminMoreMenu({ isMadrasah = false, badges = {} }) {
                 
                 {expandedSections.timetables && (
                     <div className="ml-4 mt-1 space-y-1">
-                        <BottomSheetMenuItem
-                            icon={LayoutDashboard}
-                            label="Dashboard"
-                            href="/timetables/dashboard"
-                        />
-                        <BottomSheetMenuItem
-                            icon={FileText}
-                            label="Blueprints"
-                            href="/blueprints"
-                        />
-                        <BottomSheetMenuItem
-                            icon={Calendar}
-                            label="Templates"
-                            href="/timetables/templates"
-                        />
-                        <BottomSheetMenuItem
-                            icon={Clock}
-                            label="Periods"
-                            href="/timetables/periods"
-                        />
-                        <BottomSheetMenuItem
-                            icon={School}
-                            label="Rooms"
-                            href="/timetables/rooms"
-                        />
-                        <BottomSheetMenuItem
-                            icon={UserCog}
-                            label="Availability"
-                            href="/timetables/availability"
-                        />
+                        {can('timetable-dashboard.view') && (
+                            <BottomSheetMenuItem
+                                icon={LayoutDashboard}
+                                label="Dashboard"
+                                href="/timetables/dashboard"
+                            />
+                        )}
+                        {can('timetable-dashboard.view') && (
+                            <BottomSheetMenuItem
+                                icon={FileText}
+                                label="Blueprints"
+                                href="/blueprints"
+                            />
+                        )}
+                        {can('timetable-templates.manage') && (
+                            <BottomSheetMenuItem
+                                icon={Calendar}
+                                label="Templates"
+                                href="/timetables/templates"
+                            />
+                        )}
+                        {can('timetable-periods.view') && (
+                            <BottomSheetMenuItem
+                                icon={Clock}
+                                label="Periods"
+                                href="/timetables/periods"
+                            />
+                        )}
+                        {can('timetable-rooms.view') && (
+                            <BottomSheetMenuItem
+                                icon={School}
+                                label="Rooms"
+                                href="/timetables/rooms"
+                            />
+                        )}
+                        {can('timetable-availability.manage') && (
+                            <BottomSheetMenuItem
+                                icon={UserCog}
+                                label="Availability"
+                                href="/timetables/availability"
+                            />
+                        )}
                     </div>
                 )}
             </BottomSheetSection>
@@ -158,7 +187,7 @@ export default function AdminMoreMenu({ isMadrasah = false, badges = {} }) {
                     )}
                 </button>
 
-                {expandedSections.fees && (
+                {expandedSections.fees && can('fees.manage') && (
                     <div className="ml-4 mt-1 space-y-1">
                         <BottomSheetMenuItem
                             icon={LayoutDashboard}
@@ -215,21 +244,27 @@ export default function AdminMoreMenu({ isMadrasah = false, badges = {} }) {
 
                     {expandedSections.quran && (
                         <div className="ml-4 mt-1 space-y-1">
-                            <BottomSheetMenuItem
-                                icon={LayoutDashboard}
-                                label="Dashboard"
-                                href="/quran"
-                            />
-                            <BottomSheetMenuItem
-                                icon={BookOpen}
-                                label="Homework"
-                                href="/quran-homework"
-                            />
-                            <BottomSheetMenuItem
-                                icon={Calendar}
-                                label="Schedules"
-                                href="/quran-schedule"
-                            />
+                            {can('quran-dashboard.view') && (
+                                <BottomSheetMenuItem
+                                    icon={LayoutDashboard}
+                                    label="Dashboard"
+                                    href="/quran"
+                                />
+                            )}
+                            {can('quran-homework.view') && (
+                                <BottomSheetMenuItem
+                                    icon={BookOpen}
+                                    label="Homework"
+                                    href="/quran-homework"
+                                />
+                            )}
+                            {can('quran-schedule.view-all') && (
+                                <BottomSheetMenuItem
+                                    icon={Calendar}
+                                    label="Schedules"
+                                    href="/quran-schedule"
+                                />
+                            )}
                         </div>
                     )}
                 </BottomSheetSection>
@@ -237,65 +272,79 @@ export default function AdminMoreMenu({ isMadrasah = false, badges = {} }) {
 
             {/* Documents & Reports Section */}
             <BottomSheetSection title="Documents & Reports">
-                <BottomSheetMenuItem
-                    icon={FileText}
-                    label="Reports"
-                    href="/reports"
-                    badge={badges.reports}
-                />
-                <BottomSheetMenuItem
-                    icon={FolderOpen}
-                    label="All Documents"
-                    href="/documents"
-                    badge={badges.documents}
-                />
-                <BottomSheetMenuItem
-                    icon={Shield}
-                    label="Policies & Regulations"
-                    href="/policies"
-                />
-                <BottomSheetMenuItem
-                    icon={AlertTriangle}
-                    label="Accident Reports"
-                    href="/accident-reports"
-                    badge={badges.accidentReports}
-                />
-                <BottomSheetMenuItem
-                    icon={AlertOctagon}
-                    label="Incident Reports"
-                    href="/incident-reports"
-                    badge={badges.incidentReports}
-                />
+                {can('reports.view') && (
+                    <BottomSheetMenuItem
+                        icon={FileText}
+                        label="Reports"
+                        href="/reports"
+                        badge={badges.reports}
+                    />
+                )}
+                {can('documents.view') && (
+                    <BottomSheetMenuItem
+                        icon={FolderOpen}
+                        label="All Documents"
+                        href="/documents"
+                        badge={badges.documents}
+                    />
+                )}
+                {can('policies.view') && (
+                    <BottomSheetMenuItem
+                        icon={Shield}
+                        label="Policies & Regulations"
+                        href="/policies"
+                    />
+                )}
+                {can('accident-reports.view') && (
+                    <BottomSheetMenuItem
+                        icon={AlertTriangle}
+                        label="Accident Reports"
+                        href="/accident-reports"
+                        badge={badges.accidentReports}
+                    />
+                )}
+                {can('incident-reports.view') && (
+                    <BottomSheetMenuItem
+                        icon={AlertOctagon}
+                        label="Incident Reports"
+                        href="/incident-reports"
+                        badge={badges.incidentReports}
+                    />
+                )}
             </BottomSheetSection>
 
             {/* Settings Section */}
-            <BottomSheetSection title="Settings">
-                <BottomSheetMenuItem
-                    icon={School}
-                    label="School Profile"
-                    href="/admin/settings/profile"
-                />
-                <BottomSheetMenuItem
-                    icon={Calendar}
-                    label="Academic Years"
-                    href="/admin/settings/academic-years"
-                />
-                <BottomSheetMenuItem
-                    icon={Calendar}
-                    label="Academic Terms"
-                    href="/admin/settings/academic-terms"
-                />
-                <BottomSheetMenuItem
-                    icon={Settings}
-                    label="Preferences"
-                    href="/admin/settings/preferences"
-                />
-                <BottomSheetMenuItem
-                    icon={FileText}
-                    label="Streams"
-                    href="/streams"
-                />
-            </BottomSheetSection>
+            {can('settings.manage') && (
+                <BottomSheetSection title="Settings">
+                    <BottomSheetMenuItem
+                        icon={School}
+                        label="School Profile"
+                        href="/admin/settings/profile"
+                    />
+                    <BottomSheetMenuItem
+                        icon={Calendar}
+                        label="Academic Years"
+                        href="/admin/settings/academic-years"
+                    />
+                    <BottomSheetMenuItem
+                        icon={Calendar}
+                        label="Academic Terms"
+                        href="/admin/settings/academic-terms"
+                    />
+                    <BottomSheetMenuItem
+                        icon={Settings}
+                        label="Preferences"
+                        href="/admin/settings/preferences"
+                    />
+                    {can('streams.view') && (
+                        <BottomSheetMenuItem
+                            icon={FileText}
+                            label="Streams"
+                            href="/streams"
+                        />
+                    )}
+                </BottomSheetSection>
+            )}
         </div>
     );
 }

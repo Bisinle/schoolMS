@@ -49,8 +49,10 @@ migration currently stands.
   pass done (real scope: 38 files / 123 `auth.user.role` occurrences, not the
   handoff's ~154/~41 estimate); `can()`/shared-props design approved with two
   adjustments (Users+Impersonation moved to batch 1, written per-batch
-  verification checklist required); Batch 0 (Foundation) complete — see
-  Phase log.
+  verification checklist required); Batch 0 (Foundation) complete; Batch 1
+  (Layouts/Navigation, all 3 tiers: sidebar, mobile bottom bar, mobile More
+  drawers) complete, verified live in a real browser against all 3 roles —
+  see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -345,6 +347,15 @@ every Policy that needs to keep its scoping logic when rewritten to call
   `clearAll()` behind something stronger than `fees.manage`? remove it if it
   really is dev-only?) — not something to silently patch as a side effect of
   this migration.
+- **Mobile nav "More" drawer duplicates the Quran entry for madrasah
+  teacher/guardian, found during Phase 6 Batch 1 (2026-08-27).** Quran shows
+  as both a fixed bottom-bar icon *and* again inside the More drawer for
+  those two roles, while Guardian's More drawer explicitly avoids the same
+  duplication for "Reports" (`{!isMadrasah && <Reports/>}`). Per your
+  explicit decision, **preserved as-is, not fixed** — reads as an
+  intentional quick-access-shortcut-plus-full-listing pattern, and changing
+  nav UX wasn't this phase's job regardless. Flagging for a deliberate
+  decision later, same tier as the two items above.
 
 ### Phase 2 cross-layer disagreements (found, not fixed — reproduce faithfully unless told otherwise)
 
@@ -1223,3 +1234,113 @@ Batch 1):
 
 Next: Batch 1 (Layouts/Navigation), then Batch 2 (Users + Impersonation,
 moved up).
+
+### Phase 6 Batch 1 — Layouts/Navigation (2026-08-27)
+
+**Scoping call before writing any code, per your instruction:** confirmed
+`BottomNavigation.jsx` is the genuine mobile bottom tab bar, not a
+responsive collapse of the sidebar — `<nav className="md:hidden fixed
+bottom-0 ...">`, single row, `justify-around`, hidden at the `md` breakpoint
+and up. It has its own hand-curated 4-5 item set per role plus a real
+`isMore` drawer trigger, which turned out to open **three more
+role-specific components** (`AdminMoreMenu.jsx`/`TeacherMoreMenu.jsx`/
+`GuardianMoreMenu.jsx`) not found in the original grounding pass — so the
+real shape is three tiers, not two: sidebar (`navigation.js`, full list with
+submenus) → bottom bar (4-5 fixed slots) → More drawer (the rest,
+admin's sectioned/collapsible). Documented the full current curated
+set per role (fixed slots vs. under More) before touching anything, per
+your request. One inconsistency found (Quran shows as both a fixed slot
+*and* again inside More for madrasah teacher/guardian, while Guardian's
+"Reports" explicitly avoids that same duplication) — **per your decision,
+preserved as-is, not fixed**, logged as its own flagged item, same tier as
+`InvoiceController` and the `incident_type` validation mismatch (see Risks
+section below).
+
+**Critical design finding that changed the approach:** the current
+per-role nav lists are hand-curated *subsets* of what each role's
+permissions actually allow, not full mirrors of them. Confirmed example:
+`TEACHER_PERMISSIONS` includes `timetable-periods.view` and
+`timetable-rooms.view`, but teacher's nav has never shown links to
+Periods/Rooms (same "Policy allows, no nav link" shape as Phase 2's
+disagreement #4). A fully-flattened, permission-only nav (one universal
+item list, shown wherever `can()` passes) would have **silently started
+showing Periods/Rooms to every teacher** — a real behavior change, not a
+mechanism swap. So Batch 1 does **not** flatten the four role-keyed arrays
+into one list. It keeps every array exactly as authored (same items, same
+labels, same order, same grouping — that curation is unchanged) and adds a
+`permission`/`permissions` field to every item, filtered through
+`can()`/`canAny()` before rendering. `role` still selects *which* curated
+screen to build (a UI-routing choice, not a security boundary — routes are
+gated server-side regardless of what the nav shows); what changed is that
+*each item's actual visibility* now runs through a real permission check
+instead of being implicitly trusted because the role matched. Same
+reasoning applied to `showBottomNav` and the three `auth.user.role ===
+"x"` More-menu-selection checks in `AuthenticatedLayout.jsx` — deliberately
+left role-based (there's no clean permission equivalent to "is one of
+these three roles" for a pure UI-routing decision), not an oversight.
+
+**Files changed:** `navigation.js` (added `permission`/`permissions` to
+every item + a `filterByPermission` helper recursing into `submenu`),
+`BottomNavigation.jsx` (same pattern, flat items), `AdminMoreMenu.jsx`/
+`TeacherMoreMenu.jsx`/`GuardianMoreMenu.jsx` (each item wrapped in
+`can('...') &&`), `AuthenticatedLayout.jsx` (calls `usePermissions()` once,
+threads `can`/`canAny` down to `getNavigation()` and all four nav
+components). `Sidebar.jsx` and `TopBar.jsx` needed **no changes** — Sidebar
+only renders whatever `navigation` array it's handed (no role logic of its
+own beyond the already-flagged display-only role badge text); TopBar's only
+`auth.user.role` use is the same display-only badge.
+
+**Verification — this is where it mattered most, given no frontend test
+suite exists.** Three layers, cheapest to most rigorous:
+
+1. Cross-checked all 31 permission strings used across the 5 files against
+   the real taxonomy (`RolePermissionSeeder::ALL_PERMISSIONS`) — zero
+   typos. This is the exact "silently hides a button" failure mode raised
+   before Phase 6 started: a misspelled permission string would make
+   `can()` always return false with no error anywhere.
+2. Executed the real, shipped `navigation.js` module directly (Node ESM
+   import, not a simulation) against the actual seeded `ADMIN_PERMISSIONS`/
+   `TEACHER_PERMISSIONS`/`GUARDIAN_PERMISSIONS`/`SUPER_ADMIN_PERMISSIONS`
+   arrays pulled live from the seeder. Output was byte-identical to the
+   pre-Batch-1 nav for all 4 roles × both `isMadrasah` states. Then proved
+   the filter isn't a no-op by removing `streams.view`/`teachers.view` from
+   a copy of admin's permission set and confirming exactly those two items
+   (and only those two) disappeared from the tree, submenu-nesting intact.
+3. **Full live-browser verification** — started the app for real
+   (`php artisan serve` + the production build; found and removed a stale
+   `public/hot` file left over from an old `npm run dev` session that was
+   silently pointing the app at a dead Vite dev server, which is why the
+   first load attempt was a blank page), created three throwaway QA
+   accounts (`batch1-{admin,teacher,guardian}@test.local`, deleted after)
+   rather than touch real user passwords, logged into the real Demo School
+   (madrasah) as each role, and drove the actual UI with browser automation
+   — expanded every submenu on desktop, resized to a phone viewport
+   (390×844) to check the real bottom tab bar, and opened the real "More"
+   drawer for each role.
+
+**Verification checklist** (role / page / expected / result — every check
+performed live against the running app, not narrated):
+
+| Role | Surface | Expected | Result |
+|---|---|---|---|
+| admin | Desktop sidebar | Dashboard, Students, Teachers, Guardians, Users, Attendance, Grades, Subjects, Exams, Timetables, Quran, Fees, Reports, Documents, Settings | ✅ pass — exact match |
+| admin | Desktop sidebar submenus | Timetables→6 items, Quran→3, Fees→6, Documents→4, Settings→5 (all listed above in the design) | ✅ pass — exact match, all 24 sub-items present |
+| admin | Mobile bottom bar | Home, Attendance, Students, Timetable, More | ✅ pass |
+| admin | Mobile More drawer | People Mgmt (3) / Academic (3) / Timetable[collapsible→6] / Financial[collapsible→6] / Quran[collapsible→3] / Documents & Reports (5) / Settings (5) | ✅ pass — exact match including collapsed→expanded content |
+| teacher | Desktop sidebar | Dashboard, My Grades, Students, Guardians, Attendance, Subjects, Exams, Timetables, Quran, Reports, Documents | ✅ pass — exact match |
+| teacher | Desktop sidebar submenus | Timetables→My Timetable/My Availability, Quran→3, Documents→4 | ✅ pass — exact match |
+| teacher | Mobile bottom bar | Home, Attendance, Timetable, Quran, More | ✅ pass |
+| teacher | Mobile More drawer | My Grades/Students/Guardians/Subjects/Exams, Timetable→My Availability, Quran→3 (duplicated vs. fixed slot, preserved per your decision), Documents & Reports→5 | ✅ pass — exact match |
+| guardian | Desktop sidebar | Dashboard, Quran, Invoices, Reports, Documents, Policies | ✅ pass — exact match |
+| guardian | Desktop sidebar submenu | Quran→Dashboard/Homework | ✅ pass |
+| guardian | Mobile bottom bar | Home, Attendance, Invoices, Quran, More | ✅ pass |
+| guardian | Mobile More drawer | Quran→2 (duplicated vs. fixed slot, preserved), Documents & Reports→Documents/Policies (Reports correctly absent — already-existing dedup for madrasah guardians, untouched) | ✅ pass — exact match |
+| all 3 | Permission-string integrity | Every `permission`/`can()` string used exists in `RolePermissionSeeder::ALL_PERMISSIONS` | ✅ pass — 31/31, zero typos |
+| — | Filter is real, not a no-op | Removing a permission from a copy of admin's set removes exactly that nav item | ✅ pass |
+| — | `pnpm run build` | clean | ✅ pass |
+| — | Full backend suite | no regressions | ✅ pass — 148 passed / 31 failed, same 8 pre-existing failures |
+
+Zero discrepancies found across all 16 checks. Cleanup: browser session
+closed, throwaway QA accounts deleted, dev server stopped, `public/hot`
+left deleted (it's gitignored and was actively wrong — pointed the app at
+a dead Vite server; not a repo change).
