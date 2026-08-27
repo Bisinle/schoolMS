@@ -25,14 +25,26 @@ migration currently stands.
   permissions / 4 roles seeded (86 school-level + 4 super-admin permissions;
   admin 82, teacher 39, guardian 13, super_admin 4), completely inert — see
   Phase log**
-- [x] **Phase 5** — Migrate backend: routes, policies, model — ✅ **Live.**
-  `User` now uses Spatie's `HasRoles`; all 55 `role:...` route-middleware
-  usages replaced with `permission:...`; all 22 Policy classes rewritten to
-  check real permissions. **97 permissions now (93 school-level + 4
-  super-admin)** — 7 new ones surfaced while mapping routes/Policies to
-  permissions, see Phase log. Full suite: 131 passed, 31 failed — same
-  pre-existing failures as every prior run this session, zero regressions
-  from this phase's ~80-file change.
+- [x] **Phase 5** — Migrate backend: routes, policies, model — ✅ **Closed
+  2026-08-27.** `User` now uses Spatie's `HasRoles`; all 55 `role:...`
+  route-middleware usages replaced with `permission:...`; all 22 Policy
+  classes rewritten to check real permissions. **97 permissions now (93
+  school-level + 4 super-admin)** — 7 new ones surfaced while mapping
+  routes/Policies to permissions, see Phase log. **Exhaustive live-path
+  trace done for all 22/22 Policies (2026-08-27)** — every `authorize()`
+  call site confirmed to hit the actually-routed controller, no second
+  Report-Comments-style discrepancy found; a few dead-Policy-method/
+  dead-Form-Request findings logged in the Phase log, none live bugs.
+  **Test-coverage gap identified and partially backfilled**: of the 26
+  ownership/state-scoped permissions, only 6 had negative-case tests before
+  this pass; 4 more backfilled 2026-08-27 (`quran-schedule.update`,
+  `fees.view-own-invoices`, `accident-reports.update`,
+  `incident-reports.update`) — **the remaining 15 (+1 partial) are
+  explicitly deferred to Phase 7**, not silently dropped, see Phase log for
+  the full list. `InvoiceController::destroy()`/`clearAll()` risk logged
+  separately in the Risks section (pre-existing, unrelated, not fixed).
+  Full suite: 145 passed, 31 failed — same pre-existing failures as every
+  prior run this session, zero regressions.
 - [ ] **Phase 6** — Migrate frontend
 - [ ] **Phase 7** — Verification pass
 
@@ -312,6 +324,22 @@ every Policy that needs to keep its scoping logic when rewritten to call
   list — `accountant/receptionist/nurse/it_staff`; `maid`/`cook` were never in this
   particular dropdown to begin with). Not fixed, just noted — it's not a
   role-deletion regression, and outside this task's scope.
+- **`InvoiceController::destroy()` / `clearAll()` have no real authorization or
+  safety guard, discovered during the Phase 5 exhaustive Policy trace
+  (2026-08-27).** `destroy()` calls no `$this->authorize(...)` at all — not even
+  inline — and deletes the invoice (cascading to payments) unconditionally; its
+  own comment reads *"Allow deletion even with payments (for development)"*.
+  `clearAll()` wipes every invoice, line item, and payment for the school, same
+  pattern. Both sit only behind the route group's `permission:fees.manage`
+  middleware (admin-only) — no ownership/state check either at the Policy layer
+  (`GuardianInvoicePolicy::delete()` is never actually invoked by this
+  controller) or inline. This is pre-existing, unrelated to the Spatie
+  migration — not introduced or touched by Phase 5, and **not fixed here**.
+  Flagging at the same tier as the other pre-existing/unrelated risks in this
+  section: needs a deliberate decision later (add a payments-exist guard? gate
+  `clearAll()` behind something stronger than `fees.manage`? remove it if it
+  really is dev-only?) — not something to silently patch as a side effect of
+  this migration.
 
 ### Phase 2 cross-layer disagreements (found, not fixed — reproduce faithfully unless told otherwise)
 
@@ -1017,3 +1045,96 @@ clean (no frontend files touched this phase).
 **Not yet done, deliberately Phase 6's job:** frontend permission checks
 (JSX still checks `auth.user.role`, not real permissions) and the broken
 `user.roles?.some(...)` Impersonate-button check flagged earlier.
+
+### Phase 5 close-out: exhaustive Policy trace + negative-case backfill (2026-08-27)
+
+Requested because the earlier "trust Phase 2, spot-check" pass for the 22
+Policy rewrites was, by design, not exhaustive — and the Report Comments
+discovery (disagreement #10) proved that failure mode (Policy documents
+behavior that isn't the actual live path) was real, not hypothetical, and
+therefore unconfirmed elsewhere rather than ruled out.
+
+**Exhaustive live-path trace, all 22/22 Policies.** For every Policy: found
+every `authorize()`/Form-Request call site, confirmed the controller behind
+it is the one actually registered in `routes/web.php` (not shadowed by a
+second unrouted controller, as happened with `ReportCommentController`), and
+checked for inline logic that could duplicate or bypass the Policy check.
+**No second Report-Comments-style case found.** All 22 traced clean against
+the taxonomy. Secondary findings surfaced along the way, none of them live
+authorization bugs:
+
+- `RoomController::destroy()` never calls `authorize('delete', ...)` — it
+  duplicates `RoomPolicy::delete()`'s logic inline (admin-only + "not used
+  in any timetable slot") instead. Same real behavior; the Policy method is
+  simply dead code in practice.
+- `StreamController`'s `index`/`create`/`store` never call `authorize(...)`
+  — only route middleware protects them. No divergence, since
+  `StreamPolicy`'s `viewAny`/`create` have no scoping beyond that same
+  permission check.
+- `GuardianInvoicePolicy::create()`/`delete()` are never invoked by
+  `InvoiceController` — only route middleware (`permission:fees.manage`)
+  gates `store`/`destroy`. No divergence (the Policy has no extra scoping
+  either) — but this is what surfaced the `InvoiceController::destroy()`/
+  `clearAll()` finding, logged separately in the Risks section since it's
+  a real (pre-existing, unrelated) safety gap, not an authorization one.
+- All 22 `Store*Request`/`Update*Request` Form Request classes
+  (`StoreStudentRequest`, `UpdateExamRequest`, etc.) have
+  `authorize(): bool { return false; }` and are never type-hinted by any
+  controller (confirmed via a codebase-wide grep, zero hits) — entirely
+  dead, harmless (if they were live, every request through them would 403
+  unconditionally). Same "look-alike class, not the live path" shape as
+  Report Comments, just inert. Candidate for deletion as unrelated cleanup.
+- `restore`/`forceDelete` abilities on `RoomPolicy`/`TimetablePeriodPolicy`/
+  `TimetableSlotPolicy`/`TimetableTemplatePolicy` are never routed anywhere
+  — dead boilerplate, harmless.
+- Re-verified `QuranSchedulePolicy` specifically, since this module already
+  had one real bug this session: `QuranScheduleController::index()`'s query
+  has no guardian scoping, but the route requires `quran-schedule.view-all`,
+  which guardians don't have — so guardians can never reach the unscoped
+  query. Only `show()` was guardian-reachable, and that's already fixed.
+
+**Negative-case test coverage audit, all 26 ownership/state-scoped
+permissions.** Before this pass, only 6 of 26 had a test asserting the
+*denial* case (not just "owner can act"), plus 1 partial
+(`quran-dashboard.view`, covered indirectly via scoped-count assertions,
+no explicit denial assertion). **4 backfilled this pass** (all new,
+2026-08-27):
+
+- `tests/Feature/QuranScheduleTeacherOwnershipTest.php` —
+  `quran-schedule.update`, mirrors `QuranHomeworkTeacherOwnershipTest`'s
+  same-school/different-teacher pattern (that permission never got the
+  equivalent test despite sharing the exact same ownership shape).
+- `tests/Feature/GuardianInvoiceOwnershipTest.php` —
+  `fees.view-own-invoices`, guardian cannot view another guardian's
+  invoice.
+- `tests/Feature/AccidentReportOwnershipTest.php` —
+  `accident-reports.update`, non-reporting teacher blocked, reporting
+  teacher blocked once `status = 'closed'`.
+- `tests/Feature/IncidentReportOwnershipTest.php` — same two cases,
+  incident-report side.
+
+(Writing the AccidentReport test surfaced an unrelated, pre-existing
+inconsistency: `AccidentReportController::update()`'s validation whitelist
+for `incident_type` — `fall,collision,cut,burn,sports_injury,
+playground_injury,medical_emergency,other` — doesn't match the DB check
+constraint's enum — `injury,property_damage,near_miss,illness,other`. Some
+values pass Laravel validation but would then fail at the DB layer.
+Flagging only, not fixed — unrelated to this migration.)
+
+**The remaining 15 of 26, plus the 1 partial, are explicitly deferred to
+Phase 7**, not silently dropped: `attendance.view`/`.create`/
+`.view-own-children`, `grades.view`, `exams.view`/`.update`,
+`exam-results.view`/`.create`/`.update`, `timetable-slots.view`,
+`timetable-availability.manage` (no Policy exists for this one at all —
+inline role checks only), `reports.view`, `report-comments.create`/`.lock`,
+`documents.view`/`.delete`, and the partial `quran-dashboard.view`.
+
+**Verification:** all 4 new tests green individually and as part of the
+full suite. Full suite: **145 passed, 31 failed** — same 8 pre-existing
+failing files as every run this session (`Auth\AuthenticationTest`,
+`Auth\PasswordResetTest`, `Auth\RegistrationTest`,
+`ErrorHandlingArchitectureTest`, `ProfileTest`, `TeacherTimetableTest`,
+`TimetableConflictDetectionTest`, `TimetableGenerationValidationTest`),
+zero regressions. 10 new tests total across this close-out pass (135 → 145).
+
+**Phase 5 is closed as of this entry.** Next: Phase 6 (frontend migration).
