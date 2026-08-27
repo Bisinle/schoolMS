@@ -1535,3 +1535,44 @@ Edit-but-not-Delete on every row of the desktop table (verified via
 for admin, matching the 10 exams on that page). Full backend suite
 unaffected (no PHP changed): 148 passed / 31 failed, same 8 pre-existing
 failures.
+
+### Phase 6 Batch 5 fix — Exam Edit gate now matches ExamPolicy exactly (2026-08-27)
+
+Batch 5 converted `exams.update`'s gate to `can('exams.update')` alone,
+which correctly stopped hiding Edit from teachers entirely but left the
+gate one step short of `ExamPolicy::update()`'s real logic — a non-owning
+teacher would see the Edit button and get a real 403 on click. Per your
+explicit instruction, tightened every Edit gate (mobile card swipe action,
+mobile card's own action-buttons block, desktop table row, both
+`Exams/Show.jsx` and the dead `ExamResults/Show.jsx`) to:
+
+```js
+can('exams.update') && (auth.user.role === 'admin' || exam.created_by === auth.user.id)
+```
+
+matching `ExamPolicy::update()` line for line. `exam.created_by` is
+present on every exam object in both `ExamController::index()` and
+`::show()` (both eager-load `creator`, neither restricts columns, `Exam`
+model has no `$hidden` on it — confirmed before assuming the field was
+available). Introduced a single `canEditExam` computed value per
+component/row rather than repeating the compound condition inline
+everywhere, and removed the now-unused `canAny` import from
+`Exams/Show.jsx` and `ExamResults/Show.jsx`.
+
+**Re-verified live**, the exact scenario requested: created a second exam
+owned by the throwaway QA teacher (same grade as the existing non-owned
+exam so `exams.view`'s grade-scoping wasn't a confound) and confirmed —
+- Non-owning teacher on the non-owned exam's Show page: "Edit Exam" is
+  **absent** now (previously present, 403'd on click) — only "Enter Marks"
+  shows.
+- Same teacher on their **own** exam's Show page: "Edit Exam" **is**
+  present.
+- Desktop table (`/exams`, 10 rows on the page): exactly **1** `Edit Exam`
+  link for the teacher, and its `href` was checked directly —
+  `/exams/1387/edit`, the teacher's own exam, not a coincidental match.
+- Admin: still 10/10 Edit links on the same table, and Edit still present
+  on the non-owned exam's Show page (admin bypasses ownership, matching
+  `ExamPolicy::update()`).
+
+`pnpm run build` clean. Full backend suite unaffected (no PHP changed):
+148 passed / 31 failed, same 8 pre-existing failures.

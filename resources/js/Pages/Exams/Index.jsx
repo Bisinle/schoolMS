@@ -35,16 +35,17 @@ function getExamTypeLabel(type) {
 // Mobile List Item Component - Refactored with new components
 function MobileExamItem({ exam, auth, onDelete }) {
     const { can } = usePermissions();
+    // exams.update is held by both admin and teacher, but ExamPolicy::update()
+    // scopes teacher to exams they created — mirror that exactly so the
+    // button doesn't show for exams a teacher can't actually edit.
+    const canEditExam = can('exams.update') && (auth.user.role === 'admin' || exam.created_by === auth.user.id);
 
     // Define swipe actions
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/exams/${exam.id}` },
     ];
 
-    // exams.update is also held by teachers now (scoped server-side to
-    // exams they created — see ExamPolicy::update()); this list doesn't
-    // check ownership, same as it never did for the admin-only version.
-    if (can('exams.update')) {
+    if (canEditExam) {
         primaryActions.push({ icon: Edit, label: 'Edit', href: `/exams/${exam.id}/edit` });
     }
 
@@ -187,15 +188,15 @@ function MobileExamItem({ exam, auth, onDelete }) {
             </div>
 
             {/* Action Buttons */}
-            <div className={`grid ${(can('exams.update') || can('exams.delete')) ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pt-4 border-t border-gray-100`}>
+            <div className={`grid ${(canEditExam || can('exams.delete')) ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pt-4 border-t border-gray-100`}>
                 <Link
                     href={`/exams/${exam.id}`}
-                    className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95 ${!(can('exams.update') || can('exams.delete')) ? 'col-span-1' : ''}`}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95 ${!(canEditExam || can('exams.delete')) ? 'col-span-1' : ''}`}
                 >
                     <Eye className="w-4 h-4" />
                     View
                 </Link>
-                {can('exams.update') && (
+                {canEditExam && (
                     <Link
                         href={`/exams/${exam.id}/edit`}
                         className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 rounded-xl font-bold text-sm hover:bg-orange-100 transition-colors active:scale-95"
@@ -492,7 +493,7 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Link>
-                                                {can('exams.update') && (
+                                                {can('exams.update') && (auth.user.role === 'admin' || exam.created_by === auth.user.id) && (
                                                     <Link
                                                         href={`/exams/${exam.id}/edit`}
                                                         className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"

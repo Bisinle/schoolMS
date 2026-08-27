@@ -5,7 +5,10 @@ import { ArrowLeft, Save, FileText, Users, Calendar, BookOpen } from 'lucide-rea
 import usePermissions from '@/Hooks/usePermissions';
 
 export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
-    const { can, canAny } = usePermissions();
+    const { can } = usePermissions();
+    // exams.update is held by both admin and teacher, but ExamPolicy::update()
+    // scopes teacher to exams they created — mirror that exactly.
+    const canEditExam = can('exams.update') && (auth.user.role === 'admin' || exam.created_by === auth.user.id);
     return (
         <AuthenticatedLayout header={exam.name}>
             <Head title={exam.name} />
@@ -20,7 +23,7 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to List
                     </Link>
-                    {canAny(['exam-results.view', 'exams.update']) && (
+                    {(can('exam-results.view') || canEditExam) && (
                         <div className="flex gap-2">
                             {can('exam-results.view') && (
                                 <Link
@@ -31,7 +34,7 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
                                     Enter Marks
                                 </Link>
                             )}
-                            {can('exams.update') && (
+                            {canEditExam && (
                                 <Link
                                     href={`/exams/${exam.id}/edit`}
                                     className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
