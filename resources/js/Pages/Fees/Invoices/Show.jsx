@@ -4,9 +4,13 @@ import { ArrowLeft, Plus, Download, Trash2, Edit, Save, X, User, DollarSign, Rec
 import Badge from '@/Components/UI/Badge';
 import InvoiceHeader from '@/Components/Invoice/InvoiceHeader';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import usePermissions from '@/Hooks/usePermissions';
 import { useState, useEffect } from 'react';
 
 export default function InvoiceShow({ auth, invoice, school }) {
+    const { can } = usePermissions();
+    const canManageFees = can('fees.manage');
+    const isGuardianView = can('fees.view-own-invoices');
     const [isEditMode, setIsEditMode] = useState(false);
     const [editedLineItems, setEditedLineItems] = useState([]);
     const [processing, setProcessing] = useState(false);
@@ -163,7 +167,7 @@ export default function InvoiceShow({ auth, invoice, school }) {
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
                             {/* Back Button */}
                             <Link
-                                href={auth.user.role === 'guardian' ? '/guardian/invoices' : '/invoices'}
+                                href={isGuardianView ? '/guardian/invoices' : '/invoices'}
                                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-semibold text-sm border border-gray-300"
                             >
                                 <ArrowLeft className="w-4 h-4" />
@@ -197,7 +201,7 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                 ) : (
                                     <div className="grid grid-cols-2 sm:grid-cols-none sm:flex gap-2">
                                         {/* Edit Button - Admin only, pending invoices only */}
-                                        {auth.user.role === 'admin' && invoice.status === 'pending' && (
+                                        {canManageFees && invoice.status === 'pending' && (
                                             <button
                                                 onClick={() => setIsEditMode(true)}
                                                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors font-bold text-sm border border-indigo-700"
@@ -208,7 +212,7 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                         )}
 
                                         {/* Record Payment - Admin only, if balance due */}
-                                        {auth.user.role === 'admin' && invoice.balance_due > 0 && (
+                                        {canManageFees && invoice.balance_due > 0 && (
                                             <Link
                                                 href={`/invoices/${invoice.id}/payments/create`}
                                                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors font-bold text-sm border border-orange-700"
@@ -228,7 +232,7 @@ export default function InvoiceShow({ auth, invoice, school }) {
                                         </Link>
 
                                         {/* Delete - Admin only */}
-                                        {auth.user.role === 'admin' && (
+                                        {canManageFees && (
                                             <button
                                                 onClick={() => setShowDeleteModal(true)}
                                                 className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-bold text-sm border border-red-700"

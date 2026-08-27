@@ -72,8 +72,11 @@ migration currently stands.
   files) complete, verified live — found and fixed two real pre-existing
   bugs: Documents' Delete button had zero ownership check (mobile
   completely unguarded), and IncidentReports/Index.jsx's Edit gate used a
-  nonexistent field name plus was missing the closed-status check — see
-  Phase log.
+  nonexistent field name plus was missing the closed-status check; **post-
+  Batch-8 sweep caught a real gap in the original grounding pass** —
+  `Fees/Invoices/{Index,Show}.jsx` and `Reports/ReportCard.jsx` (19
+  occurrences, 3 files) were never assigned to any batch, converted and
+  verified live — see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1863,3 +1866,73 @@ created and fully deleted after):
 
 Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
 same 8 pre-existing failures.
+
+### Phase 6 sweep — miss caught late: Fees/Invoices + ReportCard.jsx (2026-08-28)
+
+**Not a routine batch — a gap in the original Phase 6 grounding pass,
+caught by an explicit post-Batch-8 sweep, not part of the planned batch
+sequence.** A full re-grep of `resources/js` for `auth.user.role` (all
+optional-chaining variants) turned up 3 files never assigned to any of
+Batches 0–8: `Fees/Invoices/{Index,Show}.jsx` (18 occurrences) and
+`Reports/ReportCard.jsx` (1 occurrence). Neither module appears in any
+prior batch's file list, and the grounding pass's own file inventory was
+never re-published to the worksheet to check against (recorded only in
+chat, per the Batch 0 log entry) — these were simply missed when the batch
+groups were drawn up, most likely because Fees/Invoicing wasn't on the
+radar as its own domain despite being flagged as such in `CLAUDE.md`.
+
+**Why these read as real gates, not display-only exceptions (unlike the
+Timetable-Availability precedent):** `Fees/Invoices/{Index,Show}.jsx` is
+one shared component rendered by two mutually-exclusive, permission-gated
+routes — `/invoices/*` (`permission:fees.manage`, admin) and
+`/guardian/invoices/*` (`permission:fees.view-own-invoices`, guardian; no
+teacher access to either, confirmed against `TEACHER_PERMISSIONS`). Unlike
+Timetable-Availability's Teacher column (where admin and teacher hold the
+*identical* permission, so `can()` couldn't distinguish them and role was
+correctly left in place), `fees.manage` and `fees.view-own-invoices` are
+two *different* permissions, each held by exactly one of the two roles
+that can reach this component — so `can()` actually distinguishes what
+`auth.user.role` was being used as a proxy for. Confirmed against
+`GuardianInvoicePolicy` (`view`/`update`/`delete` all `fees.manage`;
+`viewAny`/`view` also accept `fees.view-own-invoices` with the guardian
+ownership scoping already handled server-side) and `InvoiceController`
+(no separate teacher-facing route exists at all).
+
+**`Reports/ReportCard.jsx`'s `isAdmin` gated only one thing: the Unlock
+button on a locked teacher comment.** Traced through
+`ReportController::unlockComment()` (not `ReportCommentController`, a
+separate, seemingly-newer controller with its own `report-comments.lock`
+route names that this page doesn't actually call) — the real endpoint the
+page posts to is inline-gated `if (!$user->isAdmin()) abort(403, ...)`, no
+permission-string check at all. This is documented, intentional legacy
+behavior — the route's own comment cites "Phase 2 disagreement #10,"
+already reviewed and accepted, and is **not being touched here**: this
+sweep only converts the *frontend* gate to `can('report-comments.unlock')`
+(a real permission in the taxonomy, admin-only, matching `isAdmin()`'s
+current allow-set exactly) rather than rewriting the backend's role check.
+The distinction between "class teacher can Lock" vs "only admin can
+Unlock" is real and asymmetric — `report-comments.lock` is teacher+admin,
+`report-comments.unlock` is admin-only — confirmed live: a class teacher
+sees the locked comment and its "Locked" badge but no Unlock button.
+
+**Left untouched:** `canEditTeacherComment` (backend-computed prop, never
+re-derived from `auth.user.role` in the frontend — correctly just
+consumed) and `Fees/Invoices/{Index,Show}.jsx`'s status-gated Edit
+condition (`invoice.status === 'pending'`, a pre-existing business rule not
+present in `GuardianInvoicePolicy::update()` itself — left as-is, not this
+sweep's place to remove a business rule while converting its role→
+permission wrapper).
+
+**Verification:** 3 permission strings (`fees.manage`,
+`fees.view-own-invoices`, `report-comments.unlock`) validated against the
+taxonomy. `pnpm run build` clean. Live-browser check (throwaway QA
+admin/teacher/guardian accounts plus one invoice and one locked report
+comment, cleaned up after): admin saw the full admin invoice view (Guardian
+column, filters, Create, Edit, Payment, Delete) at `/invoices`; guardian
+saw the stripped-down guardian view (no Guardian column, no filters, view-
+only) at `/guardian/invoices`, with the back-link resolving to the correct
+`/guardian/invoices` URL (confirmed via `get attr href`, not just visual
+absence); admin saw the Unlock button on a locked comment, a class teacher
+saw the same locked comment with no Unlock button. Full backend suite
+unaffected (no PHP changed): 148 passed / 31 failed, same 8 pre-existing
+failures.

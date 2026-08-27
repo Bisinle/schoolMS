@@ -3,6 +3,7 @@ import { Head, useForm, router, usePage } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import { Download, Lock, Save, ArrowLeft } from 'lucide-react';
 import { shouldShowAcademicSubjects } from '@/Utils/subjectFilters';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function ReportCard({
     student,
@@ -13,6 +14,7 @@ export default function ReportCard({
     isGuardian
 }) {
     const { school, auth } = usePage().props;
+    const { can } = usePermissions();
     const showAcademicSubjects = shouldShowAcademicSubjects(school?.school_type);
     const [showTeacherCommentForm, setShowTeacherCommentForm] = useState(false);
     const [showLockModal, setShowLockModal] = useState(false);
@@ -20,7 +22,7 @@ export default function ReportCard({
     const [showUnlockModal, setShowUnlockModal] = useState(false);
     const [unlockCommentType, setUnlockCommentType] = useState(null);
 
-    const isAdmin = auth?.user?.role === 'admin';
+    const canUnlockComment = can('report-comments.unlock');
 
     // Auto-print when opened via the Print button on the index page
     useEffect(() => {
@@ -515,7 +517,7 @@ export default function ReportCard({
                                             <Lock className="w-3 h-3" />
                                             <span className="font-medium">Locked</span>
                                         </div>
-                                        {isAdmin && (
+                                        {canUnlockComment && (
                                             <button
                                                 onClick={() => handleUnlockComment('teacher')}
                                                 className="inline-flex items-center px-3 py-1.5 text-xs text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
