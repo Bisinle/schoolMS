@@ -5,12 +5,19 @@ import InputLabel from '@/Components/InputLabel';
 import TextInput from '@/Components/TextInput';
 import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
+import usePermissions from '@/Hooks/usePermissions';
 
-export default function CreateAvailability({ teachers, auth }) {
+export default function CreateAvailability({ teachers, auth, currentTeacherId }) {
+    const { can } = usePermissions();
     const isAdmin = auth.user.role === 'admin';
-    
+
+    // Bug fix: this previously defaulted to auth.user.id (the Users table
+    // PK), but the backend requires the Teachers table PK
+    // ($user->teacher->id) and 403s/validation-fails when they differ.
+    // The controller already computes and passes the correct value as
+    // currentTeacherId — use it instead.
     const { data, setData, post, processing, errors } = useForm({
-        teacher_id: isAdmin ? '' : auth.user.id,
+        teacher_id: isAdmin ? '' : (currentTeacherId ?? ''),
         day_of_week: 'monday',
         start_time: '',
         end_time: '',

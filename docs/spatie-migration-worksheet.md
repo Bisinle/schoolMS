@@ -58,7 +58,13 @@ migration currently stands.
   Batch 4 (Grades/Subjects, 4 files, 10 occurrences) complete, verified
   live; Batch 5 (Exams, 3 files, 11 occurrences) complete, verified live —
   includes one flagged, intentional behavior change (teachers now see the
-  Edit-exam affordance they already had permission for) — see Phase log.
+  Edit-exam affordance they already had permission for), plus a follow-up
+  fix tightening the Edit gate to match ExamPolicy's ownership scoping
+  exactly; Batch 6 (Timetables, 6 files) complete, verified live —
+  resolved the "timetable-availability.manage scoping unverified" flag
+  from Phase 2 (confirmed: teacher scoped, admin unrestricted, no Policy
+  exists) and fixed a real pre-existing bug in Availability/Create.jsx
+  (wrong ID type sent for teacher_id) — see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -234,7 +240,7 @@ doesn't participate in the school-level module system at all.
 | `timetable-templates.manage` | ✅ | ❌ | ❌ | Reproduced as-is (Phase 2 disagreement #5, decision: no view tier, faithful reproduction, "worth a second look later" as a separate product decision) |
 | `timetable-dashboard.view` | ✅ | ❌ | ❌ | Covers Dashboard + Blueprints, no finer split |
 | `timetable-schedule.view-own` | ❌ | ✅ | ❌ | Teacher's own generated schedule (`/my-timetable`). **Renamed 2026-08-26** from `timetable.view-own`, which broke the `{module}.{action}` pattern — this name matches the sibling `timetable-*` permissions and the feature's own UI label ("My Timetable") |
-| `timetable-availability.manage` | ✅ | ✅ | ❌ | **Scoping unverified** (Phase 2 flagged this — whether a teacher can edit another teacher's availability record wasn't confirmed against controller internals). Carried forward as an open unknown, not asserted as scoped or unscoped. |
+| `timetable-availability.manage` | ✅ (unrestricted) | ✅ (scoped) | ❌ | **Resolved in Phase 6 Batch 6 (2026-08-27)** — confirmed by reading `TeacherAvailabilityController.php` directly (no Policy exists). Teacher is scoped to own records on every action (`index` query-filtered, `store`/`show`/`edit`/`update`/`destroy` all 403 on mismatch). Admin has **no equivalent restriction at all** — can view/edit/delete any teacher's record, asymmetric from the Exams/Quran "one Policy, isAdmin-bypasses-ownership" shape since here there's no Policy and no inline admin-side check either. |
 | `reports.view` | ✅ (all) | ✅ (scoped) | ✅ (scoped) | Teacher scoped to assigned grades; guardian scoped to own children |
 | `report-comments.create` | ✅ (always) | ✅ (scoped) | ❌ | **Corrected 2026-08-26 (Phase 5 finding).** Original rows were reverse-engineered from `ReportCommentPolicy`/`ReportCommentController` — turns out that whole pair is dead code, zero routes reference `ReportCommentController`. The real, live route (`ReportController::saveComment`) has its own separate inline logic: teacher scoped to being the **class teacher** for the student's grade specifically (`grades.is_class_teacher` pivot flag — tighter than "assigned to the grade"), not the ownership pattern the dead Policy claimed. One save action handles both create and edit (upsert) — no separate `.update` permission, since the real code never distinguishes the two. **Also surfaces a live gap, not fixed here:** this save path does not check whether the comment is locked before overwriting it — the "locked" protection the dead Policy claimed (`canEditTeacherComment()`) is not actually enforced on this path today |
 | `report-comments.lock` | ✅ (always) | ✅ (scoped) | ❌ | **Renamed/corrected from `report-comments.manage-lock`, same finding as above.** Real code (`ReportController::lockComment`): teacher can lock their own class's teacher-type comment; headteacher-type comments are admin-only. Genuinely different accessors than `.unlock` below, which the old single `manage-lock` permission didn't distinguish |
@@ -291,7 +297,7 @@ every Policy that needs to keep its scoping logic when rewritten to call
 `attendance.view` (teacher), `attendance.create` (teacher), `attendance.view-own-children` (guardian),
 `grades.view` (teacher), `exams.view` (teacher), `exams.update` (teacher — new),
 `exam-results.view` / `.create` / `.update` (teacher), `timetable-slots.view` (teacher),
-`timetable-availability.manage` (teacher — unverified), `reports.view` (teacher + guardian),
+`timetable-availability.manage` (teacher, scoped; admin unrestricted — resolved Batch 6), `reports.view` (teacher + guardian),
 `report-comments.create` (teacher, class-teacher only — corrected 2026-08-26),
 `report-comments.lock` (teacher, class-teacher only — corrected 2026-08-26),
 `documents.view` / `.delete` (teacher + guardian),
@@ -1576,3 +1582,83 @@ exam so `exams.view`'s grade-scoping wasn't a confound) and confirmed —
 
 `pnpm run build` clean. Full backend suite unaffected (no PHP changed):
 148 passed / 31 failed, same 8 pre-existing failures.
+
+### Phase 6 Batch 6 — Timetables (2026-08-27)
+
+Files: `Timetables/Availability/{Create,Edit,Index}.jsx`,
+`Timetables/Periods/Index.jsx`, `Timetables/Rooms/Index.jsx`,
+`Timetables/Templates/Index.jsx`.
+
+**Teacher Availability scoping — investigated before writing anything, per
+your instruction, since the worksheet had flagged this "unverified."**
+Read `TeacherAvailabilityController.php` directly (no Policy exists for
+this model — every check is inline):
+- `index()` filters the query to `teacher_id = $user->teacher->id` when the
+  viewer is a teacher — a teacher's list *can only ever contain their own
+  records*, server-side. Admin gets everyone's, unfiltered.
+- `store()`/`show()`/`edit()`/`update()`/`destroy()` each have an explicit
+  `if ($user->role === 'teacher' && $record->teacher_id != $user->teacher->id)
+  abort(403)`. **Admin has no equivalent restriction at all** — unlike
+  Exams/Quran (one Policy method, `isAdmin() ? true : owner`), here it's
+  asymmetric: teacher is scoped, admin is unrestricted by construction (no
+  admin-side check exists to restrict).
+- Route-level: single permission `timetable-availability.manage`, held by
+  both roles, gating every one of the above actions as one group.
+
+**Conclusion, confirmed not assumed:** because the list is pre-filtered
+server-side, `Availability/Index.jsx`'s existing unconditional per-row
+Edit/Delete (no role or ownership check at all) was already correct — a
+teacher never receives another teacher's row in the props, so there was
+nothing to fix there. The page's 4 `auth.user.role === 'admin'` checks are
+**not authorization decisions** — they toggle the "Teacher" column and the
+teacher-filter dropdown, relevant only when viewing multiple teachers at
+once. Since both roles hold the identical `timetable-availability.manage`
+permission, converting these to `can()` would make them always-true for
+both and wrongly show the column to teachers. **Left unconverted,
+deliberately** — same reasoning as `Create.jsx`/`Edit.jsx`'s
+admin-only teacher-select dropdown (also left as `auth.user.role`, since
+there's no permission distinct from "can manage availability at all" for
+"can assign it to any teacher" — mirrors the backend's own use of a role
+check, not a Policy, for this exact decision).
+
+**Real bug found and fixed, per your go-ahead:**
+`Availability/Create.jsx` defaulted `teacher_id: isAdmin ? '' : auth.user.id`
+— `auth.user.id` is the **Users** table PK, but the backend requires the
+**Teachers** table PK (`$user->teacher->id`) and 403s/validation-fails when
+they differ. The controller already computed and passed the correct value
+as `currentTeacherId`, but the component never destructured or used it —
+looked like a leftover from an incomplete refactor. Net effect before this
+fix: **any teacher submitting this form would almost certainly have hit an
+error**, since a Users-table id coincidentally matching a Teachers-table id
+would be rare. Fixed to use `currentTeacherId`. Verified live end-to-end:
+submitted the form as a throwaway QA teacher, confirmed a real record was
+created (no 403, no validation error), then confirmed via tinker that the
+saved `teacher_id` matched the Teacher PK (18) and *not* the User PK (42)
+that the old code would have sent.
+
+**Periods/Rooms/Templates** — straightforward admin-only conversions
+(`timetable-periods.manage`, `timetable-rooms.manage`,
+`timetable-templates.manage`; Templates has no separate `.view` in the
+taxonomy at all, so it's the same single permission for every action on
+that page). One bundle split for correctness, consistent with prior
+batches: Periods/Index.jsx's header bundled "Generate from Blueprint"
+(→ `/blueprints`, actually gated by `timetable-dashboard.view`) together
+with "Add Manually" (`timetable-periods.manage`) under one check — split
+into `canAny([...])` on the container plus `can(...)` per button (no
+visible behavior change today since teacher holds neither, but matches the
+real destination permission rather than an incidental role check).
+
+**Verification:** zero unintended `auth.user.role` occurrences remain — the
+6 that do remain (2 in Create.jsx/Edit.jsx, 4 in Availability/Index.jsx)
+are the deliberate, reasoned exceptions documented above. All 5 permission
+strings used (`timetable-{dashboard.view,periods.manage,rooms.manage,
+templates.manage}`, `timetable-availability.manage`) validated against the
+taxonomy. `pnpm run build` clean. Live-browser check (throwaway QA admin +
+teacher, deleted after): the Create.jsx bug fix confirmed end-to-end as
+above; teacher sees none of Periods/Rooms/Templates' manage affordances and
+gets a real 403 on `/timetables/templates` (teacher holds no templates
+permission at all — expected, not new); admin sees every manage affordance
+on all three; Availability/Index.jsx's Teacher column and filter dropdown
+confirmed present for admin (listing every teacher including the QA one).
+Full backend suite unaffected (no PHP changed beyond nothing — this batch
+touched no PHP): 148 passed / 31 failed, same 8 pre-existing failures.
