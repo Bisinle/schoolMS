@@ -45,7 +45,12 @@ migration currently stands.
   separately in the Risks section (pre-existing, unrelated, not fixed).
   Full suite: 145 passed, 31 failed — same pre-existing failures as every
   prior run this session, zero regressions.
-- [ ] **Phase 6** — Migrate frontend
+- [ ] **Phase 6** — Migrate frontend — 🔄 **In progress (2026-08-27).** Grounding
+  pass done (real scope: 38 files / 123 `auth.user.role` occurrences, not the
+  handoff's ~154/~41 estimate); `can()`/shared-props design approved with two
+  adjustments (Users+Impersonation moved to batch 1, written per-batch
+  verification checklist required); Batch 0 (Foundation) complete — see
+  Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1138,3 +1143,83 @@ failing files as every run this session (`Auth\AuthenticationTest`,
 zero regressions. 10 new tests total across this close-out pass (135 → 145).
 
 **Phase 5 is closed as of this entry.** Next: Phase 6 (frontend migration).
+
+### Phase 6 — Migrate frontend: grounding + Batch 0 (2026-08-27)
+
+**Grounding pass, verified against current code, not the original handoff's
+~154/~41 estimate.** `auth.user.role` (all optional-chaining variants)
+appears **123 times across 38 files** — the full file list and the
+5 non-comparison (display-only or nav-feeding) occurrences to leave alone
+are recorded in the chat, not duplicated here. Two things surfaced that
+weren't in the original handoff:
+
+- A **second, independent nav duplication** in `BottomNavigation.jsx` (the
+  mobile bottom nav) — its own `switch (role)` with 3 hardcoded
+  `getXNavItems()` functions, entirely separate from `navigation.js`'s
+  `getNavigation()`. No `super_admin` case; silently falls back to teacher's
+  items. Needs to move to permission-based filtering alongside
+  `navigation.js` in the same batch, or the two navs stay able to drift
+  apart.
+- **Confirmed the Impersonate-button check does not get fixed by Phase 5
+  alone.** `Users/Index.jsx`/`Show.jsx`'s
+  `user.roles?.some(role => role.name === 'admin')` reads a Spatie `roles`
+  relationship that `UserController::index()`/`show()` never eager-loads
+  (`with(['creator','teacher','guardian'])` / `with(['creator',
+  'createdUsers','activityLogs.causer'])`, no `roles`) and `User` has no
+  `$with`/`$appends` for it — so `user.roles` stays `undefined` regardless
+  of Phase 5, `undefined?.some(...)` is `undefined`, `!undefined` is `true`
+  — `canImpersonate` is **always true today, including for admin targets**,
+  backwards from intent. Fix: swap to the already-present `user.role ===
+  'admin'` (plain string column, already in the payload) — no backend
+  change needed. Scheduled for batch 2 (moved up per your instruction,
+  since this is a live bug, not cosmetic).
+
+**Design approved, two adjustments from you:** (1) Users + Impersonation
+moved from batch 2 to batch 2-right-after-nav (was going to sit behind
+Students/Guardians) since it's the only batch fixing a live bug; (2) a
+written per-batch verification checklist (role tested / page / expected
+show-hide / pass-fail) is required alongside every batch report, not just
+narrated click-through — this is the actual audit trail in the absence of
+any frontend test suite.
+
+**Sensitivity check on `auth.user.permissions` (requested before Batch 0):**
+confirmed via tinker against the real seeded admin — 88 permissions, zero
+`super-admin.*` names present. Permission strings are self-descriptive
+`module.action` labels naming capabilities the UI already exposes to that
+role (nav items, buttons); nothing in the array reveals structure or
+capability beyond what that role's own UI already shows. No action needed.
+
+**Batch 0 (Foundation) — done.**
+- `HandleInertiaRequests.php`: added `'permissions' =>
+  $user->getAllPermissions()->pluck('name')` to `auth.user`, additive —
+  `role` untouched, still shared for the display-only reads identified in
+  the grounding pass.
+- New `resources/js/Hooks/usePermissions.js` — `usePage()`-backed,
+  `Set`-based lookup, exposes `can(permission)` and `canAny(permissions)`
+  (the latter needed for the OR-permission pages Phase 5's route middleware
+  already uses, e.g. `quran-homework.view|quran-homework.view-own`).
+- New `tests/Feature/SharedPermissionsPropTest.php` (3 tests) — asserts the
+  real shared-prop payload per role via `assertInertia`, not just that the
+  build succeeds: admin gets exactly 88 permissions with zero
+  `super-admin.*` entries, guardian gets exactly 14 including
+  `fees.view-own-invoices` and excluding `students.delete`, `role` stays
+  present alongside `permissions` for teacher.
+- **Verification:** `pnpm run build` clean (`public/sw.js`'s auto-bump
+  reverted, not committed). Full suite: **148 passed, 31 failed** — same 8
+  pre-existing failing files, zero regressions, +3 new tests.
+
+**Batch 0 verification checklist** (no per-role click-through yet — this
+batch has no UI-visible change, verified via the automated Inertia-prop
+test above instead; the role/page/show-hide checklist format starts at
+Batch 1):
+
+| Check | Result |
+|---|---|
+| `auth.user.permissions` present, 88 entries, no `super-admin.*`, for admin | ✅ pass (automated) |
+| `auth.user.permissions` present, 14 entries, correct membership, for guardian | ✅ pass (automated) |
+| `auth.user.role` still present alongside `permissions`, for teacher | ✅ pass (automated) |
+| `pnpm run build` | ✅ pass |
+| Full backend suite, no regressions | ✅ pass (148/31, baseline held) |
+
+Next: Batch 1 (Layouts/Navigation), then Batch 2 (Users + Impersonation,
+moved up).

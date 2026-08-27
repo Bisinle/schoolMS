@@ -64,6 +64,7 @@ class HandleInertiaRequests extends Middleware
                     'school_id' => $user->school_id,
                     'is_super_admin' => $isSuperAdmin,
                     'profile_picture_url' => $user->profile_picture_url,
+                    'permissions' => $user->getAllPermissions()->pluck('name'),
                 ] : null,
             ],
             'school' => $schoolData,
