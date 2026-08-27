@@ -2,8 +2,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { ArrowLeft, Save, FileText, Users, Calendar, BookOpen } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
+    const { can, canAny } = usePermissions();
     return (
         <AuthenticatedLayout header={exam.name}>
             <Head title={exam.name} />
@@ -18,21 +20,25 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to List
                     </Link>
-                    {(auth.user.role === 'admin' || auth.user.role === 'teacher') && (
+                    {canAny(['exam-results.view', 'exams.update']) && (
                         <div className="flex gap-2">
-                            <Link
-                                href={`/exams/${exam.id}/results`}
-                                className="inline-flex items-center px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                                <FileText className="w-4 h-4 mr-2" />
-                                Enter Marks
-                            </Link>
-                            <Link
-                                href={`/exams/${exam.id}/edit`}
-                                className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
-                            >
-                                Edit Exam
-                            </Link>
+                            {can('exam-results.view') && (
+                                <Link
+                                    href={`/exams/${exam.id}/results`}
+                                    className="inline-flex items-center px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    Enter Marks
+                                </Link>
+                            )}
+                            {can('exams.update') && (
+                                <Link
+                                    href={`/exams/${exam.id}/edit`}
+                                    className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
+                                >
+                                    Edit Exam
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>
@@ -123,7 +129,7 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, auth }) {
                                 <Users className="w-6 h-6 text-orange mr-3" />
                                 <h2 className="text-lg font-semibold text-gray-900">Results Progress</h2>
                             </div>
-                            {(auth.user.role === 'admin' || auth.user.role === 'teacher') && (
+                            {can('exam-results.view') && (
                                 <Link
                                     href={`/exams/${exam.id}/results`}
                                     className="inline-flex items-center px-3 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"

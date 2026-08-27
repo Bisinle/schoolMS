@@ -4,8 +4,10 @@ import { useState } from 'react';
 import { ArrowLeft, Save, FileText, Users, Calendar, BookOpen, Edit, TrendingUp, AlertCircle } from 'lucide-react';
 import { Badge } from '@/Components/UI';
 import Avatar from '@/Components/Avatar';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function ExamsShow({ exam, resultsCount, totalStudents, unmarkedStudents, auth }) {
+    const { can, canAny } = usePermissions();
     // Helper function to get exam type badge variant
     const getExamTypeBadgeVariant = (type) => {
         const variants = {
@@ -43,23 +45,27 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, unmarkedS
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to List
                     </Link>
-                    {(auth.user.role === 'admin' || auth.user.role === 'teacher') && (
+                    {canAny(['exam-results.view', 'exams.update']) && (
                         <div className="flex flex-col md:flex-row gap-2">
-                            <Link
-                                href={`/exams/${exam.id}/results`}
-                                className="inline-flex items-center justify-center px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
-                            >
-                                <FileText className="w-4 h-4 mr-2" />
-                                Enter Marks
-                            </Link>
-                            <Link
-                                href={`/exams/${exam.id}/edit`}
-                                className="inline-flex items-center justify-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
-                            >
-                                <Edit className="w-4 h-4 mr-2" />
-                                <span className="hidden md:inline">Edit Exam</span>
-                                <span className="md:hidden">Edit</span>
-                            </Link>
+                            {can('exam-results.view') && (
+                                <Link
+                                    href={`/exams/${exam.id}/results`}
+                                    className="inline-flex items-center justify-center px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 transition-colors"
+                                >
+                                    <FileText className="w-4 h-4 mr-2" />
+                                    Enter Marks
+                                </Link>
+                            )}
+                            {can('exams.update') && (
+                                <Link
+                                    href={`/exams/${exam.id}/edit`}
+                                    className="inline-flex items-center justify-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
+                                >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    <span className="hidden md:inline">Edit Exam</span>
+                                    <span className="md:hidden">Edit</span>
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>
@@ -186,7 +192,7 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, unmarkedS
                                 <Users className="w-5 h-5 md:w-6 md:h-6 text-orange mr-2 md:mr-3" />
                                 <h2 className="text-base md:text-lg font-semibold text-gray-900">Results Progress</h2>
                             </div>
-                            {(auth.user.role === 'admin' || auth.user.role === 'teacher') && (
+                            {can('exam-results.view') && (
                                 <Link
                                     href={`/exams/${exam.id}/results`}
                                     className="inline-flex items-center justify-center px-3 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
@@ -245,7 +251,7 @@ export default function ExamsShow({ exam, resultsCount, totalStudents, unmarkedS
                                         Students Without Marks ({unmarkedStudents.length})
                                     </h2>
                                 </div>
-                                {(auth.user.role === 'admin' || auth.user.role === 'teacher') && (
+                                {can('exam-results.view') && (
                                     <Link
                                         href={`/exams/${exam.id}/results`}
                                         className="inline-flex items-center px-3 py-1.5 text-xs text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"

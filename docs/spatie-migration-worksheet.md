@@ -56,7 +56,9 @@ migration currently stands.
   always-shows-Impersonate-for-admins bug, verified live; Batch 3
   (Students/Guardians, 4 files, 16 occurrences) complete, verified live;
   Batch 4 (Grades/Subjects, 4 files, 10 occurrences) complete, verified
-  live — see Phase log.
+  live; Batch 5 (Exams, 3 files, 11 occurrences) complete, verified live —
+  includes one flagged, intentional behavior change (teachers now see the
+  Edit-exam affordance they already had permission for) — see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1473,3 +1475,63 @@ Actions column drops to View-only, `/grades` correctly shows zero grades
 regression), and both Show pages show only "Back to List" for teacher.
 Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
 same 8 pre-existing failures.
+
+### Phase 6 Batch 5 — Exams (2026-08-27)
+
+Files: `Exams/Index.jsx` (incl. `MobileExamItem`), `Exams/Show.jsx`,
+`ExamResults/Show.jsx`. 11 occurrences converted: 6 were plain
+`auth.user.role === 'admin'` (exams.update/delete), 5 were
+`auth.user.role === 'admin' || auth.user.role === 'teacher'`
+(exam-results.view / exams.update).
+
+**Real, visible behavior change flagged, not silently introduced** —
+unlike every prior batch in Phase 6, this one isn't purely mechanical.
+`exams.update` is held by **both** admin and teacher in the taxonomy
+(teacher's grant was Decision 1 from Phase 2, implemented server-side in
+Phase 5's `ExamPolicy::update()`: admin or `exam.created_by === $user->id`
+for teacher). The mobile card and desktop table's Edit/Delete gates were
+still hardcoded `auth.user.role === 'admin'` — meaning **teachers have had
+zero frontend path to edit even their own exams from these two views since
+Phase 5 shipped**, despite already holding the permission. Converting to
+`can('exams.update')` fixes that gap as a direct, correct consequence of
+"replace the mechanism" — it's not new scope, it's the frontend catching up
+to an already-approved, already-implemented backend decision.
+
+**What this does NOT fix, on purpose:** the frontend still doesn't check
+`exam.created_by` — a non-owning teacher will now see the Edit button (on
+both Index and Show) and get a real 403 on click, exactly the same gap
+`Exams/Show.jsx`'s "Enter Marks"/"Edit Exam" block already had *before*
+this batch (no ownership check there either). Verified this exact sequence
+live: assigned a throwaway QA teacher to an exam's grade (for
+`exams.view`'s grade-scoping) without making them the creator, confirmed
+"Edit Exam" appeared, then confirmed `/exams/{id}/edit` still 403s
+server-side. Not fixing the ownership-check gap here — same as
+`Quran/Homework/Show.jsx` before its Priority 2 fix, this would be a
+deliberate scoping change, not a mechanism swap, and wasn't asked for in
+this batch.
+
+Split the remaining Edit+Delete bundles (`exams.update` vs `exams.delete`)
+in `Exams/Index.jsx`'s card and table, and the "Enter Marks"
+(`exam-results.view`) + "Edit Exam" (`exams.update`) bundle in
+`Exams/Show.jsx`, same pattern as prior batches. The card's grid-column
+layout logic (2-col vs 1-col, and which button gets `col-span-2`) had to be
+reworked from a binary `role === 'admin'` check to
+`can('exams.update') || can('exams.delete')`, since a teacher can now see
+2 buttons (View + Edit) where previously only 1 or 3 were possible.
+
+**`ExamResults/Show.jsx` is dead code**, same as `StudentsTable.jsx` in
+Batch 3 — `ExamResultController` only ever renders `ExamResults/Index`,
+confirmed via grep across every controller. Converted anyway for
+consistency, flagged here.
+
+**Verification:** zero `auth.user.role` occurrences remain in any of the 3
+files; all 3 permission strings (`exams.{update,delete}`,
+`exam-results.view`) confirmed against the taxonomy. `pnpm run build`
+clean. Live-browser check (throwaway QA accounts, deleted after) confirmed
+the exact scenario above — non-owning teacher sees Edit, gets 403 on
+submit — plus admin seeing Edit+Delete on every row and teacher seeing
+Edit-but-not-Delete on every row of the desktop table (verified via
+`document.querySelectorAll` counts: 10 Edit / 0 Delete for teacher, 10/10
+for admin, matching the 10 exams on that page). Full backend suite
+unaffected (no PHP changed): 148 passed / 31 failed, same 8 pre-existing
+failures.
