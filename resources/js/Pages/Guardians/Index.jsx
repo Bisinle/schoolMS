@@ -12,9 +12,11 @@ import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Compon
 import { Badge } from '@/Components/UI';
 import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
+import usePermissions from '@/Hooks/usePermissions';
 
 // Mobile List Item Component - Refactored with new components
 function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactivate }) {
+    const { can } = usePermissions();
     const isInactive = guardian.status === 'inactive';
 
     // Build swipe actions
@@ -22,7 +24,7 @@ function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactiva
         { icon: Eye, label: 'View', href: `/guardians/${guardian.id}` },
     ];
 
-    if (auth.user.role === 'admin') {
+    if (can('guardians.update')) {
         primaryActions.push(
             { icon: Edit, label: 'Edit', href: `/guardians/${guardian.id}/edit` },
         );
@@ -113,7 +115,7 @@ function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactiva
                             <Eye className="w-3 h-3" />
                             View
                         </Link>
-                        {auth.user.role === 'admin' && (
+                        {can('guardians.update') && (
                             <Link
                                 href={`/guardians/${guardian.id}/edit`}
                                 className="flex items-center justify-center gap-1 px-2 py-1.5 bg-indigo-600 text-white rounded text-xs font-medium hover:bg-indigo-700 transition-colors"
@@ -127,7 +129,7 @@ function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactiva
                             <a
                                 href={`tel:${guardian.phone_number}`}
                                 className={`flex items-center justify-center gap-1 px-2 py-1.5 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 transition-colors ${
-                                    auth.user.role === 'admin' ? '' : 'col-span-2'
+                                    can('guardians.update') ? '' : 'col-span-2'
                                 }`}
                             >
                                 <Phone className="w-3 h-3" />
@@ -135,7 +137,7 @@ function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactiva
                             </a>
                         )}
 
-                        {auth.user.role === 'admin' && (
+                        {can('guardians.delete') && (
                             <button
                                 onClick={() => onDelete(guardian)}
                                 className={`flex items-center justify-center gap-1 px-2 py-1.5 bg-red-600 text-white rounded text-xs font-medium hover:bg-red-700 transition-colors ${
@@ -154,6 +156,7 @@ function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactiva
 }
 
 export default function GuardiansIndex({ guardians, filters: initialFilters = {}, auth, importResults }) {
+    const { can, canAny } = usePermissions();
     // Use the new useFilters hook
     const { filters, updateFilter } = useFilters({
         route: '/guardians',
@@ -286,29 +289,35 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                         />
                     </div>
 
-                    {auth.user.role === 'admin' && (
+                    {canAny(['guardians.view-inactive', 'guardians.create']) && (
                         <div className="flex items-center gap-2">
-                            <Link
-                                href={route('guardians.inactive')}
-                                className="inline-flex items-center px-4 py-2.5 bg-white border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-all duration-200 shadow-sm"
-                            >
-                                <UserX className="w-4 h-4 mr-2" />
-                                Inactive
-                            </Link>
-                            <button
-                                onClick={() => setShowImportModal(true)}
-                                className="inline-flex items-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm"
-                            >
-                                <Upload className="w-4 h-4 mr-2" />
-                                Bulk Import
-                            </button>
-                            <Link
-                                href={route('guardians.create')}
-                                className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
-                            >
-                                <Plus className="w-5 h-5 mr-2" />
-                                Add Guardian
-                            </Link>
+                            {can('guardians.view-inactive') && (
+                                <Link
+                                    href={route('guardians.inactive')}
+                                    className="inline-flex items-center px-4 py-2.5 bg-white border border-slate-300 text-slate-600 text-sm font-medium rounded-lg hover:bg-slate-50 transition-all duration-200 shadow-sm"
+                                >
+                                    <UserX className="w-4 h-4 mr-2" />
+                                    Inactive
+                                </Link>
+                            )}
+                            {can('guardians.create') && (
+                                <>
+                                    <button
+                                        onClick={() => setShowImportModal(true)}
+                                        className="inline-flex items-center px-4 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-all duration-200 shadow-sm"
+                                    >
+                                        <Upload className="w-4 h-4 mr-2" />
+                                        Bulk Import
+                                    </button>
+                                    <Link
+                                        href={route('guardians.create')}
+                                        className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
+                                    >
+                                        <Plus className="w-5 h-5 mr-2" />
+                                        Add Guardian
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     )}
                 </div>
@@ -398,7 +407,7 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                                             >
                                                 <Eye className="w-4 h-4" />
                                             </Link>
-                                            {auth.user.role === 'admin' && (
+                                            {can('guardians.update') && (
                                                 <>
                                                     <Link
                                                         href={`/guardians/${guardian.id}/edit`}

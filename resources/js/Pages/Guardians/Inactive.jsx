@@ -10,12 +10,14 @@ import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Compon
 import { Badge } from '@/Components/UI';
 import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
+import usePermissions from '@/Hooks/usePermissions';
 
 function MobileInactiveGuardianItem({ guardian, auth, onReactivate }) {
+    const { can } = usePermissions();
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/guardians/${guardian.id}` },
     ];
-    if (auth.user.role === 'admin') {
+    if (can('guardians.update')) {
         primaryActions.push({ icon: UserCheck, label: 'Reactivate', onClick: () => onReactivate(guardian) });
     }
     const secondaryActions = guardian.phone_number
@@ -83,7 +85,7 @@ function MobileInactiveGuardianItem({ guardian, auth, onReactivate }) {
                         >
                             <Eye className="w-3 h-3" /> View
                         </Link>
-                        {auth.user.role === 'admin' && (
+                        {can('guardians.update') && (
                             <button
                                 onClick={() => onReactivate(guardian)}
                                 className="flex items-center justify-center gap-1 px-2 py-1.5 bg-emerald-600 text-white rounded text-xs font-medium hover:bg-emerald-700 transition-colors"
@@ -100,6 +102,7 @@ function MobileInactiveGuardianItem({ guardian, auth, onReactivate }) {
 
 
 export default function InactiveGuardians({ guardians, filters: initialFilters = {}, auth, total }) {
+    const { can } = usePermissions();
     const { filters, updateFilter } = useFilters({
         route: '/guardians/inactive',
         initialFilters: { search: initialFilters.search || '' },
@@ -192,7 +195,7 @@ export default function InactiveGuardians({ guardians, filters: initialFilters =
                                         <td className="px-6 py-4 text-sm text-gray-400 max-w-xs truncate italic">{g.deactivation_reason || '—'}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
                                             <Link href={`/guardians/${g.id}`} className="inline-flex items-center text-blue-500 hover:text-blue-700 transition-colors" title="View"><Eye className="w-4 h-4" /></Link>
-                                            {auth.user.role === 'admin' && (<>
+                                            {can('guardians.update') && (<>
                                                 <Link href={`/guardians/${g.id}/edit`} className="inline-flex items-center text-orange-400 hover:text-orange-600 transition-colors" title="Edit"><Edit className="w-4 h-4" /></Link>
                                                 <button onClick={() => confirmReactivate(g)} className="inline-flex items-center text-emerald-500 hover:text-emerald-700 transition-colors" title="Reactivate"><UserCheck className="w-4 h-4" /></button>
                                             </>)}

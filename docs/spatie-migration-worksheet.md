@@ -53,7 +53,9 @@ migration currently stands.
   (Layouts/Navigation, all 3 tiers: sidebar, mobile bottom bar, mobile More
   drawers) complete, verified live in a real browser against all 3 roles;
   Batch 2 (Users + Impersonation) complete — fixed the live
-  always-shows-Impersonate-for-admins bug, verified live — see Phase log.
+  always-shows-Impersonate-for-admins bug, verified live; Batch 3
+  (Students/Guardians, 4 files, 16 occurrences) complete, verified live —
+  see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1387,3 +1389,54 @@ grounding pass already predicted.
 
 **Verification:** `pnpm run build` clean. Full backend suite unaffected (no
 PHP touched): 148 passed / 31 failed, same 8 pre-existing failures.
+
+### Phase 6 Batch 3 — Students/Guardians (2026-08-27)
+
+Files: `Students/Index.jsx` (incl. its `MobileStudentItem` sub-component),
+`Components/Students/StudentsTable.jsx`, `Guardians/Index.jsx` (incl.
+`MobileGuardianItem`), `Guardians/Inactive.jsx` (incl.
+`MobileInactiveGuardianItem`). All 16 `auth.user.role === 'admin'`
+occurrences converted — every one was gating an actual admin-only action
+(Edit/Delete/Reactivate/Deactivate/Create/Import/Inactive-list), no
+display-only reads in this batch.
+
+Cross-checked every gate against the real route middleware
+(`routes/web.php`) rather than guessing from icon meaning:
+`students.create` (import/add), `students.update`
+(edit/deactivate/reactivate), `students.delete` (destroy) — and the
+guardian equivalents plus `guardians.view-inactive` for the `/guardians/inactive`
+link. One correction from the naive "just swap the string" approach: the
+Students/Guardians table row Edit+Delete were previously gated by a single
+`auth.user.role === 'admin'` check; split into separate `can('...update')`/
+`can('...delete')` since they're different permissions that only happen to
+coincide for admin today. Same split applied to `Guardians/Index.jsx`'s
+header block, which had bundled the Inactive-list link
+(`guardians.view-inactive`) together with Bulk Import/Add Guardian
+(`guardians.create`) under one role check — now `canAny([...])` gates the
+container, `can(...)` gates each button individually.
+
+**`Components/Students/StudentsTable.jsx` is dead code** — grepped for
+every reference and found exactly one, a comment in `Students/Index.jsx`
+("Your existing StudentsTable component or table markup"), not an actual
+import. The real desktop table is inline in `Index.jsx`. Converted it
+anyway for consistency, same precedent as keeping Phase 5's dead Policy
+methods in sync — flagging here since it's unreachable from any route
+today.
+
+**Verification:** zero `auth.user.role` occurrences remain in any of the 4
+files (grep-confirmed); all 7 permission strings used
+(`students.{create,update,delete}`,
+`guardians.{create,update,delete,view-inactive}`) validated against
+`RolePermissionSeeder::ALL_PERMISSIONS`, zero typos. `pnpm run build`
+clean. Live-browser check (throwaway QA admin + teacher accounts, deleted
+after) against the real app: admin sees Bulk Import/Add Student on
+`/students` and Inactive/Bulk Import/Add Guardian on `/guardians`; teacher
+sees neither, and the Guardians table correctly shows no Actions column at
+all for teacher (view-only, matches `guardians.view` with no update/delete/
+create). Caught and fixed an unrelated pre-existing bug in my own test
+fixture along the way (a throwaway teacher QA account with no `Teacher`
+model row crashed `StudentController::index()` at
+`$user->teacher->grades` — not a Spatie-migration bug, just missing test
+data; fixed by creating the `Teacher` record, not by touching app code).
+Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
+same 8 pre-existing failures.
