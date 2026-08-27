@@ -64,7 +64,11 @@ migration currently stands.
   resolved the "timetable-availability.manage scoping unverified" flag
   from Phase 2 (confirmed: teacher scoped, admin unrestricted, no Policy
   exists) and fixed a real pre-existing bug in Availability/Create.jsx
-  (wrong ID type sent for teacher_id) — see Phase log.
+  (wrong ID type sent for teacher_id); Batch 7 (Quran, 5 files) complete,
+  verified live — applied the Exams-batch ownership-scoping lesson
+  proactively (checked each Policy before writing the gate) and caught +
+  fixed the same live gap in Schedule/Show.jsx before it needed a
+  follow-up — see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1662,3 +1666,78 @@ on all three; Availability/Index.jsx's Teacher column and filter dropdown
 confirmed present for admin (listing every teacher including the QA one).
 Full backend suite unaffected (no PHP changed beyond nothing — this batch
 touched no PHP): 148 passed / 31 failed, same 8 pre-existing failures.
+
+### Phase 6 Batch 7 — Quran (2026-08-27)
+
+Files: `Quran/Homework/{Index,Show,StudentReport,StudentView}.jsx`,
+`Quran/Schedule/Show.jsx`.
+
+**Applied the Exams-batch lesson proactively this time**, rather than
+needing a follow-up fix. Two ownership-scoped permissions were involved —
+`quran-homework.update` (`QuranHomeworkPolicy::update()`: admin or
+`teacher_id === user.id`, also covers delete/grade/mark-ungraded per the
+Priority 2 fix) and `quran-schedule.update` (`QuranSchedulePolicy::update()`,
+same shape; `delete()` delegates to it). Both `Homework/Show.jsx`'s
+`canEdit` and `Schedule/Show.jsx`'s new `canManageSchedule` were written as
+`can('x.update') && (role === 'admin' || record.teacher_id === user.id)`
+from the start — checked against the Policy before writing anything, not
+copied from a role check and fixed after.
+
+**`Schedule/Show.jsx` had the same live gap Exams had, found and fixed here
+directly:** the pre-existing code only checked `!isGuardian`, showing
+Activate/Deactivate/Edit/Delete to *any* teacher regardless of whose
+schedule it was — a non-owning teacher would see them and 403 on click.
+Its own comment even referenced the pre-Phase-5 middleware
+("role:admin,teacher-only routes"), a sign it hadn't been touched since.
+Fixed as part of this batch rather than deferred, given the explicit
+precedent set fixing the identical class of gap in Exams last batch.
+
+**`Homework/Index.jsx` needed no ownership check, confirmed by reading the
+controller**, unlike Homework/Show.jsx and both Schedule pages:
+`QuranHomeworkController::index()` already filters a teacher's query to
+`teacher_id = $user->id` server-side — every homework row a teacher sees in
+the list is already theirs, same shape as `TeacherAvailabilityController`
+in Batch 6. `can('quran-homework.update')` alone is correct there. The
+desktop table's Edit/Delete (a separate, ungated code path from the mobile
+card) already had zero role check at all — also correct given the same
+server-side pre-filtering, so left untouched (not in scope, no bug).
+
+**Cross-checked view-level scoping too, not just update:**
+`QuranHomeworkPolicy::view()` is unrestricted for anyone holding
+`quran-homework.view` (no ownership check) — confirmed live, a teacher
+could open a non-owned homework's Show page (no 403) but correctly saw no
+Edit/Delete. `QuranSchedulePolicy::view()` **is** teacher-owner-scoped —
+confirmed live, a teacher got a real 403 just trying to view a non-owned
+schedule, making the Show page's ownership check defensive-but-correct for
+teacher there (the real gate is upstream) while still being the right
+mirror of the Policy and essential for admin's bypass case.
+
+**Back-link href switches** (`Homework/Show.jsx`, `StudentReport.jsx`,
+`StudentView.jsx`: `/guardian/quran-homework` vs `/quran-homework`;
+`Schedule/Show.jsx`: `/quran` vs `/quran-schedule`) converted from
+`isGuardian`/role checks to `can('quran-homework.view-own')` /
+`can('quran-schedule.view-all')` respectively — the permission that
+actually determines which destination is reachable, not an incidental role
+check.
+
+**Verification:** zero unintended role checks remain (the 2 that do —
+inside the ownership conditions — are the correct isAdmin-bypass mirror of
+the Policies, same as the Exams fix). All 4 permission strings validated
+against the taxonomy. `pnpm run build` clean. Live-browser check (throwaway
+QA admin/teacher/guardian accounts, plus two homework and two schedule
+records — one owned by the QA teacher, one owned by another teacher —
+created and deleted for this verification):
+- Owning teacher: Edit/Delete present on their own homework (17) and
+  schedule (5); homework list shows exactly 1 Edit link (their 1 own
+  record — the other teacher's homework never appears in the list at all).
+- Non-owning teacher: homework (18) viewable with no Edit/Delete, and a
+  direct `/edit` hit 403s; schedule (6) 403s on `view` itself (couldn't
+  even reach the Show page).
+- Admin: full Activate/Edit/Delete on both non-owned records, bypassing
+  ownership as designed.
+- Guardian: no Edit/Delete anywhere; homework back-link correctly
+  `/guardian/quran-homework`; schedule back-link correctly `/quran` (no
+  `quran-schedule.view-all`).
+
+Full backend suite unaffected (no PHP changed): 148 passed / 31 failed,
+same 8 pre-existing failures.

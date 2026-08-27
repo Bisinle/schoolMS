@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, BookOpen, Calendar, User, CheckCircle, XCircle, AlertTriangle, Clock, Eye } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 const STATUS_BADGES = {
     'pending': 'bg-yellow-100 text-yellow-800',
@@ -28,8 +29,7 @@ const getStatusIcon = (status) => {
  * and graded so far.
  */
 export default function StudentView({ student, homework }) {
-    const { auth } = usePage().props;
-    const isGuardian = auth.user.role === 'guardian';
+    const { can } = usePermissions();
 
     return (
         <AuthenticatedLayout header={`Quran Homework - ${student.first_name} ${student.last_name}`}>
@@ -40,7 +40,7 @@ export default function StudentView({ student, homework }) {
                     {/* Header */}
                     <div className="mb-6 sm:mb-8">
                         <Link
-                            href={isGuardian ? "/guardian/quran-homework" : "/quran-homework"}
+                            href={can('quran-homework.view-own') ? "/guardian/quran-homework" : "/quran-homework"}
                             className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors mb-4"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />

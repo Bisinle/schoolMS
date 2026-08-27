@@ -9,6 +9,7 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import QuranPageText from '../Shared/QuranPageText';
 import QuranPageTextViewer from '../Shared/QuranPageTextViewer';
 import StarRating from '@/Components/UI/StarRating';
+import usePermissions from '@/Hooks/usePermissions';
 
 const QUALITY_RATING_OPTIONS = [
     { value: 'excellent', label: 'Excellent' },
@@ -24,8 +25,12 @@ export default function QuranHomeworkShow({ homework, auth }) {
     const [markNotes, setMarkNotes] = useState('');
     const [markProcessing, setMarkProcessing] = useState(false);
 
-    const isGuardian = auth.user.role === 'guardian';
-    const canEdit = auth.user.role === 'admin' || auth.user.id === homework.teacher_id;
+    const { can } = usePermissions();
+    // quran-homework.update is held by both admin and teacher, but
+    // QuranHomeworkPolicy::update() scopes teacher to homework they own —
+    // mirror that exactly (also covers delete/grade/mark-ungraded, which
+    // all authorize against 'update' per the Priority 2 fix).
+    const canEdit = can('quran-homework.update') && (auth.user.role === 'admin' || auth.user.id === homework.teacher_id);
     const isPending = homework.status === 'pending';
 
     const handleDelete = () => {
@@ -106,7 +111,7 @@ export default function QuranHomeworkShow({ homework, auth }) {
                     {/* Header */}
                     <div className="mb-6 sm:mb-8">
                         <Link
-                            href={isGuardian ? "/guardian/quran-homework" : "/quran-homework"}
+                            href={can('quran-homework.view-own') ? "/guardian/quran-homework" : "/quran-homework"}
                             className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors mb-4"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />

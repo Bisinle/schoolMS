@@ -3,6 +3,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { Calendar, User, Edit, Trash2, Power, PowerOff, TrendingUp, BookOpen, Clock, CheckCircle, XCircle, AlertTriangle } from 'lucide-react';
 import ProgressBar from '@/Components/UI/ProgressBar';
+import usePermissions from '@/Hooks/usePermissions';
 
 const STATUS_BADGES = {
     'pending': 'bg-yellow-100 text-yellow-800',
@@ -26,11 +27,16 @@ const getStatusIcon = (status) => {
 };
 
 export default function Show({ auth, schedule, homeworkRecords }) {
-    // Guardians can view a schedule (QuranSchedulePolicy::view() permits
-    // it) but activate/deactivate/edit/delete are role:admin,teacher-only
-    // routes — those controls must not render for a guardian, who'd just
-    // hit a 403 on click.
-    const isGuardian = auth.user.role === 'guardian';
+    const { can } = usePermissions();
+    // quran-schedule.update is held by admin and teacher (not guardian).
+    // QuranSchedulePolicy::update() (and ::delete(), which delegates to
+    // it) scopes teacher to schedules they own — mirror that exactly.
+    // Activate/deactivate/edit/delete all authorize against 'update'.
+    // Previously this only checked !isGuardian, unconditionally showing
+    // these controls to any teacher regardless of ownership — a
+    // non-owning teacher would see them and get a real 403 on click, same
+    // class of gap as the Exams module had before its fix.
+    const canManageSchedule = can('quran-schedule.update') && (auth.user.role === 'admin' || schedule.teacher_id === auth.user.id);
 
     const handleActivate = () => {
         if (confirm('Activate this schedule? This will deactivate any other active schedules for this student.')) {
@@ -90,7 +96,7 @@ export default function Show({ auth, schedule, homeworkRecords }) {
                             </p>
                         </div>
 
-                        {!isGuardian && (
+                        {canManageSchedule && (
                             <div className="flex gap-2">
                                 {schedule.is_active ? (
                                     <button
@@ -325,19 +331,19 @@ export default function Show({ auth, schedule, homeworkRecords }) {
 
                     {/* Back Button */}
                     <div className="mt-6">
-                        {isGuardian ? (
-                            <Link
-                                href="/quran"
-                                className="inline-flex items-center text-orange hover:text-orange-dark font-medium"
-                            >
-                                ← Back to Dashboard
-                            </Link>
-                        ) : (
+                        {can('quran-schedule.view-all') ? (
                             <Link
                                 href="/quran-schedule"
                                 className="inline-flex items-center text-orange hover:text-orange-dark font-medium"
                             >
                                 ← Back to Schedules
+                            </Link>
+                        ) : (
+                            <Link
+                                href="/quran"
+                                className="inline-flex items-center text-orange hover:text-orange-dark font-medium"
+                            >
+                                ← Back to Dashboard
                             </Link>
                         )}
                     </div>
