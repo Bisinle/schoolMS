@@ -228,7 +228,7 @@ doesn't participate in the school-level module system at all.
 | `accident-reports.delete` | ✅ | ❌ | ❌ | — |
 | `incident-reports.view` | ✅ | ✅ | ✅ | Same nav-link gap as accident-reports.view |
 | `incident-reports.create` | ✅ | ✅ | ❌ | — |
-| `incident-reports.review` | ✅ | ✅ | ❌ | **Renamed 2026-08-26** from `incident-reports.update-status` — unified with `accident-reports.review` since both represent the same underlying action (examining/closing out a report); "review" was kept over "update-status" as the more specific term, matching `AccidentReportPolicy`'s own method name/comments |
+| `incident-reports.review` | ✅ | ✅ | ❌ | **Renamed 2026-08-26** from `incident-reports.update-status` — unified with `accident-reports.review` since both represent the same underlying action (examining/closing out a report); "review" was kept over "update-status" as the more specific term, matching `AccidentReportPolicy`'s own method name/comments. **Name-only rename** — teacher keeps ✅ here (pre-migration: `in_array($user->role, ['admin','teacher'])`), unlike `accident-reports.review` which is genuinely admin-only; the two permissions share a name pattern, not a scope |
 | `incident-reports.update` | ✅ | ✅ (scoped) | ❌ | Same ownership + state pattern as accident-reports.update |
 | `incident-reports.delete` | ✅ | ❌ | ❌ | — |
 | `quran-dashboard.view` | ✅ | ✅ | ✅ | **Follow-up pass addition (2026-08-26).** All three genuinely scoped in the controller (school-wide/own-teaching-load/own-children respectively) — see ownership-scoping summary below |
@@ -411,6 +411,17 @@ every Policy that needs to keep its scoping logic when rewritten to call
     Taxonomy corrected to match real behavior (`report-comments.create`,
     `.lock`, `.unlock`), not fixing the lock-bypass gap itself — flagging it
     here rather than silently fixing or silently leaving it undocumented.
+
+11. **Guardian Invoices: `GuardianInvoicePolicy::view()`'s unconditional
+    "teacher can view any invoice" branch was dropped** — structurally
+    identical to the already-decided dead-grant pattern (disagreements
+    #2/#3/#9). No route (admin `/invoices` or guardian `/guardian/invoices`)
+    ever let a teacher reach an action checking this ability. Applying the
+    same precedent as #9 rather than re-asking. Current/final behavior:
+    `fees.manage` (admin) or `fees.view-own-invoices` (guardian, scoped to
+    their own `guardian_id`) — no teacher path at all, which is correct and
+    intentional (teachers should never see billing/invoice data). Confirmed
+    2026-08-27 as not a regression.
 
 ### Decisions on #7 and #8 (made by you, 2026-08-26 — implemented same day)
 
@@ -747,7 +758,10 @@ taxonomy table yet.
 **Two renames applied**, both purely cosmetic/naming, no behavior change:
 `timetable.view-own` → `timetable-schedule.view-own` (pattern consistency);
 `incident-reports.update-status` → `incident-reports.review` (unified with
-`accident-reports.review`, same underlying action).
+`accident-reports.review`, same underlying action — name only; teacher's
+grant on `incident-reports.review` was carried over unchanged from
+`incident-reports.update-status`, it was never narrowed to admin-only to
+match `accident-reports.review`'s scope, which is genuinely admin-only).
 
 **Running total at this point: 88 permissions** (85 school-level + 3 super-admin).
 Both disputed cells (`quran-schedule.view`, `quran-homework.update`) were resolved
