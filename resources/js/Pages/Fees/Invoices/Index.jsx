@@ -189,6 +189,7 @@ export default function InvoicesIndex({
 
             <div className="space-y-6">
                 {/* Header */}
+                {canManageFees && (
                     <Link
                         href="/fees"
                         className="inline-flex items-center px-4 py-2 bg-orange text-white font-medium rounded-lg hover:bg-orange-dark transition-colors"
@@ -196,6 +197,7 @@ export default function InvoicesIndex({
                         <ArrowLeft className="w-5 h-5 mr-2" />
                         Back to Fees
                     </Link>
+                )}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                   
                     <div className="flex items-center space-x-3">

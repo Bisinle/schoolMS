@@ -45,7 +45,7 @@ migration currently stands.
   separately in the Risks section (pre-existing, unrelated, not fixed).
   Full suite: 145 passed, 31 failed — same pre-existing failures as every
   prior run this session, zero regressions.
-- [ ] **Phase 6** — Migrate frontend — 🔄 **In progress (2026-08-27).** Grounding
+- [x] **Phase 6** — Migrate frontend — ✅ **Closed (2026-08-28).** Grounding
   pass done (real scope: 38 files / 123 `auth.user.role` occurrences, not the
   handoff's ~154/~41 estimate); `can()`/shared-props design approved with two
   adjustments (Users+Impersonation moved to batch 1, written per-batch
@@ -76,7 +76,12 @@ migration currently stands.
   Batch-8 sweep caught a real gap in the original grounding pass** —
   `Fees/Invoices/{Index,Show}.jsx` and `Reports/ReportCard.jsx` (19
   occurrences, 3 files) were never assigned to any batch, converted and
-  verified live — see Phase log.
+  verified live; a second post-sweep follow-up confirmed the two guardian-
+  isolation claims live once the DB came back up, and fixed one more
+  incidentally-flagged issue — an unconditional "Back to Fees" link in
+  `Fees/Invoices/Index.jsx` that 403'd for guardians, now gated behind
+  `can('fees.manage')` — verified live for both admin and guardian, full
+  suite unaffected. **Phase 6 is closed as of this entry** — see Phase log.
 - [ ] **Phase 7** — Verification pass
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
@@ -1936,3 +1941,47 @@ absence); admin saw the Unlock button on a locked comment, a class teacher
 saw the same locked comment with no Unlock button. Full backend suite
 unaffected (no PHP changed): 148 passed / 31 failed, same 8 pre-existing
 failures.
+
+**Follow-up live pass (post-sweep, 2026-08-28):** with the DB back up after
+an environment interruption, re-ran the two claims above with a fresh
+throwaway teacher + two guardians (A, B), each guardian with her own
+invoice. Confirmed live rather than only via the existing automated test:
+teacher's sidebar has no Fees/Invoices link at all and direct navigation to
+both `/invoices` and `/guardian/invoices` 403s; guardian A's list shows only
+her own invoice with no Guardian column/filters; guardian A hitting guardian
+B's invoice URL directly 403s, while guardian A's own invoice by ID renders
+normally (control check, rules out a blanket-deny bug rather than real
+scoping). Fixtures force-deleted after (soft-deletes on `User` meant a
+plain `delete()` from an earlier attempt left email-unique-constrained rows
+behind — `forceDelete()` needed).
+
+**Second follow-up fix — "Back to Fees" link, guardian-unreachable
+(2026-08-28):** flagged incidentally during the live pass above: the
+invoice list header had an unconditional `<Link href="/fees">Back to
+Fees</Link>` — not gated at all, in `Fees/Invoices/Index.jsx` (not
+`Show.jsx`, which was your best guess when you flagged it but doesn't
+contain this link at all — `Show.jsx`'s own back-link already correctly
+branches on `isGuardianView` and never points at `/fees`). Since `/fees`
+itself is `fees.manage`-gated in both the route and `navigation.js` (no
+guardian equivalent hub exists — a guardian's own "Invoices" nav entry goes
+straight to `/guardian/invoices`, not nested under any parent "Fees" page),
+a guardian clicking this link would 403. Fixed by wrapping it in
+`{canManageFees && (...)}`, the same `const` already used for every other
+admin-only element in this file — confirmed this is one shared component
+serving both `/invoices` (admin) and `/guardian/invoices` (guardian), so the
+same `canManageFees = can('fees.manage')` already correctly distinguishes
+the two without any risk of hiding it from admins.
+
+**Verification:** `pnpm run build` clean (`sw.js` bump reverted after,
+not committed). Live-browser check with a fresh throwaway QA admin +
+guardian (+ one invoice): admin still saw "Back to Fees" at `/invoices`;
+guardian's `/guardian/invoices` view had no `/fees` link anywhere on the
+page (confirmed via full snapshot, not just visual scan). Fixtures deleted
+after. Full backend suite (no PHP touched): 148 passed / 31 failed, same
+8 pre-existing failures — run via `php8.4 artisan test` directly, not
+`composer test`, since this environment's default `php` resolved to 8.5.8
+(missing `pdo_sqlite`) rather than the project's pinned 8.4 during this
+session; `php8.4` explicitly is unaffected and matches every prior batch's
+verification in this worksheet.
+
+**Phase 6 is now closed.**
