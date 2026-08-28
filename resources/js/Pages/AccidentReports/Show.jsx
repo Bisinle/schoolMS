@@ -21,6 +21,18 @@ import {
 } from 'lucide-react';
 import usePermissions from '@/Hooks/usePermissions';
 
+// people_involved/witnesses are stored as a JSON array on the report. The
+// create form (SearchableMultiSelect) only ever writes plain person IDs,
+// but the column's own migration comment documents a richer
+// {type, id, name} shape too - render whichever one is actually there
+// instead of assuming a scalar and crashing on an object.
+function personLabel(person) {
+    if (person !== null && typeof person === 'object') {
+        return person.name ?? `Person ID: ${person.id}`;
+    }
+    return `Person ID: ${person}`;
+}
+
 export default function Show({ auth, report }) {
     const { can } = usePermissions();
     const [showReviewModal, setShowReviewModal] = useState(false);
@@ -186,9 +198,9 @@ export default function Show({ auth, report }) {
                                 People Involved
                             </h2>
                             <div className="flex flex-wrap gap-2">
-                                {report.people_involved.map((personId, index) => (
+                                {report.people_involved.map((person, index) => (
                                     <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full text-sm">
-                                        Person ID: {personId}
+                                        {personLabel(person)}
                                     </span>
                                 ))}
                             </div>
@@ -202,9 +214,9 @@ export default function Show({ auth, report }) {
                                 Witnesses
                             </h2>
                             <div className="flex flex-wrap gap-2">
-                                {report.witnesses.map((personId, index) => (
+                                {report.witnesses.map((person, index) => (
                                     <span key={index} className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-full text-sm">
-                                        Person ID: {personId}
+                                        {personLabel(person)}
                                     </span>
                                 ))}
                             </div>
