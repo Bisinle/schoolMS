@@ -82,7 +82,14 @@ migration currently stands.
   `Fees/Invoices/Index.jsx` that 403'd for guardians, now gated behind
   `can('fees.manage')` — verified live for both admin and guardian, full
   suite unaffected. **Phase 6 is closed as of this entry** — see Phase log.
-- [ ] **Phase 7** — Verification pass
+- [ ] **Phase 7** — Verification pass — 🔄 **In progress (2026-08-29).**
+  Negative-case test backfill for the 17 ownership/state-scoped permissions
+  still lacking denial coverage (corrected from Phase 5's "15 + 1 partial"
+  count, see Phase log), split into 6 domain batches. Batch A
+  (Attendance/Grades) complete — found and fixed a real IDOR bug
+  (`attendance.view`: teacher could read another teacher's grade's
+  attendance via `grade_id` query-string manipulation), 10 new tests, zero
+  regressions.
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
 explicitly out of scope here. The only intended behavior change in this whole
@@ -1985,3 +1992,61 @@ session; `php8.4` explicitly is unaffected and matches every prior batch's
 verification in this worksheet.
 
 **Phase 6 is now closed.**
+
+### Phase 7 — Verification pass: negative-case test backfill (2026-08-29)
+
+**Re-audited the gap before starting rather than trusting the prior count.**
+Phase 5's close-out said "the remaining 15 of 26, plus the 1 partial" were
+deferred to Phase 7 — but enumerating every permission actually named in
+that sentence comes to 16, not 15 (26 total − 10 already covered ≠ 15
+remaining unless one of those 16 is secretly covered elsewhere). Grepped
+every `tests/Feature/*.php` file for `assertForbidden`/`assertStatus(403)`
+and cross-referenced by domain: confirmed zero test coverage of any kind for
+Attendance, Grades, Exams, ExamResults, TimetableSlots,
+TimetableAvailability, Reports, ReportComments, or Documents — no hidden
+coverage anywhere. **Correcting the record: 16 fully-uncovered permissions +
+1 partial (`quran-dashboard.view`) = 17 gap items, not 15 + 1 = 16.** Split
+into 6 domain batches (A: Attendance/Grades, B: Exams/ExamResults, C:
+Timetables, D: Reports/ReportComments, E: Documents, F: quran-dashboard.view
+promotion), same shape as Phase 6's batches — backend-only, no live-browser
+pass needed since this is pure Policy/route negative-case testing, matching
+how the original 4 backfilled tests in Phase 5's close-out were done.
+
+**Batch A — Attendance + Grades (`attendance.view`, `.create`,
+`.view-own-children`, `grades.view`) — done.**
+
+- `grades.view`: already correctly enforced — `GradeController::show()`
+  calls `$this->authorize('view', $grade)` → `GradePolicy::view()`'s
+  teacher-scoping. New `GradeOwnershipTest.php` (3 tests: teacher blocked
+  from another teacher's grade, teacher allowed own, admin allowed any) —
+  all passed first try, no fix needed.
+- `attendance.create`: already correctly enforced —
+  `AttendanceController::mark()` checks `$teacherGradeIds` inline before
+  writing. Covered in the new `AttendanceOwnershipTest.php` — passed first
+  try.
+- `attendance.view-own-children`: already correctly enforced —
+  `AttendanceController::studentHistory()` checks the guardian's
+  `childrenIds` inline. Covered in the same file — passed first try.
+- **`attendance.view` (teacher) — real, live IDOR bug found and fixed.**
+  `AttendancePolicy::view()` is never actually reached by any
+  `authorize()` call (documented in its own docblock) — the only ownership
+  scoping that existed was cosmetic, restricting which grades populate the
+  *dropdown* (`$grades = $user->teacher->grades`). Neither `index()` nor
+  `reports()` checked that the `grade_id` a teacher actually **submits**
+  (query string, fully attacker-controlled) belonged to that scoped list
+  before calling `getAttendanceData()`/`getAttendanceReport()` — a teacher
+  could read any other teacher's grade's attendance data (student names,
+  admission numbers, daily status, remarks) by editing `grade_id` in the
+  URL, same-school. This is pre-existing behavior, not something this
+  migration's route/Policy rewrite introduced — Spatie only replaced *which
+  permission string* gates the route, the missing per-request ownership
+  check was already absent. Fixed by adding the same `$grades->contains('id',
+  ...)` check already implicitly relied on for the dropdown, now enforced
+  as a hard `abort(403)` in both `index()` and `reports()` before the data
+  fetch. Test written red first (`assertForbidden()`, got `200`), confirmed
+  the fix turns it green.
+
+**Verification:** `AttendanceOwnershipTest.php` (7 tests) + `GradeOwnershipTest.php`
+(3 tests) — 10 new tests, all green. Full suite: **158 passed / 31 failed**,
+same 8 pre-existing failing files as every run this session, zero
+regressions (148 → 158, +10).
