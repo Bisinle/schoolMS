@@ -89,7 +89,10 @@ migration currently stands.
   (Attendance/Grades) complete — found and fixed a real IDOR bug
   (`attendance.view`: teacher could read another teacher's grade's
   attendance via `grade_id` query-string manipulation), 10 new tests, zero
-  regressions.
+  regressions. Batch B (Exams/ExamResults) complete — found and fixed the
+  same shape of bug again (`exam-results.create`: teacher could POST exam
+  results for any exam in the school, not just their own grade's), 9 new
+  tests, zero regressions.
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
 explicitly out of scope here. The only intended behavior change in this whole
@@ -2050,3 +2053,50 @@ how the original 4 backfilled tests in Phase 5's close-out were done.
 (3 tests) — 10 new tests, all green. Full suite: **158 passed / 31 failed**,
 same 8 pre-existing failing files as every run this session, zero
 regressions (148 → 158, +10).
+
+**Batch B — Exams + ExamResults (`exams.view`, `.update`, `exam-results.view`,
+`.create`, `.update`) — done.**
+
+- `exams.view`, `exams.update`: already correctly enforced —
+  `ExamController::show()`/`edit()`/`update()` all call `authorize()` against
+  `ExamPolicy::view()`/`update()`, both properly grade-scoped (`view`) or
+  `created_by`-scoped (`update`, per the Phase 3 decision on disagreement
+  #1). New `ExamOwnershipTest.php` (4 tests) — all passed first try.
+- `exam-results.view`: already correctly enforced —
+  `ExamResultController::index()` authorizes against `ExamPolicy::view($exam)`
+  (not `ExamResultPolicy` — same grade-scoping shape, different Policy
+  object, which is fine). Covered in the new `ExamResultOwnershipTest.php` —
+  passed first try.
+- `exam-results.update`: already correctly enforced —
+  `ExamResultController::update()` authorizes against
+  `ExamResultPolicy::update()`, which scopes via
+  `$examResult->exam->grade_id`. Passed first try (after fixing my own test
+  fixture — see below).
+- **`exam-results.create` — real bug found and fixed, same shape as Batch
+  A's.** `ExamResultController::store()` authorized only against
+  `ExamResultPolicy::create()`, which is unscoped (`$user->can('exam-
+  results.create')`, true for every teacher) — the route-bound `$exam` was
+  never checked against the teacher's own grades before writing marks. A
+  teacher could POST results for any exam in the school, not just one for a
+  grade they teach. Fixed by adding `$this->authorize('view', $exam)`
+  alongside the existing check — reuses `ExamPolicy::view()`'s existing
+  grade-scoping rather than inventing new logic, and confirmed every role
+  holding `exam-results.create` also holds `exams.view` (checked
+  `RolePermissionSeeder` directly), so this doesn't deny anyone who
+  currently has legitimate access. Test written red first, confirmed the
+  fix turns it green.
+- **Not a bug, a test-fixture mistake caught and fixed before it became a
+  false pass**: my first draft of the `exam-results.update` negative-case
+  test created the `ExamResult` row via `ExamResult::create()` *before*
+  calling `actingAs()` — `BelongsToSchool`'s auto-populate-on-create
+  requires `Auth::check()`, so the row's `school_id` stayed null and the
+  tenant `SchoolScope` then hid it from the acting teacher's route-model
+  binding, returning 404 instead of the 403 the test expected. Traced via
+  `grep -rl "exam_results" database/migrations/` (confirmed `school_id` was
+  added generically later, in `add_school_id_to_tables.php`, not in the
+  original `create_exam_results_table` migration) — fixed by passing
+  `school_id` explicitly in the fixture, not by touching app code.
+
+**Verification:** `ExamOwnershipTest.php` (4 tests) + `ExamResultOwnershipTest.php`
+(5 tests) — 9 new tests, all green. Full suite: **167 passed / 31 failed**,
+same 8 pre-existing failing files, zero regressions (158 → 167, +9).
