@@ -2347,3 +2347,61 @@ fixtures cleaned up after.
 
 **The verification checklist is now closed: 283/283 rows checked, 270
 pass, 5 fail (all logged, none fixed per instruction), 8 N/A/inert.**
+
+### All 5 remaining bugs fixed (2026-08-29)
+
+Fixed all 5 bugs that were logged-not-fixed at the previous close-out.
+**Total across the whole verification effort: 14 real bugs found, 14
+fixed, 0 remaining.** One fix each, one commit each (see
+`docs/spatie-migration-verification-checklist.md` for the full detail on
+each; the short version):
+
+1. **`settings.manage`** — `/settings/academic` rendered a page component
+   (`Settings/Academic.jsx`) that never existed. The route had no nav link
+   and its only real data (`headteacher_signature`) had zero frontend
+   consumers anywhere — genuinely dead, not a feature quietly being
+   dropped. `SchoolSettingController::academic()` now redirects to
+   `settings.academic-years`, the real page every nav link already points
+   to.
+2. **`timetable-slots.view` (index)** — ordered by the nonexistent
+   `period_id` column. `TimetableSlotController::index()` now orders by
+   the real column, `timetable_period_id`. Confirmed no other `period_id`
+   typos anywhere else in the file first.
+3. **`documents.create` (admin)** — `getEntityOptions()`'s admin branch
+   crashed iterating guardians whose linked user had been soft-deleted by
+   `guardians.delete` (which intentionally leaves the `Guardian` row
+   behind). Now filters those out before mapping. Checked
+   `TeacherController::destroy()` first to confirm it has no equivalent
+   risk (hard-deletes both records together) — fix stayed scoped to
+   Guardian, not applied speculatively to Teacher too.
+4. **`documents.update`** — root-caused to be an entirely wrong file:
+   `Documents/Edit.jsx` was a leftover copy of the Teachers Edit form
+   (confirmed via diff against `Teachers/Edit.jsx`), expecting a `teacher`
+   prop `DocumentController::edit()` never passes. Wrote a correct,
+   minimal Edit.jsx from scratch — a single `expiry_date` field, matching
+   `DocumentController::update()`'s actual validation and the sibling
+   `Documents/Categories/Edit.jsx`'s established style.
+5. **`accident-reports.view`** — root-caused precisely before fixing:
+   traced Create.jsx → `SearchableMultiSelect` and confirmed real,
+   UI-created accident reports only ever store plain scalar person IDs in
+   `people_involved`/`witnesses`; the crash only reproduced with the
+   richer `{type, id, name}` object shape the migration's own comment
+   documents as intended, which is what my original verification-pass
+   fixture had used — meaning real admin-created reports were never
+   actually reachable through this exact crash. Fixed defensively for
+   both shapes anyway (`personLabel()` helper), since the object shape
+   remains a legitimate, documented possibility for this JSON column.
+
+**Verification, every fix confirmed live** (not just re-reading the code):
+reproduced each original failure condition first where reproducible
+(soft-deleted a guardian's user for #3, submitted both data shapes for #5),
+then confirmed the previously-broken action now returns 200/success instead
+of 500/crash, with a zero-console-error check on every page load.
+
+Full backend suite after all 5 fixes: 198 passed / 31 failed, same
+baseline, zero regressions. All QA fixtures cleaned up.
+
+**The Spatie Permission migration's verification effort is now fully
+closed: 283/283 rows checked, 275 pass, 0 fail, 8 N/A/inert. Every bug
+found across both the original taxonomy migration (Phases 1-7) and this
+verification pass has been fixed and re-verified live.**
