@@ -210,14 +210,14 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     });
 
     //^ Teacher Routes
-    Route::middleware(['user.active', 'permission:teachers.view'])->group(function () {
-        Route::get('/teachers', [TeacherController::class, 'index'])->name('teachers.index');
-        Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');
-    });
-
     Route::middleware(['user.active', 'permission:teachers.create'])->group(function () {
         Route::get('/teachers/create', [TeacherController::class, 'create'])->name('teachers.create');
         Route::post('/teachers', [TeacherController::class, 'store'])->name('teachers.store');
+    });
+
+    Route::middleware(['user.active', 'permission:teachers.view'])->group(function () {
+        Route::get('/teachers', [TeacherController::class, 'index'])->name('teachers.index');
+        Route::get('/teachers/{teacher}', [TeacherController::class, 'show'])->name('teachers.show');
     });
 
     Route::middleware(['user.active', 'permission:teachers.update'])->group(function () {
@@ -230,14 +230,14 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     });
 
     //^ USER MANAGEMENT ROUTES
-    Route::middleware(['user.active', 'permission:users.view'])->group(function () {
-        Route::get('/users', [UserController::class, 'index'])->name('users.index');
-        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
-    });
-
     Route::middleware(['user.active', 'permission:users.create'])->group(function () {
         Route::get('/users/create', [UserController::class, 'create'])->name('users.create');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
+    });
+
+    Route::middleware(['user.active', 'permission:users.view'])->group(function () {
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/{user}', [UserController::class, 'show'])->name('users.show');
     });
 
     Route::middleware(['user.active', 'permission:users.update'])->group(function () {
@@ -270,14 +270,14 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::get('/attendance/student/{student}', [AttendanceController::class, 'studentHistory'])->name('attendance.student-history');
 
     //^ Subjects Routes
-    Route::middleware(['user.active', 'permission:subjects.view'])->group(function () {
-        Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
-        Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
-    });
-
     Route::middleware(['user.active', 'permission:subjects.create'])->group(function () {
         Route::get('/subjects/create', [SubjectController::class, 'create'])->name('subjects.create');
         Route::post('/subjects', [SubjectController::class, 'store'])->name('subjects.store');
+    });
+
+    Route::middleware(['user.active', 'permission:subjects.view'])->group(function () {
+        Route::get('/subjects', [SubjectController::class, 'index'])->name('subjects.index');
+        Route::get('/subjects/{subject}', [SubjectController::class, 'show'])->name('subjects.show');
     });
 
     Route::middleware(['user.active', 'permission:subjects.update'])->group(function () {
@@ -291,14 +291,14 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     });
 
     //^ Stream Routes
-    Route::middleware(['user.active', 'permission:streams.view'])->group(function () {
-        Route::get('/streams', [StreamController::class, 'index'])->name('streams.index');
-        Route::get('/streams/{stream}', [StreamController::class, 'show'])->name('streams.show');
-    });
-
     Route::middleware(['user.active', 'permission:streams.create'])->group(function () {
         Route::get('/streams/create', [StreamController::class, 'create'])->name('streams.create');
         Route::post('/streams', [StreamController::class, 'store'])->name('streams.store');
+    });
+
+    Route::middleware(['user.active', 'permission:streams.view'])->group(function () {
+        Route::get('/streams', [StreamController::class, 'index'])->name('streams.index');
+        Route::get('/streams/{stream}', [StreamController::class, 'show'])->name('streams.show');
     });
 
     Route::middleware(['user.active', 'permission:streams.update'])->group(function () {
@@ -312,14 +312,14 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     });
 
     //^ Exams Routes
-    Route::middleware(['user.active', 'permission:exams.view'])->group(function () {
-        Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
-        Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
-    });
-
     Route::middleware(['user.active', 'permission:exams.create'])->group(function () {
         Route::get('/exams/create', [ExamController::class, 'create'])->name('exams.create');
         Route::post('/exams', [ExamController::class, 'store'])->name('exams.store');
+    });
+
+    Route::middleware(['user.active', 'permission:exams.view'])->group(function () {
+        Route::get('/exams', [ExamController::class, 'index'])->name('exams.index');
+        Route::get('/exams/{exam}', [ExamController::class, 'show'])->name('exams.show');
     });
 
     Route::middleware(['user.active', 'permission:exams.update'])->group(function () {
@@ -427,11 +427,6 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         });
 
         // Timetable Periods (Admin only for create/edit/delete, Teachers can view)
-        Route::middleware(['user.active', 'permission:timetable-periods.view'])->group(function () {
-            Route::get('/periods', [TimetablePeriodController::class, 'index'])->name('timetables.periods.index');
-            Route::get('/periods/{period}', [TimetablePeriodController::class, 'show'])->name('timetables.periods.show');
-        });
-
         Route::middleware(['user.active', 'permission:timetable-periods.manage'])->group(function () {
             Route::get('/periods/create', [TimetablePeriodController::class, 'create'])->name('timetables.periods.create');
             Route::post('/periods', [TimetablePeriodController::class, 'store'])->name('timetables.periods.store');
@@ -440,12 +435,12 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::delete('/periods/{period}', [TimetablePeriodController::class, 'destroy'])->name('timetables.periods.destroy');
         });
 
-        // Rooms (Admin only for create/edit/delete, Teachers can view)
-        Route::middleware(['user.active', 'permission:timetable-rooms.view'])->group(function () {
-            Route::get('/rooms', [RoomController::class, 'index'])->name('timetables.rooms.index');
-            Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('timetables.rooms.show');
+        Route::middleware(['user.active', 'permission:timetable-periods.view'])->group(function () {
+            Route::get('/periods', [TimetablePeriodController::class, 'index'])->name('timetables.periods.index');
+            Route::get('/periods/{period}', [TimetablePeriodController::class, 'show'])->name('timetables.periods.show');
         });
 
+        // Rooms (Admin only for create/edit/delete, Teachers can view)
         Route::middleware(['user.active', 'permission:timetable-rooms.manage'])->group(function () {
             Route::get('/rooms/create', [RoomController::class, 'create'])->name('timetables.rooms.create');
             Route::post('/rooms', [RoomController::class, 'store'])->name('timetables.rooms.store');
@@ -454,18 +449,23 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::delete('/rooms/{room}', [RoomController::class, 'destroy'])->name('timetables.rooms.destroy');
         });
 
-        // Timetable Slots (Admin only for create/edit/delete, Teachers can view)
-        Route::middleware(['user.active', 'permission:timetable-slots.view'])->group(function () {
-            Route::get('/slots', [TimetableSlotController::class, 'index'])->name('timetables.slots.index');
-            Route::get('/slots/{slot}', [TimetableSlotController::class, 'show'])->name('timetables.slots.show');
+        Route::middleware(['user.active', 'permission:timetable-rooms.view'])->group(function () {
+            Route::get('/rooms', [RoomController::class, 'index'])->name('timetables.rooms.index');
+            Route::get('/rooms/{room}', [RoomController::class, 'show'])->name('timetables.rooms.show');
         });
 
+        // Timetable Slots (Admin only for create/edit/delete, Teachers can view)
         Route::middleware(['user.active', 'permission:timetable-slots.manage'])->group(function () {
             Route::get('/slots/create', [TimetableSlotController::class, 'create'])->name('timetables.slots.create');
             Route::post('/slots', [TimetableSlotController::class, 'store'])->name('timetables.slots.store');
             Route::get('/slots/{slot}/edit', [TimetableSlotController::class, 'edit'])->name('timetables.slots.edit');
             Route::put('/slots/{slot}', [TimetableSlotController::class, 'update'])->name('timetables.slots.update');
             Route::delete('/slots/{slot}', [TimetableSlotController::class, 'destroy'])->name('timetables.slots.destroy');
+        });
+
+        Route::middleware(['user.active', 'permission:timetable-slots.view'])->group(function () {
+            Route::get('/slots', [TimetableSlotController::class, 'index'])->name('timetables.slots.index');
+            Route::get('/slots/{slot}', [TimetableSlotController::class, 'show'])->name('timetables.slots.show');
         });
 
         // Teacher Availability (Teachers can manage their own, Admins can manage all)
@@ -566,17 +566,17 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
     Route::impersonate();
 
     //^ Document Categories Routes (Admin only)
-    Route::middleware(['user.active', 'permission:document-categories.view'])->group(function () {
-        Route::get('/document-categories', [DocumentCategoryController::class, 'index'])->name('document-categories.index');
-        Route::get('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'show'])->name('document-categories.show');
-    });
-
     Route::middleware(['user.active', 'permission:document-categories.manage'])->group(function () {
         Route::get('/document-categories/create', [DocumentCategoryController::class, 'create'])->name('document-categories.create');
         Route::post('/document-categories', [DocumentCategoryController::class, 'store'])->name('document-categories.store');
         Route::get('/document-categories/{documentCategory}/edit', [DocumentCategoryController::class, 'edit'])->name('document-categories.edit');
         Route::put('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'update'])->name('document-categories.update');
         Route::delete('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'destroy'])->name('document-categories.destroy');
+    });
+
+    Route::middleware(['user.active', 'permission:document-categories.view'])->group(function () {
+        Route::get('/document-categories', [DocumentCategoryController::class, 'index'])->name('document-categories.index');
+        Route::get('/document-categories/{documentCategory}', [DocumentCategoryController::class, 'show'])->name('document-categories.show');
     });
 
     //^ Document Verification Routes (Admin only)

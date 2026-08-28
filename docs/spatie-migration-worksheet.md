@@ -2278,3 +2278,33 @@ every document; `AccidentReports/Show.jsx` crashes client-side, React error
 row-by-row results. None of this migration's own work is implicated — every
 bug predates Phase 5 and would have existed under the old `role:` middleware
 too.
+
+### Route-shadowing bug fix — 9 of the 13 fixed (2026-08-29)
+
+Fixed the systemic route-ordering pattern found above, in `routes/web.php`:
+for each of Teachers, Users, Subjects, Streams, Exams, TimetablePeriods,
+TimetableRooms, TimetableSlots, DocumentCategories, moved the `.create`/
+`.manage` middleware group above the `.view` group so the literal `/create`
+segment is registered before the `/{id}` wildcard — matching the ordering
+`policies.create` already used correctly, which is why that one module was
+never affected. A single-file change (`routes/web.php`, 43 insertions / 43
+deletions), purely reordering existing blocks — no new routes, no route
+removed, no other ordering touched.
+
+Re-verified all 9 live: every `/create` URL now 200s with its real create
+form; spot-checked sibling `{id}`/index routes (teachers, subjects, streams,
+document-categories, timetable periods/rooms/slots indexes) to confirm the
+reordering didn't shadow anything the other direction — all still resolve
+correctly. Also wrote a systematic scanner (validated against the pre-fix
+file, where it correctly found exactly these 9 and nothing else) and ran it
+against the routes file post-fix: zero remaining instances of this pattern
+anywhere else in the file.
+
+Full backend suite: 198 passed / 31 failed, same baseline, zero regressions
+(expected — this is a pure routing-order fix, no PHP logic changed).
+
+**4 bugs remain from the original 13**: `settings.manage` (missing Vite
+page), `timetable-slots.view` index() (wrong column in `orderBy`),
+`documents.update` (client-side crash), `accident-reports.view` (client-side
+crash) — see `docs/spatie-migration-verification-checklist.md` for detail,
+not fixed, logged for review as before.

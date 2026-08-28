@@ -8,7 +8,7 @@ as of the Phase 7 close-out on 2026-08-29).
 confirmed by direct URL navigation, a real authenticated POST/PUT/DELETE request, or a
 genuine UI click-through — never inferred from a missing nav link.**
 
-**Coverage as of this pass: 126/283 rows checked (105 pass, 13 fail, 8 N/A/inert, 157 not yet reached). This was a prioritized pass, not exhaustive** —
+**Coverage as of this pass: 126/283 rows checked (114 pass, 4 fail, 8 N/A/inert, 157 not yet reached). This was a prioritized pass, not exhaustive** —
 every ownership/state-scoped permission (the highest-risk 26), the madrasah boundary, the
 super-admin boundary, and every permission touched by a Phase 7 bug fix got full live
 verification (GET nav, real POST/PUT/DELETE via authenticated fetch or actual UI
@@ -20,23 +20,52 @@ assumed. See the close-out message for the recommendation on how to finish these
 
 ---
 
-## Real bugs found this pass — 13 total, none fixed (logged for your review per instruction)
+## Real bugs found this pass — 13 total, 9 fixed, 4 remaining
+
+**9 fixed (2026-08-29, separate commit from the verification pass)** — all one
+systemic pattern: a resource's `Route::get('/{resource}/create', ...)` was
+registered *after* its `Route::get('/{resource}/{id}', ...)`, so Laravel
+matched the literal string `create` as the `{id}` route-model-binding
+parameter, failed to resolve it, and 404'd before ever reaching the
+controller. Fixed by moving each `.create`/`.manage` route group above its
+`.view` group, matching the ordering `policies.create` already used
+correctly. Re-verified live: all 9 `/create` URLs now 200 with their real
+form; sibling `{id}` routes confirmed unaffected; full backend suite holds
+at 198/31, zero regressions. A systematic scan of the rest of `routes/web.php`
+for the same pattern found no other instances (see the note below the
+remaining-bugs table).
+
+| # | Permission | Was |
+|---|---|---|
+| ~~1~~ | `teachers.create` | 404 → now 200, fixed |
+| ~~2~~ | `users.create` | 404 → now 200, fixed |
+| ~~3~~ | `streams.create` | 404 → now 200, fixed |
+| ~~4~~ | `subjects.create` | 404 → now 200, fixed |
+| ~~5~~ | `exams.create` | 404 → now 200, fixed |
+| ~~6~~ | `timetable-periods.manage` | 404 → now 200, fixed |
+| ~~7~~ | `timetable-rooms.manage` | 404 → now 200, fixed |
+| ~~8~~ | `timetable-slots.manage` | 404 → now 200, fixed |
+| ~~9~~ | `document-categories.manage` | 404 → now 200, fixed |
+
+**4 remaining, none fixed (logged for your review per instruction):**
 
 | # | Permission | Bug | Root cause |
 |---|---|---|---|
-| 1 | `teachers.create` | BUG: /teachers/create returns 404. Route not checked yet at this point in pass — flagged for follow-up check. \|\| BUG (pre-existing, unrelated to Spatie, same root cause as users.create): /teachers/create 404s — routes/web.php:215 registers GET /teachers/{teacher} before GET /teachers/create (line 219). |  |
-| 2 | `users.create` | BUG (pre-existing, unrelated to Spatie): /users/create returns 404. Root cause: routes/web.php registers GET /users/{user} (users.show, line 235) BEFORE GET /users/create (users.create, line 239) — Laravel matches 'create' as the {user} route-model-binding param first, fails to find a User with that key, and 404s automatically. The Create User page has been completely unreachable for every admin r |  |
-| 3 | `settings.manage` | BUG (pre-existing, unrelated to Spatie): /settings/academic returns 500. Root cause: SchoolSettingController::academic() calls Inertia::render('Settings/Academic'), but resources/js/Pages/Settings/Academic.jsx does not exist on disk — only Settings/AcademicTerms/ and Settings/AcademicYears/ subdirectories exist, suggesting this page was split/renamed and the controller's render call was never upda |  |
-| 4 | `streams.create` | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /streams/create 404s — /streams/{stream} (line 296) registered before /streams/create (line 300). |  |
-| 5 | `subjects.create` | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /subjects/create 404s — /subjects/{subject} (line 275) registered before /subjects/create (line 279). CONFIRMED user-facing: Subjects/Index.jsx's 'Add Subject' button links to route('subjects.create') directly, so real users hit this 404 in the actual UI, not just a dead route. |  |
-| 6 | `exams.create` | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /exams/create 404s — /exams/{exam} (line 317) registered before /exams/create (line 321). |  |
-| 7 | `timetable-periods.manage` | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /timetables/periods/create 404s — /timetables/periods/{period} (line 432) registered before /timetables/periods/create (line 436). \|\| direct URL nav /timetables/periods/5/edit, 200 (edit form works fine; only the create-route-shadowing bug is broken, logged separately) |  |
-| 8 | `timetable-rooms.manage` | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /timetables/rooms/create 404s — /timetables/rooms/{room} (line 446) registered before /timetables/rooms/create (line 450). \|\| direct URL nav /timetables/rooms/20/edit, 200 (same — edit fine, create broken) |  |
-| 9 | `timetable-slots.view` | BUG (pre-existing, unrelated to Spatie, DIFFERENT from the Phase 7 Batch C show() crash which IS still fixed): /timetables/slots (index) 500s. Root cause: TimetableSlotController::index() orders the query by 'period_id', a column that does not exist on timetable_slots — the real column is 'timetable_period_id'. Confirmed via storage/logs/laravel.log: SQLSTATE[42S22] Unknown column 'period_id' in ' |  |
-| 10 | `timetable-slots.manage` | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /timetables/slots/create 404s — /timetables/slots/{slot} (line 460) registered before /timetables/slots/create (line 464). \|\| direct URL nav /timetables/slots/4/edit, 200 (same — edit fine, create broken) |  |
-| 11 | `documents.update` | BUG (pre-existing, unrelated to Spatie): /documents/165/edit crashes client-side with a React ErrorBoundary — 'TypeError: Cannot read properties of undefined (reading user)' plus a follow-on 'Minified React error #31'. Page renders 200 at the HTTP level (Inertia response succeeds) but the Edit.jsx component itself throws on render. Not yet root-caused past the console stack trace — DocumentControl |  |
-| 12 | `accident-reports.view` | BUG (pre-existing, unrelated to Spatie): /accident-reports/6 (Show page) crashes client-side with a React ErrorBoundary — 'Minified React error #31' (React's 'Objects are not valid as a React child' error), confirmed via a cleared/fresh console capture, not a stale artifact. Page renders 200 at the HTTP level but AccidentReports/Show.jsx throws on render, most likely from rendering a raw object (e |  |
-| 13 | `document-categories.manage` | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /document-categories/create 404s — /document-categories/{documentCategory} (line 571) registered before /document-categories/create (line 575). \|\| direct URL nav /document-categories/14/edit, 200, no console errors (create form is broken per the route-shadowing bug logged separately; edit form is fine) \|\| direct URL nav /docume |  |
+| 1 | `settings.manage` | `/settings/academic` returns 500 | `SchoolSettingController::academic()` calls `Inertia::render('Settings/Academic')`, but `resources/js/Pages/Settings/Academic.jsx` does not exist on disk — only `Settings/AcademicTerms/` and `Settings/AcademicYears/` subdirectories exist. Page was likely split/renamed and the controller's render call never updated. |
+| 2 | `timetable-slots.view` | `/timetables/slots` (index) 500s whenever at least one slot exists | `TimetableSlotController::index()` orders the query by `period_id`, a column that does not exist on `timetable_slots` — the real column is `timetable_period_id`. Distinct from the Phase 7 Batch C `show()` crash, which is still fixed. (MySQL skips ORDER BY column validation on a provably-empty result set, which is why an empty-school spot-check during the route-fix re-verification briefly appeared not to reproduce it — confirmed still present with real data.) |
+| 3 | `documents.update` | `/documents/{id}/edit` crashes client-side on every document | React ErrorBoundary: `TypeError: Cannot read properties of undefined (reading 'user')` then a follow-on `Minified React error #31`. Page returns 200 at the HTTP level but `Documents/Edit.jsx` throws on render — `DocumentController::edit()` only passes `document` (with `category` eager-loaded), so the frontend likely expects a relation (e.g. uploader) that isn't loaded. Reproduced on two separate documents, not a one-off. |
+| 4 | `accident-reports.view` | `/accident-reports/{id}` (Show page) crashes client-side | React ErrorBoundary: `Minified React error #31` ("Objects are not valid as a React child"), confirmed via a cleared/fresh console capture. `AccidentReports/Show.jsx` throws on render, most likely from rendering a raw object (e.g. `people_involved` or `witnesses` JSON) directly in JSX instead of mapping over it. |
+
+**Systematic scan for the same route-shadowing pattern elsewhere in
+`routes/web.php`**: wrote a script that resolves every `Route::get()`'s full
+path (including its enclosing `->prefix()`, not just the literal string
+passed to `Route::get()`, to avoid false positives across unrelated route
+groups) and flags any literal-segment route shadowed by an earlier
+wildcard route with the same segment count. Validated the detector against
+the pre-fix version of the file first — it correctly found exactly the 9
+known bugs and nothing else, confirming the logic is sound. Run against the
+current (post-fix) file: **zero remaining instances of this pattern
+anywhere in the file.** Nothing else to flag.
 
 (Full detail for each is in its row below, and in the Notes column.)
 
@@ -77,7 +106,7 @@ assumed. See the close-out message for the recommendation on how to finish these
 | `teachers.view` | admin | Allowed | PASS | direct URL nav /teachers and /teachers/33, 200 |
 | `teachers.view` | teacher | Denied | NOT YET CHECKED |  |
 | `teachers.view` | guardian | Denied | PASS | direct URL nav /teachers, 403 |
-| `teachers.create` | admin | Allowed | FAIL | BUG: /teachers/create returns 404. Route not checked yet at this point in pass — flagged for follow-up check. \|\| BUG (pre-existing, unrelated to Spatie, same root cause as users.create): /teachers/create 404s — routes/web.php:215 registers GET /teachers/{teacher} before GET /teachers/create (line 219). |
+| `teachers.create` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /teachers/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `teachers.create` | teacher | Denied | NOT YET CHECKED |  |
 | `teachers.create` | guardian | Denied | NOT YET CHECKED |  |
 | `teachers.update` | admin | Allowed | PASS | direct URL nav /teachers/33/edit, 200 (GET form only) |
@@ -114,7 +143,7 @@ assumed. See the close-out message for the recommendation on how to finish these
 | `users.view` | admin | Allowed | PASS | direct URL nav /users and /users/89, 200 |
 | `users.view` | teacher | Denied | PASS | direct URL nav /users/89 and /users/89/edit, both 403 |
 | `users.view` | guardian | Denied | PASS | direct URL nav /users, 403 |
-| `users.create` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie): /users/create returns 404. Root cause: routes/web.php registers GET /users/{user} (users.show, line 235) BEFORE GET /users/create (users.create, line 239) — Laravel matches 'create' as the {user} route-model-binding param first, fails to find a User with that key, and 404s automatically. The Create User page has been completely unreachable for every admin regardless of the Spatie migration — this predates it entirely (same route-order bug would exist under the old role:admin middleware too). NOT FIXED — flagged per instruction to log and stop for review. |
+| `users.create` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /users/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `users.create` | teacher | Denied | NOT YET CHECKED |  |
 | `users.create` | guardian | Denied | NOT YET CHECKED |  |
 | `users.update` | admin | Allowed | PASS | direct URL nav /users/89/edit, 200 (GET form only) |
@@ -196,7 +225,7 @@ assumed. See the close-out message for the recommendation on how to finish these
 | `streams.view` | admin | Allowed | NOT YET CHECKED |  |
 | `streams.view` | teacher | Denied | NOT YET CHECKED |  |
 | `streams.view` | guardian | Denied | PASS | direct URL nav /streams, 403 |
-| `streams.create` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /streams/create 404s — /streams/{stream} (line 296) registered before /streams/create (line 300). |
+| `streams.create` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /streams/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `streams.create` | teacher | Denied | NOT YET CHECKED |  |
 | `streams.create` | guardian | Denied | NOT YET CHECKED |  |
 | `streams.update` | admin | Allowed | PASS | direct URL nav /streams/6/edit, 200 |
@@ -213,7 +242,7 @@ assumed. See the close-out message for the recommendation on how to finish these
 | `subjects.view` | admin | Allowed | NOT YET CHECKED |  |
 | `subjects.view` | teacher | Allowed | NOT YET CHECKED |  |
 | `subjects.view` | guardian | Denied | PASS | direct URL nav /subjects, 403 |
-| `subjects.create` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /subjects/create 404s — /subjects/{subject} (line 275) registered before /subjects/create (line 279). CONFIRMED user-facing: Subjects/Index.jsx's 'Add Subject' button links to route('subjects.create') directly, so real users hit this 404 in the actual UI, not just a dead route. |
+| `subjects.create` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /subjects/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `subjects.create` | teacher | Denied | NOT YET CHECKED |  |
 | `subjects.create` | guardian | Denied | NOT YET CHECKED |  |
 | `subjects.update` | admin | Allowed | PASS | direct URL nav /subjects/24/edit, 200 |
@@ -230,7 +259,7 @@ assumed. See the close-out message for the recommendation on how to finish these
 | `exams.view` | admin | Allowed | NOT YET CHECKED |  |
 | `exams.view` | teacher | Allowed | PASS | cross-teacher: teacher_m2 hit /exams/<teacher_m1's exam>, 403 |
 | `exams.view` | guardian | Denied | PASS | direct URL nav /exams, 403 |
-| `exams.create` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /exams/create 404s — /exams/{exam} (line 317) registered before /exams/create (line 321). |
+| `exams.create` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /exams/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `exams.create` | teacher | Allowed | NOT YET CHECKED |  |
 | `exams.create` | guardian | Denied | NOT YET CHECKED |  |
 | `exams.update` | admin | Allowed | NOT YET CHECKED |  |
@@ -264,19 +293,19 @@ assumed. See the close-out message for the recommendation on how to finish these
 | `timetable-periods.view` | admin | Allowed | NOT YET CHECKED |  |
 | `timetable-periods.view` | teacher | Allowed | NOT YET CHECKED |  |
 | `timetable-periods.view` | guardian | Denied | PASS | direct URL nav /timetables/periods, 403 |
-| `timetable-periods.manage` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /timetables/periods/create 404s — /timetables/periods/{period} (line 432) registered before /timetables/periods/create (line 436). \|\| direct URL nav /timetables/periods/5/edit, 200 (edit form works fine; only the create-route-shadowing bug is broken, logged separately) |
+| `timetable-periods.manage` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /timetables/periods/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `timetable-periods.manage` | teacher | Denied | PASS | direct URL nav /timetables/periods/5/edit, 403 |
 | `timetable-periods.manage` | guardian | Denied | NOT YET CHECKED |  |
 | `timetable-rooms.view` | admin | Allowed | NOT YET CHECKED |  |
 | `timetable-rooms.view` | teacher | Allowed | NOT YET CHECKED |  |
 | `timetable-rooms.view` | guardian | Denied | NOT YET CHECKED |  |
-| `timetable-rooms.manage` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /timetables/rooms/create 404s — /timetables/rooms/{room} (line 446) registered before /timetables/rooms/create (line 450). \|\| direct URL nav /timetables/rooms/20/edit, 200 (same — edit fine, create broken) |
+| `timetable-rooms.manage` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /timetables/rooms/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `timetable-rooms.manage` | teacher | Denied | PASS | direct URL nav /timetables/rooms/20/edit, 403 |
 | `timetable-rooms.manage` | guardian | Denied | NOT YET CHECKED |  |
 | `timetable-slots.view` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, DIFFERENT from the Phase 7 Batch C show() crash which IS still fixed): /timetables/slots (index) 500s. Root cause: TimetableSlotController::index() orders the query by 'period_id', a column that does not exist on timetable_slots — the real column is 'timetable_period_id'. Confirmed via storage/logs/laravel.log: SQLSTATE[42S22] Unknown column 'period_id' in 'order clause'. NOT FIXED — flagged per instruction to log and stop for review. |
 | `timetable-slots.view` | teacher | Allowed | PASS | PHASE 7 BUG RE-VERIFY (show() crash fix): teacher_m2 hit /timetables/slots/<teacher_m1's slot>, 403 (correctly denied, not a crash). Fix holds. NOTE: separate from this, the index() action (/timetables/slots) has a newly-found, different 500 bug logged under admin's row — not a regression of the Phase 7 fix, a different pre-existing defect in the same controller. |
 | `timetable-slots.view` | guardian | Denied | PASS | direct URL nav /timetables/slots (teacher/admin index), 403 |
-| `timetable-slots.manage` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /timetables/slots/create 404s — /timetables/slots/{slot} (line 460) registered before /timetables/slots/create (line 464). \|\| direct URL nav /timetables/slots/4/edit, 200 (same — edit fine, create broken) |
+| `timetable-slots.manage` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /timetables/slots/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `timetable-slots.manage` | teacher | Denied | PASS | direct URL nav /timetables/slots/4/edit, 403 |
 | `timetable-slots.manage` | guardian | Denied | NOT YET CHECKED |  |
 | `timetable-templates.manage` | admin | Allowed | PASS | direct URL nav /timetables/templates, 200, no console errors |
@@ -428,7 +457,7 @@ assumed. See the close-out message for the recommendation on how to finish these
 | `document-categories.view` | admin | Allowed | PASS | direct URL nav /document-categories and /document-categories/14, 200, no console errors (same false-flag as above, manually confirmed clean) |
 | `document-categories.view` | teacher | Denied | NOT YET CHECKED |  |
 | `document-categories.view` | guardian | Denied | PASS | direct URL nav /document-categories, 403 |
-| `document-categories.manage` | admin | Allowed | FAIL | BUG (pre-existing, unrelated to Spatie, systemic route-shadowing): /document-categories/create 404s — /document-categories/{documentCategory} (line 571) registered before /document-categories/create (line 575). \|\| direct URL nav /document-categories/14/edit, 200, no console errors (create form is broken per the route-shadowing bug logged separately; edit form is fine) \|\| direct URL nav /document-categories/14/edit, 200 (edit fine, create broken — already logged) |
+| `document-categories.manage` | admin | Allowed | PASS | FIXED 2026-08-29 (separate commit from the verification pass): moved the .create/.manage route group above the .view group in routes/web.php, matching the already-correct policies.create ordering. Re-verified live: /document-categories/create now 200s with its real create form. Sibling {id} route re-confirmed unaffected. |
 | `document-categories.manage` | teacher | Denied | PASS | direct URL nav /document-categories/14/edit, 403 |
 | `document-categories.manage` | guardian | Denied | NOT YET CHECKED |  |
 
