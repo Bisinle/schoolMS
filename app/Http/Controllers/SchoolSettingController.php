@@ -5,7 +5,6 @@ namespace App\Http\Controllers;
 use App\Models\SchoolSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use Inertia\Inertia;
 
 class SchoolSettingController extends Controller
 {
@@ -16,11 +15,13 @@ class SchoolSettingController extends Controller
             abort(403);
         }
 
-        $signature = SchoolSetting::get('headteacher_signature');
-
-        return Inertia::render('Settings/Academic', [
-            'signature' => $signature,
-        ]);
+        // Settings/Academic.jsx never existed as a standalone page - academic
+        // settings were split into the dedicated Academic Years and Academic
+        // Terms pages (see navigation.js), which is where every nav link
+        // already points. This route has no other referrer, so redirect to
+        // the natural starting point of that pair rather than render a page
+        // that doesn't exist.
+        return redirect()->route('settings.academic-years');
     }
 
     public function updateAcademic(Request $request)
