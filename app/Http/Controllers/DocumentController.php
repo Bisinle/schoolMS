@@ -331,12 +331,19 @@ class DocumentController extends Controller
                 ];
             });
 
-            $options['Guardian'] = Guardian::with('user')->get()->map(function ($guardian) {
-                return [
-                    'id' => $guardian->id,
-                    'name' => $guardian->user->name . ' (' . $guardian->relationship . ')',
-                ];
-            });
+            // GuardianController::destroy() soft-deletes the linked User but
+            // deliberately keeps the Guardian row itself, so with('user')
+            // can legitimately return a guardian whose user is gone -
+            // filter those out rather than crash on $guardian->user->name.
+            $options['Guardian'] = Guardian::with('user')->get()
+                ->filter(fn ($guardian) => $guardian->user !== null)
+                ->map(function ($guardian) {
+                    return [
+                        'id' => $guardian->id,
+                        'name' => $guardian->user->name . ' (' . $guardian->relationship . ')',
+                    ];
+                })
+                ->values();
 
             $options['User'] = User::whereNotIn('role', ['teacher', 'guardian', 'super_admin'])
                 ->get()
