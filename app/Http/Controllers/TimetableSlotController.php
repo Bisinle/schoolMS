@@ -277,7 +277,7 @@ class TimetableSlotController extends Controller
     {
         $this->authorize('view', $slot);
 
-        $slot->load(['template.grade', 'period', 'subject', 'teacher.user', 'room', 'grade']);
+        $slot->load(['template.grade', 'period', 'subject', 'teacher.user', 'room']);
 
         return Inertia::render('Timetables/Slots/Show', [
             'slot' => $slot,

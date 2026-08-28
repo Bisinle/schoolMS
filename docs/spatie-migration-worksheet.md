@@ -92,7 +92,11 @@ migration currently stands.
   regressions. Batch B (Exams/ExamResults) complete — found and fixed the
   same shape of bug again (`exam-results.create`: teacher could POST exam
   results for any exam in the school, not just their own grade's), 9 new
-  tests, zero regressions.
+  tests, zero regressions. Batch C (Timetables) complete — both permissions
+  already correctly enforced; found and fixed an unrelated pre-existing
+  crash bug instead (`timetable-slots.view`'s show() 500'd for every
+  authorized viewer, invalid eager-load key), 9 new tests, zero
+  regressions.
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
 explicitly out of scope here. The only intended behavior change in this whole
@@ -2100,3 +2104,36 @@ regressions (148 → 158, +10).
 **Verification:** `ExamOwnershipTest.php` (4 tests) + `ExamResultOwnershipTest.php`
 (5 tests) — 9 new tests, all green. Full suite: **167 passed / 31 failed**,
 same 8 pre-existing failing files, zero regressions (158 → 167, +9).
+
+**Batch C — Timetables (`timetable-slots.view`, `timetable-availability.manage`)
+— done.**
+
+- `timetable-slots.view`: already correctly enforced —
+  `TimetableSlotController::show()` authorizes against
+  `TimetableSlotPolicy::view()`, scoped to `$timetableSlot->teacher_id ===
+  $user->teacher->id`. New `TimetableSlotOwnershipTest.php` (3 tests) —
+  the negative case passed immediately, but the two *positive* cases
+  (teacher viewing their own slot, admin viewing any slot) both 500'd on
+  first run.
+- **Unrelated pre-existing crash bug found and fixed, not an authorization
+  gap**: `show()`'s eager-load call —
+  `$slot->load(['template.grade', 'period', 'subject', 'teacher.user',
+  'room', 'grade'])` — includes a bare `'grade'` key with no corresponding
+  relationship method on `TimetableSlot` (only `template()` exists; grade
+  is only reachable via `template.grade`, already loaded separately in the
+  same call). This means `/timetables/slots/{id}` has 500'd for **every**
+  successfully-authorized viewer this whole time, unconditionally — not an
+  edge case, not something this migration introduced. Fixed by dropping the
+  invalid `'grade'` key.
+- `timetable-availability.manage`: confirmed already fully correct across
+  every action (`show`/`edit`/`update`/`destroy`/`store` all inline-check
+  `$availability->teacher_id != $user->teacher->id`, admin unrestricted) —
+  this matches Batch 6's frontend-phase finding exactly (no Policy exists
+  for this permission at all). New `TeacherAvailabilityOwnershipTest.php`
+  (6 tests, covering all 4 mutating/viewing actions plus the admin-bypass
+  and teacher-owns-it cases) — all passed first try, no fix needed.
+
+**Verification:** `TimetableSlotOwnershipTest.php` (3 tests) +
+`TeacherAvailabilityOwnershipTest.php` (6 tests) — 9 new tests, all green.
+Full suite: **176 passed / 31 failed**, same 8 pre-existing failing files,
+zero regressions (167 → 176, +9).
