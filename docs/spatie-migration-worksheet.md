@@ -2308,3 +2308,42 @@ page), `timetable-slots.view` index() (wrong column in `orderBy`),
 `documents.update` (client-side crash), `accident-reports.view` (client-side
 crash) — see `docs/spatie-migration-verification-checklist.md` for detail,
 not fixed, logged for review as before.
+
+### Checklist continuation — rows 127–283, exhaustive pass complete (2026-08-29)
+
+Continued the verification checklist from row 127 through row 283 —
+**283/283 rows now checked, the exhaustive pass originally requested**.
+Same standard throughout: every "Denied" row confirmed via a hard block
+(403/404/redirect), never inferred from a missing nav link; every
+state-changing permission fired for real via an authenticated `curl`
+request (session cookie extracted from the live browser) or a genuine UI
+click-through, not just a GET page load.
+
+**One new real bug found**, via legitimate app usage rather than a fixture
+artifact: `documents.create` 500s for any school where an admin has ever
+used `guardians.delete` — `DocumentController::getEntityOptions()`'s admin
+branch iterates all guardians via `Guardian::with('user')` with no
+null-guard, but `guardians.delete` intentionally leaves an orphaned
+`Guardian` row (soft-deletes the linked `User`, doesn't touch the
+`Guardian` itself). Confirmed the causal link precisely by force-deleting
+the orphaned QA guardians this pass's own testing had produced, which
+immediately un-broke `/documents/create`. **Total across both passes: 14
+real bugs found, 9 fixed, 5 remaining** — see
+`docs/spatie-migration-verification-checklist.md` for full detail on all
+five.
+
+**Tooling note worth keeping in mind for future passes**: `agent-browser
+eval`'s in-page `fetch()` proved unreliable specifically for `DELETE`
+requests partway through this continuation — it reported `405`/`500` on
+several calls that, per direct database inspection, had actually
+succeeded. Switched to raw `curl` with a session cookie extracted via
+`agent-browser cookies get`, which reproduced the correct result every time
+it was cross-checked; real UI click-through settled one further case where
+even an early `fetch()` result looked inconsistent. Not an application bug.
+
+Full backend suite: 198 passed / 31 failed, same baseline, zero
+regressions (no app code touched in this continuation — pure QA). All QA
+fixtures cleaned up after.
+
+**The verification checklist is now closed: 283/283 rows checked, 270
+pass, 5 fail (all logged, none fixed per instruction), 8 N/A/inert.**
