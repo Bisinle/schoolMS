@@ -100,7 +100,10 @@ migration currently stands.
   report-comments.create/.lock already correctly enforced;
   `reports.view`'s generate() had the same missing-teacher-scoping bug a
   fourth time (any teacher could generate any student's report card), 10
-  new tests, zero regressions.
+  new tests, zero regressions. Batch E (Documents) complete — both
+  permissions already correctly enforced (Policy alone does all the work
+  here; the Documents routes have no route-level permission middleware at
+  all, unusually for this app), 8 new tests, zero regressions.
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
 explicitly out of scope here. The only intended behavior change in this whole
@@ -2172,3 +2175,21 @@ zero regressions (167 → 176, +9).
 `ReportCommentOwnershipTest.php` (6 tests) — 10 new tests, all green. Full
 suite: **186 passed / 31 failed**, same 8 pre-existing failing files, zero
 regressions (176 → 186, +10).
+
+**Batch E — Documents (`documents.view`, `.delete`) — done.**
+
+Both already correctly enforced — `DocumentController::show()`/`destroy()`
+call `authorize('view'/'delete', $document)` against `DocumentPolicy`,
+which scopes teacher access to their own uploaded-for-self documents,
+guardian access to their own or their children's documents, and delete
+additionally to the uploader's own pending/rejected documents — the exact
+formula the Batch 8 frontend fix already matched. Notably, the Documents
+routes carry **no route-level `permission:` middleware at all** (unlike
+every other module in this app) — the Policy alone does all the work here,
+and it holds up. New `DocumentOwnershipTest.php` (8 tests, covering view
+and delete × teacher/guardian/admin × the pending/verified status split)
+— all passed first try, no fix needed.
+
+**Verification:** 8 new tests, all green. Full suite: **194 passed / 31
+failed**, same 8 pre-existing failing files, zero regressions (186 → 194,
++8).
