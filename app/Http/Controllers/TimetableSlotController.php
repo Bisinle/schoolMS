@@ -44,7 +44,7 @@ class TimetableSlotController extends Controller
                 $query->where('teacher_id', $teacherId);
             })
             ->orderBy('day_of_week')
-            ->orderBy('period_id')
+            ->orderBy('timetable_period_id')
             ->paginate(50)
             ->withQueryString();
 
