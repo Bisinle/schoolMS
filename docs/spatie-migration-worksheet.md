@@ -88,12 +88,13 @@ migration currently stands.
   count, see Phase log), split into 6 domain batches, all complete: A
   (Attendance/Grades), B (Exams/ExamResults), C (Timetables), D
   (Reports/ReportComments), E (Documents), F (`quran-dashboard.view`
-  partial → full). Found and fixed **four real, live IDOR bugs, all the
+  partial → full). Found and fixed **three real, live IDOR bugs, all the
   same root cause** — a controller action re-using an existing ownership-
   scoped resource without re-checking the specific ID against that scope
   (`attendance.view`, `exam-results.create`, `reports.view` — three
   separate controllers, identical shape) — plus one unrelated crash bug
-  (`timetable-slots.view`'s `show()` 500'd for every viewer). 50 new tests
+  (`timetable-slots.view`'s `show()` 500'd for every viewer; four real bugs
+  total this phase). 50 new tests
   total (148 → 198 passing), zero regressions against the same 8
   pre-existing failing files throughout. See Phase log for the full
   breakdown and the pattern worth carrying forward.
@@ -2217,12 +2218,12 @@ partial promoted to full). Total: **50 new tests across this phase** (148
 → 198 passing), zero regressions against the same 8 pre-existing failing
 files throughout.
 
-**Four real, live authorization bugs found and fixed — all the same
-shape.** Every one of Batches A, B, and D turned up an IDOR with an
-identical root cause: a controller action that takes a route-bound or
-request-supplied record ID, correctly scopes the *list* a user sees but
-never re-validates that the specific ID being acted on belongs to that
-scope:
+**Three real, live IDOR bugs found and fixed — all the same shape** (plus
+one unrelated crash, see below — four real bugs total this phase). Every
+one of Batches A, B, and D turned up an IDOR with an identical root cause:
+a controller action that takes a route-bound or request-supplied record
+ID, correctly scopes the *list* a user sees but never re-validates that
+the specific ID being acted on belongs to that scope:
 
 - `attendance.view` — `AttendanceController::index()`/`reports()` (Batch A)
 - `exam-results.create` — `ExamResultController::store()` (Batch B)
@@ -2241,7 +2242,7 @@ whether an ID-bearing parameter needs the same ownership check as its
 sibling actions, rather than assuming the resource's existing scoping
 automatically covers every route.
 
-A fifth, unrelated bug (`timetable-slots.view`'s `show()` 500ing for every
+A fourth, unrelated bug (`timetable-slots.view`'s `show()` 500ing for every
 viewer, Batch C) was a plain crash, not an authorization gap — found
 incidentally while writing that batch's positive-path test.
 
@@ -2254,3 +2255,26 @@ regression test now in place" is exactly what Phase 7 set out to
 establish.
 
 **Phase 7 is now closed.**
+
+### Post-Phase-7 final verification pass (2026-08-29)
+
+A prioritized, non-exhaustive live-browser pass against the full 97-permission
+taxonomy, tracked in a new standalone document —
+`docs/spatie-migration-verification-checklist.md` — rather than duplicated
+here. 126 of 283 (permission, role) rows checked, covering: every
+ownership/state-scoped permission's cross-role negative case, the madrasah
+boundary (3 roles × non-madrasah school), the super-admin boundary, and a
+live re-confirmation of all 4 Phase 7 bug fixes (all still hold). **13 real,
+pre-existing bugs found, none fixed** — 9 are one systemic pattern (a
+`Route::get('/{resource}/create', ...)` registered *after* the wildcard
+`Route::get('/{resource}/{id}', ...)` for the same resource, so Laravel
+matches `create` as the `{id}` param and 404s — affects Teachers, Users,
+Subjects, Streams, Exams, TimetablePeriods, TimetableRooms, TimetableSlots,
+DocumentCategories); the other 4 are unrelated (`/settings/academic` 500s —
+missing Vite page component; `/timetables/slots` index 500s — orders by a
+nonexistent `period_id` column; `Documents/Edit.jsx` crashes client-side on
+every document; `AccidentReports/Show.jsx` crashes client-side, React error
+#31). See the checklist document for full detail per bug and the complete
+row-by-row results. None of this migration's own work is implicated — every
+bug predates Phase 5 and would have existed under the old `role:` middleware
+too.
