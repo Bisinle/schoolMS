@@ -82,28 +82,21 @@ migration currently stands.
   `Fees/Invoices/Index.jsx` that 403'd for guardians, now gated behind
   `can('fees.manage')` — verified live for both admin and guardian, full
   suite unaffected. **Phase 6 is closed as of this entry** — see Phase log.
-- [ ] **Phase 7** — Verification pass — 🔄 **In progress (2026-08-29).**
+- [x] **Phase 7** — Verification pass — ✅ **Closed (2026-08-29).**
   Negative-case test backfill for the 17 ownership/state-scoped permissions
   still lacking denial coverage (corrected from Phase 5's "15 + 1 partial"
-  count, see Phase log), split into 6 domain batches. Batch A
-  (Attendance/Grades) complete — found and fixed a real IDOR bug
-  (`attendance.view`: teacher could read another teacher's grade's
-  attendance via `grade_id` query-string manipulation), 10 new tests, zero
-  regressions. Batch B (Exams/ExamResults) complete — found and fixed the
-  same shape of bug again (`exam-results.create`: teacher could POST exam
-  results for any exam in the school, not just their own grade's), 9 new
-  tests, zero regressions. Batch C (Timetables) complete — both permissions
-  already correctly enforced; found and fixed an unrelated pre-existing
-  crash bug instead (`timetable-slots.view`'s show() 500'd for every
-  authorized viewer, invalid eager-load key), 9 new tests, zero
-  regressions. Batch D (Reports/ReportComments) complete —
-  report-comments.create/.lock already correctly enforced;
-  `reports.view`'s generate() had the same missing-teacher-scoping bug a
-  fourth time (any teacher could generate any student's report card), 10
-  new tests, zero regressions. Batch E (Documents) complete — both
-  permissions already correctly enforced (Policy alone does all the work
-  here; the Documents routes have no route-level permission middleware at
-  all, unusually for this app), 8 new tests, zero regressions.
+  count, see Phase log), split into 6 domain batches, all complete: A
+  (Attendance/Grades), B (Exams/ExamResults), C (Timetables), D
+  (Reports/ReportComments), E (Documents), F (`quran-dashboard.view`
+  partial → full). Found and fixed **four real, live IDOR bugs, all the
+  same root cause** — a controller action re-using an existing ownership-
+  scoped resource without re-checking the specific ID against that scope
+  (`attendance.view`, `exam-results.create`, `reports.view` — three
+  separate controllers, identical shape) — plus one unrelated crash bug
+  (`timetable-slots.view`'s `show()` 500'd for every viewer). 50 new tests
+  total (148 → 198 passing), zero regressions against the same 8
+  pre-existing failing files throughout. See Phase log for the full
+  breakdown and the pattern worth carrying forward.
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
 explicitly out of scope here. The only intended behavior change in this whole
@@ -2193,3 +2186,71 @@ and delete × teacher/guardian/admin × the pending/verified status split)
 **Verification:** 8 new tests, all green. Full suite: **194 passed / 31
 failed**, same 8 pre-existing failing files, zero regressions (186 → 194,
 +8).
+
+**Batch F — `quran-dashboard.view` (partial → fully covered) — done.**
+
+`QuranController::index()` (the only entry point this permission gates)
+takes no route parameter at all — the whole dashboard is derived entirely
+from the acting user's own session, so there is no "another user's
+dashboard" to leak, and no per-record ownership boundary of the kind every
+other batch tested. The existing `QuranDashboard*Test.php` files already
+cover the page's positive path and its guardian-scoped module-stats
+correctly (hence "partial," not "zero"). The one real, previously-untested
+denial boundary is `CheckMadrasahSchool`: every school role holds
+`quran-dashboard.view`, but the entire Quran module is `madrasah.only`-
+gated, and no existing test ever created a **non**-madrasah school to
+confirm that boundary actually holds. New `QuranDashboardAccessTest.php`
+(4 tests: admin/teacher/guardian all blocked with a 404 at a non-madrasah
+school, admin allowed at a madrasah school) — all passed first try, no fix
+needed.
+
+**Verification:** 4 new tests, all green. Full suite: **198 passed / 31
+failed**, same 8 pre-existing failing files, zero regressions (194 → 198,
++4).
+
+---
+
+### Phase 7 close-out (2026-08-29)
+
+All 6 batches done, 17 gap items closed (16 negative-case backfills + 1
+partial promoted to full). Total: **50 new tests across this phase** (148
+→ 198 passing), zero regressions against the same 8 pre-existing failing
+files throughout.
+
+**Four real, live authorization bugs found and fixed — all the same
+shape.** Every one of Batches A, B, and D turned up an IDOR with an
+identical root cause: a controller action that takes a route-bound or
+request-supplied record ID, correctly scopes the *list* a user sees but
+never re-validates that the specific ID being acted on belongs to that
+scope:
+
+- `attendance.view` — `AttendanceController::index()`/`reports()` (Batch A)
+- `exam-results.create` — `ExamResultController::store()` (Batch B)
+- `reports.view` — `ReportController::generate()` (Batch D)
+
+All three were fixed the same way: an explicit `$teacherGradeIds`-contains
+(or equivalent) check added right before the data is fetched/written,
+mirroring a check that already existed correctly elsewhere in the same
+controller (`mark()` for Attendance, `index()`'s `authorize('view',
+$exam)` for ExamResults, the guardian branch for Reports) — meaning the
+correct scoping logic was already in the codebase every time, just not
+applied consistently across every action reading or writing the same
+resource. **Worth carrying forward past this migration**: when adding a
+new controller action against an existing ownership-scoped resource, check
+whether an ID-bearing parameter needs the same ownership check as its
+sibling actions, rather than assuming the resource's existing scoping
+automatically covers every route.
+
+A fifth, unrelated bug (`timetable-slots.view`'s `show()` 500ing for every
+viewer, Batch C) was a plain crash, not an authorization gap — found
+incidentally while writing that batch's positive-path test.
+
+Batches with **no findings** (Grades, Exams' view/update, ExamResults'
+view/update, both Timetable-Availability's every action, both Documents
+permissions, ReportComments' both permissions, and the Quran-dashboard
+madrasah boundary) confirm those Policies/controllers were already
+correctly wired — not wasted batches, since "confirmed correct with a
+regression test now in place" is exactly what Phase 7 set out to
+establish.
+
+**Phase 7 is now closed.**
