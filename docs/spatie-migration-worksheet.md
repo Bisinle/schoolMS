@@ -96,7 +96,11 @@ migration currently stands.
   already correctly enforced; found and fixed an unrelated pre-existing
   crash bug instead (`timetable-slots.view`'s show() 500'd for every
   authorized viewer, invalid eager-load key), 9 new tests, zero
-  regressions.
+  regressions. Batch D (Reports/ReportComments) complete —
+  report-comments.create/.lock already correctly enforced;
+  `reports.view`'s generate() had the same missing-teacher-scoping bug a
+  fourth time (any teacher could generate any student's report card), 10
+  new tests, zero regressions.
 
 Scope reminder: Head Teacher role is a planned follow-up **after** this migration —
 explicitly out of scope here. The only intended behavior change in this whole
@@ -2137,3 +2141,34 @@ same 8 pre-existing failing files, zero regressions (158 → 167, +9).
 `TeacherAvailabilityOwnershipTest.php` (6 tests) — 9 new tests, all green.
 Full suite: **176 passed / 31 failed**, same 8 pre-existing failing files,
 zero regressions (167 → 176, +9).
+
+**Batch D — Reports + ReportComments (`reports.view`, `report-comments.create`,
+`.lock`) — done.**
+
+- `report-comments.create`, `report-comments.lock`: already correctly
+  enforced — `ReportController::saveComment()`/`lockComment()`'s inline
+  `is_class_teacher`-on-the-student's-grade check (route-level permission
+  deliberately coarse, per "Phase 2 disagreement #10", real enforcement is
+  inline — unchanged, not this migration's place to touch it). New
+  `ReportCommentOwnershipTest.php` (6 tests, covering both actions × both
+  comment types × the class-teacher/non-class-teacher/admin split) — all
+  passed first try.
+- **`reports.view` — real bug found and fixed, fourth instance of the same
+  shape as Batches A/B.** `ReportController::index()` (the list) correctly
+  scopes teachers to their own grade's students via query filtering, and
+  `generate()` (the actual per-student report-card entry point) correctly
+  checks guardian ownership — but never checked teacher ownership at all.
+  Any teacher holding `reports.view` (all of them) could generate any
+  student's full report card — academic averages, exam history, existing
+  comments — by passing an arbitrary `student_id`, regardless of grade.
+  Fixed by adding the same `$teacherGradeIds`-contains check already used
+  for `attendance.view` (Batch A). Test written red first, confirmed the
+  fix turns it green. (One test-writing mistake caught before it became a
+  false result: `reports.generate` is a GET route, not POST — my first
+  draft posted and got 405s across the board; fixed the test's HTTP verb,
+  not app code.)
+
+**Verification:** `ReportOwnershipTest.php` (4 tests) +
+`ReportCommentOwnershipTest.php` (6 tests) — 10 new tests, all green. Full
+suite: **186 passed / 31 failed**, same 8 pre-existing failing files, zero
+regressions (176 → 186, +10).
