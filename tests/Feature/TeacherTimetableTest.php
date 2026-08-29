@@ -118,7 +118,7 @@ class TeacherTimetableTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertInertia(fn ($page) => $page
-            ->component('Teachers/MyTimetable')
+            ->component('Teacher/MyTimetable')
             ->has('teacher')
             ->has('timetable')
             ->has('stats')
@@ -133,9 +133,11 @@ class TeacherTimetableTest extends TestCase
         $response->assertStatus(200);
 
         // Should have 1 lesson (from published template only)
+        // timetable is grouped by grade name, then by day - flatten across
+        // grades to check day-level counts regardless of grade grouping.
         $timetable = $response->viewData('page')['props']['timetable'];
-        $mondaySlots = $timetable['monday'] ?? [];
-        $tuesdaySlots = $timetable['tuesday'] ?? [];
+        $mondaySlots = collect($timetable)->flatMap(fn ($days) => $days['monday'] ?? [])->all();
+        $tuesdaySlots = collect($timetable)->flatMap(fn ($days) => $days['tuesday'] ?? [])->all();
 
         $this->assertCount(1, $mondaySlots, 'Should see lesson from published template');
         $this->assertCount(0, $tuesdaySlots, 'Should NOT see lesson from draft template');
