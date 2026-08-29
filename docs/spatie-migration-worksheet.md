@@ -2405,3 +2405,107 @@ baseline, zero regressions. All QA fixtures cleaned up.
 closed: 283/283 rows checked, 275 pass, 0 fail, 8 N/A/inert. Every bug
 found across both the original taxonomy migration (Phases 1-7) and this
 verification pass has been fixed and re-verified live.**
+
+### Pre-existing failing-test cleanup: 31 → 0 (2026-08-29)
+
+The 198/31 baseline referenced above (unchanged since Phase 7) was 31
+tests that were failing for reasons unrelated to the Spatie migration
+itself — stale Breeze scaffolding, one real 404-status bug, and broken
+or entirely missing test factories. Analyzed all 31 first, reported
+back categorized, then fixed one category at a time with a full-suite
+run after each. **Before: 198 passed / 31 failed. After: 227 passed / 0
+failed.** (Total dropped from 229 to 227 tests — RegistrationTest was
+deleted outright, see below.) 6 commits, in order:
+
+**Category A — stale Breeze scaffolding (4 commits: `1b29729`,
+`ee5b457`, `5708ec8`, `48a203f`):**
+1. `RegistrationTest` deleted entirely — self-registration is
+   intentionally removed (admin/school-provisioned accounts only), so
+   both its tests were testing a route that doesn't exist. Confirmed
+   this doesn't affect anything else, though it did surface a
+   pre-existing, separate issue: `Welcome.jsx` still links
+   `route('register')`, which no longer resolves — will throw
+   client-side for logged-out visitors on the public homepage. Flagged,
+   not fixed (out of scope for this pass).
+2. `ProfileTest` (5 tests) — rewrote to create school-scoped users
+   (`school_id` + `role`), matching every other test in the suite,
+   since a schoolless user isn't a real scenario here. One test also
+   had a second, independent bug: `assertNull($user->fresh())` after a
+   soft-delete — `fresh()` uses `newQueryWithoutScopes()`, which bypasses
+   `SoftDeletingScope` too (stock Laravel behavior, confirmed against
+   framework source), so it still finds the row. Replaced with
+   `assertSoftDeleted()`.
+3. `PasswordResetTest` (3 tests) — asserted against the stock
+   `ResetPassword` notification class; the app actually sends
+   `CustomResetPassword` (a subclass, for branded emails).
+   `NotificationFake` indexes by exact class name, not `instanceof`
+   (confirmed against framework source), so the stock class was never
+   going to match. Asserted against `CustomResetPassword::class`.
+4. `AuthenticationTest` (1 test) — asserted logout redirects to `/`;
+   `AuthenticatedSessionController::destroy()` deliberately redirects to
+   `/login` instead (its own comment: avoids hitting central API
+   routes).
+
+**Category B — real bug (1 commit: `38f8ed0`):**
+5. The `Route::fallback()` 404 page in `routes/web.php` returned HTTP
+   200, not 404 — `Inertia::render()` defaults to 200 and nothing
+   overrode it. Every genuinely nonexistent URL was silently a 200,
+   which is wrong for SEO/monitoring/any status-code-aware client.
+   Fixed with `->toResponse($request)->setStatusCode(404)`, verified
+   live via curl against a running dev server, and confirmed no
+   currently-passing test relied on the old 200-by-accident behavior.
+
+**Category C — broken/missing test factories (5 commits: `323d185`,
+`8322d84`, `5efec70`, `009fe69`, `28d77ee`):**
+6. `GradeFactory`/`SubjectFactory` — both `definition()` methods
+   returned an empty array, so any `::factory()->create()` without
+   overriding every column failed on NOT NULL constraints. Gave both
+   real defaults.
+7. `TimetableConflictDetectionTest` — its shared `beforeEach()` used
+   `school_type => 'primary'` and grade `level => 'primary'`, neither a
+   valid enum value (`school_type` is `islamic_school`/`madrasah`;
+   level is `ECD`/`LOWER PRIMARY`/`UPPER PRIMARY`/`JUNIOR SECONDARY`),
+   so every test in the file errored before running.
+8. Created `AcademicTermFactory`/`AcademicYearFactory` as asked, then
+   discovered — while actually getting `TeacherTimetableTest` and
+   `TimetableGenerationValidationTest` fully green, not just past the
+   originally-scoped errors — that `Room`, `TimetablePeriod`,
+   `TimetableTemplate`, `TimetableSlot`, `TeacherAvailability`, and
+   `LevelDayBlueprint` had **no factory files at all**. Wrote all 8 as
+   one group. `TimetableTemplate`/`TimetableSlot`/`AcademicTerm` chain
+   several tenant-scoped foreign keys (grade, academic term, academic
+   year, subject); since `BelongsToSchool` only auto-populates
+   `school_id` under an authenticated user and several of these tests
+   build fixtures before `actingAs()`, gave each a `school_id` default
+   and threaded it through the nested factory defaults via closures, so
+   a template and its grade/term (and a term's year) land in the same
+   tenant instead of each getting an unrelated random school.
+
+   Getting those 3 test files fully green (not just past their
+   originally-diagnosed cause) also surfaced 5 assertions that were
+   stale for reasons unrelated to factories at all — same
+   fix-the-test-not-the-app judgment call as Category A, so fixed
+   inline rather than re-scoping:
+   - `TeacherTimetableTest` asserted Inertia component
+     `Teachers/MyTimetable` (plural, an unused leftover page); the
+     controller renders `Teacher/MyTimetable` (singular). It also read
+     `$timetable['monday']` directly, but the controller groups slots
+     by grade name first, then by day.
+   - `TimetableGenerationValidationTest`: scenario 7 asserted `>=5`
+     errors from an empty grade, but `Grade::canGenerateTimetable()`'s
+     periods check only runs once a blueprint exists, so blueprint and
+     periods errors can never both fire — the real max is 4. The
+     frontend-prop test hit `timetables.templates.grid`, which now just
+     redirects to `timetables.templates.show`
+     (`TimetableTemplateController::grid()`'s own docblock says as
+     much — "grid is now the default view, kept for backward
+     compatibility"). Scenario 4 tried to attach a subject with
+     `sessions_per_week`/`priority` set to `null` to simulate "missing"
+     values, but both columns are NOT NULL with defaults (`4` /
+     `'neutral'`) — that row can never exist for real. Switched to
+     `sessions_per_week => 0`, the actual reachable invalid case the
+     app checks for.
+
+Full suite after all 6 commits: **227 passed / 0 failed** — every
+previously-failing test now passes, confirmed with no regressions
+elsewhere.
