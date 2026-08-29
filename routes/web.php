@@ -808,5 +808,10 @@ Route::middleware(['auth'])->prefix('incident-reports')->name('incident-reports.
 
 // Fallback route for 404
 Route::fallback(function () {
-    return Inertia::render('Errors/404');
+    // Inertia::render() defaults to a 200 response - without an explicit
+    // status code here, every genuinely nonexistent route would return
+    // the 404 page's content with an HTTP 200, which is wrong for SEO,
+    // monitoring, and any client that checks the status code rather than
+    // the page content.
+    return Inertia::render('Errors/404')->toResponse(request())->setStatusCode(404);
 });
