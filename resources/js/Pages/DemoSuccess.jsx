@@ -1,5 +1,6 @@
 import { Head, Link } from '@inertiajs/react';
 import { School, CheckCircle, Calendar, Mail, ArrowRight } from 'lucide-react';
+import SiteFooter from '@/Components/SiteFooter';
 
 export default function DemoSuccess() {
     return (
@@ -100,21 +101,7 @@ export default function DemoSuccess() {
                 </div>
 
                 {/* Footer */}
-                <footer className="bg-[#0b1a34] text-white py-8 mt-12">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex flex-col md:flex-row justify-between items-center">
-                            <div className="flex items-center space-x-3 mb-4 md:mb-0">
-                                <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center">
-                                    <School className="w-6 h-6 text-orange" />
-                                </div>
-                                <span className="text-xl font-bold">SchoolMS</span>
-                            </div>
-                            <div className="text-gray-400 text-sm">
-                                © {new Date().getFullYear()} SchoolMS. All rights reserved.
-                            </div>
-                        </div>
-                    </div>
-                </footer>
+                <SiteFooter />
             </div>
         </>
     );
