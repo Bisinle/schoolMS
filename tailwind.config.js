@@ -13,6 +13,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['Figtree', ...defaultTheme.fontFamily.sans],
+        display: ['Fraunces', ...defaultTheme.fontFamily.serif],
       },
       colors: {
         navy: {
@@ -25,6 +26,7 @@ export default {
           dark: '#ea580c',
           light: '#fb923c',
         },
+        cream: '#faf6ef',
       },
     },
   },

@@ -106,6 +106,11 @@ class ReportController extends Controller
             if (!in_array($student->id, $childrenIds)) {
                 abort(403, 'Unauthorized access to student report.');
             }
+        } elseif ($user->isTeacher()) {
+            $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
+            if (!in_array($student->grade_id, $teacherGradeIds)) {
+                abort(403, 'Unauthorized access to student report.');
+            }
         }
 
         $term = $validated['term'];

@@ -37,5 +37,8 @@ test('users can logout', function () {
     $response = $this->actingAs($user)->post('/logout');
 
     $this->assertGuest();
-    $response->assertRedirect('/');
+    // AuthenticatedSessionController::destroy() deliberately redirects to
+    // /login rather than / - see its own comment: "avoid hitting central
+    // API routes".
+    $response->assertRedirect('/login');
 });

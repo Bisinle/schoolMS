@@ -41,6 +41,13 @@ class AttendanceController extends Controller
             $selectedGradeId = $grades->first()->id;
         }
 
+        // A teacher may only ever view attendance for a grade they're assigned
+        // to — $grades already reflects that scoping, so reject any grade_id
+        // outside it rather than trusting the query string.
+        if ($selectedGradeId && $user->isTeacher() && !$grades->contains('id', (int) $selectedGradeId)) {
+            abort(403, 'You are not authorized to view attendance for this grade.');
+        }
+
         // Get attendance data if grade is selected
         $attendanceData = null;
         if ($selectedGradeId) {
@@ -122,6 +129,10 @@ class AttendanceController extends Controller
                 ->orderBy('level')
                 ->orderBy('name')
                 ->get();
+        }
+
+        if ($gradeId && $user->isTeacher() && !$grades->contains('id', (int) $gradeId)) {
+            abort(403, 'You are not authorized to view attendance for this grade.');
         }
 
         $reportData = null;

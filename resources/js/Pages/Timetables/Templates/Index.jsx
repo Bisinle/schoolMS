@@ -7,8 +7,10 @@ import PasswordConfirmationModal from '@/Components/PasswordConfirmationModal';
 import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { Badge } from '@/Components/UI';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function TimetableTemplatesIndex({ templates, grades, streams, filters: initialFilters = {}, auth }) {
+    const { can } = usePermissions();
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/timetables/templates',
@@ -140,7 +142,7 @@ export default function TimetableTemplatesIndex({ templates, grades, streams, fi
                         </div>
                     </div>
 
-                    {auth.user.role === 'admin' && (
+                    {can('timetable-templates.manage') && (
                         <Link
                             href={route('timetables.templates.create')}
                             className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
@@ -257,7 +259,7 @@ export default function TimetableTemplatesIndex({ templates, grades, streams, fi
                                             <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
                                             <span className="hidden sm:inline">View</span>
                                         </Link>
-                                        {auth.user.role === 'admin' && (
+                                        {can('timetable-templates.manage') && (
                                             <>
                                                 {template.status === 'draft' && (
                                                     <>
@@ -325,7 +327,7 @@ export default function TimetableTemplatesIndex({ templates, grades, streams, fi
                                 <p className="text-gray-600 mb-6">
                                     {filters.search || filters.grade_id || filters.status ? 'Try adjusting your filters' : 'Get started by creating your first timetable template'}
                                 </p>
-                                {auth.user.role === 'admin' && !filters.search && !filters.grade_id && !filters.status && (
+                                {can('timetable-templates.manage') && !filters.search && !filters.grade_id && !filters.status && (
                                     <Link
                                         href={route('timetables.templates.create')}
                                         className="inline-flex items-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"

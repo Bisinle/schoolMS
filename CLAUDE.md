@@ -155,7 +155,7 @@ Super admins have `school_id = null` and manage schools/tenants globally (`route
 
 ### Authorization
 
-Roles are a plain string column on `users` (`App\Enums\UserRole`: `super_admin`, `admin`, `teacher`, `guardian`, `accountant`, `receptionist`, `nurse`, `it_staff`, `maid`, `cook`) — not a package like Spatie Permission. Enforcement is route-middleware based:
+Roles are a plain string column on `users` (`App\Enums\UserRole`: `super_admin`, `admin`, `teacher`, `guardian`) — not a package like Spatie Permission. Enforcement is route-middleware based:
 - `role:admin,teacher,...` (`RoleMiddleware`) — the primary authorization boundary; checks `$user->role` against the allowed list and also kills sessions for deactivated (`is_active = false`) users.
 - `school.active` (`CheckSchoolActive`) — logs out users whose school has been deactivated/suspended.
 - `school.admin` / `super.admin` — narrower role checks.

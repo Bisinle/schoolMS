@@ -7,8 +7,10 @@ import BulkDeletePeriodsModal from '@/Components/Blueprints/BulkDeletePeriodsMod
 import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { Badge } from '@/Components/UI';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function TimetablePeriodsIndex({ periods, filters: initialFilters = {}, gradeLevels = [], auth }) {
+    const { can, canAny } = usePermissions();
     const { errors } = usePage().props;
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
@@ -95,22 +97,26 @@ export default function TimetablePeriodsIndex({ periods, filters: initialFilters
                     </div>
 
                     <div className="flex gap-2">
-                        {auth.user.role === 'admin' && (
+                        {canAny(['timetable-dashboard.view', 'timetable-periods.manage']) && (
                             <>
-                                <Link
-                                    href="/blueprints"
-                                    className="inline-flex items-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md hover:shadow-lg"
-                                >
-                                    <Sparkles className="w-5 h-5 mr-2" />
-                                    Generate from Blueprint
-                                </Link>
-                                <Link
-                                    href={route('timetables.periods.create')}
-                                    className="inline-flex items-center px-4 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
-                                >
-                                    <Plus className="w-5 h-5 mr-2" />
-                                    Add Manually
-                                </Link>
+                                {can('timetable-dashboard.view') && (
+                                    <Link
+                                        href="/blueprints"
+                                        className="inline-flex items-center px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-md hover:shadow-lg"
+                                    >
+                                        <Sparkles className="w-5 h-5 mr-2" />
+                                        Generate from Blueprint
+                                    </Link>
+                                )}
+                                {can('timetable-periods.manage') && (
+                                    <Link
+                                        href={route('timetables.periods.create')}
+                                        className="inline-flex items-center px-4 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
+                                    >
+                                        <Plus className="w-5 h-5 mr-2" />
+                                        Add Manually
+                                    </Link>
+                                )}
                             </>
                         )}
                     </div>
@@ -301,7 +307,7 @@ export default function TimetablePeriodsIndex({ periods, filters: initialFilters
                                                     >
                                                         <Eye className="w-4 h-4" />
                                                     </Link>
-                                                    {auth.user.role === 'admin' && (
+                                                    {can('timetable-periods.manage') && (
                                                         <>
                                                             <Link
                                                                 href={route('timetables.periods.edit', period.id)}
@@ -329,7 +335,7 @@ export default function TimetablePeriodsIndex({ periods, filters: initialFilters
                                             <p className="text-gray-600 mb-6">
                                                 {filters.search || filters.period_type || filters.is_active ? 'Try adjusting your filters' : 'Create atomic time blocks for your school day - lessons, breaks, prayers, and activities'}
                                             </p>
-                                            {auth.user.role === 'admin' && !filters.search && !filters.period_type && !filters.is_active && (
+                                            {can('timetable-periods.manage') && !filters.search && !filters.period_type && !filters.is_active && (
                                                 <Link
                                                     href={route('timetables.periods.create')}
                                                     className="inline-flex items-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"

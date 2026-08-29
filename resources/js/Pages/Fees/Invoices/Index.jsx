@@ -23,10 +23,11 @@ import useFilters from "@/Hooks/useFilters";
 import useCumulativeLoading from "@/Hooks/useCumulativeLoading";
 import LoadMoreButton from "@/Components/Pagination/LoadMoreButton";
 import Pagination from "@/Components/Pagination/Pagination";
+import usePermissions from "@/Hooks/usePermissions";
 
 // Mobile Invoice Item Component
-function MobileInvoiceItem({ invoice, auth, onDelete }) {
-    const invoiceBaseUrl = auth.user.role === 'guardian' ? '/guardian/invoices' : '/invoices';
+function MobileInvoiceItem({ invoice, auth, can, onDelete }) {
+    const invoiceBaseUrl = can('fees.view-own-invoices') ? '/guardian/invoices' : '/invoices';
 
     const primaryActions = [
         {
@@ -38,7 +39,7 @@ function MobileInvoiceItem({ invoice, auth, onDelete }) {
     ];
 
     // Always show delete for admins (for development)
-    if (auth.user.role === "admin") {
+    if (can('fees.manage')) {
         primaryActions.push({
             icon: Trash2,
             label: "Delete",
@@ -70,7 +71,7 @@ function MobileInvoiceItem({ invoice, auth, onDelete }) {
                         </div>
 
                         {/* Guardian Name (Admin only) */}
-                        {auth.user.role !== "guardian" && (
+                        {can('fees.manage') && (
                             <h3 className="text-base font-semibold text-gray-900 truncate mb-2">
                                 {invoice.guardian_name}
                             </h3>
@@ -141,7 +142,10 @@ export default function InvoicesIndex({
     terms,
     filters: initialFilters,
 }) {
-    const invoiceBaseUrl = auth.user.role === 'guardian' ? '/guardian/invoices' : '/invoices';
+    const { can } = usePermissions();
+    const canManageFees = can('fees.manage');
+    const isGuardianView = can('fees.view-own-invoices');
+    const invoiceBaseUrl = isGuardianView ? '/guardian/invoices' : '/invoices';
 
     const [deleteModal, setDeleteModal] = useState({
         show: false,
@@ -179,12 +183,13 @@ export default function InvoicesIndex({
 
     return (
         <AuthenticatedLayout
-            header={auth.user.role === "guardian" ? "My Invoices" : "Invoices"}
+            header={isGuardianView ? "My Invoices" : "Invoices"}
         >
             <Head title="Invoices" />
 
             <div className="space-y-6">
                 {/* Header */}
+                {canManageFees && (
                     <Link
                         href="/fees"
                         className="inline-flex items-center px-4 py-2 bg-orange text-white font-medium rounded-lg hover:bg-orange-dark transition-colors"
@@ -192,18 +197,19 @@ export default function InvoicesIndex({
                         <ArrowLeft className="w-5 h-5 mr-2" />
                         Back to Fees
                     </Link>
+                )}
                 <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
                   
                     <div className="flex items-center space-x-3">
                         <Receipt className="w-8 h-8 text-orange" />
                         <div>
                             <h2 className="text-2xl font-bold text-gray-900">
-                                {auth.user.role === "guardian"
+                                {isGuardianView
                                     ? "My Invoices"
                                     : "Invoices"}
                             </h2>
                             <p className="text-sm text-gray-600">
-                                {auth.user.role === "guardian"
+                                {isGuardianView
                                     ? "View and manage your fee invoices"
                                     : "Manage student fee invoices and payments"}
                             </p>
@@ -211,7 +217,7 @@ export default function InvoicesIndex({
                     </div>
 
                     {/* Action Button - Admin Only */}
-                    {auth.user.role === "admin" && (
+                    {canManageFees && (
                         <Link
                             href="/invoices/create"
                             className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
@@ -223,7 +229,7 @@ export default function InvoicesIndex({
                 </div>
 
                 {/* Filters - Admin Only */}
-                {auth.user.role === "admin" && (
+                {canManageFees && (
                     <FilterBar>
                         <SearchInput
                             value={filters.search}
@@ -271,12 +277,12 @@ export default function InvoicesIndex({
                         icon={Receipt}
                         title="No invoices found"
                         message={
-                            auth.user.role === "guardian"
+                            isGuardianView
                                 ? "You don't have any invoices yet."
                                 : "No invoices match your search criteria."
                         }
                         action={
-                            auth.user.role === "admin"
+                            canManageFees
                                 ? {
                                       label: "Create Invoice",
                                       href: "/invoices/create",
@@ -295,6 +301,7 @@ export default function InvoicesIndex({
                                     key={invoice.id}
                                     invoice={invoice}
                                     auth={auth}
+                                    can={can}
                                     onDelete={handleDelete}
                                 />
                             ))}
@@ -320,7 +327,7 @@ export default function InvoicesIndex({
                                         <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                             Invoice #
                                         </th>
-                                        {auth.user.role !== "guardian" && (
+                                        {canManageFees && (
                                             <th className="px-6 py-3.5 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
                                                 Guardian
                                             </th>
@@ -361,7 +368,7 @@ export default function InvoicesIndex({
                                                     </span>
                                                 </div>
                                             </td>
-                                            {auth.user.role !== "guardian" && (
+                                            {canManageFees && (
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="flex items-center gap-2">
                                                         <User className="w-4 h-4 text-gray-400" />
@@ -425,7 +432,7 @@ export default function InvoicesIndex({
                                                         <Eye className="w-4 h-4" />
                                                     </Link>
                                                     {/* Always show delete for admins (for development) */}
-                                                    {auth.user.role === "admin" && (
+                                                    {canManageFees && (
                                                         <button
                                                             onClick={() =>
                                                                 handleDelete(

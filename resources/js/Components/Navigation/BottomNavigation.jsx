@@ -15,14 +15,27 @@ import {
 /**
  * Bottom Navigation Component for Mobile
  * Industry-standard mobile navigation pattern
- * 
+ *
  * @param {Object} props
- * @param {string} props.role - User role (admin, teacher, guardian)
+ * @param {string} props.role - User role (admin, teacher, guardian) — still
+ *   selects which curated fixed-slot layout to build, same reasoning as
+ *   navigation.js's filterByPermission: this is a UI-routing choice, not a
+ *   security boundary. Each item's actual visibility is now gated by
+ *   `can`/`canAny` against the user's real permissions.
  * @param {boolean} props.isMadrasah - Whether school is madrasah type
+ * @param {(permission: string) => boolean} props.can
+ * @param {(permissions: string[]) => boolean} [props.canAny]
  * @param {Function} props.onMoreClick - Callback when "More" is clicked
  * @param {Object} props.badges - Badge counts for navigation items
  */
-export default function BottomNavigation({ role, isMadrasah = false, onMoreClick, badges = {} }) {
+export default function BottomNavigation({ role, isMadrasah = false, can = () => true, canAny = () => true, onMoreClick, badges = {} }) {
+    const filterItems = (items) => items.filter((item) => {
+        if (item.isMore) return true;
+        if (item.permission && !can(item.permission)) return false;
+        if (item.permissions && !canAny(item.permissions)) return false;
+        return true;
+    });
+
     // Navigation configuration for teachers
     const getTeacherNavItems = () => {
         const baseItems = [
@@ -39,6 +52,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: ClipboardCheck,
                 label: 'Attendance',
                 badge: badges.attendance,
+                permission: 'attendance.view',
             },
             {
                 name: 'My Timetable',
@@ -46,6 +60,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: Calendar,
                 label: 'Timetable',
                 badge: badges.timetable,
+                permission: 'timetable-schedule.view-own',
             },
         ];
 
@@ -57,6 +72,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: Book,
                 label: 'Quran',
                 badge: badges.quran,
+                permission: 'quran-dashboard.view',
             });
         } else {
             baseItems.push({
@@ -65,6 +81,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: BookOpen,
                 label: 'Grades',
                 badge: badges.grades,
+                permission: 'grades.view',
             });
         }
 
@@ -96,6 +113,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: ClipboardCheck,
                 label: 'Attendance',
                 badge: badges.attendance,
+                permission: 'attendance.view',
             },
             {
                 name: 'Students',
@@ -103,6 +121,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: Users,
                 label: 'Students',
                 badge: badges.students,
+                permission: 'students.view',
             },
             {
                 name: 'Timetable',
@@ -110,6 +129,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: Clock,
                 label: 'Timetable',
                 badge: badges.timetable,
+                permission: 'timetable-dashboard.view',
             },
             {
                 name: 'More',
@@ -139,6 +159,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: ClipboardCheck,
                 label: 'Attendance',
                 badge: badges.attendance,
+                permission: 'attendance.view-own-children',
             },
             {
                 name: 'Invoices',
@@ -146,6 +167,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: DollarSign,
                 label: 'Invoices',
                 badge: badges.invoices,
+                permission: 'fees.view-own-invoices',
             },
         ];
 
@@ -157,6 +179,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: Book,
                 label: 'Quran',
                 badge: badges.quran,
+                permission: 'quran-dashboard.view',
             });
         } else {
             baseItems.push({
@@ -165,6 +188,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
                 icon: FileText,
                 label: 'Reports',
                 badge: badges.reports,
+                permission: 'reports.view',
             });
         }
 
@@ -194,7 +218,7 @@ export default function BottomNavigation({ role, isMadrasah = false, onMoreClick
         }
     };
 
-    const navItems = getNavItems();
+    const navItems = filterItems(getNavItems());
 
     // Check if a nav item is active
     const isActive = (item) => {

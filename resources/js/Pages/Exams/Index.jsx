@@ -10,6 +10,7 @@ import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Compon
 import { Badge } from '@/Components/UI';
 import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
+import usePermissions from '@/Hooks/usePermissions';
 
 // Helper to get exam type badge variant
 function getExamTypeBadgeVariant(type) {
@@ -33,17 +34,22 @@ function getExamTypeLabel(type) {
 
 // Mobile List Item Component - Refactored with new components
 function MobileExamItem({ exam, auth, onDelete }) {
-    // Define swipe actions - Only admins can edit/delete
+    const { can } = usePermissions();
+    // exams.update is held by both admin and teacher, but ExamPolicy::update()
+    // scopes teacher to exams they created — mirror that exactly so the
+    // button doesn't show for exams a teacher can't actually edit.
+    const canEditExam = can('exams.update') && (auth.user.role === 'admin' || exam.created_by === auth.user.id);
+
+    // Define swipe actions
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/exams/${exam.id}` },
     ];
 
-    // Only admins can edit and delete exams
-    if (auth.user.role === 'admin') {
+    if (canEditExam) {
         primaryActions.push({ icon: Edit, label: 'Edit', href: `/exams/${exam.id}/edit` });
     }
 
-    const secondaryActions = auth.user.role === 'admin' ? [
+    const secondaryActions = can('exams.delete') ? [
         { icon: Trash2, label: 'Delete', onClick: () => onDelete(exam) },
     ] : [];
 
@@ -182,31 +188,31 @@ function MobileExamItem({ exam, auth, onDelete }) {
             </div>
 
             {/* Action Buttons */}
-            <div className={`grid ${auth.user.role === 'admin' ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pt-4 border-t border-gray-100`}>
+            <div className={`grid ${(canEditExam || can('exams.delete')) ? 'grid-cols-2' : 'grid-cols-1'} gap-3 pt-4 border-t border-gray-100`}>
                 <Link
                     href={`/exams/${exam.id}`}
-                    className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95 ${auth.user.role !== 'admin' ? 'col-span-1' : ''}`}
+                    className={`flex items-center justify-center gap-2 px-4 py-3 bg-blue-50 text-blue-700 rounded-xl font-bold text-sm hover:bg-blue-100 transition-colors active:scale-95 ${!(canEditExam || can('exams.delete')) ? 'col-span-1' : ''}`}
                 >
                     <Eye className="w-4 h-4" />
                     View
                 </Link>
-                {auth.user.role === 'admin' && (
-                    <>
-                        <Link
-                            href={`/exams/${exam.id}/edit`}
-                            className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 rounded-xl font-bold text-sm hover:bg-orange-100 transition-colors active:scale-95"
-                        >
-                            <Edit className="w-4 h-4" />
-                            Edit
-                        </Link>
-                        <button
-                            onClick={() => onDelete(exam)}
-                            className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
-                        >
-                            <Trash2 className="w-4 h-4" />
-                            Delete Exam
-                        </button>
-                    </>
+                {canEditExam && (
+                    <Link
+                        href={`/exams/${exam.id}/edit`}
+                        className="flex items-center justify-center gap-2 px-4 py-3 bg-orange-50 text-orange-700 rounded-xl font-bold text-sm hover:bg-orange-100 transition-colors active:scale-95"
+                    >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                    </Link>
+                )}
+                {can('exams.delete') && (
+                    <button
+                        onClick={() => onDelete(exam)}
+                        className="col-span-2 flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-700 rounded-xl font-bold text-sm hover:bg-red-100 transition-colors active:scale-95"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                        Delete Exam
+                    </button>
                 )}
             </div>
         </div>
@@ -225,6 +231,7 @@ function MobileExamItem({ exam, auth, onDelete }) {
 }
 
 export default function ExamsIndex({ exams, grades, filters: initialFilters = {}, auth }) {
+    const { can } = usePermissions();
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/exams',
@@ -486,23 +493,23 @@ export default function ExamsIndex({ exams, grades, filters: initialFilters = {}
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Link>
-                                                {auth.user.role === 'admin' && (
-                                                    <>
-                                                        <Link
-                                                            href={`/exams/${exam.id}/edit`}
-                                                            className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
-                                                            title="Edit Exam"
-                                                        >
-                                                            <Edit className="w-4 h-4" />
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => confirmDelete(exam)}
-                                                            className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                                            title="Delete Exam"
-                                                        >
-                                                            <Trash2 className="w-4 h-4" />
-                                                        </button>
-                                                    </>
+                                                {can('exams.update') && (auth.user.role === 'admin' || exam.created_by === auth.user.id) && (
+                                                    <Link
+                                                        href={`/exams/${exam.id}/edit`}
+                                                        className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                        title="Edit Exam"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </Link>
+                                                )}
+                                                {can('exams.delete') && (
+                                                    <button
+                                                        onClick={() => confirmDelete(exam)}
+                                                        className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                                                        title="Delete Exam"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
                                                 )}
                                             </td>
                                         </tr>

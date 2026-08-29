@@ -3,6 +3,7 @@ import { Head, Link, router, useForm } from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import { Badge } from "@/Components/UI";
+import usePermissions from "@/Hooks/usePermissions";
 import {
     Download,
     Eye,
@@ -19,6 +20,15 @@ import {
 } from "lucide-react";
 
 export default function Show({ document, auth }) {
+    const { can } = usePermissions();
+    const canVerify = can('documents.verify');
+    const canReject = can('documents.reject');
+    const canDeleteDoc = can('documents.delete') && (
+        auth.user.role === 'admin' ||
+        (document.uploaded_by === auth.user.id && ['pending', 'rejected'].includes(document.status))
+    );
+    const showAdminActions = (canVerify || canReject) && document.status === 'pending';
+
     const [showRejectModal, setShowRejectModal] = useState(false);
     const { data, setData, post, processing } = useForm({
         rejection_reason: "",
@@ -364,34 +374,36 @@ export default function Show({ document, auth }) {
                             </div>
 
                             {/* Admin Actions or Delete */}
-                            {(auth.user.role === "admin" || document.status === "pending" || document.status === "rejected") && (
+                            {(showAdminActions || canDeleteDoc) && (
                                 <div className="flex flex-col sm:flex-row gap-3">
                                     {/* Admin Actions - Verify & Reject */}
-                                    {auth.user.role === "admin" && document.status === "pending" && (
+                                    {showAdminActions && (
                                         <>
-                                            <button
-                                                onClick={handleVerifyClick}
-                                                className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
-                                            >
-                                                <CheckCircle className="w-4 h-4 mr-2" />
-                                                Verify
-                                            </button>
-                                            <button
-                                                onClick={() =>
-                                                    setShowRejectModal(true)
-                                                }
-                                                className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"
-                                            >
-                                                <XCircle className="w-4 h-4 mr-2" />
-                                                Reject
-                                            </button>
+                                            {canVerify && (
+                                                <button
+                                                    onClick={handleVerifyClick}
+                                                    className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
+                                                >
+                                                    <CheckCircle className="w-4 h-4 mr-2" />
+                                                    Verify
+                                                </button>
+                                            )}
+                                            {canReject && (
+                                                <button
+                                                    onClick={() =>
+                                                        setShowRejectModal(true)
+                                                    }
+                                                    className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"
+                                                >
+                                                    <XCircle className="w-4 h-4 mr-2" />
+                                                    Reject
+                                                </button>
+                                            )}
                                         </>
                                     )}
 
                                     {/* Delete Action */}
-                                    {(auth.user.role === "admin" ||
-                                        document.status === "pending" ||
-                                        document.status === "rejected") && (
+                                    {canDeleteDoc && (
                                         <button
                                             onClick={handleDeleteClick}
                                             className="flex-1 inline-flex items-center justify-center px-4 py-2.5 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors"

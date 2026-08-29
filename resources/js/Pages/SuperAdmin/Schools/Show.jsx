@@ -9,6 +9,9 @@ export default function Show({ school }) {
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [showImpersonateModal, setShowImpersonateModal] = useState(false);
 
+    const schoolAdmins = (school.users || []).filter((u) => u.role === 'admin');
+    const [selectedAdminId, setSelectedAdminId] = useState(schoolAdmins[0]?.id ?? null);
+
     const handleToggleActive = () => {
         router.post(
             route('super-admin.schools.toggle-active', school.id),
@@ -26,7 +29,13 @@ export default function Show({ school }) {
     };
 
     const handleImpersonate = () => {
+        if (!selectedAdminId) {
+            return;
+        }
+
         router.post(route('super-admin.schools.impersonate', school.id), {
+            user_id: selectedAdminId,
+        }, {
             onSuccess: () => setShowImpersonateModal(false),
         });
     };
@@ -267,9 +276,37 @@ export default function Show({ school }) {
                 onClose={() => setShowImpersonateModal(false)}
                 onConfirm={handleImpersonate}
                 title="Impersonate School Admin"
-                message={`You are about to impersonate the admin of ${school.name}. You will be logged in as the school admin and can perform actions on their behalf.`}
+                message={
+                    <div className="space-y-3">
+                        <p>
+                            You are about to impersonate an admin of {school.name}. You will be
+                            logged in as that admin and can perform actions on their behalf.
+                        </p>
+                        {schoolAdmins.length === 0 ? (
+                            <p className="text-red-600 font-semibold">No admin found for this school.</p>
+                        ) : (
+                            <div>
+                                <label className="block text-xs font-bold text-gray-700 mb-1">
+                                    Impersonate as
+                                </label>
+                                <select
+                                    value={selectedAdminId ?? ''}
+                                    onChange={(e) => setSelectedAdminId(Number(e.target.value))}
+                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-purple-500 focus:ring-purple-500"
+                                >
+                                    {schoolAdmins.map((admin) => (
+                                        <option key={admin.id} value={admin.id}>
+                                            {admin.name} ({admin.email})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                }
                 confirmText="Impersonate"
                 confirmButtonClass="bg-purple-600 hover:bg-purple-700"
+                confirmDisabled={!selectedAdminId}
             />
         </AuthenticatedLayout>
     );

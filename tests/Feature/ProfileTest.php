@@ -1,9 +1,14 @@
 <?php
 
+use App\Models\School;
 use App\Models\User;
 
+beforeEach(function () {
+    $this->school = School::factory()->create();
+});
+
 test('profile page is displayed', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['school_id' => $this->school->id, 'role' => 'admin']);
 
     $response = $this
         ->actingAs($user)
@@ -13,7 +18,7 @@ test('profile page is displayed', function () {
 });
 
 test('profile information can be updated', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['school_id' => $this->school->id, 'role' => 'admin']);
 
     $response = $this
         ->actingAs($user)
@@ -34,7 +39,7 @@ test('profile information can be updated', function () {
 });
 
 test('email verification status is unchanged when the email address is unchanged', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['school_id' => $this->school->id, 'role' => 'admin']);
 
     $response = $this
         ->actingAs($user)
@@ -51,7 +56,7 @@ test('email verification status is unchanged when the email address is unchanged
 });
 
 test('user can delete their account', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['school_id' => $this->school->id, 'role' => 'admin']);
 
     $response = $this
         ->actingAs($user)
@@ -64,11 +69,15 @@ test('user can delete their account', function () {
         ->assertRedirect('/');
 
     $this->assertGuest();
-    $this->assertNull($user->fresh());
+    // User::fresh() bypasses all global scopes (newQueryWithoutScopes()),
+    // including SoftDeletingScope, so it would still find a soft-deleted
+    // row - not a valid "is this user gone" check once User uses
+    // SoftDeletes. assertSoftDeleted() is the correct assertion here.
+    $this->assertSoftDeleted($user);
 });
 
 test('correct password must be provided to delete account', function () {
-    $user = User::factory()->create();
+    $user = User::factory()->create(['school_id' => $this->school->id, 'role' => 'admin']);
 
     $response = $this
         ->actingAs($user)

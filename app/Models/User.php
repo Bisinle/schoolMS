@@ -12,11 +12,13 @@ use Illuminate\Support\Facades\Storage;
 use App\Enums\UserRole;
 use App\Notifications\CustomResetPassword;
 use Lab404\Impersonate\Models\Impersonate;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
     use Impersonate;
+    use HasRoles;
 
     // NOTE: User model does NOT use BelongsToSchool trait to avoid circular reference
     // The global scope would cause infinite recursion when checking auth()->user()->school_id
@@ -185,36 +187,6 @@ class User extends Authenticatable
     public function isGuardian(): bool
     {
         return $this->role === 'guardian';
-    }
-
-    public function isAccountant(): bool
-    {
-        return $this->role === 'accountant';
-    }
-
-    public function isReceptionist(): bool
-    {
-        return $this->role === 'receptionist';
-    }
-
-    public function isNurse(): bool
-    {
-        return $this->role === 'nurse';
-    }
-
-    public function isIT(): bool
-    {
-        return $this->role === 'it_staff';
-    }
-
-    public function isMaid(): bool
-    {
-        return $this->role === 'maid';
-    }
-
-    public function isCook(): bool
-    {
-        return $this->role === 'cook';
     }
 
     // Scopes

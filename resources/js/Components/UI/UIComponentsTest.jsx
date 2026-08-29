@@ -44,7 +44,6 @@ export default function UIComponentsTest() {
                                     <Badge variant="role" value="admin" />
                                     <Badge variant="role" value="teacher" />
                                     <Badge variant="role" value="guardian" />
-                                    <Badge variant="role" value="accountant" />
                                 </div>
                             </div>
                             <div>

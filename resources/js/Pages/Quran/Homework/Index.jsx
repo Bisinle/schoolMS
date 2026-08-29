@@ -6,6 +6,7 @@ import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Components/Mobile';
 import { useState } from 'react';
 import ConfirmationModal from '@/Components/ConfirmationModal';
+import usePermissions from '@/Hooks/usePermissions';
 
 const STATUS_BADGES = {
     'pending': 'bg-yellow-100 text-yellow-800',
@@ -36,17 +37,21 @@ const getStatusIcon = (status) => {
 
 // Mobile Homework Item Component
 function MobileHomeworkItem({ homework, auth }) {
+    const { can } = usePermissions();
     const StatusIcon = getStatusIcon(homework.status);
 
-    // Define swipe actions
+    // quran-homework.update alone is enough here (no ownership check
+    // needed): QuranHomeworkController::index() already scopes a
+    // teacher's query to their own records server-side, so every homework
+    // a teacher sees in this list is already theirs.
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/quran-homework/${homework.id}`, color: 'indigo' },
-        ...(auth.user.role === 'admin' || auth.user.role === 'teacher' ? [
+        ...(can('quran-homework.update') ? [
             { icon: Edit, label: 'Edit', href: `/quran-homework/${homework.id}/edit`, color: 'green' }
         ] : []),
     ];
 
-    const secondaryActions = auth.user.role === 'admin' || auth.user.role === 'teacher' ? [
+    const secondaryActions = can('quran-homework.update') ? [
         {
             icon: Trash2,
             label: 'Delete',

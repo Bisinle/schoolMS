@@ -13,6 +13,7 @@ export default function ConfirmationModal({
     type = 'danger', // danger, warning, info, success
     confirmButtonClass = '', // Custom button class to override default
     isLoading = false,
+    confirmDisabled = false,
 }) {
     const colors = {
         danger: {
@@ -105,7 +106,7 @@ export default function ConfirmationModal({
                                             confirmButtonClass || colorScheme.button
                                         }`}
                                         onClick={onConfirm}
-                                        disabled={isLoading}
+                                        disabled={isLoading || confirmDisabled}
                                     >
                                         {confirmText}
                                     </button>

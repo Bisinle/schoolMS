@@ -12,28 +12,35 @@ class AttendancePolicy
      */
     public function viewAny(User $user): bool
     {
-        // Admins and teachers can view attendance
-        return $user->isAdmin() || $user->isTeacher();
+        return $user->can('attendance.view');
     }
 
     /**
      * Determine if the user can view a specific attendance record.
+     *
+     * Not currently reached by any $this->authorize() call in
+     * AttendanceController (confirmed 2026-08-26, Phase 5) — kept in sync
+     * with the permission model anyway, in case something starts consulting
+     * it later.
      */
     public function view(User $user, Attendance $attendance): bool
     {
-        // Admins can view all
         if ($user->isAdmin()) {
-            return true;
+            return $user->can('attendance.view');
         }
 
-        // Teachers can view attendance for their assigned grades
         if ($user->isTeacher()) {
+            if (! $user->can('attendance.view')) {
+                return false;
+            }
             $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
             return in_array($attendance->grade_id, $teacherGradeIds);
         }
 
-        // Guardians can view their own children's attendance
         if ($user->isGuardian()) {
+            if (! $user->can('attendance.view-own-children')) {
+                return false;
+            }
             $childrenIds = $user->guardian->students->pluck('id')->toArray();
             return in_array($attendance->student_id, $childrenIds);
         }
@@ -46,8 +53,7 @@ class AttendancePolicy
      */
     public function create(User $user): bool
     {
-        // Only admins and teachers can mark attendance
-        return $user->isAdmin() || $user->isTeacher();
+        return $user->can('attendance.create');
     }
 
     /**
@@ -55,13 +61,11 @@ class AttendancePolicy
      */
     public function update(User $user, Attendance $attendance): bool
     {
-        // Admins can update any attendance
         if ($user->isAdmin()) {
             return true;
         }
 
-        // Teachers can update attendance for their assigned grades
-        if ($user->isTeacher()) {
+        if ($user->isTeacher() && $user->can('attendance.create')) {
             $teacherGradeIds = $user->teacher->grades->pluck('id')->toArray();
             return in_array($attendance->grade_id, $teacherGradeIds);
         }
@@ -74,7 +78,6 @@ class AttendancePolicy
      */
     public function delete(User $user, Attendance $attendance): bool
     {
-        // Only admins can delete attendance records
-        return $user->isAdmin();
+        return $user->can('attendance.delete');
     }
 }

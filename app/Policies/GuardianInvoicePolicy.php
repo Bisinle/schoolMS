@@ -12,27 +12,25 @@ class GuardianInvoicePolicy
      */
     public function viewAny(User $user): bool
     {
-        // Admins, teachers, and guardians can view invoices
-        return in_array($user->role, ['admin', 'teacher', 'guardian']);
+        return $user->can('fees.manage') || $user->can('fees.view-own-invoices');
     }
 
     /**
      * Determine if the user can view the invoice.
+     *
+     * The old teacher-can-view-any-invoice branch was dropped here (2026-08-26,
+     * Phase 5) — no route ever let a teacher reach an action that checks this
+     * ability (neither the admin /invoices routes nor the guardian
+     * /guardian/invoices routes include teacher), so it was a dead grant, same
+     * pattern as the disagreements #2/#3/#9 precedent.
      */
     public function view(User $user, GuardianInvoice $invoice): bool
     {
-        // Admins can view all invoices
-        if ($user->isAdmin()) {
+        if ($user->can('fees.manage')) {
             return true;
         }
 
-        // Teachers can view all invoices (for reference)
-        if ($user->isTeacher()) {
-            return true;
-        }
-
-        // Guardians can ONLY view their own invoices
-        if ($user->isGuardian()) {
+        if ($user->can('fees.view-own-invoices')) {
             return $user->guardian && $user->guardian->id === $invoice->guardian_id;
         }
 
@@ -44,8 +42,7 @@ class GuardianInvoicePolicy
      */
     public function create(User $user): bool
     {
-        // Only admins can create invoices
-        return $user->isAdmin();
+        return $user->can('fees.manage');
     }
 
     /**
@@ -53,8 +50,7 @@ class GuardianInvoicePolicy
      */
     public function update(User $user, GuardianInvoice $invoice): bool
     {
-        // Only admins can update invoices
-        return $user->isAdmin();
+        return $user->can('fees.manage');
     }
 
     /**
@@ -62,8 +58,6 @@ class GuardianInvoicePolicy
      */
     public function delete(User $user, GuardianInvoice $invoice): bool
     {
-        // Only admins can delete invoices
-        return $user->isAdmin();
+        return $user->can('fees.manage');
     }
 }
-

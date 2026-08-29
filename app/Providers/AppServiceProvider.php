@@ -22,7 +22,9 @@ use App\Models\TimetableSlot;
 use App\Models\AccidentReport;
 use App\Models\IncidentReport;
 use App\Models\Policy;
+use App\Models\User;
 use App\Observers\QuranHomeworkObserver;
+use App\Observers\UserObserver;
 use App\Policies\AttendancePolicy;
 use App\Policies\ExamPolicy;
 use App\Policies\ExamResultPolicy;
@@ -71,6 +73,7 @@ class AppServiceProvider extends ServiceProvider
 
         // Register model observers
         QuranHomework::observe(QuranHomeworkObserver::class);
+        User::observe(UserObserver::class);
 
         Gate::policy(Student::class, StudentPolicy::class);
         Gate::policy(Guardian::class, GuardianPolicy::class);

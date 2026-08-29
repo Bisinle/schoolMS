@@ -1,7 +1,9 @@
 import { Link } from '@inertiajs/react';
 import { Eye, Edit, Trash2, FileText, Users } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function StudentsTable({ students, auth, onDelete, onGenerateReport }) {
+    const { can } = usePermissions();
     return (
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="overflow-x-auto">
@@ -82,23 +84,23 @@ export default function StudentsTable({ students, auth, onDelete, onGenerateRepo
                                             <FileText className="w-4 h-4" />
                                         </button>
                                         
-                                        {auth.user.role === 'admin' && (
-                                            <>
-                                                <Link
-                                                    href={`/students/${student.id}/edit`}
-                                                    className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
-                                                    title="Edit Student"
-                                                >
-                                                    <Edit className="w-4 h-4" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => onDelete(student)}
-                                                    className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                                    title="Delete Student"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </>
+                                        {can('students.update') && (
+                                            <Link
+                                                href={`/students/${student.id}/edit`}
+                                                className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                title="Edit Student"
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </Link>
+                                        )}
+                                        {can('students.delete') && (
+                                            <button
+                                                onClick={() => onDelete(student)}
+                                                className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                                                title="Delete Student"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                         )}
                                     </td>
                                 </tr>

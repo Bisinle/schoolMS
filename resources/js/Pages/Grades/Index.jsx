@@ -6,8 +6,10 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { Badge } from '@/Components/UI';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function GradesIndex({ grades, filters: initialFilters = {}, auth }) {
+    const { can } = usePermissions();
     const { school } = usePage().props;
     const isMadrasah = school?.school_type === 'madrasah';
 
@@ -99,7 +101,7 @@ export default function GradesIndex({ grades, filters: initialFilters = {}, auth
                         </div>
                     </div>
 
-                    {auth.user.role === 'admin' && (
+                    {can('grades.create') && (
                         <Link
                             href={route('grades.create')}
                             className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
@@ -241,7 +243,7 @@ export default function GradesIndex({ grades, filters: initialFilters = {}, auth
                                     {/* Actions */}
                                     <div className="flex gap-2">
                                         {/* Archived Grade - Show only Unarchive button */}
-                                        {isArchived && auth.user.role === 'admin' ? (
+                                        {isArchived && can('grades.update') ? (
                                             <button
                                                 onClick={() => confirmUnarchive(grade)}
                                                 className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-green-600 bg-green-50/80 border border-green-200/50 rounded hover:bg-green-100 transition-colors"
@@ -259,22 +261,26 @@ export default function GradesIndex({ grades, filters: initialFilters = {}, auth
                                                     <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
                                                     <span className="hidden sm:inline">View</span>
                                                 </Link>
-                                                {auth.user.role === 'admin' && !isUnassigned && (
+                                                {!isUnassigned && (can('grades.update') || can('grades.delete')) && (
                                                     <>
-                                                        <Link
-                                                            href={`/grades/${grade.id}/edit`}
-                                                            className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-orange bg-orange-50/80 border border-orange-200/50 rounded hover:bg-orange-100 transition-colors"
-                                                        >
-                                                            <Edit className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
-                                                            <span className="hidden sm:inline">Edit</span>
-                                                        </Link>
-                                                        <button
-                                                            onClick={() => confirmDelete(grade)}
-                                                            className="inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-red-600 bg-red-50/80 border border-red-200/50 rounded hover:bg-red-100 transition-colors"
-                                                            title={hasHistoricalData ? "Archive grade" : "Delete grade"}
-                                                        >
-                                                            <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
-                                                        </button>
+                                                        {can('grades.update') && (
+                                                            <Link
+                                                                href={`/grades/${grade.id}/edit`}
+                                                                className="flex-1 inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-orange bg-orange-50/80 border border-orange-200/50 rounded hover:bg-orange-100 transition-colors"
+                                                            >
+                                                                <Edit className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
+                                                                <span className="hidden sm:inline">Edit</span>
+                                                            </Link>
+                                                        )}
+                                                        {can('grades.delete') && (
+                                                            <button
+                                                                onClick={() => confirmDelete(grade)}
+                                                                className="inline-flex items-center justify-center px-3 py-2 text-xs md:text-sm font-medium text-red-600 bg-red-50/80 border border-red-200/50 rounded hover:bg-red-100 transition-colors"
+                                                                title={hasHistoricalData ? "Archive grade" : "Delete grade"}
+                                                            >
+                                                                <Trash2 className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                                                            </button>
+                                                        )}
                                                     </>
                                                 )}
                                                 {isUnassigned && (
@@ -297,7 +303,7 @@ export default function GradesIndex({ grades, filters: initialFilters = {}, auth
                                 <p className="text-gray-600 mb-6">
                                     {filters.search || filters.level ? 'Try adjusting your filters' : 'Get started by creating your first grade'}
                                 </p>
-                                {auth.user.role === 'admin' && !filters.search && !filters.level && (
+                                {can('grades.create') && !filters.search && !filters.level && (
                                     <Link
                                         href={route('grades.create')}
                                         className="inline-flex items-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"

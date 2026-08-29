@@ -12,7 +12,7 @@ class DocumentPolicy
      */
     public function viewAny(User $user): bool
     {
-        return true; // All authenticated users can access the documents page
+        return $user->can('documents.view');
     }
 
     /**
@@ -20,6 +20,10 @@ class DocumentPolicy
      */
     public function view(User $user, Document $document): bool
     {
+        if (! $user->can('documents.view')) {
+            return false;
+        }
+
         // Admin can view all documents
         if ($user->isAdmin()) {
             return true;
@@ -27,14 +31,14 @@ class DocumentPolicy
 
         // Teachers can only view their own documents
         if ($user->isTeacher()) {
-            return $document->documentable_type === 'App\Models\Teacher' 
+            return $document->documentable_type === 'App\Models\Teacher'
                    && $document->documentable_id === $user->teacher->id;
         }
 
         // Guardians can view their own documents and their children's documents
         if ($user->isGuardian()) {
             // Own documents
-            if ($document->documentable_type === 'App\Models\Guardian' 
+            if ($document->documentable_type === 'App\Models\Guardian'
                 && $document->documentable_id === $user->guardian->id) {
                 return true;
             }
@@ -47,7 +51,7 @@ class DocumentPolicy
         }
 
         // Users (non-role-specific) can view their own documents
-        if ($document->documentable_type === 'App\Models\User' 
+        if ($document->documentable_type === 'App\Models\User'
             && $document->documentable_id === $user->id) {
             return true;
         }
@@ -60,7 +64,7 @@ class DocumentPolicy
      */
     public function create(User $user): bool
     {
-        return true; // All authenticated users can upload documents
+        return $user->can('documents.create');
     }
 
     /**
@@ -68,8 +72,7 @@ class DocumentPolicy
      */
     public function update(User $user, Document $document): bool
     {
-        // Only admin can update documents (for verification/rejection)
-        return $user->isAdmin();
+        return $user->can('documents.update');
     }
 
     /**
@@ -77,13 +80,17 @@ class DocumentPolicy
      */
     public function delete(User $user, Document $document): bool
     {
+        if (! $user->can('documents.delete')) {
+            return false;
+        }
+
         // Admin can delete any document
         if ($user->isAdmin()) {
             return true;
         }
 
         // Users can delete their own pending/rejected documents
-        if ($document->uploaded_by === $user->id 
+        if ($document->uploaded_by === $user->id
             && in_array($document->status, ['pending', 'rejected'])) {
             return true;
         }
@@ -93,10 +100,14 @@ class DocumentPolicy
 
     /**
      * Determine if the user can verify/reject documents.
+     *
+     * One ability backs both DocumentController::verify() and reject() —
+     * both call $this->authorize('verify', $document) — so this must accept
+     * either permission, even though the two are separate route-level gates.
      */
     public function verify(User $user, Document $document): bool
     {
-        return $user->isAdmin();
+        return $user->can('documents.verify') || $user->can('documents.reject');
     }
 
     /**

@@ -55,6 +55,7 @@ class ExamResultController extends Controller
     public function store(Request $request, Exam $exam)
     {
         $this->authorize('create', ExamResult::class);
+        $this->authorize('view', $exam);
 
         $validated = $request->validate([
             'results' => 'required|array',

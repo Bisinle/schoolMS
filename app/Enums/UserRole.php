@@ -8,12 +8,6 @@ enum UserRole: string
     case ADMIN = 'admin';
     case TEACHER = 'teacher';
     case GUARDIAN = 'guardian';
-    case ACCOUNTANT = 'accountant';
-    case RECEPTIONIST = 'receptionist';
-    case NURSE = 'nurse';
-    case IT_STAFF = 'it_staff';
-    case MAID = 'maid';
-    case COOK = 'cook';
 
     public function label(): string
     {
@@ -22,12 +16,6 @@ enum UserRole: string
             self::ADMIN => 'School Administrator',
             self::TEACHER => 'Teacher',
             self::GUARDIAN => 'Parent/Guardian',
-            self::ACCOUNTANT => 'Accountant',
-            self::RECEPTIONIST => 'Receptionist',
-            self::NURSE => 'School Nurse',
-            self::IT_STAFF => 'IT Staff',
-            self::MAID => 'Maid',
-            self::COOK => 'Cook',
         };
     }
 

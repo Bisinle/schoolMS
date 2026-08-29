@@ -13,9 +13,11 @@ import { Badge } from '@/Components/UI';
 import Avatar from '@/Components/Avatar';
 import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
+import usePermissions from '@/Hooks/usePermissions';
 
 // Mobile List Item Component - Refactored with new components
 function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate, onGenerateReport }) {
+    const { can } = usePermissions();
     const isInactive = student.status === 'inactive';
 
     // Build swipe actions based on user role
@@ -23,7 +25,7 @@ function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate
         { icon: Eye, label: 'View', href: `/students/${student.id}` },
     ];
 
-    if (auth.user.role === 'admin') {
+    if (can('students.update')) {
         primaryActions.push(
             { icon: Edit, label: 'Edit', href: `/students/${student.id}/edit` },
         );
@@ -139,7 +141,7 @@ function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate
                             <Eye className="w-3.5 h-3.5" />
                             View
                         </Link>
-                        {auth.user.role === 'admin' && (
+                        {can('students.update') && (
                             <Link
                                 href={`/students/${student.id}/edit`}
                                 className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white rounded-lg text-xs font-semibold hover:from-indigo-700 hover:to-indigo-800 transition-all shadow-sm hover:shadow active:scale-95"
@@ -151,14 +153,14 @@ function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate
                         <button
                             onClick={() => onGenerateReport(student)}
                             className={`flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg text-xs font-semibold hover:from-green-700 hover:to-green-800 transition-all shadow-sm hover:shadow active:scale-95 ${
-                                auth.user.role === 'admin' ? '' : 'col-span-2'
+                                can('students.update') ? '' : 'col-span-2'
                             }`}
                         >
                             <FileText className="w-3.5 h-3.5" />
                             Report
                         </button>
 
-                        {auth.user.role === 'admin' && (
+                        {can('students.delete') && (
                             <button
                                 onClick={() => onDelete(student)}
                                 className="flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg text-xs font-semibold hover:from-red-700 hover:to-red-800 transition-all shadow-sm hover:shadow active:scale-95"
@@ -175,6 +177,7 @@ function MobileStudentItem({ student, auth, onDelete, onDeactivate, onReactivate
 }
 
 export default function StudentsIndex({ students, grades, filters: initialFilters = {}, auth, importResults }) {
+    const { can } = usePermissions();
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/students',
@@ -318,7 +321,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                         </div>
                     </div>
 
-                    {auth.user.role === 'admin' && (
+                    {can('students.create') && (
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={() => setShowImportModal(true)}
@@ -459,7 +462,7 @@ export default function StudentsIndex({ students, grades, filters: initialFilter
                                                 >
                                                     <Eye className="w-4 h-4" />
                                                 </Link>
-                                                {auth.user.role === 'admin' && (
+                                                {can('students.update') && (
                                                     <>
                                                         <Link
                                                             href={`/students/${student.id}/edit`}

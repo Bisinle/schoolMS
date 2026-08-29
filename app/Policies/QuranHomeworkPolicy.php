@@ -13,16 +13,24 @@ class QuranHomeworkPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher', 'guardian']);
+        return $user->can('quran-homework.view') || $user->can('quran-homework.view-own');
     }
 
     /**
      * Determine whether the user can view the homework assignment.
+     *
+     * Deliberately coarse (school + base ability only) — the controller's
+     * show() adds its own extra inline check confirming a requesting
+     * guardian is actually linked to this homework's student, on top of
+     * this. See QuranHomeworkGuardianOwnershipTest.
      */
     public function view(User $user, QuranHomework $quranHomework): bool
     {
-        return $user->school_id === $quranHomework->school_id
-            && in_array($user->role, ['admin', 'teacher', 'guardian']);
+        if ($user->school_id !== $quranHomework->school_id) {
+            return false;
+        }
+
+        return $user->can('quran-homework.view') || $user->can('quran-homework.view-own');
     }
 
     /**
@@ -37,11 +45,11 @@ class QuranHomeworkPolicy
      */
     public function create(User $user, ?Student $student = null): bool
     {
-        if (! in_array($user->role, ['admin', 'teacher'])) {
+        if (! $user->can('quran-homework.create')) {
             return false;
         }
 
-        if ($user->role === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
 
@@ -54,19 +62,34 @@ class QuranHomeworkPolicy
 
     /**
      * Determine whether the user can update the homework assignment.
+     *
+     * Teacher scoping (2026-08-26 decision): previously any teacher at the
+     * school could update any other teacher's homework record. Scoped to
+     * teacher_id, the same ownership column QuranSchedulePolicy::update()
+     * already uses — also covers the controller's grade() and
+     * markUngraded() actions, which both authorize against 'update' rather
+     * than a separate ability.
      */
     public function update(User $user, QuranHomework $quranHomework): bool
     {
-        return $user->school_id === $quranHomework->school_id
-            && in_array($user->role, ['admin', 'teacher']);
+        if (! $user->can('quran-homework.update') || $user->school_id !== $quranHomework->school_id) {
+            return false;
+        }
+
+        if ($user->isTeacher()) {
+            return $quranHomework->teacher_id === $user->id;
+        }
+
+        return $user->isAdmin();
     }
 
     /**
      * Determine whether the user can delete the homework assignment.
+     *
+     * Same teacher scoping as update() — see note there.
      */
     public function delete(User $user, QuranHomework $quranHomework): bool
     {
-        return $user->school_id === $quranHomework->school_id
-            && in_array($user->role, ['admin', 'teacher']);
+        return $this->update($user, $quranHomework);
     }
 }

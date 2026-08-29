@@ -13,7 +13,7 @@ class QuranSchedulePolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher', 'guardian']);
+        return $user->can('quran-schedule.view-all') || $user->can('quran-schedule.view');
     }
 
     /**
@@ -32,20 +32,20 @@ class QuranSchedulePolicy
      */
     public function view(User $user, QuranSchedule $quranSchedule): bool
     {
-        if ($user->school_id !== $quranSchedule->school_id) {
+        if (! $user->can('quran-schedule.view') || $user->school_id !== $quranSchedule->school_id) {
             return false;
         }
 
-        if ($user->role === 'teacher') {
+        if ($user->isTeacher()) {
             return $quranSchedule->teacher_id === $user->id;
         }
 
-        if ($user->role === 'guardian') {
+        if ($user->isGuardian()) {
             return $user->guardian
                 && $user->guardian->allStudents()->where('id', $quranSchedule->student_id)->exists();
         }
 
-        return $user->role === 'admin';
+        return $user->isAdmin();
     }
 
     /**
@@ -59,11 +59,11 @@ class QuranSchedulePolicy
      */
     public function create(User $user, ?Student $student = null): bool
     {
-        if (! in_array($user->role, ['admin', 'teacher'])) {
+        if (! $user->can('quran-schedule.create')) {
             return false;
         }
 
-        if ($user->role === 'admin') {
+        if ($user->isAdmin()) {
             return true;
         }
 
@@ -79,15 +79,15 @@ class QuranSchedulePolicy
      */
     public function update(User $user, QuranSchedule $quranSchedule): bool
     {
-        if ($user->school_id !== $quranSchedule->school_id) {
+        if (! $user->can('quran-schedule.update') || $user->school_id !== $quranSchedule->school_id) {
             return false;
         }
 
-        if ($user->role === 'teacher') {
+        if ($user->isTeacher()) {
             return $quranSchedule->teacher_id === $user->id;
         }
 
-        return $user->role === 'admin';
+        return $user->isAdmin();
     }
 
     /**

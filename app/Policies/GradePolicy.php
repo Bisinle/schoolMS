@@ -9,11 +9,15 @@ class GradePolicy
 {
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['admin', 'teacher']);
+        return $user->can('grades.view');
     }
 
     public function view(User $user, Grade $grade): bool
     {
+        if (! $user->can('grades.view')) {
+            return false;
+        }
+
         if ($user->isAdmin()) {
             return true;
         }
@@ -28,16 +32,16 @@ class GradePolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin();
+        return $user->can('grades.create');
     }
 
     public function update(User $user, Grade $grade): bool
     {
-        return $user->isAdmin();
+        return $user->can('grades.update');
     }
 
     public function delete(User $user, Grade $grade): bool
     {
-        return $user->isAdmin();
+        return $user->can('grades.delete');
     }
 }

@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
+import usePermissions from '@/Hooks/usePermissions';
 import { ArrowLeft, BookOpen, Calendar, TrendingUp, BarChart3, PieChart, Award, Target, Book, User, Eye, Star, AlertCircle, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
 
 const STATUS_BADGES = {
@@ -75,8 +76,7 @@ function MobileSessionCard({ session }) {
 }
 
 export default function StudentReport({ student, sessions, analytics }) {
-    const { auth } = usePage().props;
-    const isGuardian = auth.user.role === 'guardian';
+    const { can } = usePermissions();
 
     // The controller sends the raw session list plus a handful of totals in
     // `analytics` — reading-type and assessment breakdowns are derived here
@@ -118,7 +118,7 @@ export default function StudentReport({ student, sessions, analytics }) {
                     {/* Header */}
                     <div className="mb-6 sm:mb-8">
                         <Link
-                            href={isGuardian ? "/guardian/quran-homework" : "/quran-homework"}
+                            href={can('quran-homework.view-own') ? "/guardian/quran-homework" : "/quran-homework"}
                             className="inline-flex items-center text-sm text-gray-600 hover:text-orange transition-colors mb-4"
                         >
                             <ArrowLeft className="w-4 h-4 mr-2" />

@@ -17,7 +17,7 @@ beforeEach(function () {
     // Create school
     $this->school = School::factory()->create([
         'name' => 'Test School',
-        'school_type' => 'primary',
+        'school_type' => 'islamic_school',
     ]);
 
     // Create admin user
@@ -40,7 +40,7 @@ beforeEach(function () {
     $this->grade = Grade::factory()->create([
         'school_id' => $this->school->id,
         'name' => 'Grade 1',
-        'level' => 'primary',
+        'level' => 'LOWER PRIMARY',
     ]);
 
     // Create subject

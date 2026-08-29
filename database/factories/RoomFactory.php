@@ -5,9 +5,9 @@ namespace Database\Factories;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\ImpersonationLog>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Room>
  */
-class ImpersonationLogFactory extends Factory
+class RoomFactory extends Factory
 {
     /**
      * Define the model's default state.
@@ -17,7 +17,7 @@ class ImpersonationLogFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => 'Room ' . fake()->unique()->numberBetween(1, 999),
         ];
     }
 }

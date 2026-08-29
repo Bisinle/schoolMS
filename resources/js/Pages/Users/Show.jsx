@@ -68,12 +68,6 @@ export default function Show({ auth, user, recentActivity, roles, flash }) {
             admin: 'bg-purple-100 text-purple-800',
             teacher: 'bg-blue-100 text-blue-800',
             guardian: 'bg-green-100 text-green-800',
-            accountant: 'bg-yellow-100 text-yellow-800',
-            receptionist: 'bg-pink-100 text-pink-800',
-            nurse: 'bg-red-100 text-red-800',
-            it_staff: 'bg-indigo-100 text-indigo-800',
-            maid: 'bg-gray-100 text-gray-800',
-            cook: 'bg-orange-100 text-orange-800',
         };
         return colors[role] || 'bg-gray-100 text-gray-800';
     };
@@ -217,8 +211,12 @@ export default function Show({ auth, user, recentActivity, roles, flash }) {
                                         Edit User
                                     </Link>
 
-                                    {/* Login As User Button - Only for non-admin users */}
-                                    {!user.roles?.some(role => role.name === 'admin') && (
+                                    {/* Login As User Button - Only for non-admin users.
+                                        Was `!user.roles?.some(role => role.name === 'admin')`,
+                                        reading a Spatie relationship UserController never
+                                        eager-loads (always undefined, so this always passed) —
+                                        `user.role` is the plain string column, always present. */}
+                                    {user.role !== 'admin' && (
                                         <ImpersonateButton user={user} className="w-full justify-center px-4 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg" />
                                     )}
 

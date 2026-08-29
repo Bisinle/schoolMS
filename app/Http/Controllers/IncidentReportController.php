@@ -75,7 +75,7 @@ class IncidentReportController extends Controller
             ->get(['id', 'first_name', 'last_name', 'admission_number']);
 
         $staff = User::where('school_id', Auth::user()->school_id)
-            ->whereIn('role', ['admin', 'teacher', 'nurse', 'receptionist', 'it_staff', 'accountant'])
+            ->whereIn('role', ['admin', 'teacher'])
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'role']);
 
@@ -236,7 +236,7 @@ class IncidentReportController extends Controller
             ->get(['id', 'first_name', 'last_name', 'admission_number', 'grade_id']);
 
         $allStaff = User::where('school_id', Auth::user()->school_id)
-            ->whereIn('role', ['admin', 'teacher', 'nurse', 'receptionist', 'it_staff', 'accountant'])
+            ->whereIn('role', ['admin', 'teacher'])
             ->orderBy('name')
             ->get(['id', 'name', 'email', 'role']);
 

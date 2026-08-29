@@ -23,6 +23,7 @@ Route::middleware(['auth', 'super.admin'])->prefix('super-admin')->name('super-a
     // Schools Management
     Route::resource('schools', SchoolController::class);
     Route::post('schools/{school}/toggle-active', [SchoolController::class, 'toggleActive'])->name('schools.toggle-active');
+    Route::get('schools/{school}/admins', [SchoolController::class, 'admins'])->name('schools.admins');
     Route::post('schools/{school}/impersonate', [SchoolController::class, 'impersonate'])->name('schools.impersonate');
     
     // Users Management

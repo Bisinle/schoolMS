@@ -44,7 +44,7 @@ class TimetableSlotController extends Controller
                 $query->where('teacher_id', $teacherId);
             })
             ->orderBy('day_of_week')
-            ->orderBy('period_id')
+            ->orderBy('timetable_period_id')
             ->paginate(50)
             ->withQueryString();
 
@@ -277,7 +277,7 @@ class TimetableSlotController extends Controller
     {
         $this->authorize('view', $slot);
 
-        $slot->load(['template.grade', 'period', 'subject', 'teacher.user', 'room', 'grade']);
+        $slot->load(['template.grade', 'period', 'subject', 'teacher.user', 'room']);
 
         return Inertia::render('Timetables/Slots/Show', [
             'slot' => $slot,

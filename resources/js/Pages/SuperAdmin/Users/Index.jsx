@@ -21,10 +21,6 @@ function getRoleBadgeVariant(role) {
         admin: "primary",
         teacher: "info",
         guardian: "success",
-        accountant: "warning",
-        receptionist: "secondary",
-        nurse: "danger",
-        it_staff: "secondary",
     };
     return variants[role] || "secondary";
 }
@@ -37,10 +33,6 @@ function MobileUserItem({ user, onToggleActive, onResetPassword, onDelete }) {
             admin: { bg: 'bg-gradient-to-br from-blue-500 to-blue-600', icon: 'bg-blue-100', iconColor: 'text-blue-600', border: 'border-blue-200' },
             teacher: { bg: 'bg-gradient-to-br from-purple-500 to-purple-600', icon: 'bg-purple-100', iconColor: 'text-purple-600', border: 'border-purple-200' },
             guardian: { bg: 'bg-gradient-to-br from-green-500 to-green-600', icon: 'bg-green-100', iconColor: 'text-green-600', border: 'border-green-200' },
-            accountant: { bg: 'bg-gradient-to-br from-yellow-500 to-yellow-600', icon: 'bg-yellow-100', iconColor: 'text-yellow-600', border: 'border-yellow-200' },
-            receptionist: { bg: 'bg-gradient-to-br from-pink-500 to-pink-600', icon: 'bg-pink-100', iconColor: 'text-pink-600', border: 'border-pink-200' },
-            nurse: { bg: 'bg-gradient-to-br from-red-500 to-red-600', icon: 'bg-red-100', iconColor: 'text-red-600', border: 'border-red-200' },
-            it_staff: { bg: 'bg-gradient-to-br from-indigo-500 to-indigo-600', icon: 'bg-indigo-100', iconColor: 'text-indigo-600', border: 'border-indigo-200' },
         };
         return colors[role] || { bg: 'bg-gradient-to-br from-gray-500 to-gray-600', icon: 'bg-gray-100', iconColor: 'text-gray-600', border: 'border-gray-200' };
     };
@@ -211,10 +203,6 @@ export default function Index({ users, schools, filters: initialFilters = {} }) 
         { value: 'admin', label: 'Admin' },
         { value: 'teacher', label: 'Teacher' },
         { value: 'guardian', label: 'Guardian' },
-        { value: 'accountant', label: 'Accountant' },
-        { value: 'receptionist', label: 'Receptionist' },
-        { value: 'nurse', label: 'Nurse' },
-        { value: 'it_staff', label: 'IT Staff' },
     ], []);
 
     const statusOptions = useMemo(() => [

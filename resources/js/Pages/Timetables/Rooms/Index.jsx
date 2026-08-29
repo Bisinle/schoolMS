@@ -6,8 +6,10 @@ import ConfirmationModal from '@/Components/ConfirmationModal';
 import useFilters from '@/Hooks/useFilters';
 import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { Badge } from '@/Components/UI';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function RoomsIndex({ rooms, filters: initialFilters = {}, auth }) {
+    const { can } = usePermissions();
     const { errors } = usePage().props;
 
     // Extract data from paginated response
@@ -104,7 +106,7 @@ export default function RoomsIndex({ rooms, filters: initialFilters = {}, auth }
                         </div>
                     </div>
 
-                    {auth.user.role === 'admin' && (
+                    {can('timetable-rooms.manage') && (
                         <Link
                             href={route('timetables.rooms.create')}
                             className="inline-flex items-center px-6 py-3 bg-orange text-white rounded-lg hover:bg-orange-dark transition-colors shadow-md hover:shadow-lg"
@@ -225,7 +227,7 @@ export default function RoomsIndex({ rooms, filters: initialFilters = {}, auth }
                                             <Eye className="w-3.5 h-3.5 md:w-4 md:h-4 mr-1.5" />
                                             <span className="hidden sm:inline">View</span>
                                         </Link>
-                                        {auth.user.role === 'admin' && (
+                                        {can('timetable-rooms.manage') && (
                                             <>
                                                 <Link
                                                     href={route('timetables.rooms.edit', room.id)}
@@ -254,7 +256,7 @@ export default function RoomsIndex({ rooms, filters: initialFilters = {}, auth }
                                 <p className="text-gray-600 mb-6">
                                     {filters.search || filters.room_type || filters.is_active ? 'Try adjusting your filters' : 'Get started by adding your first room'}
                                 </p>
-                                {auth.user.role === 'admin' && !filters.search && !filters.room_type && !filters.is_active && (
+                                {can('timetable-rooms.manage') && !filters.search && !filters.room_type && !filters.is_active && (
                                     <Link
                                         href={route('timetables.rooms.create')}
                                         className="inline-flex items-center px-6 py-3 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-colors"

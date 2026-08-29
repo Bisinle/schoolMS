@@ -2,8 +2,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ArrowLeft, Edit, Users, BookOpen, Tag, GraduationCap, Settings, Layers } from 'lucide-react';
 import { Badge } from '@/Components/UI';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function GradesShow({ grade, availableTeachers, auth }) {
+    const { can } = usePermissions();
     const { school } = usePage().props;
     const isMadrasah = school?.school_type === 'madrasah';
 
@@ -24,7 +26,7 @@ export default function GradesShow({ grade, availableTeachers, auth }) {
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to List
                     </Link>
-                    {auth.user.role === 'admin' && (
+                    {can('grades.update') && (
                         <div className="flex gap-3">
                             <Link
                                 href={route('grades.curriculum.manage', grade.id)}
@@ -202,7 +204,7 @@ export default function GradesShow({ grade, availableTeachers, auth }) {
                             <div className="text-center py-12">
                                 <BookOpen className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                                 <p className="text-gray-600 mb-2">No subjects assigned to this grade yet.</p>
-                                {auth.user.role === 'admin' && (
+                                {can('grades.update') && (
                                     <Link
                                         href={`/grades/${grade.id}/edit`}
                                         className="inline-flex items-center text-orange hover:text-orange-dark font-medium"
