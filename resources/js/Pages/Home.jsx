@@ -675,9 +675,15 @@ export default function Home() {
                             </div>
                             <span className="text-white font-display font-semibold">SchoolMS</span>
                         </div>
-                        <p className="text-white/40 text-sm text-center md:text-right">
-                            © {new Date().getFullYear()} SchoolMS. Empowering education through technology.
-                        </p>
+                        <div className="flex flex-col items-center md:items-end gap-2">
+                            <p className="text-white/40 text-sm text-center md:text-right">
+                                © {new Date().getFullYear()} SchoolMS. Empowering education through technology.
+                            </p>
+                            <div className="flex items-center gap-5 text-white/50 text-xs">
+                                <Link href="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link>
+                                <Link href="/terms-of-service" className="hover:text-white transition-colors">Terms of Service</Link>
+                            </div>
+                        </div>
                     </div>
                 </footer>
             </div>

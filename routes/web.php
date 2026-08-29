@@ -89,6 +89,15 @@ Route::get('/demo-booking/success', function () {
     return Inertia::render('DemoSuccess');
 })->name('demo.success');
 
+// Legal Pages
+Route::get('/privacy-policy', function () {
+    return Inertia::render('PrivacyPolicy');
+})->name('privacy-policy');
+
+Route::get('/terms-of-service', function () {
+    return Inertia::render('TermsOfService');
+})->name('terms-of-service');
+
 // School Inactive Page
 Route::get('/school-inactive', function () {
     return Inertia::render('Errors/SchoolInactive', [

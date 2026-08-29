@@ -201,6 +201,13 @@ export default function Sidebar({
 
                         {renderNavigationItems(() => setSidebarOpen(false))}
                     </nav>
+
+                    {/* Legal links */}
+                    <div className="flex-shrink-0 px-4 py-3 border-t border-navy-light flex items-center justify-center gap-3 text-[11px] text-gray-500">
+                        <Link href="/privacy-policy" className="hover:text-gray-300 transition-colors">Privacy Policy</Link>
+                        <span>·</span>
+                        <Link href="/terms-of-service" className="hover:text-gray-300 transition-colors">Terms of Service</Link>
+                    </div>
                 </div>
             </div>
 
@@ -252,6 +259,13 @@ export default function Sidebar({
                                 </p>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Legal links */}
+                    <div className="flex-shrink-0 px-4 py-3 border-t border-navy-light flex items-center justify-center gap-3 text-[11px] text-gray-500">
+                        <Link href="/privacy-policy" className="hover:text-gray-300 transition-colors">Privacy Policy</Link>
+                        <span>·</span>
+                        <Link href="/terms-of-service" className="hover:text-gray-300 transition-colors">Terms of Service</Link>
                     </div>
                 </div>
             </div>
