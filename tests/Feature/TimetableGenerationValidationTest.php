@@ -185,9 +185,13 @@ class TimetableGenerationValidationTest extends TestCase
         $subject1 = Subject::factory()->create(['school_id' => $this->school->id, 'name' => 'Math']);
         $subject2 = Subject::factory()->create(['school_id' => $this->school->id, 'name' => 'English']);
         
+        // grade_subject.sessions_per_week/priority are NOT NULL with DB
+        // defaults (4 / 'neutral'), so a real row can never hold null here -
+        // 0 is the actual reachable "invalid" case the app's own
+        // canGenerateTimetable() check (sessions_per_week <= 0) guards against.
         $this->grade->subjects()->attach($subject1->id, [
-            'sessions_per_week' => null, // Missing!
-            'priority' => null, // Missing!
+            'sessions_per_week' => 0, // Invalid!
+            'priority' => 'neutral',
         ]);
         $this->grade->subjects()->attach($subject2->id, [
             'sessions_per_week' => 0, // Invalid!
@@ -278,7 +282,11 @@ class TimetableGenerationValidationTest extends TestCase
 
         // Assertions
         $this->assertFalse($validation['can_generate'], 'Should block generation with multiple errors');
-        $this->assertGreaterThanOrEqual(5, count($validation['errors']), 'Should show ALL errors at once');
+        // The "periods" check only runs once a blueprint exists (you can't
+        // check for periods generated from a blueprint that isn't there),
+        // so with nothing set up, blueprint and periods errors can't both
+        // appear - the maximum here is 4 errors, not 5.
+        $this->assertGreaterThanOrEqual(4, count($validation['errors']), 'Should show ALL errors at once');
 
         // Verify all error types are present
         $errorTypes = collect($validation['errors'])->pluck('type')->toArray();
@@ -391,8 +399,10 @@ class TimetableGenerationValidationTest extends TestCase
     {
         // Setup: Create grade with missing requirements
 
-        // Test grid view endpoint
-        $response = $this->get(route('timetables.templates.grid', $this->template));
+        // The "grid" route now just redirects to "show" (grid is the
+        // default view rendered by show() - see
+        // TimetableTemplateController::grid()'s own docblock).
+        $response = $this->get(route('timetables.templates.show', $this->template));
 
         $response->assertStatus(200);
 
