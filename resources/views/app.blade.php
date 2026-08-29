@@ -25,7 +25,9 @@
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+    <!-- Fraunces: display serif used only for the public landing page's headlines -->
+    <link href="https://fonts.bunny.net/css?family=fraunces:500,600,600i,700,900&display=swap" rel="stylesheet" />
 
     <!-- Scripts -->
     @routes
