@@ -17,7 +17,8 @@ class GradeFactory extends Factory
     public function definition(): array
     {
         return [
-            //
+            'name' => 'Grade ' . fake()->unique()->numberBetween(1, 999),
+            'level' => fake()->randomElement(array_keys(\App\Models\Grade::LEVELS)),
         ];
     }
 }
