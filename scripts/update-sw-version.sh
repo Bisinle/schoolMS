@@ -33,11 +33,21 @@ fi
 # Create a backup of the original file
 cp "$SW_FILE" "$SW_FILE.backup"
 
-# Replace the placeholder with the commit hash
-sed -i "s/__CACHE_VERSION__/$COMMIT_HASH/g" "$SW_FILE"
+# Replace whatever version is currently in the file (the __CACHE_VERSION__
+# placeholder, or a hash left over from a previous build that got committed
+# by mistake) with the current commit hash. Matching the placeholder alone
+# is not enough: if restore-sw-placeholder.sh wasn't run before a commit,
+# the placeholder is gone and a literal-placeholder sed becomes a no-op,
+# which makes the verification check below fail every time on every future
+# build. Matching the general schoolms-*-<anything> pattern makes this
+# idempotent no matter what's currently committed.
+sed -i "s/const CACHE_NAME = 'schoolms-[^']*';/const CACHE_NAME = 'schoolms-$COMMIT_HASH';/g" "$SW_FILE"
+sed -i "s/const STATIC_CACHE = 'schoolms-static-[^']*';/const STATIC_CACHE = 'schoolms-static-$COMMIT_HASH';/g" "$SW_FILE"
+sed -i "s/const DYNAMIC_CACHE = 'schoolms-dynamic-[^']*';/const DYNAMIC_CACHE = 'schoolms-dynamic-$COMMIT_HASH';/g" "$SW_FILE"
+sed -i "s/const IMAGE_CACHE = 'schoolms-images-[^']*';/const IMAGE_CACHE = 'schoolms-images-$COMMIT_HASH';/g" "$SW_FILE"
 
 # Check if replacement was successful
-if grep -q "$COMMIT_HASH" "$SW_FILE"; then
+if grep -q "'schoolms-$COMMIT_HASH'" "$SW_FILE" && grep -q "'schoolms-static-$COMMIT_HASH'" "$SW_FILE"; then
     echo -e "${GREEN}✅ Service Worker updated successfully!${NC}"
     echo -e "${GREEN}   Version: $COMMIT_HASH${NC}"
     
