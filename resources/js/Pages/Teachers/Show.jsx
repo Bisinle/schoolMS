@@ -1,8 +1,10 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, Mail, Phone, MapPin, Briefcase, Calendar, Award, BookOpen, Users } from 'lucide-react';
+import usePermissions from '@/Hooks/usePermissions';
 
 export default function TeachersShow({ teacher }) {
+    const { can } = usePermissions();
     const InfoCard = ({ icon: Icon, label, value }) => (
         <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-10 h-10 bg-orange bg-opacity-10 rounded-lg flex items-center justify-center">
@@ -142,14 +144,16 @@ export default function TeachersShow({ teacher }) {
                         )}
                     </div>
 
-                    <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
-                        <Link
-                            href={`/teachers/${teacher.id}/edit`}
-                            className="inline-flex items-center px-4 py-2 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all"
-                        >
-                            Edit Teacher
-                        </Link>
-                    </div>
+                    {can('teachers.update') && (
+                        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-end gap-3">
+                            <Link
+                                href={`/teachers/${teacher.id}/edit`}
+                                className="inline-flex items-center px-4 py-2 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all"
+                            >
+                                Edit Teacher
+                            </Link>
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>

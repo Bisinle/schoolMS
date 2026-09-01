@@ -40,6 +40,16 @@ class GradePolicy
         return $user->can('grades.update');
     }
 
+    /**
+     * Curriculum mapping is a narrower carve-out than general grade
+     * editing — Head Teacher gets this without grades.update (which also
+     * gates Edit Grade, delete/restore, and teacher assignment).
+     */
+    public function manageCurriculum(User $user, Grade $grade): bool
+    {
+        return $user->can('grades.update') || $user->can('grades.manage-curriculum');
+    }
+
     public function delete(User $user, Grade $grade): bool
     {
         return $user->can('grades.delete');

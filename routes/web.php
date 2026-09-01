@@ -134,11 +134,17 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::get('/grades/{grade}/edit', [GradeController::class, 'edit'])->name('grades.edit');
         Route::put('/grades/{grade}', [GradeController::class, 'update'])->name('grades.update');
         Route::post('/grades/{grade}/restore', [GradeController::class, 'restore'])->name('grades.restore');
-        Route::get('/grades/{grade}/curriculum', [GradeController::class, 'manageCurriculum'])->name('grades.curriculum.manage');
-        Route::post('/grades/{grade}/curriculum', [GradeController::class, 'updateCurriculum'])->name('grades.curriculum.update');
         Route::post('/grades/{grade}/assign-teacher', [GradeController::class, 'assignTeacher'])->name('grades.assign-teacher');
         Route::delete('/grades/{grade}/remove-teacher/{teacher}', [GradeController::class, 'removeTeacher'])->name('grades.remove-teacher');
         Route::patch('/grades/{grade}/update-teacher/{teacher}', [GradeController::class, 'updateTeacherAssignment'])->name('grades.update-teacher');
+    });
+
+    // Curriculum mapping is a narrower carve-out than grades.update — Head
+    // Teacher holds grades.manage-curriculum without the rest of grade
+    // editing (see GradePolicy::manageCurriculum()).
+    Route::middleware(['user.active', 'permission:grades.update|grades.manage-curriculum'])->group(function () {
+        Route::get('/grades/{grade}/curriculum', [GradeController::class, 'manageCurriculum'])->name('grades.curriculum.manage');
+        Route::post('/grades/{grade}/curriculum', [GradeController::class, 'updateCurriculum'])->name('grades.curriculum.update');
     });
 
     Route::middleware(['user.active', 'permission:grades.delete'])->group(function () {

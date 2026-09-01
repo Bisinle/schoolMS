@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import usePermissions from '@/Hooks/usePermissions';
 import {
     ArrowLeft,
     User,
@@ -15,6 +16,7 @@ import {
 import Avatar from '@/Components/Avatar';
 
 export default function StudentsShow({ student, attendanceStats, currentMonth }) {
+    const { can } = usePermissions();
     const InfoCard = ({ icon: Icon, label, value }) => (
         <div className="flex items-start space-x-3">
             <div className="flex-shrink-0 w-10 h-10 bg-orange bg-opacity-10 rounded-lg flex items-center justify-center">
@@ -206,12 +208,14 @@ console.log(student);
                             <ClipboardCheck className="w-4 h-4 mr-2" />
                             View Attendance
                         </Link>
-                        <Link
-                            href={`/students/${student.id}/edit`}
-                            className="inline-flex items-center px-4 py-2 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all"
-                        >
-                            Edit Student
-                        </Link>
+                        {can('students.update') && (
+                            <Link
+                                href={`/students/${student.id}/edit`}
+                                className="inline-flex items-center px-4 py-2 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all"
+                            >
+                                Edit Student
+                            </Link>
+                        )}
                     </div>
                 </div>
             </div>

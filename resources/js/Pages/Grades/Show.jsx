@@ -26,22 +26,26 @@ export default function GradesShow({ grade, availableTeachers, auth }) {
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Back to List
                     </Link>
-                    {can('grades.update') && (
+                    {(can('grades.update') || can('grades.manage-curriculum')) && (
                         <div className="flex gap-3">
-                            <Link
-                                href={route('grades.curriculum.manage', grade.id)}
-                                className="inline-flex items-center px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                <Settings className="w-4 h-4 mr-2" />
-                                Manage Curriculum
-                            </Link>
-                            <Link
-                                href={`/grades/${grade.id}/edit`}
-                                className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
-                            >
-                                <Edit className="w-4 h-4 mr-2" />
-                                Edit Grade
-                            </Link>
+                            {(can('grades.update') || can('grades.manage-curriculum')) && (
+                                <Link
+                                    href={route('grades.curriculum.manage', grade.id)}
+                                    className="inline-flex items-center px-4 py-2 text-sm text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
+                                >
+                                    <Settings className="w-4 h-4 mr-2" />
+                                    Manage Curriculum
+                                </Link>
+                            )}
+                            {can('grades.update') && (
+                                <Link
+                                    href={`/grades/${grade.id}/edit`}
+                                    className="inline-flex items-center px-4 py-2 text-sm text-white bg-orange rounded-lg hover:bg-orange-dark transition-colors"
+                                >
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Edit Grade
+                                </Link>
+                            )}
                         </div>
                     )}
                 </div>

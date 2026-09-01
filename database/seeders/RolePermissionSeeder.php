@@ -88,6 +88,7 @@ class RolePermissionSeeder extends Seeder
         'grades.create',
         'grades.update',
         'grades.delete',
+        'grades.manage-curriculum',
         'streams.view',
         'streams.create',
         'streams.update',
@@ -346,6 +347,7 @@ class RolePermissionSeeder extends Seeder
         'policies.acknowledge',
         // --- Head Teacher boosts beyond a normal teacher ---
         'teachers.view', // whole-school, read-only (a normal teacher has no Teachers access at all)
+        'grades.manage-curriculum', // narrow carve-out: curriculum mapping only, not general grade edit/delete/teacher-assignment
         'attendance.delete', // full parity with admin (currently dormant for every role — no route calls it)
         'exams.delete', // full parity with admin (live)
         'exam-results.delete', // full parity with admin (currently dormant for every role — no route calls it)

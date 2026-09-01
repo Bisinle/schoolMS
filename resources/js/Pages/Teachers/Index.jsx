@@ -10,14 +10,17 @@ import { SwipeableListItem, ExpandableCard, MobileListContainer } from '@/Compon
 import { Badge } from '@/Components/UI';
 import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
+import usePermissions from '@/Hooks/usePermissions';
 
 // Mobile List Item Component - Refactored with new components
 function MobileTeacherItem({ teacher, auth, onDelete }) {
+    const { can } = usePermissions();
+
     // Build swipe actions
     const primaryActions = [
         { icon: Eye, label: 'View', href: `/teachers/${teacher.id}` },
-        { icon: Edit, label: 'Edit', href: `/teachers/${teacher.id}/edit` },
-        { icon: Trash2, label: 'Delete', onClick: () => onDelete(teacher) },
+        ...(can('teachers.update') ? [{ icon: Edit, label: 'Edit', href: `/teachers/${teacher.id}/edit` }] : []),
+        ...(can('teachers.delete') ? [{ icon: Trash2, label: 'Delete', onClick: () => onDelete(teacher) }] : []),
     ];
 
     const secondaryActions = teacher.user?.phone ? [
@@ -151,13 +154,15 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                             <Eye className="w-3.5 h-3.5" />
                             View
                         </Link>
-                        <Link
-                            href={`/teachers/${teacher.id}/edit`}
-                            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
-                        >
-                            <Edit className="w-3.5 h-3.5" />
-                            Edit
-                        </Link>
+                        {can('teachers.update') && (
+                            <Link
+                                href={`/teachers/${teacher.id}/edit`}
+                                className="flex items-center justify-center gap-1.5 px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-medium hover:bg-indigo-700 transition-colors"
+                            >
+                                <Edit className="w-3.5 h-3.5" />
+                                Edit
+                            </Link>
+                        )}
 
                         {teacher.user?.email && (
                             <a
@@ -169,15 +174,17 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                             </a>
                         )}
 
-                        <button
-                            onClick={() => onDelete(teacher)}
-                            className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors ${
-                                teacher.user?.email ? '' : 'col-span-2'
-                            }`}
-                        >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            Delete
-                        </button>
+                        {can('teachers.delete') && (
+                            <button
+                                onClick={() => onDelete(teacher)}
+                                className={`flex items-center justify-center gap-1.5 px-3 py-2 bg-red-600 text-white rounded-lg text-xs font-medium hover:bg-red-700 transition-colors ${
+                                    teacher.user?.email ? '' : 'col-span-2'
+                                }`}
+                            >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Delete
+                            </button>
+                        )}
                     </div>
                 </div>
             </ExpandableCard>
@@ -186,6 +193,8 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
 }
 
 export default function TeachersIndex({ teachers, filters: initialFilters = {}, auth }) {
+    const { can } = usePermissions();
+
     // Use the new useFilters hook
     const { filters, updateFilter } = useFilters({
         route: '/teachers',
@@ -236,13 +245,15 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                         />
                     </div>
 
-                    <Link
-                        href={route('teachers.create')}
-                        className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
-                    >
-                        <Plus className="w-5 h-5 mr-2" />
-                        Add Teacher
-                    </Link>
+                    {can('teachers.create') && (
+                        <Link
+                            href={route('teachers.create')}
+                            className="inline-flex items-center px-4 py-2.5 bg-orange text-white text-sm font-medium rounded-lg hover:bg-orange-dark transition-all duration-200 shadow-sm hover:shadow-md"
+                        >
+                            <Plus className="w-5 h-5 mr-2" />
+                            Add Teacher
+                        </Link>
+                    )}
                 </div>
 
                 {/* Mobile List View - Refactored with MobileListContainer */}
@@ -346,18 +357,22 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                                             >
                                                 <Eye className="w-4 h-4" />
                                             </Link>
-                                            <Link
-                                                href={`/teachers/${teacher.id}/edit`}
-                                                className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
-                                            >
-                                                <Edit className="w-4 h-4" />
-                                            </Link>
-                                            <button
-                                                onClick={() => confirmDelete(teacher)}
-                                                className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                            </button>
+                                            {can('teachers.update') && (
+                                                <Link
+                                                    href={`/teachers/${teacher.id}/edit`}
+                                                    className="inline-flex items-center text-orange hover:text-orange-dark transition-colors"
+                                                >
+                                                    <Edit className="w-4 h-4" />
+                                                </Link>
+                                            )}
+                                            {can('teachers.delete') && (
+                                                <button
+                                                    onClick={() => confirmDelete(teacher)}
+                                                    className="inline-flex items-center text-red-600 hover:text-red-800 transition-colors"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                </button>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}

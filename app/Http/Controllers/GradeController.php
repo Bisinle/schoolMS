@@ -486,7 +486,7 @@ class GradeController extends Controller
     // Curriculum Management Methods
     public function manageCurriculum(Grade $grade)
     {
-        $this->authorize('update', $grade);
+        $this->authorize('manageCurriculum', $grade);
 
         $subjects = $grade->subjects()
             ->withPivot(['sessions_per_week', 'priority', 'must_be_daily', 'can_repeat_same_day'])
@@ -502,7 +502,7 @@ class GradeController extends Controller
 
     public function updateCurriculum(Request $request, Grade $grade)
     {
-        $this->authorize('update', $grade);
+        $this->authorize('manageCurriculum', $grade);
 
         $validated = $request->validate([
             'subjects' => 'required|array',
