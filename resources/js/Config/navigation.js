@@ -169,6 +169,51 @@ export const getNavigation = (role, isMadrasah = false, can = () => true, canAny
                 ]
             },
         ],
+        head_teacher: [
+            { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+            { name: "Students", href: "/students", icon: Users, permission: "students.view" },
+            { name: "Teachers", href: "/teachers", icon: GraduationCap, permission: "teachers.view" },
+            { name: "Guardians", href: "/guardians", icon: UserCircle, permission: "guardians.view" },
+            { name: "Attendance", href: "/attendance", icon: ClipboardCheck, permission: "attendance.view" },
+            { name: "Grades", href: "/grades", icon: BookOpen, permission: "grades.view" },
+            { name: "Subjects", href: "/subjects", icon: FileText, permission: "subjects.view" },
+            { name: "Exams", href: "/exams", icon: Calendar, permission: "exams.view" },
+            {
+                name: "Timetables",
+                icon: Clock,
+                submenu: [
+                    { name: "Dashboard", href: "/timetables/dashboard", icon: LayoutDashboard, permission: "timetable-dashboard.view" },
+                    { name: "Blueprints", href: "/blueprints", icon: FileText, permission: "timetable-dashboard.view" },
+                    { name: "Templates", href: "/timetables/templates", icon: Calendar, permission: "timetable-templates.manage" },
+                    { name: "Periods", href: "/timetables/periods", icon: Clock, permission: "timetable-periods.view" },
+                    { name: "Rooms", href: "/timetables/rooms", icon: School, permission: "timetable-rooms.view" },
+                    { name: "My Timetable", href: "/timetables/my-timetable", icon: Calendar, permission: "timetable-schedule.view-own" },
+                    { name: "Availability", href: "/timetables/availability", icon: UserCog, permission: "timetable-availability.manage" },
+                ]
+            },
+            ...(isMadrasah ? [
+                {
+                    name: "Quran",
+                    icon: Book,
+                    submenu: [
+                        { name: "Dashboard", href: "/quran", icon: LayoutDashboard, permission: "quran-dashboard.view" },
+                        { name: "Homework", href: "/quran-homework", icon: BookOpen, permission: "quran-homework.view" },
+                        { name: "Schedules", href: "/quran-schedule", icon: Calendar, permission: "quran-schedule.view-all" },
+                    ]
+                },
+            ] : []),
+            { name: "Reports", href: "/reports", icon: FileText, permission: "reports.view" },
+            {
+                name: "Documents",
+                icon: FolderOpen,
+                submenu: [
+                    { name: "My Documents", href: "/documents", icon: FolderOpen, permission: "documents.view" },
+                    { name: "Policies & Regulations", href: "/policies", icon: Shield, permission: "policies.view" },
+                    { name: "Accident Reports", href: "/accident-reports", icon: AlertTriangle, permission: "accident-reports.view" },
+                    { name: "Incident Reports", href: "/incident-reports", icon: AlertOctagon, permission: "incident-reports.view" },
+                ]
+            },
+        ],
         guardian: [
             { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
             ...(isMadrasah ? [

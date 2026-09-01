@@ -133,8 +133,8 @@ class ReportController extends Controller
             'term' => $term,
             'academicYear' => $academicYear,
             'reportData' => $reportData,
-            'canEditTeacherComment' => $user->isAdmin() || $isClassTeacher,
-            'canEditHeadteacherComment' => $user->isAdmin(),
+            'canEditTeacherComment' => $user->isAdmin() || $user->isHeadTeacher() || $isClassTeacher,
+            'canEditHeadteacherComment' => $user->isAdmin() || $user->isHeadTeacher(),
             'isGuardian' => $user->isGuardian(),
         ]);
     }
@@ -387,7 +387,7 @@ class ReportController extends Controller
 
         // Check permissions
         if ($validated['comment_type'] === 'teacher') {
-            if (!$user->isAdmin()) {
+            if (!$user->isAdmin() && !$user->isHeadTeacher()) {
                 $isClassTeacher = $user->teacher->grades()
                     ->where('grades.id', $student->grade_id)
                     ->wherePivot('is_class_teacher', true)
@@ -399,7 +399,7 @@ class ReportController extends Controller
             }
         }
 
-        if ($validated['comment_type'] === 'headteacher' && !$user->isAdmin()) {
+        if ($validated['comment_type'] === 'headteacher' && !$user->isAdmin() && !$user->isHeadTeacher()) {
             abort(403, 'Only administrators can add headteacher comments.');
         }
 
@@ -434,7 +434,7 @@ class ReportController extends Controller
 
         // Check permissions
         if ($validated['comment_type'] === 'teacher') {
-            if (!$user->isAdmin()) {
+            if (!$user->isAdmin() && !$user->isHeadTeacher()) {
                 $isClassTeacher = $user->teacher->grades()
                     ->where('grades.id', $student->grade_id)
                     ->wherePivot('is_class_teacher', true)
@@ -450,7 +450,7 @@ class ReportController extends Controller
                 'teacher_locked_by' => $user->id,
             ]);
         } else {
-            if (!$user->isAdmin()) {
+            if (!$user->isAdmin() && !$user->isHeadTeacher()) {
                 abort(403);
             }
 
@@ -467,8 +467,8 @@ class ReportController extends Controller
     {
         $user = $request->user();
 
-        // Only admins can unlock comments
-        if (!$user->isAdmin()) {
+        // Only admins/head teachers can unlock comments
+        if (!$user->isAdmin() && !$user->isHeadTeacher()) {
             abort(403, 'Only administrators can unlock comments.');
         }
 

@@ -12,6 +12,7 @@ use App\Models\Exam;
 use App\Models\ExamResult;
 use App\Models\Document;
 use App\Models\QuranHomework;
+use App\Models\ReportComment;
 use App\Models\TimetableSlot;
 use App\Services\TimetableAnalyticsService;
 use Illuminate\Http\Request;
@@ -31,6 +32,8 @@ class DashboardController extends Controller
 
         if ($user->isAdmin()) {
             $data = array_merge($data, $this->getAdminDashboardData());
+        } elseif ($user->isHeadTeacher()) {
+            $data = array_merge($data, $this->getHeadTeacherDashboardData($user));
         } elseif ($user->isTeacher()) {
             $data = array_merge($data, $this->getTeacherDashboardData($user));
         } elseif ($user->isGuardian()) {
@@ -266,6 +269,102 @@ class DashboardController extends Controller
             'documentStats' => $documentStats,
             'quranStats' => $quranStats,
             'timetableAnalytics' => $timetableAnalytics,
+        ];
+    }
+
+    /**
+     * Head Teacher's dedicated view: a school-wide supervisory rollup, not a
+     * personal teaching dashboard (that's what /grades, /exams, /attendance
+     * themselves are now unscoped for) and not a clone of admin's — no
+     * Fees/Users data, since Head Teacher has no access there. Covers the
+     * three things the role exists to supervise: has every grade had
+     * attendance marked today, are exam results fully entered, and are
+     * report comments filed for the current term.
+     */
+    private function getHeadTeacherDashboardData($user)
+    {
+        $currentYear = now()->year;
+        $currentTerm = $this->getCurrentTerm();
+        $today = now()->toDateString();
+
+        $grades = Grade::where('status', 'active')
+            ->withCount(['students' => fn ($q) => $q->where('status', 'active')])
+            ->orderBy('name')
+            ->get();
+
+        // Attendance-marking completion for today, per grade.
+        $gradeIdsMarkedToday = DB::table('attendances')
+            ->join('students', 'attendances.student_id', '=', 'students.id')
+            ->where('attendances.attendance_date', $today)
+            ->distinct()
+            ->pluck('students.grade_id');
+
+        $attendanceToday = $grades->map(function ($grade) use ($gradeIdsMarkedToday) {
+            return [
+                'grade' => $grade->name,
+                'grade_id' => $grade->id,
+                'students_count' => $grade->students_count,
+                'marked' => $grade->students_count > 0 && $gradeIdsMarkedToday->contains($grade->id),
+            ];
+        });
+
+        // Exam-results entry completion — exams this term that aren't fully marked yet.
+        $examsNeedingAttention = Exam::where('academic_year', $currentYear)
+            ->where('term', $currentTerm)
+            ->with(['grade', 'subject'])
+            ->withCount('results')
+            ->get()
+            ->map(function ($exam) {
+                $studentsInGrade = $exam->grade->students()->where('status', 'active')->count();
+                return [
+                    'id' => $exam->id,
+                    'name' => $exam->name,
+                    'grade' => $exam->grade->name,
+                    'subject' => $exam->subject->name,
+                    'exam_date' => $exam->exam_date->format('M d, Y'),
+                    'students_marked' => $exam->results_count,
+                    'total_students' => $studentsInGrade,
+                    'completion_rate' => $studentsInGrade > 0 ? round(($exam->results_count / $studentsInGrade) * 100, 1) : 0,
+                ];
+            })
+            ->filter(fn ($exam) => $exam['completion_rate'] < 100)
+            ->sortBy('completion_rate')
+            ->values();
+
+        // Report-comment completion for the current term, per grade.
+        $reportCommentCompletion = $grades->map(function ($grade) use ($currentTerm, $currentYear) {
+            $studentIds = Student::where('grade_id', $grade->id)->where('status', 'active')->pluck('id');
+            $totalStudents = $studentIds->count();
+
+            $commentsFiled = ReportComment::whereIn('student_id', $studentIds)
+                ->where('term', $currentTerm)
+                ->where('academic_year', $currentYear)
+                ->whereNotNull('teacher_comment')
+                ->count();
+
+            return [
+                'grade' => $grade->name,
+                'grade_id' => $grade->id,
+                'total_students' => $totalStudents,
+                'comments_filed' => $commentsFiled,
+                'completion_rate' => $totalStudents > 0 ? round(($commentsFiled / $totalStudents) * 100, 1) : 0,
+            ];
+        });
+
+        return [
+            'stats' => [
+                'totalStudents' => Student::where('status', 'active')->count(),
+                'totalTeachers' => Teacher::count(),
+                'totalGrades' => $grades->count(),
+                'gradesAttendanceMarkedToday' => $attendanceToday->where('marked', true)->count(),
+                'gradesAttendancePendingToday' => $attendanceToday->where('marked', false)->count(),
+                'examsPendingResults' => $examsNeedingAttention->count(),
+            ],
+            'attendanceToday' => $attendanceToday,
+            'examsNeedingAttention' => $examsNeedingAttention,
+            'reportCommentCompletion' => $reportCommentCompletion,
+            'currentTerm' => $currentTerm,
+            'currentYear' => $currentYear,
         ];
     }
 

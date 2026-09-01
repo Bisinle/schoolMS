@@ -150,8 +150,8 @@ class RoomController extends Controller
      */
     public function destroy(Room $room)
     {
-        // Check if user is admin first
-        if (!auth()->user()->isAdmin()) {
+        // Check if user is admin/head_teacher first
+        if (!auth()->user()->isAdmin() && !auth()->user()->isHeadTeacher()) {
             abort(403, 'Only administrators can delete rooms.');
         }
 

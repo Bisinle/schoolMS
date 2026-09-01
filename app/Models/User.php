@@ -184,6 +184,20 @@ class User extends Authenticatable
         return $this->role === 'teacher';
     }
 
+    /**
+     * Head Teacher: a teaching Teacher account with school-wide supervisory
+     * boosts on top (see database/seeders/RolePermissionSeeder.php and the
+     * isHeadTeacher() bypass branches in the Attendance/Exam/Grade/Timetable
+     * Policies). Deliberately kept distinct from isTeacher() rather than
+     * folded into it, so every existing isTeacher()-scoped branch keeps its
+     * current behavior unless a Policy/controller explicitly opts a
+     * head_teacher in.
+     */
+    public function isHeadTeacher(): bool
+    {
+        return $this->role === 'head_teacher';
+    }
+
     public function isGuardian(): bool
     {
         return $this->role === 'guardian';

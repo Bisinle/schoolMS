@@ -38,6 +38,7 @@ class RolePermissionSeeder extends Seeder
         $roles = [
             'admin' => self::ADMIN_PERMISSIONS,
             'teacher' => self::TEACHER_PERMISSIONS,
+            'head_teacher' => self::HEAD_TEACHER_PERMISSIONS,
             'guardian' => self::GUARDIAN_PERMISSIONS,
             'super_admin' => self::SUPER_ADMIN_PERMISSIONS,
         ];
@@ -286,6 +287,75 @@ class RolePermissionSeeder extends Seeder
         'quran-schedule.update',
         'policies.view',
         'policies.acknowledge',
+    ];
+
+    /**
+     * Head Teacher: built as the Teacher baseline (they hold a real Teacher
+     * record and teach classes like any teacher — confirmed 2026-08-29,
+     * not a standalone role) plus the specific school-wide/full-access
+     * boosts from the Head Teacher functional spec. Quran is deliberately
+     * NOT boosted — identical to TEACHER_PERMISSIONS there, per explicit
+     * instruction. See the isHeadTeacher() bypass branches in
+     * AttendancePolicy/ExamPolicy/ExamResultPolicy/GradePolicy/
+     * TimetableSlotPolicy/QuranHomeworkPolicy/QuranSchedulePolicy, and the
+     * DashboardController/AttendanceController/ReportController/
+     * QuranController/RoomController changes, for how these are enforced
+     * beyond the flat permission grant.
+     */
+    private const HEAD_TEACHER_PERMISSIONS = [
+        // --- identical to TEACHER_PERMISSIONS ---
+        'students.view',
+        'guardians.view',
+        'attendance.view',
+        'attendance.create',
+        'grades.view',
+        'subjects.view',
+        'exams.view',
+        'exams.create',
+        'exams.update',
+        'exam-results.view',
+        'exam-results.create',
+        'exam-results.update',
+        'timetable-periods.view',
+        'timetable-rooms.view',
+        'timetable-slots.view',
+        'timetable-schedule.view-own',
+        'timetable-availability.manage',
+        'reports.view',
+        'report-comments.create',
+        'report-comments.lock',
+        'documents.view',
+        'documents.create',
+        'documents.delete',
+        'accident-reports.view',
+        'accident-reports.create',
+        'accident-reports.update',
+        'incident-reports.view',
+        'incident-reports.create',
+        'incident-reports.review',
+        'incident-reports.update',
+        'quran-dashboard.view',
+        'quran-homework.view',
+        'quran-homework.create',
+        'quran-homework.update',
+        'quran-schedule.view-all',
+        'quran-schedule.view',
+        'quran-schedule.create',
+        'quran-schedule.update',
+        'policies.view',
+        'policies.acknowledge',
+        // --- Head Teacher boosts beyond a normal teacher ---
+        'teachers.view', // whole-school, read-only (a normal teacher has no Teachers access at all)
+        'attendance.delete', // full parity with admin (currently dormant for every role — no route calls it)
+        'exams.delete', // full parity with admin (live)
+        'exam-results.delete', // full parity with admin (currently dormant for every role — no route calls it)
+        'timetable-periods.manage',
+        'timetable-rooms.manage',
+        'timetable-slots.manage',
+        'timetable-templates.manage',
+        'timetable-dashboard.view',
+        'report-comments.unlock', // admin-only today; full Reports parity
+        'reports.headteacher-comment', // explicit exception: Settings stays off-limits, this one permission doesn't
     ];
 
     private const GUARDIAN_PERMISSIONS = [

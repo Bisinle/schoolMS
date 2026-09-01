@@ -36,7 +36,7 @@ class QuranSchedulePolicy
             return false;
         }
 
-        if ($user->isTeacher()) {
+        if ($user->isTeacher() || $user->isHeadTeacher()) {
             return $quranSchedule->teacher_id === $user->id;
         }
 
@@ -83,7 +83,7 @@ class QuranSchedulePolicy
             return false;
         }
 
-        if ($user->isTeacher()) {
+        if ($user->isTeacher() || $user->isHeadTeacher()) {
             return $quranSchedule->teacher_id === $user->id;
         }
 

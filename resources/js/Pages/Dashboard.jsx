@@ -3,6 +3,7 @@ import { usePage } from "@inertiajs/react";
 import { Head } from "@inertiajs/react";
 import AdminDashboardContent from "./Dashboard/Components/AdminDashboardContent";
 import TeacherDashboardContent from "./Dashboard/Components/TeacherDashboardContent";
+import HeadTeacherDashboardContent from "./Dashboard/Components/HeadTeacherDashboardContent";
 import GuardianDashboardContent from "./Dashboard/Components/GuardianDashboardContent";
 
 export default function Dashboard({
@@ -33,6 +34,9 @@ export default function Dashboard({
     examsNeedingAttention,
     todayLessons,
     currentDay,
+    // Head Teacher specific
+    attendanceToday,
+    reportCommentCompletion,
 }) {
     const { flash } = usePage().props;
     const { auth } = usePage().props;
@@ -104,6 +108,17 @@ export default function Dashboard({
                     recentStudents={recentStudents}
                     todayLessons={todayLessons}
                     currentDay={currentDay}
+                />
+            )}
+
+            {role === "head_teacher" && (
+                <HeadTeacherDashboardContent
+                    stats={stats}
+                    attendanceToday={attendanceToday}
+                    examsNeedingAttention={examsNeedingAttention}
+                    reportCommentCompletion={reportCommentCompletion}
+                    currentYear={currentYear}
+                    currentTerm={currentTerm}
                 />
             )}
 

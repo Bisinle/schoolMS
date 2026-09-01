@@ -7,7 +7,10 @@ import InputError from '@/Components/InputError';
 import PrimaryButton from '@/Components/PrimaryButton';
 
 export default function EditAvailability({ availability, teachers, auth }) {
-    const isAdmin = auth.user.role === 'admin';
+    // Head Teacher gets the same unrestricted (pick-any-teacher) availability
+    // access as admin — matches TeacherAvailabilityController's own
+    // role !== 'teacher' fallback, which already treats them the same way.
+    const isAdmin = auth.user.role === 'admin' || auth.user.role === 'head_teacher';
     
     const { data, setData, put, processing, errors } = useForm({
         teacher_id: availability.teacher_id || '',

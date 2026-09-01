@@ -9,7 +9,10 @@ import usePermissions from '@/Hooks/usePermissions';
 
 export default function CreateAvailability({ teachers, auth, currentTeacherId }) {
     const { can } = usePermissions();
-    const isAdmin = auth.user.role === 'admin';
+    // Head Teacher gets the same unrestricted (pick-any-teacher) availability
+    // access as admin — matches TeacherAvailabilityController's own
+    // role !== 'teacher' fallback, which already treats them the same way.
+    const isAdmin = auth.user.role === 'admin' || auth.user.role === 'head_teacher';
 
     // Bug fix: this previously defaulted to auth.user.id (the Users table
     // PK), but the backend requires the Teachers table PK

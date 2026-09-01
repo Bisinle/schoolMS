@@ -24,7 +24,7 @@ class ExamPolicy
             return false;
         }
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isHeadTeacher()) {
             return true;
         }
 
@@ -58,7 +58,7 @@ class ExamPolicy
             return false;
         }
 
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isHeadTeacher()) {
             return true;
         }
 

@@ -36,7 +36,14 @@ export default function AuthenticatedLayout({ header, children }) {
     const navigation = getNavigation(auth.user.role, isMadrasah, can, canAny);
 
     // Determine if bottom nav should be shown (mobile only, for teachers, admins, and guardians)
-    const showBottomNav = auth.user.role === 'teacher' || auth.user.role === 'admin' || auth.user.role === 'guardian';
+    const showBottomNav = auth.user.role === 'teacher' || auth.user.role === 'head_teacher' || auth.user.role === 'admin' || auth.user.role === 'guardian';
+
+    // Bottom nav / More-menu icon sets only distinguish admin/teacher/guardian
+    // (a UI-convenience choice, not a security boundary — see navigation.js's
+    // filterByPermission docblock). Head Teacher reuses the Teacher set here,
+    // matching "behaves like a normal teacher" — the actual items shown are
+    // still filtered by real permissions via `can`/`canAny`.
+    const bottomNavRole = auth.user.role === 'head_teacher' ? 'teacher' : auth.user.role;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -105,7 +112,7 @@ export default function AuthenticatedLayout({ header, children }) {
             {/* Bottom Navigation (Mobile Only) */}
             {showBottomNav && (
                 <BottomNavigation
-                    role={auth.user.role}
+                    role={bottomNavRole}
                     isMadrasah={isMadrasah}
                     can={can}
                     canAny={canAny}
@@ -118,8 +125,8 @@ export default function AuthenticatedLayout({ header, children }) {
                 />
             )}
 
-            {/* More Menu Bottom Sheet - Teacher */}
-            {showBottomNav && auth.user.role === "teacher" && (
+            {/* More Menu Bottom Sheet - Teacher (also used for Head Teacher) */}
+            {showBottomNav && (auth.user.role === "teacher" || auth.user.role === "head_teacher") && (
                 <BottomSheet
                     show={showMoreMenu}
                     onClose={() => setShowMoreMenu(false)}

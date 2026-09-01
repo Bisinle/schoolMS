@@ -24,7 +24,7 @@ class QuranController extends Controller
         $recentProgress = null;
         $activeSchedulesList = null;
 
-        if ($user->isTeacher()) {
+        if ($user->isTeacher() || $user->isHeadTeacher()) {
             $stats = $this->teacherStats($user);
             $recentActivity = $this->teacherRecentActivity($user);
         } elseif ($user->isGuardian()) {

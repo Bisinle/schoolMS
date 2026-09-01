@@ -25,7 +25,7 @@ class AttendancePolicy
      */
     public function view(User $user, Attendance $attendance): bool
     {
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isHeadTeacher()) {
             return $user->can('attendance.view');
         }
 
@@ -61,7 +61,7 @@ class AttendancePolicy
      */
     public function update(User $user, Attendance $attendance): bool
     {
-        if ($user->isAdmin()) {
+        if ($user->isAdmin() || $user->isHeadTeacher()) {
             return true;
         }
 

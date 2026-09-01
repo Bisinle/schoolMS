@@ -8,6 +8,11 @@ import { SearchInput, FilterSelect, FilterBar } from '@/Components/Filters';
 import { Badge } from '@/Components/UI';
 
 export default function TeacherAvailabilityIndex({ availabilities, teachers, filters: initialFilters = {}, auth }) {
+    // Head Teacher gets the same unrestricted (all-teachers) availability
+    // view as admin — matches TeacherAvailabilityController's own
+    // role !== 'teacher' fallback, which already treats them the same way.
+    const isAdminView = auth.user.role === 'admin' || auth.user.role === 'head_teacher';
+
     // Use the new useFilters hook
     const { filters, updateFilter, clearFilters } = useFilters({
         route: '/timetables/availability',
@@ -84,7 +89,7 @@ export default function TeacherAvailabilityIndex({ availabilities, teachers, fil
 
                 {/* Filters */}
                 <FilterBar onClear={clearFilters} gridCols="3">
-                    {auth.user.role === 'admin' && (
+                    {isAdminView && (
                         <FilterSelect
                             value={filters.teacher_id}
                             onChange={(e) => updateFilter('teacher_id', e.target.value)}
@@ -119,7 +124,7 @@ export default function TeacherAvailabilityIndex({ availabilities, teachers, fil
                         <table className="min-w-full divide-y divide-gray-200">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    {auth.user.role === 'admin' && (
+                                    {isAdminView && (
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Teacher
                                         </th>
@@ -145,7 +150,7 @@ export default function TeacherAvailabilityIndex({ availabilities, teachers, fil
                                 {availabilities.data && availabilities.data.length > 0 ? (
                                     availabilities.data.map((availability) => (
                                         <tr key={availability.id} className="hover:bg-gray-50 transition-colors">
-                                            {auth.user.role === 'admin' && (
+                                            {isAdminView && (
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <div className="text-sm font-medium text-gray-900">
                                                         {availability.teacher?.user?.name || 'Unknown'}
@@ -204,7 +209,7 @@ export default function TeacherAvailabilityIndex({ availabilities, teachers, fil
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan={auth.user.role === 'admin' ? "6" : "5"} className="px-6 py-12 text-center">
+                                        <td colSpan={isAdminView ? "6" : "5"} className="px-6 py-12 text-center">
                                             <UserCog className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                                             <h3 className="text-lg font-medium text-gray-900 mb-2">No availability records found</h3>
                                             <p className="text-gray-600 mb-6">

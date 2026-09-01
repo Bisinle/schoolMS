@@ -76,7 +76,7 @@ class QuranHomeworkPolicy
             return false;
         }
 
-        if ($user->isTeacher()) {
+        if ($user->isTeacher() || $user->isHeadTeacher()) {
             return $quranHomework->teacher_id === $user->id;
         }
 

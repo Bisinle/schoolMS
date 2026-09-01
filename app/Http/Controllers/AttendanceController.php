@@ -59,7 +59,7 @@ class AttendanceController extends Controller
             'selectedGradeId' => $selectedGradeId,
             'selectedDate' => $selectedDate,
             'attendanceData' => $attendanceData,
-            'canMarkAttendance' => $user->isAdmin() || $user->isTeacher(),
+            'canMarkAttendance' => $user->isAdmin() || $user->isTeacher() || $user->isHeadTeacher(),
         ]);
     }
 
