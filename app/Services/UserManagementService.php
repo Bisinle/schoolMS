@@ -2,12 +2,12 @@
 
 namespace App\Services;
 
-use App\Models\User;
-use App\Models\ActivityLog;
-use App\Helpers\PasswordGenerator;
 use App\Enums\ActivityType;
-use Illuminate\Support\Facades\Hash;
+use App\Helpers\PasswordGenerator;
+use App\Models\ActivityLog;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 
 class UserManagementService
@@ -29,14 +29,14 @@ class UserManagementService
                     // Generate temporary password and show it to admin
                     $password = PasswordGenerator::generate(12);
                     break;
-                
+
                 case 'send_email':
                     // Generate a random password (user won't know it)
                     // Laravel will handle sending the reset link
                     $password = PasswordGenerator::generate(16);
                     $sendPasswordSetupEmail = true;
                     break;
-                
+
                 case 'custom':
                     // Admin sets the password
                     $password = $data['password'];
@@ -75,7 +75,7 @@ class UserManagementService
                             'status' => $status,
                         ]);
                     }
-                    
+
                 } catch (\Exception $e) {
                     \Log::error('Failed to send password setup email', [
                         'user_id' => $user->id,
@@ -83,7 +83,7 @@ class UserManagementService
                         'error' => $e->getMessage(),
                     ]);
                 }
-                
+
                 // Don't return password for email method
                 $password = null;
             }
@@ -104,7 +104,7 @@ class UserManagementService
             DB::commit();
 
             // Determine success message based on method
-            $message = match($data['password_setup_method']) {
+            $message = match ($data['password_setup_method']) {
                 'generate' => 'User created successfully. Please share the generated password securely.',
                 'send_email' => "User created successfully. A password setup email has been sent to {$user->email}.",
                 'custom' => 'User created successfully with custom password.',
@@ -118,17 +118,25 @@ class UserManagementService
                 'message' => $message,
             ];
 
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            DB::rollBack();
+
+            return [
+                'success' => false,
+                'message' => 'This email is already registered to another account.',
+            ];
+
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             \Log::error('Failed to create user', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
-            
+
             return [
                 'success' => false,
-                'message' => 'Failed to create user: ' . $e->getMessage(),
+                'message' => 'Failed to create user: '.$e->getMessage(),
             ];
         }
     }
@@ -163,7 +171,7 @@ class UserManagementService
             if (isset($data['role']) && $data['role'] !== $user->role) {
                 $oldValues['role'] = $user->role;
                 $changes['role'] = $data['role'];
-                
+
                 // Log role change separately
                 ActivityLog::createLog(
                     ActivityType::ROLE_CHANGED->value,
@@ -177,18 +185,18 @@ class UserManagementService
             if (isset($data['is_active']) && $data['is_active'] !== $user->is_active) {
                 $oldValues['is_active'] = $user->is_active;
                 $changes['is_active'] = $data['is_active'];
-                
+
                 // Log activation/deactivation
-                $activityType = $data['is_active'] 
-                    ? ActivityType::USER_ACTIVATED->value 
+                $activityType = $data['is_active']
+                    ? ActivityType::USER_ACTIVATED->value
                     : ActivityType::USER_DEACTIVATED->value;
-                
+
                 ActivityLog::createLog(
                     $activityType,
                     $user->id,
                     $updater->id,
-                    $data['is_active'] 
-                        ? "User activated by {$updater->name}" 
+                    $data['is_active']
+                        ? "User activated by {$updater->name}"
                         : "User deactivated by {$updater->name}",
                     null
                 );
@@ -198,7 +206,7 @@ class UserManagementService
             $user->update($changes);
 
             // Log general update
-            if (!empty($changes)) {
+            if (! empty($changes)) {
                 ActivityLog::createLog(
                     ActivityType::USER_UPDATED->value,
                     $user->id,
@@ -219,12 +227,20 @@ class UserManagementService
                 'message' => 'User updated successfully',
             ];
 
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
             DB::rollBack();
-            
+
             return [
                 'success' => false,
-                'message' => 'Failed to update user: ' . $e->getMessage(),
+                'message' => 'This email is already registered to another account.',
+            ];
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+
+            return [
+                'success' => false,
+                'message' => 'Failed to update user: '.$e->getMessage(),
             ];
         }
     }
@@ -262,10 +278,10 @@ class UserManagementService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return [
                 'success' => false,
-                'message' => 'Failed to reset password: ' . $e->getMessage(),
+                'message' => 'Failed to reset password: '.$e->getMessage(),
             ];
         }
     }
@@ -291,6 +307,12 @@ class UserManagementService
                 ]
             );
 
+            // Soft delete the linked profile row alongside the user, so
+            // Teachers/Guardians index pages don't end up with a leftover
+            // record pointing at a user that no longer resolves.
+            $user->teacher?->delete();
+            $user->guardian?->delete();
+
             // Soft delete
             $user->delete();
 
@@ -303,10 +325,10 @@ class UserManagementService
 
         } catch (\Exception $e) {
             DB::rollBack();
-            
+
             return [
                 'success' => false,
-                'message' => 'Failed to delete user: ' . $e->getMessage(),
+                'message' => 'Failed to delete user: '.$e->getMessage(),
             ];
         }
     }

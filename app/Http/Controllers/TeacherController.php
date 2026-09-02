@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Teacher;
-use App\Models\User;
 use App\Models\Grade;
 use App\Models\Subject;
+use App\Models\Teacher;
+use App\Models\User;
 use App\Services\UniqueIdentifierService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
@@ -26,9 +26,9 @@ class TeacherController extends Controller
             ->when($request->search, function ($query, $search) {
                 $query->whereHas('user', function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%");
+                        ->orWhere('email', 'like', "%{$search}%");
                 })
-                ->orWhere('employee_number', 'like', "%{$search}%");
+                    ->orWhere('employee_number', 'like', "%{$search}%");
             })
             ->paginate(10)
             ->withQueryString();
@@ -62,8 +62,6 @@ class TeacherController extends Controller
     {
         $this->authorize('create', Teacher::class);
 
-        $schoolId = $request->user()->school_id;
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
@@ -71,7 +69,10 @@ class TeacherController extends Controller
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->where('school_id', $schoolId),
+                // Global: users.email is a system-wide unique column (login
+                // resolves by email alone, with no school selector), not
+                // scoped per school.
+                Rule::unique('users', 'email'),
             ],
             'password' => 'required|string|min:8',
             'phone_number' => 'required|string|max:20',
@@ -87,14 +88,20 @@ class TeacherController extends Controller
             'class_teacher_grade_id' => 'nullable|exists:grades,id',
         ]);
 
-        $user = User::create([
-            'school_id' => auth()->user()->school_id,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'teacher',
-            'created_by' => auth()->id(),
-        ]);
+        try {
+            $user = User::create([
+                'school_id' => auth()->user()->school_id,
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => 'teacher',
+                'created_by' => auth()->id(),
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => 'This email is already registered to another account.',
+            ]);
+        }
 
         // Auto-generate employee number
         $employeeNumber = UniqueIdentifierService::generateEmployeeNumber(auth()->user()->school_id);
@@ -111,12 +118,12 @@ class TeacherController extends Controller
         ]);
 
         // Attach subject specializations
-        if (!empty($validated['subject_ids'])) {
+        if (! empty($validated['subject_ids'])) {
             $teacher->subjects()->sync($validated['subject_ids']);
         }
 
         // Attach grades
-        if (!empty($validated['grade_ids'])) {
+        if (! empty($validated['grade_ids'])) {
             foreach ($validated['grade_ids'] as $gradeId) {
                 $isClassTeacher = $gradeId == $validated['class_teacher_grade_id'];
                 $teacher->grades()->attach($gradeId, ['is_class_teacher' => $isClassTeacher]);
@@ -156,8 +163,8 @@ class TeacherController extends Controller
         $assignedGradeIds = $teacher->grades->pluck('id')->toArray();
         $assignedSubjectIds = $teacher->subjects->pluck('id')->toArray();
         // $classTeacherGradeId = $teacher->grades->where('pivot.is_class_teacher', true)->first()?->id;
-        $classTeacherGradeId = $teacher->grades ->filter(fn($grade) => $grade->pivot && $grade->pivot->is_class_teacher)
-    ->first()?->id;
+        $classTeacherGradeId = $teacher->grades->filter(fn ($grade) => $grade->pivot && $grade->pivot->is_class_teacher)
+            ->first()?->id;
 
         return Inertia::render('Teachers/Edit', [
             'teacher' => $teacher,
@@ -180,9 +187,7 @@ class TeacherController extends Controller
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')
-                    ->ignore($teacher->user_id)
-                    ->where('school_id', $teacher->user->school_id),
+                Rule::unique('users', 'email')->ignore($teacher->user_id),
             ],
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
@@ -197,10 +202,16 @@ class TeacherController extends Controller
             'class_teacher_grade_id' => 'nullable|exists:grades,id',
         ]);
 
-        $teacher->user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ]);
+        try {
+            $teacher->user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => 'This email is already registered to another account.',
+            ]);
+        }
 
         $teacher->update([
             'phone_number' => $validated['phone_number'],
@@ -212,13 +223,13 @@ class TeacherController extends Controller
         ]);
 
         // Sync subject specializations
-        if (!empty($validated['subject_ids'])) {
+        if (! empty($validated['subject_ids'])) {
             $teacher->subjects()->sync($validated['subject_ids']);
         }
 
         // Sync grades
         $teacher->grades()->detach();
-        if (!empty($validated['grade_ids'])) {
+        if (! empty($validated['grade_ids'])) {
             foreach ($validated['grade_ids'] as $gradeId) {
                 $isClassTeacher = $gradeId == $validated['class_teacher_grade_id'];
                 $teacher->grades()->attach($gradeId, ['is_class_teacher' => $isClassTeacher]);
@@ -233,9 +244,18 @@ class TeacherController extends Controller
     {
         $this->authorize('delete', $teacher);
 
-        $user = $teacher->user;
-        $teacher->delete();
-        $user->delete();
+        $timetableSlotCount = $teacher->timetableSlots()->count();
+        $availabilityCount = $teacher->availability()->count();
+
+        if ($timetableSlotCount > 0 || $availabilityCount > 0) {
+            return back()->with('error', "This teacher has {$timetableSlotCount} timetable slot(s) and {$availabilityCount} availability record(s) assigned. Reassign or remove them from the timetable before deleting this teacher.");
+        }
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($teacher) {
+            $user = $teacher->user;
+            $teacher->delete();
+            $user?->delete();
+        });
 
         return redirect()->route('teachers.index')
             ->with('success', 'Teacher deleted successfully.');

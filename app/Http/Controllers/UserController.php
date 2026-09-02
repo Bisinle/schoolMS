@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use App\Models\ActivityLog;
-use App\Services\UserManagementService;
 use App\Enums\UserRole;
+use App\Models\ActivityLog;
+use App\Models\User;
+use App\Services\UserManagementService;
 use Illuminate\Http\Request;
-use Inertia\Inertia;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
-use Illuminate\Support\Arr;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
@@ -41,8 +41,8 @@ class UserController extends Controller
             $search = $request->search;
             $query->where(function ($q) use ($search) {
                 $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%")
-                  ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
@@ -119,8 +119,6 @@ class UserController extends Controller
                 'roles_string' => implode(',', UserRole::values()),
             ]);
 
-            $schoolId = $request->user()->school_id;
-
             $validated = $request->validate([
                 'name' => ['required', 'string', 'max:255'],
                 'email' => [
@@ -128,12 +126,13 @@ class UserController extends Controller
                     'string',
                     'email',
                     'max:255',
-                    Rule::unique('users', 'email')
-                        ->where('school_id', $schoolId)
-                        ->whereNull('deleted_at'),
+                    // Global: users.email is a system-wide unique column
+                    // (login resolves by email alone, with no school
+                    // selector), not scoped per school.
+                    Rule::unique('users', 'email'),
                 ],
                 'phone' => ['nullable', 'string', 'max:20'],
-                'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
+                'role' => ['required', 'string', 'in:'.implode(',', UserRole::values())],
                 'password_setup_method' => ['required', 'in:generate,send_email,custom'],
                 'password' => ['required_if:password_setup_method,custom', 'nullable', 'string', Rules\Password::min(8)
                     ->mixedCase()
@@ -199,7 +198,6 @@ class UserController extends Controller
                 'failed_field' => array_keys($e->errors())[0] ?? 'unknown',
             ]);
             throw $e;
-
         } catch (\Exception $e) {
             \Log::error('Unexpected error during user creation', [
                 'error_message' => $e->getMessage(),
@@ -208,7 +206,7 @@ class UserController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors(['error' => 'An unexpected error occurred: ' . $e->getMessage()])->withInput();
+            return back()->withErrors(['error' => 'An unexpected error occurred: '.$e->getMessage()])->withInput();
         }
     }
 
@@ -218,7 +216,7 @@ class UserController extends Controller
     public function show(User $user)
     {
         $user->load(['creator', 'createdUsers', 'activityLogs.causer']);
-        
+
         $recentActivity = ActivityLog::where('user_id', $user->id)
             ->with('causer')
             ->latest()
@@ -265,13 +263,10 @@ class UserController extends Controller
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')
-                    ->ignore($user->id)
-                    ->where('school_id', $user->school_id)
-                    ->whereNull('deleted_at'),
+                Rule::unique('users', 'email')->ignore($user->id),
             ],
             'phone' => ['nullable', 'string', 'max:20'],
-            'role' => ['required', 'string', 'in:' . implode(',', UserRole::values())],
+            'role' => ['required', 'string', 'in:'.implode(',', UserRole::values())],
             'is_active' => ['required', 'boolean'],
             'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg', 'max:2048'],
         ]);
@@ -361,12 +356,13 @@ class UserController extends Controller
 
         $result = $this->userService->updateUser(
             $user,
-            ['is_active' => !$user->is_active],
+            ['is_active' => ! $user->is_active],
             Auth::user()
         );
 
         if ($result['success']) {
             $status = $user->fresh()->is_active ? 'activated' : 'deactivated';
+
             return back()->with('success', "User {$status} successfully.");
         }
 

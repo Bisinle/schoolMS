@@ -14,7 +14,7 @@ use Inertia\Inertia;
 class GuardianController extends Controller
 {
     use AuthorizesRequests;
-    
+
     public function index(Request $request)
     {
         $this->authorize('viewAny', Guardian::class);
@@ -50,8 +50,6 @@ class GuardianController extends Controller
     {
         $this->authorize('create', Guardian::class);
 
-        $schoolId = $request->user()->school_id;
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => [
@@ -59,7 +57,10 @@ class GuardianController extends Controller
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->where('school_id', $schoolId),
+                // Global: users.email is a system-wide unique column (login
+                // resolves by email alone, with no school selector), not
+                // scoped per school.
+                Rule::unique('users', 'email'),
             ],
             'password' => 'required|string|min:8',
             'phone_number' => 'required|string|max:20',
@@ -68,14 +69,20 @@ class GuardianController extends Controller
             'relationship' => 'required|string|max:255',
         ]);
 
-        $user = User::create([
-            'school_id' => auth()->user()->school_id,
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => 'guardian',
-            'created_by' => auth()->id(),
-        ]);
+        try {
+            $user = User::create([
+                'school_id' => auth()->user()->school_id,
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => 'guardian',
+                'created_by' => auth()->id(),
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => 'This email is already registered to another account.',
+            ]);
+        }
 
         Guardian::create([
             'user_id' => $user->id,
@@ -99,11 +106,12 @@ class GuardianController extends Controller
         // Add attendance stats for each child (current month)
         $startDate = now()->startOfMonth()->toDateString();
         $endDate = now()->toDateString();
-        
+
         $studentsWithAttendance = $guardian->students->map(function ($student) use ($startDate, $endDate) {
             $stats = $student->getAttendanceStats($startDate, $endDate);
             $studentArray = $student->toArray();
             $studentArray['attendance_stats'] = $stats;
+
             return $studentArray;
         });
 
@@ -136,9 +144,7 @@ class GuardianController extends Controller
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')
-                    ->ignore($guardian->user_id)
-                    ->where('school_id', $guardian->user->school_id),
+                Rule::unique('users', 'email')->ignore($guardian->user_id),
             ],
             'phone_number' => 'required|string|max:20',
             'address' => 'nullable|string',
@@ -146,10 +152,16 @@ class GuardianController extends Controller
             'relationship' => 'required|string|max:255',
         ]);
 
-        $guardian->user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ]);
+        try {
+            $guardian->user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ]);
+        } catch (\Illuminate\Database\UniqueConstraintViolationException $e) {
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'email' => 'This email is already registered to another account.',
+            ]);
+        }
 
         $guardian->update([
             'phone_number' => $validated['phone_number'],
@@ -166,7 +178,11 @@ class GuardianController extends Controller
     {
         $this->authorize('delete', $guardian);
 
-        $guardian->user->delete();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($guardian) {
+            $user = $guardian->user;
+            $guardian->delete();
+            $user?->delete();
+        });
 
         return redirect()->route('guardians.index')
             ->with('success', 'Guardian deleted successfully.');
@@ -195,8 +211,8 @@ class GuardianController extends Controller
 
         return Inertia::render('Guardians/Inactive', [
             'guardians' => $guardians,
-            'filters'   => $request->only(['search']),
-            'total'     => Guardian::where('status', 'inactive')->count(),
+            'filters' => $request->only(['search']),
+            'total' => Guardian::where('status', 'inactive')->count(),
         ]);
     }
 

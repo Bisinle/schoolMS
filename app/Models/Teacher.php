@@ -2,14 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Teacher extends Model
 {
-    use HasFactory, BelongsToSchool;
+    use BelongsToSchool, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'school_id',
@@ -43,8 +44,8 @@ class Teacher extends Model
     public function grades()
     {
         return $this->belongsToMany(Grade::class, 'grade_teacher')
-                    ->withPivot('is_class_teacher')
-                    ->withTimestamps();
+            ->withPivot('is_class_teacher')
+            ->withTimestamps();
     }
 
     /**
@@ -53,7 +54,7 @@ class Teacher extends Model
     public function subjects()
     {
         return $this->belongsToMany(Subject::class, 'teacher_subject')
-                    ->withTimestamps();
+            ->withTimestamps();
     }
 
     public function assignedGrades()
@@ -86,10 +87,10 @@ class Teacher extends Model
     public function getDocumentsByCategory($categorySlug)
     {
         return $this->documents()
-                    ->whereHas('category', function ($query) use ($categorySlug) {
-                        $query->where('slug', $categorySlug);
-                    })
-                    ->get();
+            ->whereHas('category', function ($query) use ($categorySlug) {
+                $query->where('slug', $categorySlug);
+            })
+            ->get();
     }
 
     // 🆕 NEW: Check if teacher has uploaded required documents
@@ -136,17 +137,17 @@ class Teacher extends Model
             ->where('day_of_week', $day)
             ->where('availability_type', 'unavailable')
             ->where(function ($query) use ($startTime, $endTime) {
-                $query->where(function ($q) use ($startTime, $endTime) {
+                $query->where(function ($q) use ($startTime) {
                     $q->where('start_time', '<=', $startTime)
-                      ->where('end_time', '>=', $startTime);
-                })->orWhere(function ($q) use ($startTime, $endTime) {
+                        ->where('end_time', '>=', $startTime);
+                })->orWhere(function ($q) use ($endTime) {
                     $q->where('start_time', '<=', $endTime)
-                      ->where('end_time', '>=', $endTime);
+                        ->where('end_time', '>=', $endTime);
                 });
             })
             ->exists();
 
-        return !$unavailable;
+        return ! $unavailable;
     }
 
     /**

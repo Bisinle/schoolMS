@@ -192,7 +192,7 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
     );
 }
 
-export default function TeachersIndex({ teachers, filters: initialFilters = {}, auth }) {
+export default function TeachersIndex({ teachers, filters: initialFilters = {}, auth, flash }) {
     const { can } = usePermissions();
 
     // Use the new useFilters hook
@@ -233,6 +233,18 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
     return (
         <AuthenticatedLayout header="Teachers Management">
             <Head title="Teachers" />
+
+            {flash?.success && (
+                <div className="mb-6 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg">
+                    <p className="text-sm font-medium text-green-800">{flash.success}</p>
+                </div>
+            )}
+
+            {flash?.error && (
+                <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                    <p className="text-sm font-medium text-red-800">{flash.error}</p>
+                </div>
+            )}
 
             <div className="space-y-6">
                 {/* Header Actions - Refactored with SearchInput */}

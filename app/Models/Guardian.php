@@ -2,13 +2,14 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\Traits\BelongsToSchool;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Guardian extends Model
 {
-    use HasFactory, BelongsToSchool;
+    use BelongsToSchool, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'school_id',
@@ -38,14 +39,14 @@ class Guardian extends Model
     public function deactivate(?string $reason = null): void
     {
         $this->update([
-            'status'               => 'inactive',
-            'deactivated_at'       => now(),
-            'deactivation_reason'  => $reason,
+            'status' => 'inactive',
+            'deactivated_at' => now(),
+            'deactivation_reason' => $reason,
         ]);
 
         $studentPayload = [
-            'status'              => 'inactive',
-            'deactivated_at'      => now(),
+            'status' => 'inactive',
+            'deactivated_at' => now(),
             'deactivation_reason' => $reason ?? 'Guardian deactivated',
         ];
 
@@ -62,8 +63,8 @@ class Guardian extends Model
     public function reactivate(): void
     {
         $this->update([
-            'status'              => 'active',
-            'deactivated_at'      => null,
+            'status' => 'active',
+            'deactivated_at' => null,
             'deactivation_reason' => null,
         ]);
     }
@@ -139,10 +140,10 @@ class Guardian extends Model
     public function getDocumentsByCategory($categorySlug)
     {
         return $this->documents()
-                    ->whereHas('category', function ($query) use ($categorySlug) {
-                        $query->where('slug', $categorySlug);
-                    })
-                    ->get();
+            ->whereHas('category', function ($query) use ($categorySlug) {
+                $query->where('slug', $categorySlug);
+            })
+            ->get();
     }
 
     // 🆕 NEW: Check if guardian has uploaded required documents
@@ -182,7 +183,7 @@ class Guardian extends Model
             ->where('is_active', true)
             ->first();
 
-        if (!$currentTerm) {
+        if (! $currentTerm) {
             return null;
         }
 
@@ -196,7 +197,7 @@ class Guardian extends Model
     {
         $invoice = $this->getCurrentTermInvoice();
 
-        if (!$invoice) {
+        if (! $invoice) {
             return null;
         }
 
