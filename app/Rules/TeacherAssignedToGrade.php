@@ -23,7 +23,7 @@ class TeacherAssignedToGrade implements ValidationRule
     /**
      * Create a new rule instance.
      *
-     * @param int $gradeId The ID of the grade to validate against
+     * @param  int  $gradeId  The ID of the grade to validate against
      */
     public function __construct($gradeId)
     {
@@ -33,27 +33,24 @@ class TeacherAssignedToGrade implements ValidationRule
     /**
      * Run the validation rule.
      *
-     * @param  string  $attribute
-     * @param  mixed  $value
      * @param  \Closure(string): \Illuminate\Translation\PotentiallyTranslatedString  $fail
-     * @return void
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         // Find the grade
         $grade = Grade::find($this->gradeId);
 
-        if (!$grade) {
+        if (! $grade) {
             $fail('Grade not found.');
+
             return;
         }
 
         // Check if teacher is assigned to this grade
-        if (!$grade->isTeacherAllowed($value)) {
+        if (! $grade->isTeacherAllowed($value)) {
             $teacher = Teacher::with('user')->find($value);
-            $teacherName = $teacher ? $teacher->user->name : 'Unknown';
+            $teacherName = $teacher->user->name ?? 'Unknown';
             $fail("Teacher '{$teacherName}' is not assigned to grade '{$grade->name}'. Please assign them in the Grade management section first.");
         }
     }
 }
-

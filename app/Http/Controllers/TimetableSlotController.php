@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TimetableSlot;
-use App\Models\TimetableTemplate;
-use App\Models\TimetablePeriod;
+use App\Models\Room;
 use App\Models\Subject;
 use App\Models\Teacher;
-use App\Models\Room;
+use App\Models\TimetablePeriod;
+use App\Models\TimetableSlot;
+use App\Models\TimetableTemplate;
 use App\Rules\SubjectAssignedToGrade;
 use App\Rules\TeacherAssignedToGrade;
 use App\Services\TimetableConflictDetector;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class TimetableSlotController extends Controller
@@ -123,6 +123,7 @@ class TimetableSlotController extends Controller
             ->where('school_id', $schoolId)
             ->where('status', 'active')
             ->get()
+            ->filter(fn ($teacher) => $teacher->user !== null)
             ->map(function ($teacher) use ($classTeacherId) {
                 return [
                     'id' => $teacher->id,
@@ -237,7 +238,7 @@ class TimetableSlotController extends Controller
         $errorConflicts = collect($conflicts)->where('severity', 'error');
         if ($errorConflicts->isNotEmpty()) {
             return back()->withErrors([
-                'conflicts' => $errorConflicts->pluck('message')->toArray()
+                'conflicts' => $errorConflicts->pluck('message')->toArray(),
             ])->withInput();
         }
 
@@ -328,6 +329,7 @@ class TimetableSlotController extends Controller
             ->where('school_id', $schoolId)
             ->where('status', 'active')
             ->get()
+            ->filter(fn ($teacher) => $teacher->user !== null)
             ->map(function ($teacher) use ($classTeacherId) {
                 return [
                     'id' => $teacher->id,
@@ -445,7 +447,7 @@ class TimetableSlotController extends Controller
         $errorConflicts = collect($conflicts)->where('severity', 'error');
         if ($errorConflicts->isNotEmpty()) {
             return back()->withErrors([
-                'conflicts' => $errorConflicts->pluck('message')->toArray()
+                'conflicts' => $errorConflicts->pluck('message')->toArray(),
             ])->withInput();
         }
 

@@ -3,14 +3,14 @@
 namespace App\Services;
 
 use App\Models\Grade;
-use App\Models\TimetableTemplate;
-use App\Models\TimetableSlot;
 use App\Models\Subject;
+use App\Models\TimetableSlot;
+use App\Models\TimetableTemplate;
 use Illuminate\Support\Collection;
 
 /**
  * Service for tracking timetable compliance with curriculum requirements
- * 
+ *
  * Phase 2: Grade-Timetable Integration
  * Purpose: Centralize all session tracking and compliance logic
  */
@@ -18,9 +18,6 @@ class TimetableComplianceService
 {
     /**
      * Get comprehensive compliance report for a timetable template
-     *
-     * @param TimetableTemplate $template
-     * @return array
      */
     public function getTemplateComplianceReport(TimetableTemplate $template): array
     {
@@ -41,10 +38,6 @@ class TimetableComplianceService
 
     /**
      * Get detailed compliance for each subject
-     *
-     * @param Grade $grade
-     * @param int $termId
-     * @return Collection
      */
     public function getSubjectComplianceDetails(Grade $grade, int $termId): Collection
     {
@@ -71,10 +64,6 @@ class TimetableComplianceService
 
     /**
      * Get overall compliance summary
-     *
-     * @param Grade $grade
-     * @param int $termId
-     * @return array
      */
     public function getComplianceSummary(Grade $grade, int $termId): array
     {
@@ -102,35 +91,32 @@ class TimetableComplianceService
 
     /**
      * Get teacher workload summary for a template
-     *
-     * @param TimetableTemplate $template
-     * @return Collection
      */
     public function getTeacherWorkloadSummary(TimetableTemplate $template): Collection
     {
         $grade = $template->grade;
 
-        return $grade->teachers->map(function ($teacher) use ($template) {
-            $slots = TimetableSlot::where('timetable_template_id', $template->id)
-                ->where('teacher_id', $teacher->id)
-                ->where('slot_type', TimetableSlot::TYPE_LESSON)
-                ->count();
+        // A teacher can end up with no linked user (e.g. its user was
+        // soft-deleted without the teacher row itself being cleaned up) -
+        // skip those rather than crash the whole report.
+        return $grade->teachers->filter(fn ($teacher) => $teacher->user !== null)
+            ->map(function ($teacher) use ($template) {
+                $slots = TimetableSlot::where('timetable_template_id', $template->id)
+                    ->where('teacher_id', $teacher->id)
+                    ->where('slot_type', TimetableSlot::TYPE_LESSON)
+                    ->count();
 
-            return [
-                'teacher_id' => $teacher->id,
-                'teacher_name' => $teacher->user->name,
-                'is_class_teacher' => $teacher->pivot->is_class_teacher,
-                'total_lessons' => $slots,
-            ];
-        })->sortByDesc('total_lessons');
+                return [
+                    'teacher_id' => $teacher->id,
+                    'teacher_name' => $teacher->user->name,
+                    'is_class_teacher' => $teacher->pivot->is_class_teacher,
+                    'total_lessons' => $slots,
+                ];
+            })->sortByDesc('total_lessons')->values();
     }
 
     /**
      * Get compliance status
-     *
-     * @param int $actual
-     * @param int $required
-     * @return string
      */
     private function getComplianceStatus(int $actual, int $required): string
     {
@@ -145,16 +131,12 @@ class TimetableComplianceService
 
     /**
      * Get human-readable status label
-     *
-     * @param int $actual
-     * @param int $required
-     * @return string
      */
     private function getComplianceStatusLabel(int $actual, int $required): string
     {
         $status = $this->getComplianceStatus($actual, $required);
 
-        return match($status) {
+        return match ($status) {
             'complete' => 'Complete',
             'under' => 'Under-scheduled',
             'over' => 'Over-scheduled',
@@ -163,20 +145,15 @@ class TimetableComplianceService
 
     /**
      * Get status color for UI
-     *
-     * @param int $actual
-     * @param int $required
-     * @return string
      */
     private function getComplianceStatusColor(int $actual, int $required): string
     {
         $status = $this->getComplianceStatus($actual, $required);
 
-        return match($status) {
+        return match ($status) {
             'complete' => 'green',
             'under' => 'orange',
             'over' => 'red',
         };
     }
 }
-

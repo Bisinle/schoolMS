@@ -2,19 +2,19 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\TimetableTemplate;
-use App\Models\TimetablePeriod;
-use App\Models\Room;
-use App\Models\TimetableSlot;
-use App\Models\TimetableConflict;
-use App\Models\Grade;
 use App\Models\AcademicTerm;
+use App\Models\Grade;
+use App\Models\Room;
 use App\Models\Stream;
+use App\Models\TimetableConflict;
+use App\Models\TimetablePeriod;
+use App\Models\TimetableSlot;
+use App\Models\TimetableTemplate;
 use App\Services\TimetableComplianceService;
 use App\Services\TimetableConflictDetector;
 use App\Services\TimetableGenerationService;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 
@@ -221,7 +221,7 @@ class TimetableTemplateController extends Controller
 
         $template = TimetableTemplate::create($validated);
 
-        $streamName = $template->stream ? ' ' . $template->stream->name : '';
+        $streamName = $template->stream ? ' '.$template->stream->name : '';
         $gradeName = $template->grade->name ?? 'Unknown';
 
         return redirect()->route('timetables.templates.show', $template)
@@ -322,6 +322,7 @@ class TimetableTemplateController extends Controller
         $teachers = $template->grade->teachers()
             ->with(['user', 'subjects'])
             ->get()
+            ->filter(fn ($teacher) => $teacher->user !== null)
             ->map(function ($teacher) {
                 return [
                     'id' => $teacher->id,
@@ -331,23 +332,26 @@ class TimetableTemplateController extends Controller
                         return ['id' => $subject->id, 'name' => $subject->name];
                     }),
                 ];
-            });
+            })
+            ->values();
 
         // Get class teacher
         $classTeacher = $template->grade->getClassTeacher();
-        if ($classTeacher) {
+        if ($classTeacher && $classTeacher->user) {
             $classTeacher = [
                 'id' => $classTeacher->id,
                 'name' => $classTeacher->user->name,
                 'user' => $classTeacher->user,
             ];
+        } else {
+            $classTeacher = null;
         }
 
         // Check if generation is possible (prerequisite validation)
         $generationValidation = $template->grade->canGenerateTimetable();
 
         // Get priority allocation stats and recommendations
-        $priorityAllocator = new \App\Services\Timetable\PriorityBasedPeriodAllocator();
+        $priorityAllocator = new \App\Services\Timetable\PriorityBasedPeriodAllocator;
         $priorityStats = $priorityAllocator->getTemplateAllocationStats($template);
         $priorityRecommendations = $priorityAllocator->getRecommendations($template);
 
@@ -454,7 +458,7 @@ class TimetableTemplateController extends Controller
 
         $message = 'Timetable template deleted successfully.';
         if ($slotsCount > 0) {
-            $message .= " ({$slotsCount} slot" . ($slotsCount > 1 ? 's' : '') . " also deleted)";
+            $message .= " ({$slotsCount} slot".($slotsCount > 1 ? 's' : '').' also deleted)';
         }
 
         return redirect()->route('timetables.templates.index')
@@ -545,7 +549,7 @@ class TimetableTemplateController extends Controller
         ]);
 
         // Verify password
-        if (!Hash::check($request->password, $request->user()->password)) {
+        if (! Hash::check($request->password, $request->user()->password)) {
             return redirect()->back()
                 ->withErrors(['password' => 'The provided password is incorrect.'])
                 ->with('error', 'Password verification failed.');
@@ -600,7 +604,7 @@ class TimetableTemplateController extends Controller
         // structured error responses
         $validation = $template->grade->canGenerateTimetable();
 
-        if (!$validation['can_generate']) {
+        if (! $validation['can_generate']) {
             $errorMessage = $this->formatValidationErrors($validation, $template->grade->name);
 
             return redirect()->back()
@@ -611,30 +615,30 @@ class TimetableTemplateController extends Controller
         // LAYER 3: SERVICE VALIDATION (Final Safeguard)
         // ============================================
         try {
-            $service = new TimetableGenerationService();
+            $service = new TimetableGenerationService;
             $result = $service->generate($template);
 
             // Build success message with post-validation results
             $studyHallsInfo = isset($result['study_halls']) && $result['study_halls'] > 0
                 ? ", {$result['study_halls']} study halls"
-                : "";
+                : '';
             $successMessage = "Generated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks{$studyHallsInfo}). All lesson slots assigned to class teacher.";
 
             // Add post-validation warnings
-            if (!empty($result['post_validation']['warnings'])) {
-                $successMessage .= "\n\n⚠️ Warnings:\n" . implode("\n", $result['post_validation']['warnings']);
+            if (! empty($result['post_validation']['warnings'])) {
+                $successMessage .= "\n\n⚠️ Warnings:\n".implode("\n", $result['post_validation']['warnings']);
             }
 
             // Add post-validation issues (critical)
-            if (!empty($result['post_validation']['issues'])) {
-                $successMessage .= "\n\n❌ Issues:\n" . implode("\n", $result['post_validation']['issues']);
+            if (! empty($result['post_validation']['issues'])) {
+                $successMessage .= "\n\n❌ Issues:\n".implode("\n", $result['post_validation']['issues']);
             }
 
             // Add day-by-day stats
-            if (!empty($result['post_validation']['day_stats'])) {
+            if (! empty($result['post_validation']['day_stats'])) {
                 $successMessage .= "\n\n📊 Daily Distribution:";
                 foreach ($result['post_validation']['day_stats'] as $day => $stats) {
-                    $successMessage .= "\n• " . ucfirst($day) . ": {$stats['total_slots']} lessons";
+                    $successMessage .= "\n• ".ucfirst($day).": {$stats['total_slots']} lessons";
                 }
             }
 
@@ -670,7 +674,7 @@ class TimetableTemplateController extends Controller
         // Validate prerequisites before calling service
         $validation = $template->grade->canGenerateTimetable();
 
-        if (!$validation['can_generate']) {
+        if (! $validation['can_generate']) {
             $errorMessage = $this->formatValidationErrors($validation, $template->grade->name);
 
             return redirect()->back()
@@ -681,27 +685,27 @@ class TimetableTemplateController extends Controller
         // LAYER 3: SERVICE VALIDATION (Final Safeguard)
         // ============================================
         try {
-            $service = new TimetableGenerationService();
+            $service = new TimetableGenerationService;
             $result = $service->generate($template);
 
             // Build success message with post-validation results
             $successMessage = "Regenerated {$result['generated']} slots ({$result['lessons']} lessons, {$result['breaks']} breaks). Manual edits preserved.";
 
             // Add post-validation warnings
-            if (!empty($result['post_validation']['warnings'])) {
-                $successMessage .= "\n\n⚠️ Warnings:\n" . implode("\n", $result['post_validation']['warnings']);
+            if (! empty($result['post_validation']['warnings'])) {
+                $successMessage .= "\n\n⚠️ Warnings:\n".implode("\n", $result['post_validation']['warnings']);
             }
 
             // Add post-validation issues (critical)
-            if (!empty($result['post_validation']['issues'])) {
-                $successMessage .= "\n\n❌ Issues:\n" . implode("\n", $result['post_validation']['issues']);
+            if (! empty($result['post_validation']['issues'])) {
+                $successMessage .= "\n\n❌ Issues:\n".implode("\n", $result['post_validation']['issues']);
             }
 
             // Add day-by-day stats
-            if (!empty($result['post_validation']['day_stats'])) {
+            if (! empty($result['post_validation']['day_stats'])) {
                 $successMessage .= "\n\n📊 Daily Distribution:";
                 foreach ($result['post_validation']['day_stats'] as $day => $stats) {
-                    $successMessage .= "\n• " . ucfirst($day) . ": {$stats['total_slots']} lessons";
+                    $successMessage .= "\n• ".ucfirst($day).": {$stats['total_slots']} lessons";
                 }
             }
 
@@ -736,7 +740,7 @@ class TimetableTemplateController extends Controller
         $message = "<strong>Cannot Generate Timetable for {$gradeName}</strong>\n\n";
 
         // Show missing requirements
-        if (!empty($validation['errors'])) {
+        if (! empty($validation['errors'])) {
             $message .= "<strong>Missing Requirements:</strong>\n";
             foreach ($validation['errors'] as $error) {
                 if (is_array($error)) {
@@ -750,7 +754,7 @@ class TimetableTemplateController extends Controller
         }
 
         // Show successes (what's already configured)
-        if (!empty($validation['successes'])) {
+        if (! empty($validation['successes'])) {
             $message .= "<strong>Already Configured:</strong>\n";
             foreach ($validation['successes'] as $success) {
                 $message .= "✅ {$success}\n";
@@ -759,7 +763,7 @@ class TimetableTemplateController extends Controller
         }
 
         // Show warnings
-        if (!empty($validation['warnings'])) {
+        if (! empty($validation['warnings'])) {
             $message .= "<strong>Warnings:</strong>\n";
             foreach ($validation['warnings'] as $warning) {
                 if (is_array($warning)) {

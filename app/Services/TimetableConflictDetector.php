@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\TimetableSlot;
-use App\Models\Teacher;
 use App\Models\Room;
-use App\Models\TimetablePeriod;
-use App\Models\TimetableTemplate;
+use App\Models\Teacher;
 use App\Models\TimetableConflict;
+use App\Models\TimetablePeriod;
+use App\Models\TimetableSlot;
+use App\Models\TimetableTemplate;
 use Illuminate\Support\Collection;
 
 /**
  * Service for detecting timetable conflicts
- * 
+ *
  * Phase 3: Teacher Availability & Conflict Management
  * Purpose: Centralize all conflict detection logic
  */
@@ -20,9 +20,9 @@ class TimetableConflictDetector
 {
     /**
      * Detect all conflicts for a given slot configuration
-     * 
-     * @param array $slotData Slot data (template_id, day, period_id, teacher_id, room_id, etc.)
-     * @param int|null $excludeSlotId Slot ID to exclude (for updates)
+     *
+     * @param  array  $slotData  Slot data (template_id, day, period_id, teacher_id, room_id, etc.)
+     * @param  int|null  $excludeSlotId  Slot ID to exclude (for updates)
      * @return array Array of conflicts with severity and descriptions
      */
     public function detectConflicts(array $slotData, ?int $excludeSlotId = null): array
@@ -35,7 +35,7 @@ class TimetableConflictDetector
         }
 
         // 1. Teacher availability check
-        if (!empty($slotData['teacher_id'])) {
+        if (! empty($slotData['teacher_id'])) {
             $availabilityConflict = $this->checkTeacherAvailability($slotData);
             if ($availabilityConflict) {
                 $conflicts[] = $availabilityConflict;
@@ -43,7 +43,7 @@ class TimetableConflictDetector
         }
 
         // 2. Teacher double-booking check
-        if (!empty($slotData['teacher_id'])) {
+        if (! empty($slotData['teacher_id'])) {
             $teacherConflict = $this->checkTeacherConflict($slotData, $excludeSlotId);
             if ($teacherConflict) {
                 $conflicts[] = $teacherConflict;
@@ -51,7 +51,7 @@ class TimetableConflictDetector
         }
 
         // 3. Room double-booking check
-        if (!empty($slotData['room_id'])) {
+        if (! empty($slotData['room_id'])) {
             $roomConflict = $this->checkRoomConflict($slotData, $excludeSlotId);
             if ($roomConflict) {
                 $conflicts[] = $roomConflict;
@@ -73,12 +73,12 @@ class TimetableConflictDetector
     private function checkTeacherAvailability(array $slotData): ?array
     {
         $teacher = Teacher::find($slotData['teacher_id']);
-        if (!$teacher) {
+        if (! $teacher) {
             return null;
         }
 
         $period = TimetablePeriod::find($slotData['timetable_period_id']);
-        if (!$period) {
+        if (! $period) {
             return null;
         }
 
@@ -87,13 +87,15 @@ class TimetableConflictDetector
         $endTime = $period->end_time->format('H:i:s');
 
         // Use the Teacher model's isAvailableAt method
-        if (!$teacher->isAvailableAt($day, $startTime, $endTime)) {
+        if (! $teacher->isAvailableAt($day, $startTime, $endTime)) {
+            $teacherName = $teacher->user->name ?? 'Unknown';
+
             return [
                 'type' => 'teacher_availability',
                 'severity' => 'error',
-                'message' => "Teacher {$teacher->user->name} is not available on " . ucfirst($day) . " from {$startTime} to {$endTime}",
+                'message' => "Teacher {$teacherName} is not available on ".ucfirst($day)." from {$startTime} to {$endTime}",
                 'teacher_id' => $teacher->id,
-                'teacher_name' => $teacher->user->name,
+                'teacher_name' => $teacherName,
                 'day' => $day,
                 'time_range' => "{$startTime} - {$endTime}",
             ];
@@ -108,7 +110,7 @@ class TimetableConflictDetector
     private function checkTeacherConflict(array $slotData, ?int $excludeSlotId): ?array
     {
         $teacher = Teacher::with('user')->find($slotData['teacher_id']);
-        if (!$teacher) {
+        if (! $teacher) {
             return null;
         }
 
@@ -123,12 +125,14 @@ class TimetableConflictDetector
             ->first();
 
         if ($conflictingSlot) {
+            $teacherName = $teacher->user->name ?? 'Unknown';
+
             return [
                 'type' => 'teacher_double_booking',
                 'severity' => 'error',
-                'message' => "Teacher {$teacher->user->name} is already teaching {$conflictingSlot->subject->name} for {$conflictingSlot->template->grade->name} at this time",
+                'message' => "Teacher {$teacherName} is already teaching {$conflictingSlot->subject->name} for {$conflictingSlot->template->grade->name} at this time",
                 'teacher_id' => $teacher->id,
-                'teacher_name' => $teacher->user->name,
+                'teacher_name' => $teacherName,
                 'conflicting_slot_id' => $conflictingSlot->id,
                 'conflicting_subject' => $conflictingSlot->subject->name ?? 'Unknown',
                 'conflicting_grade' => $conflictingSlot->template->grade->name ?? 'Unknown',
@@ -144,7 +148,7 @@ class TimetableConflictDetector
     private function checkRoomConflict(array $slotData, ?int $excludeSlotId): ?array
     {
         $room = Room::find($slotData['room_id']);
-        if (!$room) {
+        if (! $room) {
             return null;
         }
 
@@ -182,7 +186,7 @@ class TimetableConflictDetector
     private function checkGradeConflict(array $slotData, ?int $excludeSlotId): ?array
     {
         $template = TimetableTemplate::with('grade')->find($slotData['timetable_template_id']);
-        if (!$template) {
+        if (! $template) {
             return null;
         }
 
@@ -220,7 +224,7 @@ class TimetableConflictDetector
     public function getTeacherDayConflicts(int $teacherId, string $dayOfWeek, int $templateId): Collection
     {
         $teacher = Teacher::with('user')->find($teacherId);
-        if (!$teacher) {
+        if (! $teacher) {
             return collect();
         }
 
@@ -234,7 +238,7 @@ class TimetableConflictDetector
         $conflicts = collect();
 
         foreach ($slots as $slot) {
-            if (!$slot->period) {
+            if (! $slot->period) {
                 continue;
             }
 
@@ -247,7 +251,7 @@ class TimetableConflictDetector
                 'slot_type' => $slot->slot_type,
             ], $slot->id);
 
-            if (!empty($slotConflicts)) {
+            if (! empty($slotConflicts)) {
                 $conflicts->push([
                     'slot' => $slot,
                     'conflicts' => $slotConflicts,
@@ -297,7 +301,7 @@ class TimetableConflictDetector
                 'slot_type' => $slot->slot_type,
             ], $slot->id);
 
-            if (!empty($conflicts)) {
+            if (! empty($conflicts)) {
                 $summary['total_conflicts'] += count($conflicts);
 
                 foreach ($conflicts as $conflict) {
@@ -310,7 +314,7 @@ class TimetableConflictDetector
                     }
                 }
 
-                if (!isset($summary['conflicts_by_day'][$slot->day_of_week])) {
+                if (! isset($summary['conflicts_by_day'][$slot->day_of_week])) {
                     $summary['conflicts_by_day'][$slot->day_of_week] = 0;
                 }
                 $summary['conflicts_by_day'][$slot->day_of_week] += count($conflicts);
@@ -323,12 +327,11 @@ class TimetableConflictDetector
     /**
      * Log a conflict to the database
      *
-     * @param int $slotId1 Primary slot ID
-     * @param int|null $slotId2 Secondary slot ID (for double-booking conflicts)
-     * @param string $conflictType Type of conflict
-     * @param string $description Human-readable description
-     * @param string $severity Severity level (low, medium, high, critical)
-     * @return TimetableConflict
+     * @param  int  $slotId1  Primary slot ID
+     * @param  int|null  $slotId2  Secondary slot ID (for double-booking conflicts)
+     * @param  string  $conflictType  Type of conflict
+     * @param  string  $description  Human-readable description
+     * @param  string  $severity  Severity level (low, medium, high, critical)
      */
     public function logConflict(
         int $slotId1,
@@ -369,14 +372,14 @@ class TimetableConflictDetector
     {
         $resolved = TimetableConflict::where(function ($query) use ($slotId) {
             $query->where('slot_id_1', $slotId)
-                  ->orWhere('slot_id_2', $slotId);
+                ->orWhere('slot_id_2', $slotId);
         })
-        ->whereIn('status', ['detected', 'acknowledged'])
-        ->update([
-            'status' => 'resolved',
-            'resolved_at' => now(),
-            'resolution_notes' => 'Auto-resolved: Slot was modified or deleted',
-        ]);
+            ->whereIn('status', ['detected', 'acknowledged'])
+            ->update([
+                'status' => 'resolved',
+                'resolved_at' => now(),
+                'resolution_notes' => 'Auto-resolved: Slot was modified or deleted',
+            ]);
 
         return $resolved;
     }

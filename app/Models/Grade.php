@@ -2,18 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use App\Models\Traits\BelongsToSchool;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
-use App\Models\LevelDayBlueprint;
-use App\Models\TimetablePeriod;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Grade extends Model
 {
-    use HasFactory, BelongsToSchool, SoftDeletes;
+    use BelongsToSchool, HasFactory, SoftDeletes;
 
     protected $fillable = [
         'school_id',
@@ -135,22 +133,22 @@ class Grade extends Model
 
         // Check 1: Class teacher exists
         $classTeacher = $this->getClassTeacher();
-        if (!$classTeacher) {
+        if (! $classTeacher) {
             $errors[] = [
                 'message' => 'No class teacher assigned',
                 'action' => "Go to Grades → {$this->name} → Edit → Assign a class teacher",
-                'type' => 'class_teacher'
+                'type' => 'class_teacher',
             ];
         } else {
-            $successes[] = "Class teacher assigned: {$classTeacher->user->name}";
+            $successes[] = 'Class teacher assigned: '.($classTeacher->user->name ?? 'Unknown');
         }
 
         // Check 2: Default room assigned (REQUIRED)
-        if (!$this->default_room_id) {
+        if (! $this->default_room_id) {
             $errors[] = [
                 'message' => 'No default classroom assigned',
                 'action' => "Go to Grades → {$this->name} → Edit → Assign a default room",
-                'type' => 'default_room'
+                'type' => 'default_room',
             ];
         } else {
             $room = $this->defaultRoom;
@@ -163,7 +161,7 @@ class Grade extends Model
             $errors[] = [
                 'message' => 'No subjects assigned',
                 'action' => "Go to Grades → {$this->name} → Subjects → Assign subjects",
-                'type' => 'subjects'
+                'type' => 'subjects',
             ];
         } else {
             $successes[] = "{$subjectsCount} subjects assigned";
@@ -175,11 +173,11 @@ class Grade extends Model
             ->where('is_active', true)
             ->first();
 
-        if (!$blueprint) {
+        if (! $blueprint) {
             $errors[] = [
                 'message' => "No active timetable blueprint found for {$this->level} level",
                 'action' => "Go to Blueprints → Create blueprint for {$this->level}",
-                'type' => 'blueprint'
+                'type' => 'blueprint',
             ];
         } else {
             $successes[] = "Blueprint exists for {$this->level}: {$blueprint->name}";
@@ -197,7 +195,7 @@ class Grade extends Model
                 $errors[] = [
                     'message' => "No periods generated from blueprint for {$this->level} level",
                     'action' => "Go to Blueprints → {$blueprint->name} → Generate Periods",
-                    'type' => 'periods'
+                    'type' => 'periods',
                 ];
             } else {
                 $successes[] = "Periods generated from blueprint ({$periodsCount} periods)";
@@ -214,6 +212,7 @@ class Grade extends Model
             $subjectsWithMissingRules = $subjectsWithRules->filter(function ($subject) {
                 $sessionsInvalid = empty($subject->pivot->sessions_per_week) || $subject->pivot->sessions_per_week <= 0;
                 $priorityInvalid = empty($subject->pivot->priority);
+
                 return $sessionsInvalid || $priorityInvalid;
             });
 
@@ -225,7 +224,7 @@ class Grade extends Model
                     'message' => "{$count} subjects missing curriculum rules (sessions per week, priority)",
                     'action' => "Go to Grades → {$this->name} → Subjects → Configure: {$subjectNames}",
                     'type' => 'curriculum_rules',
-                    'details' => $subjectNames
+                    'details' => $subjectNames,
                 ];
             }
         }
@@ -259,7 +258,7 @@ class Grade extends Model
 
                 $warnings[] = [
                     'message' => "No subject specializations set for teachers: {$teacherNames}",
-                    'action' => "Go to Teachers → Edit → Add subject specializations for better teacher matching",
+                    'action' => 'Go to Teachers → Edit → Add subject specializations for better teacher matching',
                     'type' => 'teacher_specializations',
                     'teacher_ids' => $teacherIds,
                 ];
@@ -281,7 +280,7 @@ class Grade extends Model
      */
     private function getGenerationSummary($blueprint): array
     {
-        if (!$blueprint) {
+        if (! $blueprint) {
             return [];
         }
 
@@ -313,9 +312,10 @@ class Grade extends Model
 
     public function hasCapacity()
     {
-        if (!$this->capacity) {
+        if (! $this->capacity) {
             return true;
         }
+
         return $this->students()->where('status', 'active')->count() < $this->capacity;
     }
 
@@ -393,9 +393,6 @@ class Grade extends Model
 
     /**
      * Check if a subject is allowed for this grade
-     *
-     * @param int $subjectId
-     * @return bool
      */
     public function isSubjectAllowed(int $subjectId): bool
     {
@@ -404,9 +401,6 @@ class Grade extends Model
 
     /**
      * Check if a teacher is allowed for this grade
-     *
-     * @param int $teacherId
-     * @return bool
      */
     public function isTeacherAllowed(int $teacherId): bool
     {
@@ -416,28 +410,24 @@ class Grade extends Model
     /**
      * Get required sessions per week for a subject
      *
-     * @param int $subjectId
      * @return int|null Returns null if subject not assigned to grade
      */
     public function getRequiredSessionsForSubject(int $subjectId): ?int
     {
         $subject = $this->subjects()->where('subjects.id', $subjectId)->first();
+
         return $subject ? $subject->pivot->sessions_per_week : null;
     }
 
     /**
      * Get actual scheduled sessions for a subject in a term
-     *
-     * @param int $subjectId
-     * @param int $termId
-     * @return int
      */
     public function getActualSessionsForSubject(int $subjectId, int $termId): int
     {
         return $this->timetableSlots()
             ->whereHas('timetableTemplate', function ($query) use ($termId) {
                 $query->where('academic_term_id', $termId)
-                      ->where('is_active', true);
+                    ->where('is_active', true);
             })
             ->where('subject_id', $subjectId)
             ->where('slot_type', TimetableSlot::TYPE_LESSON)
@@ -446,9 +436,6 @@ class Grade extends Model
 
     /**
      * Check if all subjects meet their session requirements for a term
-     *
-     * @param int $termId
-     * @return bool
      */
     public function hasMetSessionRequirements(int $termId): bool
     {
@@ -467,9 +454,6 @@ class Grade extends Model
     /**
      * Get session compliance report for a term
      * Shows which subjects are under/over/complete for their session quotas
-     *
-     * @param int $termId
-     * @return array
      */
     public function getSessionComplianceReport(int $termId): array
     {
@@ -513,6 +497,7 @@ class Grade extends Model
         if ($this->stream_id && $this->stream) {
             return "{$this->name} {$this->stream->name}";
         }
+
         return $this->name;
     }
 
@@ -531,12 +516,10 @@ class Grade extends Model
 
     /**
      * Check if this grade has a stream assigned
-     *
-     * @return bool
      */
     public function hasStream(): bool
     {
-        return !is_null($this->stream_id);
+        return ! is_null($this->stream_id);
     }
 
     /**
@@ -556,7 +539,7 @@ class Grade extends Model
     /**
      * Get timetable templates for a specific stream
      *
-     * @param int|null $streamId
+     * @param  int|null  $streamId
      * @return \Illuminate\Database\Eloquent\Collection
      */
     public function getTemplatesForStream($streamId = null)

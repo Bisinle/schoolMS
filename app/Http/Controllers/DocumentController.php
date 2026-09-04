@@ -4,12 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\Document;
 use App\Models\DocumentCategory;
-use App\Models\Teacher;
-use App\Models\Student;
 use App\Models\Guardian;
+use App\Models\Student;
+use App\Models\Teacher;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -40,23 +40,23 @@ class DocumentController extends Controller
                     });
                 })
                 // Search in students (supports first name, last name, OR full name)
-                ->orWhereHasMorph('documentable', [Student::class], function ($q2) use ($ownerSearch) {
-                    $q2->where(function ($q3) use ($ownerSearch) {
-                        $q3->where('first_name', 'like', "%{$ownerSearch}%")
-                          ->orWhere('last_name', 'like', "%{$ownerSearch}%")
-                          ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$ownerSearch}%"]);
-                    });
-                })
+                    ->orWhereHasMorph('documentable', [Student::class], function ($q2) use ($ownerSearch) {
+                        $q2->where(function ($q3) use ($ownerSearch) {
+                            $q3->where('first_name', 'like', "%{$ownerSearch}%")
+                                ->orWhere('last_name', 'like', "%{$ownerSearch}%")
+                                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$ownerSearch}%"]);
+                        });
+                    })
                 // Search in guardians
-                ->orWhereHasMorph('documentable', [Guardian::class], function ($q2) use ($ownerSearch) {
-                    $q2->whereHas('user', function ($q3) use ($ownerSearch) {
-                        $q3->where('name', 'like', "%{$ownerSearch}%");
-                    });
-                })
+                    ->orWhereHasMorph('documentable', [Guardian::class], function ($q2) use ($ownerSearch) {
+                        $q2->whereHas('user', function ($q3) use ($ownerSearch) {
+                            $q3->where('name', 'like', "%{$ownerSearch}%");
+                        });
+                    })
                 // Search in users
-                ->orWhereHasMorph('documentable', [User::class], function ($q2) use ($ownerSearch) {
-                    $q2->where('name', 'like', "%{$ownerSearch}%");
-                });
+                    ->orWhereHasMorph('documentable', [User::class], function ($q2) use ($ownerSearch) {
+                        $q2->where('name', 'like', "%{$ownerSearch}%");
+                    });
             });
         }
 
@@ -72,7 +72,7 @@ class DocumentController extends Controller
 
         // Filter by entity type (admin only)
         if ($request->filled('entity_type') && $request->entity_type !== 'all') {
-            $query->where('documentable_type', 'App\\Models\\' . $request->entity_type);
+            $query->where('documentable_type', 'App\\Models\\'.$request->entity_type);
         }
 
         // Sort
@@ -143,29 +143,29 @@ class DocumentController extends Controller
         $file = $request->file('file');
         $extension = $file->getClientOriginalExtension();
 
-        if (!$category->isValidFileExtension($extension)) {
+        if (! $category->isValidFileExtension($extension)) {
             return back()->withErrors([
-                'file' => "File type .{$extension} is not allowed. Allowed types: " . $category->getAllowedExtensionsString()
+                'file' => "File type .{$extension} is not allowed. Allowed types: ".$category->getAllowedExtensionsString(),
             ])->withInput();
         }
 
         // Validate file size
-        if (!$category->isValidFileSize($file->getSize())) {
+        if (! $category->isValidFileSize($file->getSize())) {
             return back()->withErrors([
-                'file' => "File size exceeds maximum allowed size of {$category->max_file_size_in_mb}MB"
+                'file' => "File size exceeds maximum allowed size of {$category->max_file_size_in_mb}MB",
             ])->withInput();
         }
 
         // Generate unique filename
-        $storedFilename = Str::uuid() . '.' . $extension;
-        
+        $storedFilename = Str::uuid().'.'.$extension;
+
         // Determine storage path based on entity type
-        $entityFolder = strtolower($validated['documentable_type']) . 's';
+        $entityFolder = strtolower($validated['documentable_type']).'s';
         $filePath = "documents/{$entityFolder}/{$storedFilename}";
 
         // Store file
         try {
-            $file->storeAs('documents/' . $entityFolder, $storedFilename, 'r2_private');
+            $file->storeAs('documents/'.$entityFolder, $storedFilename, 'r2_private');
         } catch (\Throwable $e) {
             throw ValidationException::withMessages([
                 'file' => 'Failed to upload file. Please try again.',
@@ -175,7 +175,7 @@ class DocumentController extends Controller
         // Create document record
         Document::create([
             'document_category_id' => $validated['document_category_id'],
-            'documentable_type' => 'App\\Models\\' . $validated['documentable_type'],
+            'documentable_type' => 'App\\Models\\'.$validated['documentable_type'],
             'documentable_id' => $validated['documentable_id'],
             'original_filename' => $file->getClientOriginalName(),
             'stored_filename' => $storedFilename,
@@ -277,7 +277,7 @@ class DocumentController extends Controller
     {
         $this->authorize('download', $document);
 
-        if (!Storage::disk('r2_private')->exists($document->file_path)) {
+        if (! Storage::disk('r2_private')->exists($document->file_path)) {
             abort(404, 'File not found.');
         }
 
@@ -291,20 +291,20 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        if (!Storage::disk('r2_private')->exists($document->file_path)) {
+        if (! Storage::disk('r2_private')->exists($document->file_path)) {
             abort(404, 'File not found.');
         }
 
         $mimeType = $document->mime_type;
         $allowedPreviewTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
 
-        if (!in_array($mimeType, $allowedPreviewTypes)) {
+        if (! in_array($mimeType, $allowedPreviewTypes)) {
             return $this->download($document);
         }
 
         return Storage::disk('r2_private')->response($document->file_path, null, [
-            'Content-Type'        => $mimeType,
-            'Content-Disposition' => 'inline; filename="' . $document->original_filename . '"',
+            'Content-Type' => $mimeType,
+            'Content-Disposition' => 'inline; filename="'.$document->original_filename.'"',
         ]);
     }
 
@@ -317,17 +317,19 @@ class DocumentController extends Controller
 
         if ($user->isAdmin()) {
             // Admin can upload for anyone
-            $options['Teacher'] = Teacher::with('user')->get()->map(function ($teacher) {
-                return [
-                    'id' => $teacher->id,
-                    'name' => $teacher->user->name . ' (' . $teacher->employee_number . ')',
-                ];
-            });
+            $options['Teacher'] = Teacher::with('user')->get()
+                ->filter(fn ($teacher) => $teacher->user !== null)
+                ->map(function ($teacher) {
+                    return [
+                        'id' => $teacher->id,
+                        'name' => $teacher->user->name.' ('.$teacher->employee_number.')',
+                    ];
+                });
 
             $options['Student'] = Student::with('grade')->get()->map(function ($student) {
                 return [
                     'id' => $student->id,
-                    'name' => $student->full_name . ' (' . $student->grade_name . ')',
+                    'name' => $student->full_name.' ('.$student->grade_name.')',
                 ];
             });
 
@@ -340,7 +342,7 @@ class DocumentController extends Controller
                 ->map(function ($guardian) {
                     return [
                         'id' => $guardian->id,
-                        'name' => $guardian->user->name . ' (' . $guardian->relationship . ')',
+                        'name' => $guardian->user->name.' ('.$guardian->relationship.')',
                     ];
                 })
                 ->values();
@@ -350,33 +352,33 @@ class DocumentController extends Controller
                 ->map(function ($user) {
                     return [
                         'id' => $user->id,
-                        'name' => $user->name . ' (' . ucfirst($user->role) . ')',
+                        'name' => $user->name.' ('.ucfirst($user->role).')',
                     ];
                 });
         } elseif ($user->isTeacher() && $user->teacher) {
             // Teacher can only upload their own documents
             $options['Teacher'] = [[
                 'id' => $user->teacher->id,
-                'name' => $user->name . ' (You)',
+                'name' => $user->name.' (You)',
             ]];
         } elseif ($user->isGuardian() && $user->guardian) {
             // Guardian can upload their own and their children's documents
             $options['Guardian'] = [[
                 'id' => $user->guardian->id,
-                'name' => $user->name . ' (You)',
+                'name' => $user->name.' (You)',
             ]];
 
             $options['Student'] = $user->guardian->students->map(function ($student) {
                 return [
                     'id' => $student->id,
-                    'name' => $student->full_name . ' (Your child)',
+                    'name' => $student->full_name.' (Your child)',
                 ];
             });
         } else {
             // Other users can only upload their own documents
             $options['User'] = [[
                 'id' => $user->id,
-                'name' => $user->name . ' (You)',
+                'name' => $user->name.' (You)',
             ]];
         }
 

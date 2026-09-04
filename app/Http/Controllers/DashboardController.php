@@ -2,23 +2,22 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Student;
-use App\Models\Guardian;
-use App\Models\Teacher;
-use App\Models\User;
-use App\Models\Grade;
-use App\Models\Subject;
+use App\Models\Document;
 use App\Models\Exam;
 use App\Models\ExamResult;
-use App\Models\Document;
+use App\Models\Grade;
+use App\Models\Guardian;
 use App\Models\QuranHomework;
 use App\Models\ReportComment;
+use App\Models\Student;
+use App\Models\Subject;
+use App\Models\Teacher;
 use App\Models\TimetableSlot;
 use App\Services\TimetableAnalyticsService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
-use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -48,7 +47,7 @@ class DashboardController extends Controller
         // Keep existing admin dashboard code exactly as is
         $totalStudents = Student::count();
         $activeStudents = Student::where('status', 'active')->count();
-        $activeGuardians  = Guardian::where('status', 'active')->count();
+        $activeGuardians = Guardian::where('status', 'active')->count();
         $inactiveGuardians = Guardian::where('status', 'inactive')->count();
         $totalTeachers = Teacher::count();
         $totalGrades = Grade::where('status', 'active')->count();
@@ -69,7 +68,7 @@ class DashboardController extends Controller
             //     ->whereRaw('DATEDIFF(expiry_date, CURDATE()) <= 30')
             //     ->whereRaw('DATEDIFF(expiry_date, CURDATE()) > 0')
             //     ->count(),
-            
+
         ];
 
         $studentsByGrade = Grade::withCount('students')
@@ -81,7 +80,7 @@ class DashboardController extends Controller
                     'name' => $grade->name,
                     'count' => $grade->students_count,
                     'capacity' => $grade->capacity,
-                    'percentage' => $grade->capacity > 0 ? round(($grade->students_count / $grade->capacity) * 100, 1) : 0
+                    'percentage' => $grade->capacity > 0 ? round(($grade->students_count / $grade->capacity) * 100, 1) : 0,
                 ];
             });
 
@@ -107,6 +106,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($exam) {
                 $studentsInGrade = $exam->grade->students()->count();
+
                 return [
                     'id' => $exam->id,
                     'name' => $exam->name,
@@ -114,7 +114,7 @@ class DashboardController extends Controller
                     'subject' => $exam->subject->name,
                     'completion_rate' => $studentsInGrade > 0 ? round(($exam->results_count / $studentsInGrade) * 100, 1) : 0,
                     'students_marked' => $exam->results_count,
-                    'total_students' => $studentsInGrade
+                    'total_students' => $studentsInGrade,
                 ];
             });
 
@@ -126,10 +126,11 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($grade) {
                 $classTeacher = $grade->teachers()->wherePivot('is_class_teacher', true)->first();
+
                 return [
                     'grade' => $grade->name,
                     'teachers_count' => $grade->teachers_count,
-                    'class_teacher' => $classTeacher ? $classTeacher->user->name : 'Not Assigned'
+                    'class_teacher' => $classTeacher?->user->name ?? 'Not Assigned',
                 ];
             });
 
@@ -227,7 +228,7 @@ class DashboardController extends Controller
                     ->map(function ($count, $day) use ($schoolId) {
                         // Get breakdown by type for this day
                         $daySlots = \App\Models\TimetableSlot::where('school_id', $schoolId)
-                            ->whereHas('timetableTemplate', fn($q) => $q->where('is_active', true))
+                            ->whereHas('timetableTemplate', fn ($q) => $q->where('is_active', true))
                             ->where('day_of_week', $day)
                             ->get();
 
@@ -247,7 +248,7 @@ class DashboardController extends Controller
             'stats' => [
                 'totalStudents' => $totalStudents,
                 'activeStudents' => $activeStudents,
-                'activeGuardians'   => $activeGuardians,
+                'activeGuardians' => $activeGuardians,
                 'inactiveGuardians' => $inactiveGuardians,
                 'totalTeachers' => $totalTeachers,
                 'totalGrades' => $totalGrades,
@@ -316,6 +317,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($exam) {
                 $studentsInGrade = $exam->grade->students()->where('status', 'active')->count();
+
                 return [
                     'id' => $exam->id,
                     'name' => $exam->name,
@@ -371,8 +373,8 @@ class DashboardController extends Controller
     private function getTeacherDashboardData($user)
     {
         $teacher = $user->teacher;
-        
-        if (!$teacher) {
+
+        if (! $teacher) {
             return ['stats' => [], 'message' => 'Teacher profile not found.'];
         }
 
@@ -387,10 +389,10 @@ class DashboardController extends Controller
             'verified' => $teacherDocuments->where('status', 'verified')->count(),
             'rejected' => $teacherDocuments->where('status', 'rejected')->count(),
         ];
-    
+
         $currentYear = now()->year;
         $currentTerm = $this->getCurrentTerm();
-        $assignedGrades = $teacher->grades()->with(['students' => function($query) {
+        $assignedGrades = $teacher->grades()->with(['students' => function ($query) {
             $query->where('status', 'active');
         }])->get();
 
@@ -414,7 +416,7 @@ class DashboardController extends Controller
         // Debug logging for students
         \Log::info('Teacher Students Debug', [
             'total_students_in_assigned_grades' => $studentsInAssignedGrades,
-            'students_per_grade' => $assignedGrades->map(function($grade) {
+            'students_per_grade' => $assignedGrades->map(function ($grade) {
                 return [
                     'grade_id' => $grade->id,
                     'grade_name' => $grade->name,
@@ -422,22 +424,24 @@ class DashboardController extends Controller
                 ];
             })->toArray(),
         ]);
-    
+
         // Get all exams created by this teacher
         $myExams = Exam::where('created_by', $user->id)
             ->where('academic_year', $currentYear)
             ->with(['grade.students', 'subject'])
             ->withCount('results')
             ->get();
-    
+
         $examsThisTerm = $myExams->where('term', $currentTerm)->count();
-    
+
         // Exams needing attention (incomplete marking)
         $examsNeedingAttention = $myExams->filter(function ($exam) {
             $studentsInGrade = $exam->grade->students()->where('status', 'active')->count();
+
             return $studentsInGrade > 0 && $exam->results_count < $studentsInGrade;
         })->map(function ($exam) {
             $stats = $exam->getCompletionStats();
+
             return [
                 'id' => $exam->id,
                 'name' => $exam->name,
@@ -452,7 +456,7 @@ class DashboardController extends Controller
                 'days_since_exam' => now()->diffInDays($exam->exam_date),
             ];
         })->sortByDesc('days_since_exam')->take(6)->values();
-    
+
         // Recent students from assigned grades
         $recentStudents = Student::whereIn('grade_id', $assignedGrades->pluck('id'))
             ->with(['guardian.user', 'grade'])
@@ -460,16 +464,16 @@ class DashboardController extends Controller
             ->latest()
             ->take(10)
             ->get();
-    
+
         // Top performing students in assigned grades
         $topStudents = $this->getTopPerformingStudents(10, $assignedGrades->pluck('id')->toArray());
-    
+
         // Grade breakdown with detailed stats
-        $myGrades = $assignedGrades->map(function ($grade) use ($teacher, $currentTerm, $currentYear) {
+        $myGrades = $assignedGrades->map(function ($grade) use ($currentTerm, $currentYear) {
             $isClassTeacher = $grade->pivot->is_class_teacher ?? false;
             $activeStudents = $grade->students->where('status', 'active');
             $studentsCount = $activeStudents->count();
-            
+
             // Get attendance rate for this grade (last 30 days)
             $attendanceRate = 0;
             if ($studentsCount > 0) {
@@ -483,14 +487,14 @@ class DashboardController extends Controller
                 }
                 $attendanceRate = round($totalRate / $studentsCount, 1);
             }
-    
+
             // Get average performance for this grade
-            $gradeAverage = ExamResult::whereHas('exam', function($query) use ($grade, $currentYear, $currentTerm) {
+            $gradeAverage = ExamResult::whereHas('exam', function ($query) use ($grade, $currentYear, $currentTerm) {
                 $query->where('grade_id', $grade->id)
-                      ->where('academic_year', $currentYear)
-                      ->where('term', $currentTerm);
+                    ->where('academic_year', $currentYear)
+                    ->where('term', $currentTerm);
             })->avg('marks');
-    
+
             return [
                 'id' => $grade->id,
                 'name' => $grade->name,
@@ -504,7 +508,7 @@ class DashboardController extends Controller
                 'performance_grade' => $gradeAverage ? $this->calculateGrade($gradeAverage) : null,
             ];
         });
-    
+
         // Upcoming exams (next 14 days)
         $upcomingExams = Exam::where('created_by', $user->id)
             ->where('exam_date', '>=', now())
@@ -513,7 +517,7 @@ class DashboardController extends Controller
             ->orderBy('exam_date')
             ->take(5)
             ->get()
-            ->map(function($exam) {
+            ->map(function ($exam) {
                 return [
                     'id' => $exam->id,
                     'name' => $exam->name,
@@ -525,26 +529,26 @@ class DashboardController extends Controller
                     'term' => $exam->term,
                 ];
             });
-    
+
         // Recent exam activity
-        $recentExamActivity = ExamResult::whereHas('exam', function($query) use ($user) {
+        $recentExamActivity = ExamResult::whereHas('exam', function ($query) use ($user) {
             $query->where('created_by', $user->id);
         })
-        ->with(['exam.subject', 'student'])
-        ->latest()
-        ->take(5)
-        ->get()
-        ->map(function($result) {
-            return [
-                'student_name' => $result->student->full_name,
-                'subject' => $result->exam->subject->name,
-                'marks' => round($result->marks, 1),
-                'grade' => $this->calculateGrade($result->marks),
-                'exam_name' => $result->exam->name,
-                'marked_at' => $result->created_at->diffForHumans(),
-            ];
-        });
-    
+            ->with(['exam.subject', 'student'])
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(function ($result) {
+                return [
+                    'student_name' => $result->student->full_name,
+                    'subject' => $result->exam->subject->name,
+                    'marks' => round($result->marks, 1),
+                    'grade' => $this->calculateGrade($result->marks),
+                    'exam_name' => $result->exam->name,
+                    'marked_at' => $result->created_at->diffForHumans(),
+                ];
+            });
+
         // Attendance summary for assigned grades (last 7 days)
         $recentAttendance = DB::table('attendances')
             ->join('students', 'attendances.student_id', '=', 'students.id')
@@ -553,10 +557,10 @@ class DashboardController extends Controller
             ->select('attendances.status', DB::raw('count(*) as count'))
             ->groupBy('attendances.status')
             ->get()
-            ->mapWithKeys(function($item) {
+            ->mapWithKeys(function ($item) {
                 return [$item->status => $item->count];
             });
-    
+
         $totalAttendanceRecords = $recentAttendance->sum();
         $attendanceSummary = [
             'present' => $recentAttendance['present'] ?? 0,
@@ -566,40 +570,40 @@ class DashboardController extends Controller
             'total' => $totalAttendanceRecords,
             'present_rate' => $totalAttendanceRecords > 0 ? round((($recentAttendance['present'] ?? 0) / $totalAttendanceRecords) * 100, 1) : 0,
         ];
-    
+
         // Students needing attention (low performers or poor attendance)
         $studentsNeedingAttention = Student::whereIn('grade_id', $assignedGrades->pluck('id'))
             ->where('status', 'active')
             ->with('grade')
             ->get()
-            ->map(function($student) use ($currentYear, $currentTerm) {
+            ->map(function ($student) use ($currentYear, $currentTerm) {
                 // Get attendance stats (last 30 days)
                 $attendanceStats = $student->getAttendanceStats(
                     now()->subDays(30)->toDateString(),
                     now()->toDateString()
                 );
-                
+
                 // Get term average
                 $termAverage = ExamResult::where('student_id', $student->id)
-                    ->whereHas('exam', function($query) use ($currentYear, $currentTerm) {
+                    ->whereHas('exam', function ($query) use ($currentYear, $currentTerm) {
                         $query->where('academic_year', $currentYear)
-                              ->where('term', $currentTerm);
+                            ->where('term', $currentTerm);
                     })
                     ->avg('marks');
-    
+
                 $needsAttention = false;
                 $reasons = [];
-    
+
                 if ($attendanceStats['attendance_rate'] < 75) {
                     $needsAttention = true;
-                    $reasons[] = 'Low attendance (' . $attendanceStats['attendance_rate'] . '%)';
+                    $reasons[] = 'Low attendance ('.$attendanceStats['attendance_rate'].'%)';
                 }
-    
+
                 if ($termAverage && $termAverage < 50) {
                     $needsAttention = true;
-                    $reasons[] = 'Low performance (' . round($termAverage, 1) . '%)';
+                    $reasons[] = 'Low performance ('.round($termAverage, 1).'%)';
                 }
-    
+
                 if ($needsAttention) {
                     return [
                         'id' => $student->id,
@@ -611,12 +615,13 @@ class DashboardController extends Controller
                         'reasons' => $reasons,
                     ];
                 }
+
                 return null;
             })
             ->filter()
             ->take(5)
             ->values();
-    
+
         // Get today's lessons from published timetables
         $today = strtolower(Carbon::now()->format('l')); // 'monday', 'tuesday', etc.
         $todayLessons = TimetableSlot::query()
@@ -626,9 +631,9 @@ class DashboardController extends Controller
             ->where(function ($query) {
                 $query->where(function ($q) {
                     $q->where('is_teachable', true)
-                      ->where('slot_type', 'lesson');
+                        ->where('slot_type', 'lesson');
                 })
-                ->orWhere('slot_type', TimetableSlot::TYPE_LESSON);
+                    ->orWhere('slot_type', TimetableSlot::TYPE_LESSON);
             })
             ->whereHas('template', function ($query) {
                 $query->where('status', 'published');
@@ -684,20 +689,20 @@ class DashboardController extends Controller
     {
         $guardian = $user->guardian;
 
-        if (!$guardian) {
+        if (! $guardian) {
             return ['message' => 'Guardian profile not found.'];
         }
 
         // Get guardian's and children's documents
         $studentIds = $guardian->students()->pluck('id');
 
-        $guardianDocs = Document::where(function($query) use ($guardian, $studentIds) {
-            $query->where(function($q) use ($guardian) {
+        $guardianDocs = Document::where(function ($query) use ($guardian, $studentIds) {
+            $query->where(function ($q) use ($guardian) {
                 $q->where('documentable_type', 'App\\Models\\Guardian')
-                  ->where('documentable_id', $guardian->id);
-            })->orWhere(function($q) use ($studentIds) {
+                    ->where('documentable_id', $guardian->id);
+            })->orWhere(function ($q) use ($studentIds) {
                 $q->where('documentable_type', 'App\\Models\\Student')
-                  ->whereIn('documentable_id', $studentIds);
+                    ->whereIn('documentable_id', $studentIds);
             });
         })->get();
 
@@ -772,16 +777,16 @@ class DashboardController extends Controller
         }
 
         $students = $guardian->students()->where('status', 'active')->get();
-        
+
         $startDate = now()->startOfMonth()->toDateString();
         $endDate = now()->toDateString();
-        
+
         $currentYear = now()->year;
         $currentTerm = $this->getCurrentTerm();
-        
+
         $studentsData = $students->map(function ($student) use ($startDate, $endDate, $currentYear, $currentTerm) {
             $attendanceStats = $student->getAttendanceStats($startDate, $endDate);
-            
+
             $recentExams = ExamResult::where('student_id', $student->id)
                 ->with(['exam.subject'])
                 ->whereHas('exam', function ($query) use ($currentYear) {
@@ -807,22 +812,22 @@ class DashboardController extends Controller
                     $query->where('academic_year', $currentYear);
                 })
                 ->get();
-            
+
             $overallAverage = $allResults->count() > 0 ? round($allResults->avg('marks'), 2) : null;
 
             $termResults = ExamResult::where('student_id', $student->id)
                 ->whereHas('exam', function ($query) use ($currentYear, $currentTerm) {
                     $query->where('academic_year', $currentYear)
-                          ->where('term', $currentTerm);
+                        ->where('term', $currentTerm);
                 })
                 ->get();
-            
+
             $termAverage = $termResults->count() > 0 ? round($termResults->avg('marks'), 2) : null;
 
             $subjectPerformance = ExamResult::where('student_id', $student->id)
                 ->whereHas('exam', function ($query) use ($currentYear, $currentTerm) {
                     $query->where('academic_year', $currentYear)
-                          ->where('term', $currentTerm);
+                        ->where('term', $currentTerm);
                 })
                 ->with('exam.subject')
                 ->get()
@@ -830,6 +835,7 @@ class DashboardController extends Controller
                 ->map(function ($results, $subjectId) {
                     $subject = $results->first()->exam->subject;
                     $average = round($results->avg('marks'), 2);
+
                     return [
                         'subject_id' => $subject->id,
                         'subject_name' => $subject->name,
@@ -875,7 +881,7 @@ class DashboardController extends Controller
                 'total_exams_this_year' => $allResults->count(),
             ];
         });
-        
+
         return [
             'students' => $studentsData,
             'guardianInfo' => [
@@ -900,7 +906,7 @@ class DashboardController extends Controller
     private function getTopPerformingStudents($limit = 5, $gradeIds = null)
     {
         $currentYear = now()->year;
-        
+
         $query = Student::select('students.*')
             ->join('exam_results', 'students.id', '=', 'exam_results.student_id')
             ->join('exams', 'exam_results.exam_id', '=', 'exams.id')
@@ -918,7 +924,7 @@ class DashboardController extends Controller
         return $query->get()->map(function ($student) {
             return [
                 'id' => $student->id,
-                'name' => $student->first_name . ' ' . $student->last_name,
+                'name' => $student->first_name.' '.$student->last_name,
                 'admission_number' => $student->admission_number,
                 'grade' => $student->grade->name ?? 'N/A',
                 'average' => round($student->average_marks, 2),
@@ -930,7 +936,7 @@ class DashboardController extends Controller
     private function getCurrentTerm()
     {
         $month = now()->month;
-        
+
         if ($month >= 1 && $month <= 4) {
             return '1';
         } elseif ($month >= 5 && $month <= 8) {
@@ -942,9 +948,16 @@ class DashboardController extends Controller
 
     private function calculateGrade($marks)
     {
-        if ($marks >= 90) return 'EE';
-        if ($marks >= 75) return 'ME';
-        if ($marks >= 50) return 'AE';
+        if ($marks >= 90) {
+            return 'EE';
+        }
+        if ($marks >= 75) {
+            return 'ME';
+        }
+        if ($marks >= 50) {
+            return 'AE';
+        }
+
         return 'BE';
     }
 }

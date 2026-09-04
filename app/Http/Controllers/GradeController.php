@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Grade;
-use App\Models\Teacher;
-use App\Models\Subject;
 use App\Models\Room;
 use App\Models\Stream;
-use Illuminate\Http\Request;
+use App\Models\Subject;
+use App\Models\Teacher;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -39,9 +39,9 @@ class GradeController extends Controller
 
         // Apply search filter
         if ($request->search) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('name', 'like', "%{$request->search}%")
-                  ->orWhere('code', 'like', "%{$request->search}%");
+                    ->orWhere('code', 'like', "%{$request->search}%");
             });
         }
 
@@ -76,13 +76,15 @@ class GradeController extends Controller
                 $query->where('role', 'teacher');
             })
             ->get()
+            ->filter(fn ($teacher) => $teacher->user !== null)
             ->map(function ($teacher) {
                 return [
                     'id' => $teacher->id,
                     'name' => $teacher->user->name,
                     'employee_number' => $teacher->employee_number,
                 ];
-            });
+            })
+            ->values();
 
         $rooms = Room::where('is_active', true)
             ->orderBy('name')
@@ -142,14 +144,14 @@ class GradeController extends Controller
 
         if ($existingGrade) {
             return back()->withErrors([
-                'name' => 'A grade with this name and stream combination already exists.'
+                'name' => 'A grade with this name and stream combination already exists.',
             ])->withInput();
         }
 
         // Validate that class_teacher_id is in teacher_ids
-        if (!in_array($validated['class_teacher_id'], $validated['teacher_ids'])) {
+        if (! in_array($validated['class_teacher_id'], $validated['teacher_ids'])) {
             return back()->withErrors([
-                'class_teacher_id' => 'The class teacher must be one of the assigned teachers.'
+                'class_teacher_id' => 'The class teacher must be one of the assigned teachers.',
             ])->withInput();
         }
 
@@ -172,7 +174,7 @@ class GradeController extends Controller
             $teacherData = [];
             foreach ($validated['teacher_ids'] as $teacherId) {
                 $teacherData[$teacherId] = [
-                    'is_class_teacher' => isset($validated['class_teacher_id']) && $validated['class_teacher_id'] == $teacherId
+                    'is_class_teacher' => isset($validated['class_teacher_id']) && $validated['class_teacher_id'] == $teacherId,
                 ];
             }
             $grade->teachers()->attach($teacherData);
@@ -197,7 +199,7 @@ class GradeController extends Controller
                 $query->orderBy('category')
                     ->orderBy('name');
             },
-            'stream' // Load the stream relationship if this grade has one
+            'stream', // Load the stream relationship if this grade has one
         ]);
 
         $availableTeachers = Teacher::whereDoesntHave('grades', function ($query) use ($grade) {
@@ -224,13 +226,15 @@ class GradeController extends Controller
                 $query->where('role', 'teacher');
             })
             ->get()
+            ->filter(fn ($teacher) => $teacher->user !== null)
             ->map(function ($teacher) {
                 return [
                     'id' => $teacher->id,
                     'name' => $teacher->user->name,
                     'employee_number' => $teacher->employee_number,
                 ];
-            });
+            })
+            ->values();
 
         $rooms = Room::where('is_active', true)
             ->orderBy('name')
@@ -299,7 +303,7 @@ class GradeController extends Controller
 
         if ($existingGrade) {
             return back()->withErrors([
-                'name' => 'A grade with this name and stream combination already exists.'
+                'name' => 'A grade with this name and stream combination already exists.',
             ])->withInput();
         }
 
@@ -324,7 +328,7 @@ class GradeController extends Controller
             $teacherData = [];
             foreach ($validated['teacher_ids'] as $teacherId) {
                 $teacherData[$teacherId] = [
-                    'is_class_teacher' => isset($validated['class_teacher_id']) && $validated['class_teacher_id'] == $teacherId
+                    'is_class_teacher' => isset($validated['class_teacher_id']) && $validated['class_teacher_id'] == $teacherId,
                 ];
             }
             $grade->teachers()->sync($teacherData);
@@ -344,7 +348,7 @@ class GradeController extends Controller
             // Prevent deletion of "Unassigned" grade
             if ($grade->code === 'UNASSIGNED') {
                 return back()->withErrors([
-                    'error' => "The 'Unassigned' grade cannot be deleted as it is a system grade."
+                    'error' => "The 'Unassigned' grade cannot be deleted as it is a system grade.",
                 ]);
             }
 
@@ -422,7 +426,7 @@ class GradeController extends Controller
                 $message .= " {$studentCount} student(s) were moved to 'Unassigned' grade.";
             }
             if ($examCount > 0 || $attendanceCount > 0) {
-                $message .= " Historical exam and attendance records have been preserved.";
+                $message .= ' Historical exam and attendance records have been preserved.';
             }
 
             return redirect()->route('grades.index')
@@ -435,11 +439,11 @@ class GradeController extends Controller
                 'grade_id' => $grade->id,
                 'grade_name' => $grade->name,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return back()->withErrors([
-                'error' => "Failed to delete/archive grade '{$grade->name}'. Error: " . $e->getMessage()
+                'error' => "Failed to delete/archive grade '{$grade->name}'. Error: ".$e->getMessage(),
             ]);
         }
     }
@@ -474,11 +478,11 @@ class GradeController extends Controller
                 'grade_id' => $grade->id,
                 'grade_name' => $grade->name,
                 'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
+                'trace' => $e->getTraceAsString(),
             ]);
 
             return back()->withErrors([
-                'error' => "Failed to unarchive grade '{$grade->name}'. Error: " . $e->getMessage()
+                'error' => "Failed to unarchive grade '{$grade->name}'. Error: ".$e->getMessage(),
             ]);
         }
     }
@@ -538,7 +542,7 @@ class GradeController extends Controller
         // Check if teacher is already assigned
         if ($grade->teachers()->where('teacher_id', $validated['teacher_id'])->exists()) {
             return back()->withErrors([
-                'teacher_id' => 'This teacher is already assigned to this grade.'
+                'teacher_id' => 'This teacher is already assigned to this grade.',
             ]);
         }
 
