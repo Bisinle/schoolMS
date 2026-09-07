@@ -49,9 +49,10 @@ function MobileGuardianItem({ guardian, auth, onDelete, onDeactivate, onReactiva
                     <div className={`flex items-start justify-between gap-3 ${isInactive ? 'opacity-70' : ''}`}>
                         <div className="flex-1 min-w-0">
                             {/* Guardian Number + Status */}
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex items-center gap-2 mb-2 flex-wrap">
                                 <Badge variant="primary" value={guardian.guardian_number} size="sm" />
-                                <Badge variant="status" value={guardian.status || 'active'} size="sm" />
+                                <Badge variant="status" value={guardian.status || 'active'} label={guardian.status === 'inactive' ? 'Enrollment: Inactive' : 'Enrollment: Active'} size="sm" />
+                                <Badge variant="status" value={guardian.user?.is_active ? 'active' : 'inactive'} label={guardian.user?.is_active ? 'Portal: Active' : 'Portal: Blocked'} size="xs" />
                             </div>
 
                             <h3 className={`text-base font-bold truncate mb-2 ${isInactive ? 'text-gray-500 line-through' : 'text-gray-900'}`}>
@@ -397,7 +398,10 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <Badge variant="status" value={guardian.status || 'active'} />
+                                            <div className="flex flex-col gap-1">
+                                                <Badge variant="status" value={guardian.status || 'active'} label={guardian.status === 'inactive' ? 'Enrollment: Inactive' : 'Enrollment: Active'} />
+                                                <Badge variant="status" value={guardian.user?.is_active ? 'active' : 'inactive'} label={guardian.user?.is_active ? 'Portal: Active' : 'Portal: Blocked'} size="xs" />
+                                            </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                                             <Link
@@ -471,8 +475,8 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                 show={showDeactivateModal}
                 onClose={() => setShowDeactivateModal(false)}
                 onConfirm={handleDeactivate}
-                title="Deactivate Guardian"
-                message={`This will mark ${selectedGuardian?.user?.name} as inactive and also deactivate all their linked students. All records (attendance, invoices, reports) are preserved and can still be reviewed. You can reactivate them at any time.`}
+                title="Deactivate Enrollment"
+                message={`This marks ${selectedGuardian?.user?.name}'s enrollment record inactive and also deactivates all their linked students. This does NOT block their portal login — to revoke login access, use the toggle on the Users page instead. All records (attendance, invoices, reports) are preserved and can still be reviewed.`}
                 confirmText="Deactivate"
                 type="warning"
             />
@@ -482,8 +486,8 @@ export default function GuardiansIndex({ guardians, filters: initialFilters = {}
                 show={showReactivateModal}
                 onClose={() => setShowReactivateModal(false)}
                 onConfirm={handleReactivate}
-                title="Reactivate Guardian"
-                message={`Reactivate ${selectedGuardian?.user?.name}? Their linked students will remain inactive — reactivate each student individually if needed.`}
+                title="Reactivate Enrollment"
+                message={`Reactivate ${selectedGuardian?.user?.name}'s enrollment record? Their linked students will remain inactive — reactivate each student individually if needed. Portal login access is managed separately from the Users page.`}
                 confirmText="Reactivate"
                 type="success"
             />

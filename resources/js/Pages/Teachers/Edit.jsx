@@ -22,7 +22,6 @@ export default function TeachersEdit({ teacher, grades, subjects, assignedGradeI
         subject_id: teacher.subject_id?.toString() || '',
         subject_ids: assignedSubjectIds || [],
         date_of_joining: teacher.date_of_joining || '',
-        status: teacher.status || 'active',
         grade_ids: assignedGradeIds || [],
         class_teacher_grade_id: classTeacherGradeId?.toString() || '',
     });
@@ -166,17 +165,6 @@ export default function TeachersEdit({ teacher, grades, subjects, assignedGradeI
                                 error={errors.subject_ids}
                                 required
                                 helperText="Select all subjects this teacher can teach"
-                            />
-
-                            <SelectInput
-                                label="Status"
-                                name="status"
-                                value={data.status}
-                                onChange={(e) => setData('status', e.target.value)}
-                                error={errors.status}
-                                required
-                                options={['active', 'inactive']}
-                                showPlaceholder={false}
                             />
 
                             <FormField span="full">
