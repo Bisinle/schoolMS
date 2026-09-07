@@ -47,7 +47,7 @@ function MobileTeacherItem({ teacher, auth, onDelete }) {
                                 </h3>
                                 <Badge
                                     variant="status"
-                                    value={teacher.status}
+                                    value={teacher.user?.is_active ? 'active' : 'inactive'}
                                     size="sm"
                                     className="flex-shrink-0 ml-2"
                                 />
@@ -360,7 +360,7 @@ export default function TeachersIndex({ teachers, filters: initialFilters = {}, 
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <Badge variant="status" value={teacher.status} />
+                                            <Badge variant="status" value={teacher.user?.is_active ? 'active' : 'inactive'} />
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm space-x-2">
                                             <Link

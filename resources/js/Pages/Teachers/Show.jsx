@@ -46,11 +46,11 @@ export default function TeachersShow({ teacher }) {
                                 </div>
                                 <h2 className="text-2xl font-bold text-white">{teacher.user?.name}</h2>
                                 <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium mt-2 ${
-                                    teacher.status === 'active' 
-                                        ? 'bg-green-100 text-green-800' 
+                                    teacher.user?.is_active
+                                        ? 'bg-green-100 text-green-800'
                                         : 'bg-red-100 text-red-800'
                                 }`}>
-                                    {teacher.status.toUpperCase()}
+                                    {teacher.user?.is_active ? 'ACTIVE' : 'INACTIVE'} (Portal Access)
                                 </span>
                             </div>
                         </div>

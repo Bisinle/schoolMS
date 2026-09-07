@@ -82,7 +82,6 @@ class TeacherController extends Controller
             'subject_ids' => 'required|array|min:1',
             'subject_ids.*' => 'exists:subjects,id',
             'date_of_joining' => 'nullable|date',
-            'status' => 'required|in:active,inactive',
             'grade_ids' => 'nullable|array',
             'grade_ids.*' => 'exists:grades,id',
             'class_teacher_grade_id' => 'nullable|exists:grades,id',
@@ -114,7 +113,6 @@ class TeacherController extends Controller
             'qualification' => $validated['qualification'],
             'subject_id' => $validated['subject_id'],
             'date_of_joining' => $validated['date_of_joining'],
-            'status' => $validated['status'],
         ]);
 
         // Attach subject specializations
@@ -196,7 +194,6 @@ class TeacherController extends Controller
             'subject_ids' => 'required|array|min:1',
             'subject_ids.*' => 'exists:subjects,id',
             'date_of_joining' => 'nullable|date',
-            'status' => 'required|in:active,inactive',
             'grade_ids' => 'nullable|array',
             'grade_ids.*' => 'exists:grades,id',
             'class_teacher_grade_id' => 'nullable|exists:grades,id',
@@ -219,7 +216,6 @@ class TeacherController extends Controller
             'qualification' => $validated['qualification'],
             'subject_id' => $validated['subject_id'],
             'date_of_joining' => $validated['date_of_joining'],
-            'status' => $validated['status'],
         ]);
 
         // Sync subject specializations
