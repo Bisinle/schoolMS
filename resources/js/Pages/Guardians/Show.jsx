@@ -46,6 +46,18 @@ export default function GuardiansShow({ guardian, studentsWithAttendance, curren
                                 </div>
                                 <h2 className="text-2xl font-bold text-white">{guardian.user?.name}</h2>
                                 <p className="text-orange-100 mt-1">{guardian.relationship}</p>
+                                <div className="flex items-center gap-2 mt-2">
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        guardian.status === 'inactive' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                                    }`}>
+                                        Enrollment: {guardian.status === 'inactive' ? 'Inactive' : 'Active'}
+                                    </span>
+                                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                        guardian.user?.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                    }`}>
+                                        Portal Access: {guardian.user?.is_active ? 'Active' : 'Blocked'}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
