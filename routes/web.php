@@ -36,6 +36,7 @@ use App\Http\Controllers\UniversalFeeController;
 use App\Http\Controllers\GuardianFeePreferenceController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\MonthlyFeeController;
 use App\Http\Controllers\Settings\SchoolProfileController;
 use App\Http\Controllers\Settings\AcademicYearController;
 use App\Http\Controllers\Settings\AcademicTermController;
@@ -675,6 +676,14 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::post('/fee-preferences/bulk-apply-defaults', [GuardianFeePreferenceController::class, 'bulkApplyDefaults'])->name('fee-preferences.bulk-apply-defaults');
         Route::get('/fee-preferences/{guardian}/history', [GuardianFeePreferenceController::class, 'history'])->name('fee-preferences.history');
 
+        // Monthly Fee Ledger
+        Route::get('/monthly-fees', [MonthlyFeeController::class, 'index'])->name('monthly-fees.index');
+        Route::post('/monthly-fees/open-next-month', [MonthlyFeeController::class, 'openNextMonth'])->name('monthly-fees.open-next-month');
+        Route::put('/monthly-fees/guardians/{guardian}/expected-fee', [MonthlyFeeController::class, 'updateExpected'])->name('monthly-fees.update-expected');
+        Route::post('/monthly-fees/entries/{entry}/mark-paid', [MonthlyFeeController::class, 'markPaid'])->name('monthly-fees.mark-paid');
+        Route::post('/monthly-fees/entries/{entry}/undo', [MonthlyFeeController::class, 'undoPaid'])->name('monthly-fees.undo');
+        Route::put('/monthly-fees/entries/{entry}', [MonthlyFeeController::class, 'updateCollected'])->name('monthly-fees.update-collected');
+
         // Invoice Management
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
         Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
@@ -698,6 +707,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::get('/guardian/invoices', [InvoiceController::class, 'index'])->name('guardian.invoices');
         Route::get('/guardian/invoices/{invoice}', [InvoiceController::class, 'show'])->name('guardian.invoices.show');
         Route::get('/guardian/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('guardian.invoices.pdf');
+        Route::get('/guardian/monthly-fees', [MonthlyFeeController::class, 'guardianShow'])->name('guardian.monthly-fees');
     });
 });
 

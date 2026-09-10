@@ -105,6 +105,7 @@ export const getNavigation = (role, isMadrasah = false, can = () => true, canAny
                     { name: "Tuition Fees", href: "/tuition-fees", icon: GraduationCap, permission: "fees.manage" },
                     { name: "Universal Fees", href: "/universal-fees", icon: BookOpen, permission: "fees.manage" },
                     { name: "Fee Preferences", href: "/fee-preferences", icon: Settings, permission: "fees.manage" },
+                    { name: "Monthly Fees", href: "/monthly-fees", icon: Calendar, permission: "fees.manage" },
                 ]
             },
             { name: "Reports", href: "/reports", icon: FileText, permission: "reports.view" },
@@ -227,6 +228,7 @@ export const getNavigation = (role, isMadrasah = false, can = () => true, canAny
                 },
             ] : []),
             { name: "Invoices", href: "/guardian/invoices", icon: DollarSign, permission: "fees.view-own-invoices" },
+            { name: "Monthly Fees", href: "/guardian/monthly-fees", icon: DollarSign, permission: "fees.view-own-invoices" },
             { name: "Reports", href: "/reports", icon: FileText, permission: "reports.view" },
             { name: "Documents", href: "/documents", icon: FolderOpen, permission: "documents.view" },
             { name: "Policies", href: "/policies", icon: Shield, permission: "policies.view" },
