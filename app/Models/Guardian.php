@@ -176,6 +176,16 @@ class Guardian extends Model
         return $this->hasMany(GuardianFeeAdjustment::class);
     }
 
+    public function monthlyFeeSetting()
+    {
+        return $this->hasOne(MonthlyFeeSetting::class);
+    }
+
+    public function monthlyFeeEntries()
+    {
+        return $this->hasMany(MonthlyFeeEntry::class);
+    }
+
     // Helper to get current term invoice
     public function getCurrentTermInvoice()
     {
