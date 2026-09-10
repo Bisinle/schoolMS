@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class MonthlyFeeSetting extends Model
 {
-    use HasFactory, BelongsToSchool;
+    use BelongsToSchool, HasFactory;
 
     protected $fillable = [
         'school_id',

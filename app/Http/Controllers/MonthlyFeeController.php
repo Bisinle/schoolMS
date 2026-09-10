@@ -128,6 +128,10 @@ class MonthlyFeeController extends Controller
 
     public function markPaid(Request $request, MonthlyFeeEntry $entry)
     {
+        if ($entry->expected_amount <= 0) {
+            return back()->withErrors(['error' => 'Set an expected fee for this guardian before marking a payment.']);
+        }
+
         $entry->update([
             'amount_collected' => $entry->expected_amount,
             'paid_date' => now()->toDateString(),
@@ -176,12 +180,20 @@ class MonthlyFeeController extends Controller
         $schoolId = $guardian->school_id;
         $latest = $this->ledger->latestMonth($schoolId);
 
-        $this->ledger->syncMonth($schoolId, $latest['year'], $latest['month']);
-
-        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)
-            ->where('year', $latest['year'])
-            ->where('month', $latest['month'])
-            ->first();
+        // Only this guardian's own entry needs to exist for the open month —
+        // unlike the admin ledger page, there's no reason to sync the whole
+        // school's guardian list just so one guardian can see their own row.
+        $entry = MonthlyFeeEntry::firstOrCreate(
+            [
+                'guardian_id' => $guardian->id,
+                'year' => $latest['year'],
+                'month' => $latest['month'],
+            ],
+            [
+                'school_id' => $schoolId,
+                'expected_amount' => $guardian->monthlyFeeSetting?->expected_fee ?? 0,
+            ]
+        );
 
         $monthDate = Carbon::create($latest['year'], $latest['month'], 1);
         $expected = $entry ? (float) $entry->expected_amount : 0;

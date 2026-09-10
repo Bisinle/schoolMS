@@ -129,7 +129,7 @@ export default function MonthlyFeesIndex({
                                         </div>
 
                                         <div className="flex items-center justify-end gap-1.5 text-sm" onClick={(e) => e.stopPropagation()}>
-                                            {editingExpected === row.guardian_id ? (
+                                            {isOpenMonth && editingExpected === row.guardian_id ? (
                                                 <InlineAmountEditor
                                                     initial={row.expected_amount}
                                                     onSave={(value) => saveExpected(row.guardian_id, value)}
@@ -137,13 +137,15 @@ export default function MonthlyFeesIndex({
                                             ) : (
                                                 <>
                                                     <span>{row.expected_amount ? fmt(row.expected_amount) : '—'}</span>
-                                                    <button
-                                                        onClick={() => setEditingExpected(row.guardian_id)}
-                                                        className="text-gray-400 hover:text-indigo-600"
-                                                        title="Edit expected fee"
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </button>
+                                                    {isOpenMonth && (
+                                                        <button
+                                                            onClick={() => setEditingExpected(row.guardian_id)}
+                                                            className="text-gray-400 hover:text-indigo-600"
+                                                            title="Edit expected fee"
+                                                        >
+                                                            <Pencil className="h-3.5 w-3.5" />
+                                                        </button>
+                                                    )}
                                                 </>
                                             )}
                                         </div>

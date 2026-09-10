@@ -48,7 +48,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $school = School::factory()->create();
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
-        (new MonthlyFeeLedgerService())->syncMonth($school->id, 2026, 9);
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
 
         $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)
             ->where('year', 2026)->where('month', 9)->first();
@@ -63,7 +63,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $school = School::factory()->create();
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
-        $service = new MonthlyFeeLedgerService();
+        $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
 
         $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
@@ -82,7 +82,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $school = School::factory()->create();
         $existing = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
 
-        $service = new MonthlyFeeLedgerService();
+        $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
 
         $this->assertSame(1, MonthlyFeeEntry::where('year', 2026)->where('month', 9)->count());
@@ -106,7 +106,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $user->id, 'status' => 'active']);
         // No students attached at all.
 
-        (new MonthlyFeeLedgerService())->syncMonth($school->id, 2026, 9);
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
 
         $this->assertSame(0, MonthlyFeeEntry::where('year', 2026)->where('month', 9)->count());
     }
@@ -116,7 +116,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $school = School::factory()->create();
         $now = Carbon::now();
 
-        $latest = (new MonthlyFeeLedgerService())->latestMonth($school->id);
+        $latest = (new MonthlyFeeLedgerService)->latestMonth($school->id);
 
         $this->assertSame($now->year, $latest['year']);
         $this->assertSame($now->month, $latest['month']);
@@ -127,7 +127,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $school = School::factory()->create();
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
-        $service = new MonthlyFeeLedgerService();
+        $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
 
         $next = $service->openNextMonth($school->id);

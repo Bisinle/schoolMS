@@ -167,6 +167,36 @@ class MonthlyFeeControllerTest extends TestCase
         $this->assertSame(2, MonthlyFeeEntry::count());
     }
 
+    public function test_browsing_a_closed_month_does_not_inject_a_newly_joined_guardian(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
+
+        // Sync and close out the current month by opening the next one.
+        $this->actingAs($admin)->get('/monthly-fees');
+        $closedEntry = MonthlyFeeEntry::first();
+        $closedYear = $closedEntry->year;
+        $closedMonth = $closedEntry->month;
+        $this->actingAs($admin)->post('/monthly-fees/open-next-month');
+
+        // A new guardian joins after the month was closed.
+        $newGuardian = $this->makeGuardianWithActiveChild($school, expectedFee: 20000);
+
+        $response = $this->actingAs($admin)->get("/monthly-fees?year={$closedYear}&month={$closedMonth}");
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('isOpenMonth', false)
+            ->has('rows', 1)
+        );
+        $this->assertFalse(
+            MonthlyFeeEntry::where('year', $closedYear)->where('month', $closedMonth)
+                ->where('guardian_id', $newGuardian->id)->exists()
+        );
+    }
+
     public function test_guardian_can_view_their_own_current_month(): void
     {
         $this->withoutVite();
