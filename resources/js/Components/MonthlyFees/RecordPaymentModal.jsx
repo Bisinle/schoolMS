@@ -1,6 +1,6 @@
 import Modal from '@/Components/Modal';
 import { router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function RecordPaymentModal({ show, onClose, guardian }) {
     const { flash } = usePage().props;
@@ -10,6 +10,21 @@ export default function RecordPaymentModal({ show, onClose, guardian }) {
     const [processing, setProcessing] = useState(false);
 
     const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
+
+    // This modal is always mounted (visibility is controlled by `show`, per
+    // this app's established modal convention — see StudentImportModal /
+    // GenerateReportModal), so `guardian` is still null on the very first
+    // render and the useState initializers above never fire again for it.
+    // Without this, the amount field would always start at 0 instead of the
+    // selected guardian's total due, and the date/notes fields would carry
+    // over from whichever guardian was open previously.
+    useEffect(() => {
+        if (guardian) {
+            setAmount(guardian.total_due || 0);
+            setReceivedAt(new Date().toISOString().slice(0, 10));
+            setNotes('');
+        }
+    }, [guardian?.guardian_id]);
 
     if (!guardian) {
         return null;
