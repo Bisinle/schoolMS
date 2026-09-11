@@ -1,5 +1,6 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import RecordPaymentModal from '@/Components/MonthlyFees/RecordPaymentModal';
+import HolidayMonthsModal from '@/Components/MonthlyFees/HolidayMonthsModal';
 import StatCard from '@/Components/UI/StatCard';
 import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
 import Pagination from '@/Components/Pagination/Pagination';
@@ -14,7 +15,7 @@ import {
 export default function MonthlyFeesIndex({
     auth, year, month, monthLabel, isOpenMonth, canBrowseNext, prev, next, rows, totalCollected,
     collectedThisPeriod, arrearsCollectedThisPeriod, creditRecognizedThisPeriod, creditOutstanding, arrearsActivity,
-    totalExpectedThisPeriod, remainingThisMonth, unpaidGuardianCount, paidGuardianCount, needsFeeCount,
+    totalExpectedThisPeriod, remainingThisMonth, unpaidGuardianCount, paidGuardianCount, needsFeeCount, holidayMonths,
 }) {
     const [openRows, setOpenRows] = useState({});
     const [editingExpected, setEditingExpected] = useState(null);
@@ -22,6 +23,7 @@ export default function MonthlyFeesIndex({
     const [showArrearsDrilldown, setShowArrearsDrilldown] = useState(false);
     const [openArrearsGuardians, setOpenArrearsGuardians] = useState({});
     const [recordPaymentGuardian, setRecordPaymentGuardian] = useState(null);
+    const [showHolidayMonthsModal, setShowHolidayMonthsModal] = useState(false);
 
     // Mobile gets the "Load More"/infinite-scroll pattern used across the
     // rest of the app (Students/Guardians/Users); desktop pages through
@@ -85,12 +87,13 @@ export default function MonthlyFeesIndex({
             partial: { style: 'bg-amber-100 text-amber-700 border-amber-200', label: 'Partial' },
             unpaid: { style: 'bg-gray-100 text-gray-600 border-gray-200', label: 'Unpaid' },
             needs_fee: { style: 'bg-red-100 text-red-700 border-red-200', label: 'Needs fee' },
+            holiday: { style: 'bg-blue-100 text-blue-700 border-blue-200', label: 'Holiday' },
         };
         return map[row.status];
     };
 
     const stripeColor = (status) => ({
-        paid: 'border-l-green-500', partial: 'border-l-amber-500', unpaid: 'border-l-gray-300', needs_fee: 'border-l-red-500',
+        paid: 'border-l-green-500', partial: 'border-l-amber-500', unpaid: 'border-l-gray-300', needs_fee: 'border-l-red-500', holiday: 'border-l-blue-400',
     }[status]);
 
     const StatusBadge = ({ row }) => {
@@ -107,7 +110,9 @@ export default function MonthlyFeesIndex({
     const ExpectedCell = ({ row, align = 'end' }) => (
         <div className={`flex flex-col gap-1 ${align === 'end' ? 'items-end' : 'items-start'}`} onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-1.5">
-                {isOpenMonth && editingExpected === row.guardian_id ? (
+                {row.status === 'holiday' ? (
+                    <span className="text-xs font-semibold text-blue-600">On holiday — no fee</span>
+                ) : isOpenMonth && editingExpected === row.guardian_id ? (
                     <InlineAmountEditor initial={row.expected_amount} onSave={(value) => saveExpected(row.guardian_id, value)} />
                 ) : row.expected_amount ? (
                     <>
@@ -285,6 +290,12 @@ export default function MonthlyFeesIndex({
                                     <ChevronRight className="h-4 w-4" />
                                 </button>
                             </div>
+                            <button
+                                onClick={() => setShowHolidayMonthsModal(true)}
+                                className="rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+                            >
+                                Holiday Months
+                            </button>
                             <button
                                 onClick={openNextMonth}
                                 className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700"
@@ -512,6 +523,12 @@ export default function MonthlyFeesIndex({
                 show={!!recordPaymentGuardian}
                 guardian={recordPaymentGuardian}
                 onClose={() => setRecordPaymentGuardian(null)}
+            />
+
+            <HolidayMonthsModal
+                show={showHolidayMonthsModal}
+                holidayMonths={holidayMonths}
+                onClose={() => setShowHolidayMonthsModal(false)}
             />
         </AuthenticatedLayout>
     );
