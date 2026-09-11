@@ -432,6 +432,66 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // ends at "give back whatever was credit").
     }
 
+    public function test_undo_entry_on_a_mixed_funded_entry_splits_the_refund_and_logs_a_correction_via_log_cash_received(): void
+    {
+        // The exact scenario round 3 found, now routed through the
+        // consolidated undoEntry() (Fix 2): an entry partially credit-
+        // settled, then topped up with real cash, must split correctly on
+        // undo — refunding only the credit portion to credit_balance and
+        // logging only the cash portion as a negative correction, through
+        // the service's own logCashReceived() (not a raw controller write).
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $service->recordPayment($guardian->id, 8000, $admin->id); // partial cash on current month, no credit yet
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $entry->update(['credit_applied' => 8000, 'amount_collected' => 16000]); // 8000 cash + 8000 credit
+
+        $service->undoEntry($entry, $admin->id);
+
+        $entry->refresh();
+        $this->assertNull($entry->amount_collected);
+        $this->assertNull($entry->paid_date);
+        $this->assertSame('0.00', $entry->credit_applied);
+        $this->assertSame('8000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+
+        $correction = MonthlyFeePayment::where('corrects_entry_id', $entry->id)->first();
+        $this->assertNotNull($correction);
+        $this->assertSame('-8000.00', $correction->amount); // only the cash portion corrected, not the full 16000
+        $this->assertSame($admin->id, $correction->recorded_by);
+    }
+
+    public function test_undo_entry_called_twice_in_a_row_is_a_safe_no_op_and_never_double_refunds(): void
+    {
+        // Demonstrates the actual race Fix 2 prevents: a double-submitted
+        // undo (e.g. a duplicate HTTP request) must not refund the same
+        // credit twice or log two negative corrections. undoEntry() re-locks
+        // and re-fetches the entry from inside its own transaction, so the
+        // second call sees the already-reset row and is a genuine no-op.
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $service->recordPayment($guardian->id, 32000, $admin->id); // 16000 current + 16000 credit
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+
+        $service->undoEntry($entry, $admin->id); // first undo: real refund + correction
+        $service->undoEntry($entry->fresh(), $admin->id); // second undo on an already-reset entry: must be a no-op
+
+        $entry->refresh();
+        $this->assertNull($entry->amount_collected);
+        $this->assertSame('0.00', $entry->credit_applied);
+        // Credit was refunded exactly once, not twice.
+        $this->assertSame('16000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+        // Only one correction row exists — the second call wrote nothing.
+        $this->assertSame(2, MonthlyFeePayment::count()); // the original recordPayment + the one correction
+        $this->assertSame(1, MonthlyFeePayment::where('corrects_entry_id', $entry->id)->count());
+    }
+
     public function test_record_manual_cash_change_logs_the_delta_classified_by_whether_the_entry_is_the_open_month(): void
     {
         $school = School::factory()->create();

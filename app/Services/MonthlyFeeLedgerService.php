@@ -273,6 +273,76 @@ class MonthlyFeeLedgerService
     }
 
     /**
+     * The full reversal of a paid/partial entry back to unpaid — used by
+     * MonthlyFeeController::undoPaid(). Runs the ENTIRE read-refund-correct-
+     * reset sequence inside one locked transaction, matching the pattern
+     * every other credit_balance/entry read-modify-write in this service
+     * uses (recordPayment, syncMonth's credit step, applyCreditToArrears):
+     * the plan's Global Constraints explicitly name undoPaid's
+     * credit-refund path as one of these. Re-fetches and locks the entry
+     * itself inside the transaction rather than trusting a possibly-stale
+     * $entry instance passed in from outside the lock — only the entry's
+     * immutable identifying FKs (guardian_id/school_id) are read from the
+     * passed instance, never its mutable financial fields.
+     *
+     * Any credit portion of the entry's amount_collected goes back to
+     * credit_balance; any real-cash portion is logged as a negative
+     * correction through logCashReceived() — the one place that writes the
+     * cash ledger — rather than a raw MonthlyFeePayment::create(). Calling
+     * this on an entry that's already fully reset (no credit_applied, no
+     * amount_collected) is a safe no-op: nothing is written, so a
+     * double-submitted undo can't double-refund or log two corrections.
+     */
+    public function undoEntry(MonthlyFeeEntry $entry, int $recordedBy): void
+    {
+        DB::transaction(function () use ($entry, $recordedBy) {
+            // Lock the setting row before the entry row — the same order
+            // every other credit_balance read-modify-write in this service
+            // uses (recordPayment/applyCreditToArrears lock the setting
+            // first, then entries), so this can't deadlock against them
+            // under concurrent access.
+            $setting = MonthlyFeeSetting::lockForUpdate()->where('guardian_id', $entry->guardian_id)->first()
+                ?? MonthlyFeeSetting::create(['school_id' => $entry->school_id, 'guardian_id' => $entry->guardian_id, 'expected_fee' => 0]);
+
+            $locked = MonthlyFeeEntry::lockForUpdate()->findOrFail($entry->id);
+
+            $creditPortion = (float) $locked->credit_applied;
+            $cashPortion = (float) ($locked->amount_collected ?? 0) - $creditPortion;
+
+            if ($creditPortion <= 0 && $cashPortion <= 0) {
+                return;
+            }
+
+            if ($creditPortion > 0) {
+                $setting->increment('credit_balance', $creditPortion);
+            }
+
+            if ($cashPortion > 0) {
+                $latest = $this->latestMonth($locked->school_id);
+                $isCurrentMonth = $locked->year === $latest['year'] && $locked->month === $latest['month'];
+
+                $this->logCashReceived(
+                    $locked->school_id,
+                    $locked->guardian_id,
+                    -$cashPortion,
+                    $isCurrentMonth ? 0.0 : -$cashPortion,
+                    $isCurrentMonth ? -$cashPortion : 0.0,
+                    0.0,
+                    $recordedBy,
+                    correctsEntryId: $locked->id,
+                );
+            }
+
+            $locked->update([
+                'amount_collected' => null,
+                'credit_applied' => 0,
+                'paid_date' => null,
+                'recorded_by' => $recordedBy,
+            ]);
+        });
+    }
+
+    /**
      * Used by the manual correction tools (markPaid/updateCollected in the
      * controller) so real cash changed through them also feeds the
      * cash-basis analytics, the same way recordPayment() does. Computes the

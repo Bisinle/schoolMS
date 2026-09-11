@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Guardian;
 use App\Models\MonthlyFeeEntry;
-use App\Models\MonthlyFeePayment;
 use App\Models\MonthlyFeeSetting;
 use App\Services\MonthlyFeeLedgerService;
 use Illuminate\Http\Request;
@@ -194,35 +193,7 @@ class MonthlyFeeController extends Controller
 
     public function undoPaid(Request $request, MonthlyFeeEntry $entry)
     {
-        $creditPortion = (float) $entry->credit_applied;
-        $cashPortion = (float) ($entry->amount_collected ?? 0) - $creditPortion;
-
-        if ($creditPortion > 0) {
-            $this->ledger->refundCredit($entry, $request->user()->id);
-        }
-
-        if ($cashPortion > 0) {
-            $latest = $this->ledger->latestMonth($entry->school_id);
-            $isCurrentMonth = $entry->year === $latest['year'] && $entry->month === $latest['month'];
-
-            MonthlyFeePayment::create([
-                'school_id' => $entry->school_id,
-                'guardian_id' => $entry->guardian_id,
-                'amount' => -$cashPortion,
-                'applied_to_arrears' => $isCurrentMonth ? 0 : -$cashPortion,
-                'applied_to_current_month' => $isCurrentMonth ? -$cashPortion : 0,
-                'received_at' => now()->toDateString(),
-                'recorded_by' => $request->user()->id,
-                'corrects_entry_id' => $entry->id,
-            ]);
-        }
-
-        $entry->update([
-            'amount_collected' => null,
-            'credit_applied' => 0,
-            'paid_date' => null,
-            'recorded_by' => $request->user()->id,
-        ]);
+        $this->ledger->undoEntry($entry, $request->user()->id);
 
         return back()->with('success', 'Payment undone.');
     }
