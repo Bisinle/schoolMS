@@ -5,13 +5,15 @@ import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2 } from 'lu
 
 export default function MonthlyFeesIndex({
     auth, year, month, monthLabel, isOpenMonth, canBrowseNext, prev, next, rows, totalCollected,
+    collectedThisPeriod, arrearsCollectedThisPeriod, creditRecognizedThisPeriod, arrearsActivity,
 }) {
     const [openRows, setOpenRows] = useState({});
     const [editingExpected, setEditingExpected] = useState(null);
     const [editingAmount, setEditingAmount] = useState(null);
+    const [showArrearsDrilldown, setShowArrearsDrilldown] = useState(false);
+    const [openArrearsGuardians, setOpenArrearsGuardians] = useState({});
 
     const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
-    const totalOutstanding = rows.reduce((sum, row) => sum + (row.outstanding_balance || 0), 0);
 
     const goToMonth = (target) => {
         router.get('/monthly-fees', { year: target.year, month: target.month });
@@ -23,6 +25,10 @@ export default function MonthlyFeesIndex({
 
     const toggleRow = (guardianId) => {
         setOpenRows((prevState) => ({ ...prevState, [guardianId]: !prevState[guardianId] }));
+    };
+
+    const toggleArrearsGuardian = (guardianId) => {
+        setOpenArrearsGuardians((prevState) => ({ ...prevState, [guardianId]: !prevState[guardianId] }));
     };
 
     const saveExpected = (guardianId, value) => {
@@ -318,16 +324,78 @@ export default function MonthlyFeesIndex({
                         )}
                     </div>
 
-                    {/* Totals footer */}
-                    <div className="mt-4 flex flex-col gap-2 rounded-lg border-2 border-gray-300 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="text-sm font-bold text-gray-700">Collected so far &mdash; {monthLabel}</span>
-                        <div className="flex flex-col items-start gap-1 sm:items-end">
-                            {totalOutstanding > 0 && (
-                                <span className="text-sm font-semibold text-red-600">{fmt(totalOutstanding)} owed from earlier months</span>
+                    {/* Analytics cards */}
+                    <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+                        <div className="rounded-lg border-2 border-gray-300 bg-white p-4">
+                            <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Collected this period</div>
+                            <div className="mt-1 font-mono text-xl font-bold text-green-700">{fmt(collectedThisPeriod)}</div>
+                        </div>
+
+                        <button
+                            onClick={() => setShowArrearsDrilldown((prevState) => !prevState)}
+                            className="rounded-lg border-2 border-gray-300 bg-white p-4 text-left hover:border-indigo-300"
+                        >
+                            <div className="flex items-center justify-between">
+                                <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Arrears</div>
+                                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showArrearsDrilldown ? 'rotate-180' : ''}`} />
+                            </div>
+                            <div className="mt-1 text-sm text-amber-700">Collected: <span className="font-mono font-bold">{fmt(arrearsCollectedThisPeriod)}</span></div>
+                            <div className="text-sm text-red-600">Still owed: <span className="font-mono font-bold">{fmt(arrearsActivity.reduce((sum, g) => sum + g.still_owing, 0))}</span></div>
+                            <div className="mt-1 text-xs text-gray-400">{arrearsActivity.length} {arrearsActivity.length === 1 ? 'guardian' : 'guardians'}</div>
+                        </button>
+
+                        <div className="rounded-lg border-2 border-gray-300 bg-white p-4">
+                            <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Credit outstanding</div>
+                            <div className="mt-1 font-mono text-xl font-bold text-indigo-700">{fmt(rows.reduce((sum, row) => sum + (row.credit_balance || 0), 0))}</div>
+                            {creditRecognizedThisPeriod > 0 && (
+                                <div className="mt-1 text-xs text-gray-400">{fmt(creditRecognizedThisPeriod)} recognized from credit this period</div>
                             )}
-                            <span className="font-mono text-xl font-bold text-gray-900">{fmt(totalCollected)}</span>
                         </div>
                     </div>
+
+                    {/* Arrears drill-down */}
+                    {showArrearsDrilldown && (
+                        <div className="mt-3 space-y-2">
+                            {arrearsActivity.length === 0 && (
+                                <div className="rounded-lg border-2 border-gray-300 bg-white px-4 py-6 text-center text-sm text-gray-400">
+                                    No arrears activity for this period.
+                                </div>
+                            )}
+                            {arrearsActivity.map((g) => (
+                                <div key={g.guardian_id} className="overflow-hidden rounded-lg border-2 border-gray-300 bg-white">
+                                    <button
+                                        onClick={() => toggleArrearsGuardian(g.guardian_id)}
+                                        className="flex w-full items-center justify-between p-3 text-left hover:bg-gray-50"
+                                    >
+                                        <div>
+                                            <div className="font-bold text-gray-900">{g.guardian_name}</div>
+                                            <div className="text-xs text-gray-400">{g.guardian_number}</div>
+                                        </div>
+                                        <div className="text-right text-sm">
+                                            {g.still_owing > 0 && <div className="font-mono font-semibold text-red-600">{fmt(g.still_owing)} owed</div>}
+                                        </div>
+                                    </button>
+                                    {openArrearsGuardians[g.guardian_id] && (
+                                        <div className="space-y-1.5 border-t border-gray-200 bg-gray-50 p-3">
+                                            {g.months.map((m) => (
+                                                <div key={m.entry_id} className="flex items-center justify-between rounded border border-gray-200 bg-white px-3 py-1.5 text-sm">
+                                                    <span className="font-semibold text-gray-800">{m.label}</span>
+                                                    <div className="flex items-center gap-2">
+                                                        {m.credit_applied > 0 && (
+                                                            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">from credit</span>
+                                                        )}
+                                                        <span className="font-mono text-gray-600">
+                                                            {m.paid_date ? `Settled ${m.paid_date}` : 'Still owed'}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </AuthenticatedLayout>
