@@ -1,9 +1,8 @@
 import Modal from '@/Components/Modal';
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 export default function RecordPaymentModal({ show, onClose, guardian }) {
-    const { flash } = usePage().props;
     const [amount, setAmount] = useState(guardian?.total_due || 0);
     const [receivedAt, setReceivedAt] = useState(new Date().toISOString().slice(0, 10));
     const [notes, setNotes] = useState('');
@@ -31,19 +30,33 @@ export default function RecordPaymentModal({ show, onClose, guardian }) {
     }
 
     const submit = () => {
+        // Guards against a double-click recording the same payment twice —
+        // the disabled button below closes this same gap visually, but a
+        // second click landing before React re-renders the disabled state
+        // would otherwise still reach here and fire a second request.
+        if (processing) {
+            return;
+        }
+
         setProcessing(true);
         router.post(
             `/monthly-fees/guardians/${guardian.guardian_id}/record-payment`,
             { amount, received_at: receivedAt, notes },
             {
                 preserveScroll: true,
-                onSuccess: () => setProcessing(false),
+                // Closes on success rather than leaving the modal open with
+                // no visible change — the guardian's row behind it already
+                // reflects the new status/credit the moment this redirect
+                // lands, so staying open just invited exactly the repeated
+                // "did that work?" clicking this is meant to prevent.
+                onSuccess: () => {
+                    setProcessing(false);
+                    onClose();
+                },
                 onError: () => setProcessing(false),
             }
         );
     };
-
-    const receipt = flash?.payment_receipt;
 
     return (
         <Modal show={show} onClose={onClose} maxWidth="md">
@@ -91,14 +104,6 @@ export default function RecordPaymentModal({ show, onClose, guardian }) {
                     rows={2}
                     className="mt-1 w-full rounded border border-gray-300 px-3 py-2 text-sm"
                 />
-
-                {receipt && (
-                    <div className="mt-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-800">
-                        Recorded {fmt(receipt.amount_received)}.
-                        {receipt.total_arrears_cleared > 0 && ` Cleared ${fmt(receipt.total_arrears_cleared)} of arrears.`}
-                        {receipt.applied_to_credit > 0 && ` ${fmt(receipt.applied_to_credit)} left over as credit.`}
-                    </div>
-                )}
 
                 <div className="mt-5 flex justify-end gap-2">
                     <button onClick={onClose} className="rounded border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50">
