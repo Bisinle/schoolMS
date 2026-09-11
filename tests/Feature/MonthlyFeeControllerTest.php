@@ -267,6 +267,42 @@ class MonthlyFeeControllerTest extends TestCase
         $this->assertSame('0.00', $entry->expected_amount);
     }
 
+    public function test_guardian_show_during_a_holiday_month_still_surfaces_prior_arrears(): void
+    {
+        $this->withoutVite();
+        // Regression guard found by the scoped re-review of the holiday-months
+        // final-fix round: the frontend's holiday branch must not hide a real
+        // amount owed just because the *current* month happens to be a
+        // holiday — outstanding balance from an earlier real month must still
+        // surface as a positive amountDue, not get swallowed by "no fee this
+        // month".
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
+        [$priorYear, $priorMonth] = $currentMonth === 1 ? [$currentYear - 1, 12] : [$currentYear, $currentMonth - 1];
+
+        $school = School::factory()->create(['fee_module' => 'monthly', 'holiday_months' => [$currentMonth]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => $priorYear, 'month' => $priorMonth, 'expected_amount' => 16000, 'amount_collected' => null,
+        ]);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => $currentYear, 'month' => $currentMonth, 'expected_amount' => 0, 'is_holiday' => true,
+        ]);
+
+        $response = $this->actingAs($guardian->user)->get('/guardian/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('status', 'holiday')
+            ->where('expectedAmount', 0)
+            ->where('outstandingBalance', 16000)
+            ->where('amountDue', 16000)
+        );
+    }
+
     public function test_index_shows_outstanding_balance_and_total_due_from_a_past_unpaid_month(): void
     {
         $this->withoutVite();
