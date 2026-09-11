@@ -161,7 +161,7 @@ class MonthlyFeeLedgerService
         $guardian = Guardian::findOrFail($guardianId);
         $schoolId = $guardian->school_id;
 
-        return DB::transaction(function () use ($guardian, $guardianId, $schoolId, $amountReceived, $recordedBy, $receivedAt, $notes) {
+        return DB::transaction(function () use ($guardianId, $schoolId, $amountReceived, $recordedBy, $receivedAt, $notes) {
             $setting = MonthlyFeeSetting::lockForUpdate()->where('guardian_id', $guardianId)->first()
                 ?? MonthlyFeeSetting::create(['school_id' => $schoolId, 'guardian_id' => $guardianId, 'expected_fee' => 0]);
 

@@ -35,7 +35,7 @@ class HandleInertiaRequests extends Middleware
         $schoolData = null;
         $isSuperAdmin = $user && $user->isSuperAdmin();
 
-        if ($user && $user->school_id && !$isSuperAdmin) {
+        if ($user && $user->school_id && ! $isSuperAdmin) {
             $school = \App\Models\School::select('id', 'name', 'logo_path', 'is_active', 'status', 'school_type')
                 ->find($user->school_id);
 
