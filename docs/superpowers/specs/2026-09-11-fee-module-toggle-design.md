@@ -37,16 +37,30 @@ A plain add-column migration, mirroring `2025_11_22_100000_add_school_type_to_sc
 
 ## Backend enforcement
 
-A new middleware, `CheckFeeModule`, structurally identical to `CheckMadrasahSchool`:
+A new middleware, `CheckFeeModule`, mirroring the actual current `app/Http/Middleware/CheckMadrasahSchool.php` structure exactly (verified by reading it directly — not paraphrased):
 
 ```php
 class CheckFeeModule
 {
-    public function handle(Request $request, Closure $next, string $required)
+    public function handle(Request $request, Closure $next, string $required): Response
     {
-        $school = /* load the authenticated user's school fresh, same pattern as CheckMadrasahSchool */;
+        if (! auth()->check()) {
+            return redirect()->route('login');
+        }
 
-        if ($school?->fee_module !== $required) {
+        $user = auth()->user();
+
+        if ($user->isSuperAdmin()) {
+            abort(404);
+        }
+
+        if (! $user->school_id) {
+            abort(404);
+        }
+
+        $school = School::find($user->school_id);
+
+        if (! $school || $school->fee_module !== $required) {
             abort(404);
         }
 
@@ -55,54 +69,55 @@ class CheckFeeModule
 }
 ```
 
-Registered as two middleware aliases in `bootstrap/app.php`:
+Registered as **one** middleware alias in `bootstrap/app.php` (not two — this takes a parameter, exactly like the existing `'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class` alias already does):
 
-- `fee-module:termly`
-- `fee-module:monthly`
+```php
+'fee-module' => CheckFeeModule::class,
+```
+
+Used in routes as `fee-module:termly` / `fee-module:monthly`.
 
 ### Route grouping (`routes/web.php`)
 
-The existing single `Route::middleware(['user.active', 'permission:fees.manage'])->group(...)` block that currently holds every fee-related route (both termly and monthly, undifferentiated) splits into three:
+Verified against the actual current route block (lines 640-706, admin; 708-712, guardian). The full, exact route-name inventory per bucket:
 
-```php
-Route::middleware(['user.active', 'permission:fees.manage'])->group(function () {
+**Termly bucket** (`fee-module:termly`):
+`fees.index`; `tuition-fees.index/store/bulk-store/update/destroy/toggle-status`; `universal-fees.index/store/bulk-store/update/destroy/toggle-status`; `fee-preferences.index/edit/update/destroy/bulk-apply-defaults/history`; `invoices.index/create/preview/store/clearAll/show/updateLineItems/pdf/destroy`; `payments.create/store/show/destroy` (a `PaymentController`, found during this scan — was missing from the spec's original route list); guardian-facing: `guardian.invoices`, `guardian.invoices.show`, `guardian.invoices.pdf`.
 
-    Route::middleware(['fee-module:termly'])->group(function () {
-        // fees.*, invoices.*, tuition-fees.*, universal-fees.*, fee-preferences.*
-    });
+**Monthly bucket** (`fee-module:monthly`):
+`monthly-fees.index/open-next-month/update-expected/mark-paid/undo/update-collected/record-payment/apply-credit`; guardian-facing: `guardian.monthly-fees`.
 
-    Route::middleware(['fee-module:monthly'])->group(function () {
-        // monthly-fees.*
-    });
+**Shared, ungated** (stays exactly where it is today, outside both `fee-module` gates — per the Transport Routes clarification):
+`transport-routes.index/store/update/destroy/toggle-status`.
 
-    // Transport Routes — NOT wrapped in either fee-module gate.
-    // transport-routes.*
-});
-```
+Both the admin block (currently one `Route::middleware(['user.active', 'permission:fees.manage'])->group(...)`) and the guardian block (currently one `Route::middleware(['user.active', 'permission:fees.view-own-invoices'])->group(...)`) split the same way: two new nested `fee-module:*` sub-groups, with Transport Routes left at the outer level, untouched.
 
-Guardian-facing routes (currently one `permission:fees.view-own-invoices` group mixing `invoices.*` and `guardian.monthly-fees`) get the identical split: `invoices.*` under `fee-module:termly`, `guardian.monthly-fees` under `fee-module:monthly`.
+This is a routing reorganization only — no controller changes. Every controller involved (`FeeManagementController`, `InvoiceController`, `PaymentController`, `TuitionFeeController`, `UniversalFeeController`, `GuardianFeePreferenceController`, `TransportRouteController`, `MonthlyFeeController`) is already a fully separate class with no shared logic to untangle.
 
-This is a routing reorganization only — no controller changes. `MonthlyFeeController` and the termly controllers (`FeeManagementController`, `InvoiceController`, `TuitionFeeController`, `UniversalFeeController`, `GuardianFeePreferenceController`) are already fully separate classes with no shared logic to untangle. `TransportRouteController` moves out of both gates entirely.
+## Data model — model layer
+
+`App\Models\School`'s `$fillable` array needs `'fee_module'` added (verified: `school_type` is already there; `fee_module` must be added alongside it or `SchoolController::store()`/`update()`'s mass-assignment will silently drop the field).
 
 ## Frontend
 
 ### Shared prop
 
-`HandleInertiaRequests` middleware already selects and shares `school_type` inside the global `school` prop — `fee_module` gets added to that same `select()`/share call.
+`HandleInertiaRequests.php` (verified, lines ~39-50): both the `School::select(...)` column list and the `$schoolData` array it builds need `'fee_module'` added, alongside the existing `'school_type'` entries in each.
 
 ### Navigation (`resources/js/Config/navigation.js`)
 
-`AuthenticatedLayout.jsx` reads `school?.fee_module` (alongside the existing `isMadrasah` read) and passes it into `getNavigation(...)`. The current single "Fees" submenu — which lists all 7 items unconditionally — becomes conditional, following the exact `...(isMadrasah ? [...] : [])` spread pattern already used for Quran nav entries:
+Verified: the "Fees" submenu with all 7 items appears in exactly **one place** — the `admin` role's nav array (lines 99-109). Neither `teacher` nor `head_teacher` has a Fees section at all. The `guardian` role has two flat top-level items (lines 230-231: `Invoices`, `Monthly Fees`) rather than a submenu. So exactly two edits are needed, not a broad sweep:
 
-- `Dashboard`, `Invoices`, `Tuition Fees`, `Universal Fees`, `Fee Preferences` → shown only when `fee_module === 'termly'`
-- `Monthly Fees` → shown only when `fee_module === 'monthly'`
-- `Transport Routes` → shown unconditionally, regardless of `fee_module` (same visibility rule as today — only gated by the `fees.manage` permission)
+- Admin's "Fees" submenu splits its `submenu` array using the same `...(isMadrasah ? [...] : [])` spread pattern already used for the Quran entries in this same file: `Dashboard`, `Invoices`, `Tuition Fees`, `Universal Fees`, `Fee Preferences` spread in only when `feeModule === 'termly'`; `Monthly Fees` spread in only when `feeModule === 'monthly'`; `Transport Routes` stays unconditional.
+- Guardian's two flat items become conditional: `Invoices` only when `feeModule === 'termly'`, `Monthly Fees` only when `feeModule === 'monthly'`.
 
-Guardian-facing nav gets the same split: `Invoices` only when `fee_module === 'termly'`, `Monthly Fees` only when `fee_module === 'monthly'`.
+`AuthenticatedLayout.jsx` (verified, line 35: `const isMadrasah = school?.school_type === "madrasah";`) gets a parallel `const feeModule = school?.fee_module;` line, and `getNavigation(role, isMadrasah, can, canAny)` (line 57 of navigation.js) gains a new `feeModule` parameter passed alongside `isMadrasah`.
 
 ### Super Admin Create/Edit School form
 
-A new "Fee Module" field — two radio options ("Termly" / "Monthly") — added to `SuperAdmin/Schools/Create` and `Edit` pages, alongside the existing "School Type" field. Backend validation on `SchoolController::store()`/`update()`: `'fee_module' => ['required', 'in:termly,monthly']`.
+Verified: `school_type` renders as a `<select>` dropdown (not radio buttons — correcting this spec's earlier draft) in both `resources/js/Pages/SuperAdmin/Schools/Create.jsx` (~line 260) and `Edit.jsx` (~line 278), each with an `<InputLabel>`, the `<select>` itself, an `<InputError>`, and a one-line helper `<p>` underneath explaining the choice. The new "Fee Module" field matches this exact same markup shape — a `<select>` with `<option value="termly">Termly</option>` / `<option value="monthly">Monthly Fees</option>`, plus a helper line explaining what each does — placed directly next to the existing "School Type" field. Both pages' `useForm` initial `data` objects need a `fee_module` key (`Create.jsx` defaults it to `'termly'`; `Edit.jsx` defaults it to `school.fee_module || 'termly'`, mirroring exactly how `school_type` is initialized in each).
+
+Backend validation, added to both `store()` and `update()` in `SchoolController.php`: `'fee_module' => 'required|in:termly,monthly'` (matching the existing `'school_type' => 'required|in:islamic_school,madrasah'` line's exact style), and `'fee_module' => $validated['fee_module']` added to the `School::create([...])` array in `store()` (verified `update()` needs no equivalent addition — it already does `$school->update($validated)` with the whole validated array, so adding the validation rule is sufficient there).
 
 ## Error handling
 
@@ -110,16 +125,16 @@ A school hitting a route outside its `fee_module` (e.g. a stale bookmark, a guar
 
 ## Testing
 
-Mirrors the existing tenant-isolation/madrasah-gating test style already in this codebase:
+Mirrors the existing madrasah-gating test style already in this codebase (verified via `tests/Feature/QuranDashboardAccessTest.php`, which creates schools with an explicit `School::factory()->create(['school_type' => 'islamic_school'])` override — the same override pattern works for `fee_module` with no new factory state needed):
 
-- A school on `fee_module: 'monthly'` gets 404 on every termly route (`/fees`, `/invoices`, `/tuition-fees`, `/universal-fees`, `/fee-preferences`, and their guardian-facing equivalents).
+- A school on `fee_module: 'monthly'` gets 404 on every termly route, including `payments.*` (easy to miss — it's a separate `PaymentController`, not folded into `invoices.*`).
 - A school on `fee_module: 'termly'` gets 404 on every monthly-fees route (`/monthly-fees` and its sub-actions, `/guardian/monthly-fees`).
 - Both types of school get 200 on `/transport-routes` regardless of `fee_module`.
-- Existing schools (created via factory with no explicit `fee_module`) default to `'termly'`.
+- Existing schools (created via factory with no explicit `fee_module`) default to `'termly'` — assert this via `->fresh()` after create, not the in-memory model immediately post-`create()`, since Eloquent doesn't reflect a DB-level column default on the in-memory instance without a refresh (the exact lesson this session already hit once with `credit_balance`/`credit_applied` defaults on `MonthlyFeeSetting`/`MonthlyFeeEntry`).
 - Super admin can create a school with either `fee_module` value, and can change an existing school's value via the Edit screen at any time, with no restriction.
-- Nav.js: existing school_type/madrasah conditional-nav tests (if any exist) serve as the pattern for a parallel `fee_module` nav test, if the project has frontend nav tests — otherwise this is verified manually via live browser check, matching how nav changes were verified earlier this session.
+- Nav.js has no existing frontend test suite (verified earlier this session — no Jest/RTL/Vitest present in this repo) — the nav split is verified via a live browser check instead, same as every other frontend change made this session.
 
-## Open assumptions carried into implementation
+## Open items for the implementation plan
 
-- The exact route-name list per bucket (termly vs. monthly vs. shared) should be re-verified against the actual current `routes/web.php` at implementation time — the list in this spec reflects what was found during this session's research pass and could have shifted slightly.
-- Whether any guardian-dashboard widget or admin-dashboard summary card (outside of `navigation.js`) links directly to a termly or monthly fee page should be audited during implementation planning, so no stray link silently 404s for a guardian who never even sees it in their nav.
+- Double-check no other page (a guardian-dashboard widget, an admin summary card) links directly to a termly or monthly fee route outside of `navigation.js` — a quick grep for `/invoices`, `/tuition-fees`, `/universal-fees`, `/fee-preferences`, `/monthly-fees` across `resources/js/Pages` during planning is enough to rule this in or out; nothing found so far suggests it's a problem, but it wasn't exhaustively checked.
+- `routes/api.php` was checked and confirmed to have no fee/invoice/monthly/payment routes — no API-layer gate needed.
