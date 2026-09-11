@@ -3,7 +3,7 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function MonthlyFeeGuardianShow({
-    auth, monthLabel, guardianName, guardianNumber, phone, amountDue, outstandingBalance, status,
+    auth, monthLabel, guardianName, guardianNumber, phone, amountDue, outstandingBalance, creditBalance, status,
 }) {
     const [payPhone, setPayPhone] = useState(phone || '');
     const [showNote, setShowNote] = useState(false);
@@ -40,6 +40,12 @@ export default function MonthlyFeeGuardianShow({
                                 </>
                             )}
                         </div>
+
+                        {creditBalance > 0 && (
+                            <p className="mb-4 text-center text-xs text-green-700">
+                                You've prepaid ahead — {fmt(creditBalance)} credit remaining.
+                            </p>
+                        )}
 
                         {!nothingDue && (
                             <>

@@ -1,4 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import RecordPaymentModal from '@/Components/MonthlyFees/RecordPaymentModal';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2 } from 'lucide-react';
@@ -12,6 +13,7 @@ export default function MonthlyFeesIndex({
     const [editingAmount, setEditingAmount] = useState(null);
     const [showArrearsDrilldown, setShowArrearsDrilldown] = useState(false);
     const [openArrearsGuardians, setOpenArrearsGuardians] = useState({});
+    const [recordPaymentGuardian, setRecordPaymentGuardian] = useState(null);
 
     const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
 
@@ -47,6 +49,10 @@ export default function MonthlyFeesIndex({
         router.post(`/monthly-fees/entries/${entryId}/undo`, {}, { preserveScroll: true });
     };
 
+    const applyCredit = (guardianId) => {
+        router.post(`/monthly-fees/guardians/${guardianId}/apply-credit`, {}, { preserveScroll: true });
+    };
+
     const saveAmount = (entryId, value) => {
         router.put(
             `/monthly-fees/entries/${entryId}`,
@@ -64,6 +70,10 @@ export default function MonthlyFeesIndex({
         };
         return map[row.status];
     };
+
+    const stripeColor = (status) => ({
+        paid: 'border-l-green-500', partial: 'border-l-amber-500', unpaid: 'border-l-gray-300', needs_fee: 'border-l-red-500',
+    }[status]);
 
     const StatusBadge = ({ row }) => {
         const meta = statusMeta(row);
@@ -106,11 +116,33 @@ export default function MonthlyFeesIndex({
                     +{fmt(row.outstanding_balance)} owed
                 </span>
             )}
+            {row.outstanding_balance > 0 && row.credit_balance > 0 && (
+                <button
+                    onClick={(e) => { e.stopPropagation(); applyCredit(row.guardian_id); }}
+                    className="text-xs font-semibold text-indigo-600 underline hover:text-indigo-800"
+                >
+                    Apply credit to arrears
+                </button>
+            )}
+            {row.credit_balance > 0 && (
+                <span className="whitespace-nowrap text-xs font-semibold text-green-600" title="Prepaid credit available">
+                    +{fmt(row.credit_balance)} prepaid
+                </span>
+            )}
         </div>
     );
 
     const CollectedControls = ({ row, align = 'end' }) => (
         <div className={`flex flex-wrap items-center gap-1.5 ${align === 'end' ? 'justify-end' : 'justify-start'}`} onClick={(e) => e.stopPropagation()}>
+            {row.status !== 'paid' && (
+                <button
+                    onClick={() => setRecordPaymentGuardian(row)}
+                    className="rounded bg-green-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-green-700"
+                >
+                    Record Payment
+                </button>
+            )}
+
             {row.status === 'needs_fee' && <StatusBadge row={row} />}
 
             {row.status !== 'needs_fee' && editingAmount === row.entry_id && (
@@ -122,36 +154,26 @@ export default function MonthlyFeesIndex({
                     {row.status === 'paid' && (
                         <>
                             <StatusBadge row={row} />
-                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Adjust amount">
-                                <Pencil className="h-3.5 w-3.5" />
+                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-300 hover:text-indigo-600" title="Fix a mistake in this specific month">
+                                <Pencil className="h-3 w-3" />
                             </button>
-                            <button onClick={() => undoPaid(row.entry_id)} className="text-gray-400 hover:text-red-600" title="Undo — this was marked paid by mistake">
-                                <Undo2 className="h-3.5 w-3.5" />
+                            <button onClick={() => undoPaid(row.entry_id)} className="text-gray-300 hover:text-red-600" title="Undo — this was marked paid by mistake">
+                                <Undo2 className="h-3 w-3" />
                             </button>
                         </>
                     )}
                     {row.status === 'partial' && (
                         <>
-                            <span className="font-mono text-sm font-semibold text-amber-700">{fmt(row.amount_collected)}</span>
-                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Adjust amount">
-                                <Pencil className="h-3.5 w-3.5" />
+                            <span className="font-mono text-xs text-amber-700">{fmt(row.amount_collected)}</span>
+                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-300 hover:text-indigo-600" title="Fix a mistake in this specific month">
+                                <Pencil className="h-3 w-3" />
                             </button>
-                            <StatusBadge row={row} />
                         </>
                     )}
                     {row.status === 'unpaid' && (
-                        <>
-                            <button
-                                onClick={() => markPaid(row.entry_id)}
-                                className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:border-green-500 hover:bg-green-50 hover:text-green-700"
-                            >
-                                Mark paid
-                            </button>
-                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Enter a specific amount">
-                                <Pencil className="h-3.5 w-3.5" />
-                            </button>
-                            <StatusBadge row={row} />
-                        </>
+                        <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-300 hover:text-indigo-600" title="Fix a mistake in this specific month">
+                            <Pencil className="h-3 w-3" />
+                        </button>
                     )}
                 </>
             )}
@@ -260,7 +282,7 @@ export default function MonthlyFeesIndex({
 
                         <div className="divide-y divide-gray-200">
                             {rows.map((row, index) => (
-                                <div key={row.guardian_id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                <div key={row.guardian_id} className={`border-l-4 ${stripeColor(row.status)} ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                     <div className="grid grid-cols-[28px_2fr_0.9fr_1.1fr_1.5fr] items-center gap-3 px-4 py-3">
                                         <span />
                                         <div>
@@ -287,7 +309,7 @@ export default function MonthlyFeesIndex({
                     {/* Mobile cards */}
                     <div className="space-y-3 lg:hidden">
                         {rows.map((row) => (
-                            <div key={row.guardian_id} className="overflow-hidden rounded-lg border-2 border-gray-300 bg-white">
+                            <div key={row.guardian_id} className={`overflow-hidden rounded-lg border-2 border-l-4 border-gray-300 bg-white ${stripeColor(row.status)}`}>
                                 <div className="p-4">
                                     <div className="mb-3 flex items-start justify-between gap-2">
                                         <div className="min-w-0">
@@ -398,6 +420,12 @@ export default function MonthlyFeesIndex({
                     )}
                 </div>
             </div>
+
+            <RecordPaymentModal
+                show={!!recordPaymentGuardian}
+                guardian={recordPaymentGuardian}
+                onClose={() => setRecordPaymentGuardian(null)}
+            />
         </AuthenticatedLayout>
     );
 }
