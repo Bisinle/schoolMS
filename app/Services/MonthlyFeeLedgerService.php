@@ -408,6 +408,129 @@ class MonthlyFeeLedgerService
             ->all();
     }
 
+    /**
+     * The date range this abstract (year, month) was actually "open" for —
+     * from the earliest entry syncMonth ever created for it, until the
+     * earliest entry of whichever month opened right after it (or now, if
+     * none has opened yet). Round-3 fix #4: this is what lets the analytics
+     * below match what's actually on screen, regardless of how far behind
+     * the real calendar a school's "Open next month" habits are.
+     *
+     * @return array{start: string, end: string}
+     */
+    private function periodBounds(int $schoolId, int $year, int $month): array
+    {
+        $start = MonthlyFeeEntry::where('school_id', $schoolId)
+            ->where('year', $year)->where('month', $month)
+            ->min('created_at');
+
+        $next = MonthlyFeeEntry::where('school_id', $schoolId)
+            ->where(function ($query) use ($year, $month) {
+                $query->where('year', '>', $year)
+                    ->orWhere(function ($query) use ($year, $month) {
+                        $query->where('year', $year)->where('month', '>', $month);
+                    });
+            })
+            ->orderBy('year')->orderBy('month')
+            ->first(['year', 'month']);
+
+        $end = $next
+            ? MonthlyFeeEntry::where('school_id', $schoolId)->where('year', $next->year)->where('month', $next->month)->min('created_at')
+            : now()->toDateTimeString();
+
+        return ['start' => $start ?? now()->toDateTimeString(), 'end' => $end];
+    }
+
+    /**
+     * Real cash received while this abstract month was open — the true,
+     * honest "cash in the door this period" figure.
+     *
+     * Bounded against the payment row's own `created_at` (not `received_at`,
+     * a user-editable, day-precision cash-received date used only for
+     * display/statements) — `received_at` can be backdated by the recorder
+     * and is stored as a bare DATE column, so comparing it against
+     * periodBounds()'s datetime-precision boundaries would silently exclude
+     * everything (a `date` string like "2026-09-11" always sorts below a
+     * `datetime` string like "2026-09-11 08:15:00" once any time-of-day
+     * component is present, which is effectively always). `created_at`
+     * matches periodBounds()'s own precision and reflects when the cash was
+     * actually recorded into this open period, which is what "this period"
+     * is meant to mean here.
+     */
+    public function collectedThisPeriod(int $schoolId, int $year, int $month): float
+    {
+        $bounds = $this->periodBounds($schoolId, $year, $month);
+
+        return (float) (MonthlyFeePayment::where('school_id', $schoolId)
+            ->whereBetween('created_at', [$bounds['start'], $bounds['end']])
+            ->sum('amount') ?? 0);
+    }
+
+    /** How much of this period's real cash went toward old debt. See collectedThisPeriod()'s note on why this binds to created_at, not received_at. */
+    public function arrearsCollectedThisPeriod(int $schoolId, int $year, int $month): float
+    {
+        $bounds = $this->periodBounds($schoolId, $year, $month);
+
+        return (float) (MonthlyFeePayment::where('school_id', $schoolId)
+            ->whereBetween('created_at', [$bounds['start'], $bounds['end']])
+            ->sum('applied_to_arrears') ?? 0);
+    }
+
+    /**
+     * Informational only: how much reserve credit got recognized as this
+     * period's fees, with no new cash behind it. Deliberately keys off
+     * credit_applied, not recorded_by IS NULL (round-4 fix) — that would
+     * only catch syncMonth's automatic consumption and miss everything
+     * applyCreditToArrears settles, since that's a deliberate admin action
+     * that honestly attributes recorded_by to whoever clicked it.
+     *
+     * Bounded against `updated_at`, not `paid_date`, for the same
+     * date-vs-datetime precision reason documented on collectedThisPeriod():
+     * `paid_date` is a bare DATE column and periodBounds() is datetime-
+     * precision. Both syncMonth's auto-consumption and applyCreditToArrears
+     * touch `updated_at` via their own ->update() calls, so it tracks
+     * exactly when the credit was recognized, at matching precision.
+     */
+    public function creditRecognizedThisPeriod(int $schoolId, int $year, int $month): float
+    {
+        $bounds = $this->periodBounds($schoolId, $year, $month);
+
+        return (float) (MonthlyFeeEntry::where('school_id', $schoolId)
+            ->where('credit_applied', '>', 0)
+            ->whereBetween('updated_at', [$bounds['start'], $bounds['end']])
+            ->sum('credit_applied') ?? 0);
+    }
+
+    /**
+     * Every guardian with arrears activity relevant to this period — either
+     * a still-outstanding shortfall from before (year, month), or an entry
+     * actually resolved during this period. Grouped by guardian for the
+     * drill-down.
+     *
+     * The "resolved during this period" leg binds to `updated_at`, not
+     * `paid_date`, for the same date-vs-datetime precision reason documented
+     * on collectedThisPeriod()/creditRecognizedThisPeriod(): `paid_date` is
+     * a bare DATE column and periodBounds() is datetime-precision.
+     *
+     * @return \Illuminate\Support\Collection<int, \Illuminate\Support\Collection<int, MonthlyFeeEntry>>
+     */
+    public function arrearsActivityForSchool(int $schoolId, int $year, int $month): \Illuminate\Support\Collection
+    {
+        $bounds = $this->periodBounds($schoolId, $year, $month);
+
+        return MonthlyFeeEntry::where('school_id', $schoolId)
+            ->where('expected_amount', '>', 0)
+            ->where(fn ($query) => $this->beforeMonth($query, $year, $month))
+            ->where(function ($query) use ($bounds) {
+                $query->whereRaw('COALESCE(amount_collected, 0) < expected_amount')
+                    ->orWhereBetween('updated_at', [$bounds['start'], $bounds['end']]);
+            })
+            ->with('guardian')
+            ->orderBy('guardian_id')->orderBy('year')->orderBy('month')
+            ->get()
+            ->groupBy('guardian_id');
+    }
+
     private function beforeMonth($query, int $year, int $month): void
     {
         $query->where('year', '<', $year)

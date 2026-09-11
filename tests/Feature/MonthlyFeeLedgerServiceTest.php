@@ -520,4 +520,120 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
         $this->assertSame('8000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
     }
+
+    public function test_collected_this_period_sums_real_cash_bounded_by_when_the_month_opened_and_closed(): void
+    {
+        // Round-3 fix #4: bounded by the ledger's own open period, not
+        // calendar-month boundaries.
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        $service->recordPayment($guardian->id, 16000, $admin->id);
+
+        $collected = $service->collectedThisPeriod($school->id, 2026, 9);
+
+        $this->assertSame(16000.0, $collected);
+    }
+
+    public function test_collected_this_period_is_unaffected_by_later_credit_auto_consumption_in_a_different_month(): void
+    {
+        // The core regression for the cash-basis fix: a big payment made
+        // while September is open must NOT inflate October's own
+        // "collected this period" figure once credit auto-settles it.
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $service->recordPayment($guardian->id, 32000, $admin->id); // 16000 current + 16000 credit
+
+        // In real use, "record payment" and "open next month" are separate
+        // admin actions taken at least a moment apart — travel forward so
+        // the payment and the October entry don't land in the exact same
+        // whole-second created_at tick, which the period-bounds analytics
+        // (correctly) rely on to tell "before October opened" apart from
+        // "after". Without this, this test's zero-elapsed-time execution
+        // would produce a false tie that can never happen in production.
+        $this->travel(1)->second();
+        $service->openNextMonth($school->id); // October opens, consumes the 16000 credit
+
+        $septemberCollected = $service->collectedThisPeriod($school->id, 2026, 9);
+        $octoberCollected = $service->collectedThisPeriod($school->id, 2026, 10);
+
+        $this->assertSame(32000.0, $septemberCollected); // all the real cash landed while September was open
+        $this->assertSame(0.0, $octoberCollected); // nothing NEW was received in October
+    }
+
+    public function test_arrears_collected_this_period_sums_only_the_arrears_portion(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 8, 'expected_amount' => 16000,
+        ]);
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        (new MonthlyFeeLedgerService)->recordPayment($guardian->id, 32000, $admin->id); // 16000 arrears + 16000 current
+
+        $arrears = (new MonthlyFeeLedgerService)->arrearsCollectedThisPeriod($school->id, 2026, 9);
+
+        $this->assertSame(16000.0, $arrears);
+    }
+
+    public function test_credit_recognized_this_period_counts_both_the_automatic_and_the_explicit_paths(): void
+    {
+        // Round-4 fix: must key off credit_applied, not recorded_by IS NULL,
+        // or it would miss everything applyCreditToArrears settles.
+        $school = School::factory()->create();
+        $guardianA = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $guardianB = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardianB->id,
+            'year' => 2026, 'month' => 8, 'expected_amount' => 8000,
+        ]);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        // Guardian A: automatic credit consumption via syncMonth.
+        // Guardian B's credit_balance is deliberately set AFTER this first
+        // syncMonth call (not before, as it might seem natural to write) —
+        // otherwise syncMonth's own auto-consumption (tested above) would
+        // immediately spend it against guardian B's own September entry
+        // being created here, leaving nothing for applyCreditToArrears to
+        // apply to B's August arrears below, which is what this test needs.
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
+        $guardianA->monthlyFeeSetting->update(['credit_balance' => 16000]);
+        $entryA = MonthlyFeeEntry::where('guardian_id', $guardianA->id)->first();
+        $entryA->delete();
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
+        $guardianB->monthlyFeeSetting->update(['credit_balance' => 8000]);
+
+        // Guardian B: explicit applyCreditToArrears.
+        (new MonthlyFeeLedgerService)->applyCreditToArrears($guardianB->id, $admin->id);
+
+        $recognized = (new MonthlyFeeLedgerService)->creditRecognizedThisPeriod($school->id, 2026, 9);
+
+        $this->assertSame(24000.0, $recognized); // 16000 (guardian A, automatic) + 8000 (guardian B, explicit)
+    }
+
+    public function test_arrears_activity_for_school_lists_still_owing_and_resolved_this_period(): void
+    {
+        $school = School::factory()->create();
+        $stillOwing = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $stillOwing->id,
+            'year' => 2026, 'month' => 8, 'expected_amount' => 8000,
+        ]);
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
+
+        $activity = (new MonthlyFeeLedgerService)->arrearsActivityForSchool($school->id, 2026, 9);
+
+        $this->assertTrue($activity->has($stillOwing->id));
+        $this->assertCount(1, $activity->get($stillOwing->id));
+        $this->assertSame(8, $activity->get($stillOwing->id)->first()->month);
+    }
 }
