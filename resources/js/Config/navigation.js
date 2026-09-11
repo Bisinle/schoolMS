@@ -54,7 +54,7 @@ const filterByPermission = (items, can, canAny) =>
  * @param {(permissions: string[]) => boolean} canAny
  * @returns {Array} Navigation items for the role
  */
-export const getNavigation = (role, isMadrasah = false, can = () => true, canAny = () => true) => {
+export const getNavigation = (role, isMadrasah = false, can = () => true, canAny = () => true, feeModule = 'termly') => {
     const navigationConfig = {
         super_admin: [
             { name: "Dashboard", href: "/super-admin/dashboard", icon: LayoutDashboard },
@@ -99,13 +99,19 @@ export const getNavigation = (role, isMadrasah = false, can = () => true, canAny
                 name: "Fees",
                 icon: DollarSign,
                 submenu: [
-                    { name: "Dashboard", href: "/fees", icon: LayoutDashboard, permission: "fees.manage" },
-                    { name: "Invoices", href: "/invoices", icon: Receipt, permission: "fees.manage" },
+                    ...(feeModule === 'termly' ? [
+                        { name: "Dashboard", href: "/fees", icon: LayoutDashboard, permission: "fees.manage" },
+                        { name: "Invoices", href: "/invoices", icon: Receipt, permission: "fees.manage" },
+                    ] : []),
                     { name: "Transport Routes", href: "/transport-routes", icon: Bus, permission: "fees.manage" },
-                    { name: "Tuition Fees", href: "/tuition-fees", icon: GraduationCap, permission: "fees.manage" },
-                    { name: "Universal Fees", href: "/universal-fees", icon: BookOpen, permission: "fees.manage" },
-                    { name: "Fee Preferences", href: "/fee-preferences", icon: Settings, permission: "fees.manage" },
-                    { name: "Monthly Fees", href: "/monthly-fees", icon: Calendar, permission: "fees.manage" },
+                    ...(feeModule === 'termly' ? [
+                        { name: "Tuition Fees", href: "/tuition-fees", icon: GraduationCap, permission: "fees.manage" },
+                        { name: "Universal Fees", href: "/universal-fees", icon: BookOpen, permission: "fees.manage" },
+                        { name: "Fee Preferences", href: "/fee-preferences", icon: Settings, permission: "fees.manage" },
+                    ] : []),
+                    ...(feeModule === 'monthly' ? [
+                        { name: "Monthly Fees", href: "/monthly-fees", icon: Calendar, permission: "fees.manage" },
+                    ] : []),
                 ]
             },
             { name: "Reports", href: "/reports", icon: FileText, permission: "reports.view" },
@@ -227,8 +233,12 @@ export const getNavigation = (role, isMadrasah = false, can = () => true, canAny
                     ]
                 },
             ] : []),
-            { name: "Invoices", href: "/guardian/invoices", icon: DollarSign, permission: "fees.view-own-invoices" },
-            { name: "Monthly Fees", href: "/guardian/monthly-fees", icon: DollarSign, permission: "fees.view-own-invoices" },
+            ...(feeModule === 'termly' ? [
+                { name: "Invoices", href: "/guardian/invoices", icon: DollarSign, permission: "fees.view-own-invoices" },
+            ] : []),
+            ...(feeModule === 'monthly' ? [
+                { name: "Monthly Fees", href: "/guardian/monthly-fees", icon: DollarSign, permission: "fees.view-own-invoices" },
+            ] : []),
             { name: "Reports", href: "/reports", icon: FileText, permission: "reports.view" },
             { name: "Documents", href: "/documents", icon: FolderOpen, permission: "documents.view" },
             { name: "Policies", href: "/policies", icon: Shield, permission: "policies.view" },

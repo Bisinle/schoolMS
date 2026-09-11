@@ -33,7 +33,8 @@ export default function AuthenticatedLayout({ header, children }) {
     // user's real permissions (role still picks which curated screen to
     // build — see navigation.js's filterByPermission docblock for why).
     const isMadrasah = school?.school_type === "madrasah";
-    const navigation = getNavigation(auth.user.role, isMadrasah, can, canAny);
+    const feeModule = school?.fee_module;
+    const navigation = getNavigation(auth.user.role, isMadrasah, can, canAny, feeModule);
 
     // Determine if bottom nav should be shown (mobile only, for teachers, admins, and guardians)
     const showBottomNav = auth.user.role === 'teacher' || auth.user.role === 'head_teacher' || auth.user.role === 'admin' || auth.user.role === 'guardian';
