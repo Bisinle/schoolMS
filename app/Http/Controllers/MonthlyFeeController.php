@@ -7,6 +7,8 @@ use App\Models\MonthlyFeeEntry;
 use App\Models\MonthlyFeeSetting;
 use App\Services\MonthlyFeeLedgerService;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
 
@@ -38,12 +40,18 @@ class MonthlyFeeController extends Controller
         $entries = MonthlyFeeEntry::where('school_id', $schoolId)
             ->where('year', $year)
             ->where('month', $month)
+            ->whereHas('guardian.user', fn ($query) => $query->where('is_active', true))
             ->with('guardian.user')
-            ->get();
+            ->get()
+            // A guardian's children can become inactive after this month's
+            // entry was already created (syncMonth() never retroactively
+            // touches an existing row) — once none remain active, there's
+            // nothing left to bill them for, so stop showing them here too.
+            ->filter(fn (MonthlyFeeEntry $entry) => $entry->guardian?->allStudents()->where('status', 'active')->exists());
 
         $outstandingByGuardian = $this->ledger->outstandingBalancesForSchool($schoolId, $year, $month);
 
-        $rows = $entries->map(function (MonthlyFeeEntry $entry) use ($outstandingByGuardian) {
+        $allRows = $entries->map(function (MonthlyFeeEntry $entry) use ($outstandingByGuardian) {
             $guardian = $entry->guardian;
 
             $children = $guardian->allStudents()
@@ -74,6 +82,28 @@ class MonthlyFeeController extends Controller
                 'credit_balance' => (float) ($guardian->monthlyFeeSetting?->credit_balance ?? 0),
             ];
         })->sortBy('guardian_name')->values();
+
+        // These must be computed from the FULL month's rows, before
+        // pagination slices $rows down to one page — otherwise the
+        // analytics cards would silently only reflect whichever page
+        // happens to be showing.
+        $totalExpectedThisPeriod = (float) $allRows->sum('expected_amount');
+        $remainingThisMonth = (float) $allRows->sum(
+            fn ($row) => max(0, $row['expected_amount'] - ($row['amount_collected'] ?? 0))
+        );
+        $unpaidGuardianCount = $allRows->whereIn('status', ['unpaid', 'partial', 'needs_fee'])->count();
+        $paidGuardianCount = $allRows->where('status', 'paid')->count();
+        $needsFeeCount = $allRows->where('status', 'needs_fee')->count();
+
+        $perPage = 10;
+        $page = Paginator::resolveCurrentPage() ?: 1;
+        $rows = new LengthAwarePaginator(
+            $allRows->forPage($page, $perPage)->values(),
+            $allRows->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()],
+        );
 
         $monthDate = Carbon::create($year, $month, 1);
         $prev = $monthDate->copy()->subMonthNoOverflow();
@@ -123,9 +153,14 @@ class MonthlyFeeController extends Controller
             'prev' => ['year' => $prev->year, 'month' => $prev->month],
             'next' => ['year' => $next->year, 'month' => $next->month],
             'rows' => $rows,
-            'totalCollected' => $rows->sum(
+            'totalCollected' => $allRows->sum(
                 fn ($row) => in_array($row['status'], ['paid', 'partial'], true) ? $row['amount_collected'] : 0
             ),
+            'totalExpectedThisPeriod' => $totalExpectedThisPeriod,
+            'remainingThisMonth' => $remainingThisMonth,
+            'unpaidGuardianCount' => $unpaidGuardianCount,
+            'paidGuardianCount' => $paidGuardianCount,
+            'needsFeeCount' => $needsFeeCount,
             'collectedThisPeriod' => $this->ledger->collectedThisPeriod($schoolId, $year, $month),
             'arrearsCollectedThisPeriod' => $this->ledger->arrearsCollectedThisPeriod($schoolId, $year, $month),
             'creditRecognizedThisPeriod' => $this->ledger->creditRecognizedThisPeriod($schoolId, $year, $month),

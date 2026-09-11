@@ -47,6 +47,7 @@ class MonthlyFeeLedgerService
     {
         $guardianIds = Guardian::where('school_id', $schoolId)
             ->where('status', 'active')
+            ->whereHas('user', fn ($query) => $query->where('is_active', true))
             ->get()
             ->filter(fn (Guardian $guardian) => $guardian->allStudents()->where('status', 'active')->exists())
             ->pluck('id');

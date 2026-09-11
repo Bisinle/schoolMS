@@ -1,16 +1,20 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import RecordPaymentModal from '@/Components/MonthlyFees/RecordPaymentModal';
 import StatCard from '@/Components/UI/StatCard';
+import LoadMoreButton from '@/Components/Pagination/LoadMoreButton';
+import Pagination from '@/Components/Pagination/Pagination';
+import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
     ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2,
-    Wallet, AlertTriangle, PiggyBank, UserX, Clock, ClipboardList, TrendingUp, UserCheck, Settings,
+    Wallet, AlertTriangle, PiggyBank, UserX, Clock, ClipboardList, UserCheck, Settings,
 } from 'lucide-react';
 
 export default function MonthlyFeesIndex({
     auth, year, month, monthLabel, isOpenMonth, canBrowseNext, prev, next, rows, totalCollected,
     collectedThisPeriod, arrearsCollectedThisPeriod, creditRecognizedThisPeriod, creditOutstanding, arrearsActivity,
+    totalExpectedThisPeriod, remainingThisMonth, unpaidGuardianCount, paidGuardianCount, needsFeeCount,
 }) {
     const [openRows, setOpenRows] = useState({});
     const [editingExpected, setEditingExpected] = useState(null);
@@ -19,22 +23,17 @@ export default function MonthlyFeesIndex({
     const [openArrearsGuardians, setOpenArrearsGuardians] = useState({});
     const [recordPaymentGuardian, setRecordPaymentGuardian] = useState(null);
 
-    const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
-
-    // Derived purely from this month's own rows — distinct from the
-    // cash-basis `collectedThisPeriod`/`arrearsCollectedThisPeriod` props,
-    // which come from the append-only payments ledger and can include cash
-    // received for other months. These are simple this-month accrual totals.
-    const totalExpectedThisPeriod = rows.reduce((sum, row) => sum + Number(row.expected_amount || 0), 0);
-    const totalCollectedThisMonth = rows.reduce((sum, row) => sum + Number(row.amount_collected || 0), 0);
-    const remainingThisMonth = rows.reduce(
-        (sum, row) => sum + Math.max(0, Number(row.expected_amount || 0) - Number(row.amount_collected || 0)),
-        0,
+    // Mobile gets the "Load More"/infinite-scroll pattern used across the
+    // rest of the app (Students/Guardians/Users); desktop pages through
+    // `rows.data` directly via the Pagination component below, matching
+    // those same pages' desktop behavior. Browsing to a different month is
+    // this page's equivalent of changing filters — it resets the
+    // accumulated mobile list back to page 1.
+    const { items: mobileRows, isLoadingMore, handleLoadMore } = useCumulativeLoading(
+        rows, { year, month }, 'monthly-fees.index', 'rows',
     );
-    const collectionRate = totalExpectedThisPeriod > 0 ? Math.round((totalCollectedThisMonth / totalExpectedThisPeriod) * 100) : 0;
-    const unpaidGuardianCount = rows.filter((row) => row.status === 'unpaid' || row.status === 'partial' || row.status === 'needs_fee').length;
-    const paidGuardianCount = rows.filter((row) => row.status === 'paid').length;
-    const needsFeeCount = rows.filter((row) => row.status === 'needs_fee').length;
+
+    const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
 
     const goToMonth = (target) => {
         router.get('/monthly-fees', { year: target.year, month: target.month });
@@ -293,9 +292,44 @@ export default function MonthlyFeesIndex({
                     <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
                         <StatCard
                             icon={Wallet}
-                            title="Collected this period"
+                            title="Collected this month"
                             value={fmt(collectedThisPeriod)}
                             gradient="from-green-500 to-green-600"
+                        />
+
+                        <StatCard
+                            icon={UserX}
+                            title="Guardians who have not paid"
+                            value={unpaidGuardianCount}
+                            gradient="from-orange-500 to-orange-600"
+                        />
+
+                        <StatCard
+                            icon={Clock}
+                            title="Remaining this month"
+                            value={fmt(remainingThisMonth)}
+                            gradient="from-amber-500 to-amber-600"
+                        />
+
+                        <StatCard
+                            icon={ClipboardList}
+                            title="Total expected"
+                            value={fmt(totalExpectedThisPeriod)}
+                            gradient="from-blue-500 to-blue-600"
+                        />
+
+                        <StatCard
+                            icon={UserCheck}
+                            title="Fully paid"
+                            value={paidGuardianCount}
+                            gradient="from-teal-500 to-teal-600"
+                        />
+
+                        <StatCard
+                            icon={Settings}
+                            title="Needs fee set"
+                            value={needsFeeCount}
+                            gradient="from-gray-500 to-gray-600"
                         />
 
                         <StatCard
@@ -318,48 +352,6 @@ export default function MonthlyFeesIndex({
                             gradient="from-indigo-500 to-indigo-600"
                             trend={creditRecognizedThisPeriod > 0 ? `${fmt(creditRecognizedThisPeriod)} recognized this period` : undefined}
                             trendDirection="up"
-                        />
-
-                        <StatCard
-                            icon={UserX}
-                            title="Haven't paid"
-                            value={unpaidGuardianCount}
-                            gradient="from-orange-500 to-orange-600"
-                        />
-
-                        <StatCard
-                            icon={Clock}
-                            title="Remaining this month"
-                            value={fmt(remainingThisMonth)}
-                            gradient="from-amber-500 to-amber-600"
-                        />
-
-                        <StatCard
-                            icon={ClipboardList}
-                            title="Total expected"
-                            value={fmt(totalExpectedThisPeriod)}
-                            gradient="from-blue-500 to-blue-600"
-                        />
-
-                        <StatCard
-                            icon={TrendingUp}
-                            title="Collection rate"
-                            value={`${collectionRate}%`}
-                            gradient="from-emerald-500 to-emerald-600"
-                        />
-
-                        <StatCard
-                            icon={UserCheck}
-                            title="Fully paid"
-                            value={paidGuardianCount}
-                            gradient="from-teal-500 to-teal-600"
-                        />
-
-                        <StatCard
-                            icon={Settings}
-                            title="Needs fee set"
-                            value={needsFeeCount}
-                            gradient="from-gray-500 to-gray-600"
                         />
                     </div>
 
@@ -418,7 +410,7 @@ export default function MonthlyFeesIndex({
                         </div>
 
                         <div className="divide-y divide-gray-200">
-                            {rows.map((row, index) => (
+                            {rows.data.map((row, index) => (
                                 <div key={row.guardian_id} className={`border-l-4 ${stripeColor(row.status)} ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                     <div className="grid grid-cols-[28px_2fr_0.9fr_1.1fr_1.5fr] items-center gap-3 px-4 py-3">
                                         <span />
@@ -437,15 +429,24 @@ export default function MonthlyFeesIndex({
                                 </div>
                             ))}
 
-                            {rows.length === 0 && (
+                            {rows.data.length === 0 && (
                                 <div className="px-4 py-10 text-center text-sm text-gray-400">No guardians with active students yet.</div>
                             )}
                         </div>
+
+                        <Pagination
+                            links={rows.links}
+                            currentPage={rows.current_page}
+                            lastPage={rows.last_page}
+                            total={rows.total}
+                            from={rows.from}
+                            to={rows.to}
+                        />
                     </div>
 
                     {/* Mobile cards */}
                     <div className="space-y-3 lg:hidden">
-                        {rows.map((row) => (
+                        {mobileRows.map((row) => (
                             <div key={row.guardian_id} className={`overflow-hidden rounded-lg border-2 border-l-4 border-gray-300 bg-white ${stripeColor(row.status)}`}>
                                 <div className="p-4">
                                     <div className="mb-3 flex items-start justify-between gap-2">
@@ -476,10 +477,20 @@ export default function MonthlyFeesIndex({
                             </div>
                         ))}
 
-                        {rows.length === 0 && (
+                        {mobileRows.length === 0 && (
                             <div className="rounded-lg border-2 border-gray-300 bg-white px-4 py-10 text-center text-sm text-gray-400">
                                 No guardians with active students yet.
                             </div>
+                        )}
+
+                        {rows.data.length > 0 && (
+                            <LoadMoreButton
+                                currentCount={mobileRows.length}
+                                totalCount={rows.total}
+                                isLoading={isLoadingMore}
+                                onLoadMore={handleLoadMore}
+                                itemName="guardians"
+                            />
                         )}
                     </div>
                 </div>

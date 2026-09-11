@@ -57,9 +57,9 @@ class MonthlyFeeControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->has('rows', 1)
-            ->where('rows.0.guardian_id', $guardian->id)
-            ->where('rows.0.status', 'unpaid')
+            ->has('rows.data', 1)
+            ->where('rows.data.0.guardian_id', $guardian->id)
+            ->where('rows.data.0.status', 'unpaid')
         );
     }
 
@@ -189,7 +189,7 @@ class MonthlyFeeControllerTest extends TestCase
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
             ->where('isOpenMonth', false)
-            ->has('rows', 1)
+            ->has('rows.data', 1)
         );
         $this->assertFalse(
             MonthlyFeeEntry::where('year', $closedYear)->where('month', $closedMonth)
@@ -236,9 +236,9 @@ class MonthlyFeeControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->where('rows.0.expected_amount', 8000)
-            ->where('rows.0.outstanding_balance', 8000)
-            ->where('rows.0.total_due', 16000)
+            ->where('rows.data.0.expected_amount', 8000)
+            ->where('rows.data.0.outstanding_balance', 8000)
+            ->where('rows.data.0.total_due', 16000)
         );
     }
 
@@ -376,7 +376,7 @@ class MonthlyFeeControllerTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->where('collectedThisPeriod', 16000)
             ->has('arrearsActivity')
-            ->where('rows.0.credit_balance', 0)
+            ->where('rows.data.0.credit_balance', 0)
         );
     }
 
@@ -405,7 +405,7 @@ class MonthlyFeeControllerTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->has('rows', 1) // the stranded guardian never appears here
+            ->has('rows.data', 1) // the stranded guardian never appears here
             ->where('creditOutstanding', 8000) // but their credit is still counted
         );
     }
@@ -514,5 +514,130 @@ class MonthlyFeeControllerTest extends TestCase
         $this->assertSame(2, \App\Models\MonthlyFeePayment::count());
         $second = \App\Models\MonthlyFeePayment::orderBy('id')->skip(1)->first();
         $this->assertSame('7000.00', $second->amount); // only the delta, not the full 12000
+    }
+
+    public function test_index_stops_offering_a_new_month_to_a_guardian_whose_user_account_is_deactivated(): void
+    {
+        // Deactivating a login (users.is_active) is a distinct action from
+        // guardian.status, which this fix must not touch or duplicate.
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $guardian->user->update(['is_active' => false]);
+
+        $response = $this->actingAs($admin)->get('/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->has('rows.data', 0));
+        $this->assertSame(0, MonthlyFeeEntry::where('guardian_id', $guardian->id)->count());
+    }
+
+    public function test_index_hides_an_already_existing_entry_once_the_guardians_user_account_is_deactivated(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees'); // creates the open-month entry while still active
+
+        $guardian->user->update(['is_active' => false]);
+
+        $response = $this->actingAs($admin)->get('/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->has('rows.data', 0));
+        // The entry itself is untouched — only hidden from this view.
+        $this->assertSame(1, MonthlyFeeEntry::where('guardian_id', $guardian->id)->count());
+    }
+
+    public function test_index_hides_a_guardian_once_all_their_children_become_inactive_even_with_an_existing_entry(): void
+    {
+        // syncMonth() never retroactively touches an existing entry, so a
+        // guardian whose children were active when the month opened keeps
+        // that entry even after they all later become inactive. Nothing
+        // left to bill them for, so stop showing them on this page too.
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees'); // creates the entry while the child is still active
+
+        Student::where('guardian_id', $guardian->id)->update(['status' => 'inactive']);
+
+        $response = $this->actingAs($admin)->get('/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->has('rows.data', 0));
+        $this->assertSame(1, MonthlyFeeEntry::where('guardian_id', $guardian->id)->count());
+    }
+
+    public function test_index_still_shows_a_guardian_whose_own_status_is_active_but_unrelated_to_user_activation(): void
+    {
+        // Regression guard: this fix must key off users.is_active only,
+        // never interact with guardians.status, which is a separate,
+        // pre-existing system this change must not touch.
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->assertSame('active', $guardian->status);
+        $this->assertTrue($guardian->user->is_active);
+
+        $response = $this->actingAs($admin)->get('/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->has('rows.data', 1));
+    }
+
+    public function test_index_paginates_rows_ten_per_page_matching_the_rest_of_the_app(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        for ($i = 0; $i < 15; $i++) {
+            $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        }
+
+        $firstPage = $this->actingAs($admin)->get('/monthly-fees');
+
+        $firstPage->assertOk();
+        $firstPage->assertInertia(fn ($page) => $page
+            ->has('rows.data', 10)
+            ->where('rows.total', 15)
+            ->where('rows.current_page', 1)
+            ->where('rows.last_page', 2)
+        );
+
+        $secondPage = $this->actingAs($admin)->get('/monthly-fees?page=2');
+
+        $secondPage->assertOk();
+        $secondPage->assertInertia(fn ($page) => $page
+            ->has('rows.data', 5)
+            ->where('rows.current_page', 2)
+        );
+    }
+
+    public function test_index_analytics_reflect_the_full_month_not_just_the_current_page(): void
+    {
+        // The regression this test protects: analytics must be computed
+        // from every row in the month, not just whichever page happens to
+        // be showing — otherwise paginating would silently make these
+        // numbers wrong.
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        for ($i = 0; $i < 12; $i++) {
+            $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        }
+
+        $response = $this->actingAs($admin)->get('/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->has('rows.data', 10) // only page 1 renders...
+            ->where('unpaidGuardianCount', 12) // ...but the count covers all 12
+            ->where('totalExpectedThisPeriod', 192000) // 12 * 16000
+        );
     }
 }

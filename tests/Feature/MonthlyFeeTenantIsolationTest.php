@@ -105,8 +105,8 @@ class MonthlyFeeTenantIsolationTest extends TestCase
 
         $response->assertOk();
         $response->assertInertia(fn ($page) => $page
-            ->has('rows', 1)
-            ->where('rows.0.guardian_id', $guardianA->id)
+            ->has('rows.data', 1)
+            ->where('rows.data.0.guardian_id', $guardianA->id)
         );
 
         $guardianIds = MonthlyFeeEntry::where('school_id', $schoolA->id)->pluck('guardian_id');
