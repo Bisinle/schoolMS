@@ -30,10 +30,11 @@ import { BottomSheetMenuItem, BottomSheetSection } from './BottomSheet';
  *
  * @param {Object} props
  * @param {boolean} [props.isMadrasah]
+ * @param {string} [props.feeModule]
  * @param {(permission: string) => boolean} [props.can]
  * @param {Object} [props.badges]
  */
-export default function AdminMoreMenu({ isMadrasah = false, can = () => true, badges = {} }) {
+export default function AdminMoreMenu({ isMadrasah = false, feeModule = 'termly', can = () => true, badges = {} }) {
     const [expandedSections, setExpandedSections] = useState({
         timetables: false,
         fees: false,
@@ -189,37 +190,52 @@ export default function AdminMoreMenu({ isMadrasah = false, can = () => true, ba
 
                 {expandedSections.fees && can('fees.manage') && (
                     <div className="ml-4 mt-1 space-y-1">
-                        <BottomSheetMenuItem
-                            icon={LayoutDashboard}
-                            label="Dashboard"
-                            href="/fees"
-                        />
-                        <BottomSheetMenuItem
-                            icon={Receipt}
-                            label="Invoices"
-                            href="/invoices"
-                            badge={badges.invoices}
-                        />
+                        {feeModule === 'termly' && (
+                            <>
+                                <BottomSheetMenuItem
+                                    icon={LayoutDashboard}
+                                    label="Dashboard"
+                                    href="/fees"
+                                />
+                                <BottomSheetMenuItem
+                                    icon={Receipt}
+                                    label="Invoices"
+                                    href="/invoices"
+                                    badge={badges.invoices}
+                                />
+                            </>
+                        )}
                         <BottomSheetMenuItem
                             icon={Bus}
                             label="Transport Routes"
                             href="/transport-routes"
                         />
-                        <BottomSheetMenuItem
-                            icon={GraduationCap}
-                            label="Tuition Fees"
-                            href="/tuition-fees"
-                        />
-                        <BottomSheetMenuItem
-                            icon={BookOpen}
-                            label="Universal Fees"
-                            href="/universal-fees"
-                        />
-                        <BottomSheetMenuItem
-                            icon={Settings}
-                            label="Fee Preferences"
-                            href="/fee-preferences"
-                        />
+                        {feeModule === 'termly' && (
+                            <>
+                                <BottomSheetMenuItem
+                                    icon={GraduationCap}
+                                    label="Tuition Fees"
+                                    href="/tuition-fees"
+                                />
+                                <BottomSheetMenuItem
+                                    icon={BookOpen}
+                                    label="Universal Fees"
+                                    href="/universal-fees"
+                                />
+                                <BottomSheetMenuItem
+                                    icon={Settings}
+                                    label="Fee Preferences"
+                                    href="/fee-preferences"
+                                />
+                            </>
+                        )}
+                        {feeModule === 'monthly' && (
+                            <BottomSheetMenuItem
+                                icon={Calendar}
+                                label="Monthly Fees"
+                                href="/monthly-fees"
+                            />
+                        )}
                     </div>
                 )}
             </BottomSheetSection>

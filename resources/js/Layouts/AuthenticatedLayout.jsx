@@ -115,6 +115,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 <BottomNavigation
                     role={bottomNavRole}
                     isMadrasah={isMadrasah}
+                    feeModule={feeModule}
                     can={can}
                     canAny={canAny}
                     onMoreClick={() => setShowMoreMenu(true)}
@@ -154,6 +155,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <AdminMoreMenu
                         isMadrasah={isMadrasah}
+                        feeModule={feeModule}
                         can={can}
                         badges={
                             {
