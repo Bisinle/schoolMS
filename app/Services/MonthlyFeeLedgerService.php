@@ -250,6 +250,61 @@ class MonthlyFeeLedgerService
     }
 
     /**
+     * Returns however much of $entry's amount_collected was credit-funded
+     * back to the guardian's credit_balance — used by undoPaid() (Task 3),
+     * which separately handles the cash portion (if any) via a negative
+     * monthly_fee_payments correction. Locked the same way every other
+     * credit_balance write is.
+     */
+    public function refundCredit(MonthlyFeeEntry $entry, int $recordedBy): void
+    {
+        $creditPortion = (float) $entry->credit_applied;
+
+        if ($creditPortion <= 0) {
+            return;
+        }
+
+        DB::transaction(function () use ($entry, $creditPortion) {
+            $setting = MonthlyFeeSetting::lockForUpdate()->where('guardian_id', $entry->guardian_id)->first()
+                ?? MonthlyFeeSetting::create(['school_id' => $entry->school_id, 'guardian_id' => $entry->guardian_id, 'expected_fee' => 0]);
+
+            $setting->increment('credit_balance', $creditPortion);
+        });
+    }
+
+    /**
+     * Used by the manual correction tools (markPaid/updateCollected in the
+     * controller) so real cash changed through them also feeds the
+     * cash-basis analytics, the same way recordPayment() does. Computes the
+     * delta being applied to $entry's own amount_collected, classifies it
+     * as arrears or current-month cash depending on whether $entry belongs
+     * to the school's actual open month, and logs it. Deliberately never
+     * touches credit_applied — these tools only ever add/adjust real cash;
+     * undoPaid() alone handles the credit-refund side.
+     */
+    public function recordManualCashChange(MonthlyFeeEntry $entry, float $newAmountCollected, int $recordedBy): void
+    {
+        $delta = $newAmountCollected - (float) ($entry->amount_collected ?? 0);
+
+        if ($delta === 0.0) {
+            return;
+        }
+
+        $latest = $this->latestMonth($entry->school_id);
+        $isCurrentMonth = $entry->year === $latest['year'] && $entry->month === $latest['month'];
+
+        $this->logCashReceived(
+            $entry->school_id,
+            $entry->guardian_id,
+            $delta,
+            $isCurrentMonth ? 0.0 : $delta,
+            $isCurrentMonth ? $delta : 0.0,
+            0.0,
+            $recordedBy,
+        );
+    }
+
+    /**
      * How much a guardian owes from months strictly before (year, month) —
      * the sum of each past entry's shortfall (expected_amount minus
      * whatever was actually collected). Deliberately excludes the

@@ -386,4 +386,88 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $this->assertNull($october->recorded_by);
         $this->assertSame(1, MonthlyFeePayment::count()); // unchanged — no new cash was received
     }
+
+    public function test_refund_credit_returns_the_entrys_credit_applied_amount_to_the_guardians_balance(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $service->recordPayment($guardian->id, 32000, $admin->id); // 16000 current + 16000 credit
+        $service->syncMonth($school->id, 2026, 10); // fully credit-settled
+
+        $october = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 10)->first();
+        $this->assertSame('16000.00', $october->credit_applied);
+        $this->assertSame('0.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+
+        $service->refundCredit($october, $admin->id);
+
+        $this->assertSame('16000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+    }
+
+    public function test_the_mixed_funding_regression_from_round_3_refunds_only_the_credit_portion_on_undo(): void
+    {
+        // The exact scenario round 3 found: an entry partially credit-settled,
+        // then topped up with real cash, must split correctly on undo instead
+        // of treating the whole amount as one or the other.
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $service->recordPayment($guardian->id, 8000, $admin->id); // partial cash on current month, no credit yet
+
+        // Simulate a prior 8,000 credit consumption on this same entry (as
+        // syncMonth would have done had credit existed before recordPayment ran).
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $entry->update(['credit_applied' => 8000]); // entry now: 16000 collected total (8000 cash + 8000 credit)
+        $entry->update(['amount_collected' => 16000]);
+
+        $service->refundCredit($entry, $admin->id);
+        $this->assertSame('8000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+        // The remaining 8,000 (real cash) is NOT refunded as credit — it stays
+        // as the entry's own record until a separate cash correction is logged
+        // (Task 3's undoPaid() wires that half; this service method's job
+        // ends at "give back whatever was credit").
+    }
+
+    public function test_record_manual_cash_change_logs_the_delta_classified_by_whether_the_entry_is_the_open_month(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $current = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $pastEntry = MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 8, 'expected_amount' => 16000,
+        ]);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        $service->recordManualCashChange($current, 16000, $admin->id);
+        $service->recordManualCashChange($pastEntry, 16000, $admin->id);
+
+        $this->assertSame(2, MonthlyFeePayment::count());
+        $currentPayment = MonthlyFeePayment::orderBy('id')->first();
+        $this->assertSame('16000.00', $currentPayment->applied_to_current_month);
+        $this->assertSame('0.00', $currentPayment->applied_to_arrears);
+        $pastPayment = MonthlyFeePayment::orderBy('id')->skip(1)->first();
+        $this->assertSame('16000.00', $pastPayment->applied_to_arrears);
+        $this->assertSame('0.00', $pastPayment->applied_to_current_month);
+    }
+
+    public function test_record_manual_cash_change_logs_nothing_when_the_amount_is_unchanged(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        $service->recordManualCashChange($entry, 0.0, $admin->id);
+
+        $this->assertSame(0, MonthlyFeePayment::count());
+    }
 }
