@@ -36,6 +36,7 @@ use App\Http\Controllers\UniversalFeeController;
 use App\Http\Controllers\GuardianFeePreferenceController;
 use App\Http\Controllers\InvoiceController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\MonthlyFeeController;
 use App\Http\Controllers\Settings\SchoolProfileController;
 use App\Http\Controllers\Settings\AcademicYearController;
 use App\Http\Controllers\Settings\AcademicTermController;
@@ -637,67 +638,89 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
 
     //^ Fee Management Routes (Admin only)
     Route::middleware(['user.active', 'permission:fees.manage'])->group(function () {
-        // Fee Management Dashboard
-        Route::get('/fees', [FeeManagementController::class, 'index'])->name('fees.index');
-
-        // Bulk Invoice Generation
-        Route::get('/fees/bulk-generate', [FeeManagementController::class, 'bulkGenerate'])->name('fees.bulk-generate');
-        Route::post('/fees/bulk-generate', [FeeManagementController::class, 'processBulkGenerate'])->name('fees.process-bulk-generate');
-
-        // Transport Routes
+        // Transport Routes — shared by both fee modules' guardian
+        // fee-preference flows, so it is never wrapped in a fee-module gate.
         Route::get('/transport-routes', [TransportRouteController::class, 'index'])->name('transport-routes.index');
         Route::post('/transport-routes', [TransportRouteController::class, 'store'])->name('transport-routes.store');
         Route::put('/transport-routes/{transportRoute}', [TransportRouteController::class, 'update'])->name('transport-routes.update');
         Route::delete('/transport-routes/{transportRoute}', [TransportRouteController::class, 'destroy'])->name('transport-routes.destroy');
         Route::post('/transport-routes/{transportRoute}/toggle-status', [TransportRouteController::class, 'toggleStatus'])->name('transport-routes.toggle-status');
 
-        // Tuition Fees
-        Route::get('/tuition-fees', [TuitionFeeController::class, 'index'])->name('tuition-fees.index');
-        Route::post('/tuition-fees', [TuitionFeeController::class, 'store'])->name('tuition-fees.store');
-        Route::post('/tuition-fees/bulk', [TuitionFeeController::class, 'bulkStore'])->name('tuition-fees.bulk-store');
-        Route::put('/tuition-fees/{tuitionFee}', [TuitionFeeController::class, 'update'])->name('tuition-fees.update');
-        Route::delete('/tuition-fees/{tuitionFee}', [TuitionFeeController::class, 'destroy'])->name('tuition-fees.destroy');
-        Route::post('/tuition-fees/{tuitionFee}/toggle-status', [TuitionFeeController::class, 'toggleStatus'])->name('tuition-fees.toggle-status');
+        Route::middleware(['fee-module:termly'])->group(function () {
+            // Fee Management Dashboard
+            Route::get('/fees', [FeeManagementController::class, 'index'])->name('fees.index');
 
-        // Universal Fees
-        Route::get('/universal-fees', [UniversalFeeController::class, 'index'])->name('universal-fees.index');
-        Route::post('/universal-fees', [UniversalFeeController::class, 'store'])->name('universal-fees.store');
-        Route::post('/universal-fees/bulk', [UniversalFeeController::class, 'bulkStore'])->name('universal-fees.bulk-store');
-        Route::put('/universal-fees/{universalFee}', [UniversalFeeController::class, 'update'])->name('universal-fees.update');
-        Route::delete('/universal-fees/{universalFee}', [UniversalFeeController::class, 'destroy'])->name('universal-fees.destroy');
-        Route::post('/universal-fees/{universalFee}/toggle-status', [UniversalFeeController::class, 'toggleStatus'])->name('universal-fees.toggle-status');
+            // Bulk Invoice Generation
+            Route::get('/fees/bulk-generate', [FeeManagementController::class, 'bulkGenerate'])->name('fees.bulk-generate');
+            Route::post('/fees/bulk-generate', [FeeManagementController::class, 'processBulkGenerate'])->name('fees.process-bulk-generate');
 
-        // Guardian Fee Preferences
-        Route::get('/fee-preferences', [GuardianFeePreferenceController::class, 'index'])->name('fee-preferences.index');
-        Route::get('/fee-preferences/{guardian}/edit', [GuardianFeePreferenceController::class, 'edit'])->name('fee-preferences.edit');
-        Route::put('/fee-preferences/{guardian}', [GuardianFeePreferenceController::class, 'update'])->name('fee-preferences.update');
-        Route::delete('/fee-preferences/{feePreference}', [GuardianFeePreferenceController::class, 'destroy'])->name('fee-preferences.destroy');
-        Route::post('/fee-preferences/bulk-apply-defaults', [GuardianFeePreferenceController::class, 'bulkApplyDefaults'])->name('fee-preferences.bulk-apply-defaults');
-        Route::get('/fee-preferences/{guardian}/history', [GuardianFeePreferenceController::class, 'history'])->name('fee-preferences.history');
+            // Tuition Fees
+            Route::get('/tuition-fees', [TuitionFeeController::class, 'index'])->name('tuition-fees.index');
+            Route::post('/tuition-fees', [TuitionFeeController::class, 'store'])->name('tuition-fees.store');
+            Route::post('/tuition-fees/bulk', [TuitionFeeController::class, 'bulkStore'])->name('tuition-fees.bulk-store');
+            Route::put('/tuition-fees/{tuitionFee}', [TuitionFeeController::class, 'update'])->name('tuition-fees.update');
+            Route::delete('/tuition-fees/{tuitionFee}', [TuitionFeeController::class, 'destroy'])->name('tuition-fees.destroy');
+            Route::post('/tuition-fees/{tuitionFee}/toggle-status', [TuitionFeeController::class, 'toggleStatus'])->name('tuition-fees.toggle-status');
 
-        // Invoice Management
-        Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
-        Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
-        Route::post('/invoices/preview', [InvoiceController::class, 'preview'])->name('invoices.preview');
-        Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
-        Route::post('/invoices/clear-all', [InvoiceController::class, 'clearAll'])->name('invoices.clearAll');
-        Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
-        Route::put('/invoices/{invoice}/line-items', [InvoiceController::class, 'updateLineItems'])->name('invoices.updateLineItems');
-        Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
-        Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+            // Universal Fees
+            Route::get('/universal-fees', [UniversalFeeController::class, 'index'])->name('universal-fees.index');
+            Route::post('/universal-fees', [UniversalFeeController::class, 'store'])->name('universal-fees.store');
+            Route::post('/universal-fees/bulk', [UniversalFeeController::class, 'bulkStore'])->name('universal-fees.bulk-store');
+            Route::put('/universal-fees/{universalFee}', [UniversalFeeController::class, 'update'])->name('universal-fees.update');
+            Route::delete('/universal-fees/{universalFee}', [UniversalFeeController::class, 'destroy'])->name('universal-fees.destroy');
+            Route::post('/universal-fees/{universalFee}/toggle-status', [UniversalFeeController::class, 'toggleStatus'])->name('universal-fees.toggle-status');
 
-        // Payment Management
-        Route::get('/invoices/{invoice}/payments/create', [PaymentController::class, 'create'])->name('payments.create');
-        Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
-        Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
-        Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+            // Guardian Fee Preferences
+            Route::get('/fee-preferences', [GuardianFeePreferenceController::class, 'index'])->name('fee-preferences.index');
+            Route::get('/fee-preferences/{guardian}/edit', [GuardianFeePreferenceController::class, 'edit'])->name('fee-preferences.edit');
+            Route::put('/fee-preferences/{guardian}', [GuardianFeePreferenceController::class, 'update'])->name('fee-preferences.update');
+            Route::delete('/fee-preferences/{feePreference}', [GuardianFeePreferenceController::class, 'destroy'])->name('fee-preferences.destroy');
+            Route::post('/fee-preferences/bulk-apply-defaults', [GuardianFeePreferenceController::class, 'bulkApplyDefaults'])->name('fee-preferences.bulk-apply-defaults');
+            Route::get('/fee-preferences/{guardian}/history', [GuardianFeePreferenceController::class, 'history'])->name('fee-preferences.history');
+
+            // Invoice Management
+            Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');
+            Route::get('/invoices/create', [InvoiceController::class, 'create'])->name('invoices.create');
+            Route::post('/invoices/preview', [InvoiceController::class, 'preview'])->name('invoices.preview');
+            Route::post('/invoices', [InvoiceController::class, 'store'])->name('invoices.store');
+            Route::post('/invoices/clear-all', [InvoiceController::class, 'clearAll'])->name('invoices.clearAll');
+            Route::get('/invoices/{invoice}', [InvoiceController::class, 'show'])->name('invoices.show');
+            Route::put('/invoices/{invoice}/line-items', [InvoiceController::class, 'updateLineItems'])->name('invoices.updateLineItems');
+            Route::get('/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('invoices.pdf');
+            Route::delete('/invoices/{invoice}', [InvoiceController::class, 'destroy'])->name('invoices.destroy');
+
+            // Payment Management
+            Route::get('/invoices/{invoice}/payments/create', [PaymentController::class, 'create'])->name('payments.create');
+            Route::post('/invoices/{invoice}/payments', [PaymentController::class, 'store'])->name('payments.store');
+            Route::get('/payments/{payment}', [PaymentController::class, 'show'])->name('payments.show');
+            Route::delete('/payments/{payment}', [PaymentController::class, 'destroy'])->name('payments.destroy');
+        });
+
+        Route::middleware(['fee-module:monthly'])->group(function () {
+            // Monthly Fee Ledger
+            Route::get('/monthly-fees', [MonthlyFeeController::class, 'index'])->name('monthly-fees.index');
+            Route::post('/monthly-fees/open-next-month', [MonthlyFeeController::class, 'openNextMonth'])->name('monthly-fees.open-next-month');
+            Route::put('/monthly-fees/guardians/{guardian}/expected-fee', [MonthlyFeeController::class, 'updateExpected'])->name('monthly-fees.update-expected');
+            Route::post('/monthly-fees/entries/{entry}/mark-paid', [MonthlyFeeController::class, 'markPaid'])->name('monthly-fees.mark-paid');
+            Route::post('/monthly-fees/entries/{entry}/undo', [MonthlyFeeController::class, 'undoPaid'])->name('monthly-fees.undo');
+            Route::put('/monthly-fees/entries/{entry}', [MonthlyFeeController::class, 'updateCollected'])->name('monthly-fees.update-collected');
+            Route::post('/monthly-fees/guardians/{guardian}/record-payment', [MonthlyFeeController::class, 'recordPayment'])->name('monthly-fees.record-payment');
+            Route::post('/monthly-fees/guardians/{guardian}/apply-credit', [MonthlyFeeController::class, 'applyCredit'])->name('monthly-fees.apply-credit');
+            Route::put('/monthly-fees/holiday-months', [MonthlyFeeController::class, 'updateHolidayMonths'])->name('monthly-fees.update-holiday-months');
+        });
     });
 
     //^ Guardian Invoice Routes (Guardians can view their own invoices)
     Route::middleware(['user.active', 'permission:fees.view-own-invoices'])->group(function () {
-        Route::get('/guardian/invoices', [InvoiceController::class, 'index'])->name('guardian.invoices');
-        Route::get('/guardian/invoices/{invoice}', [InvoiceController::class, 'show'])->name('guardian.invoices.show');
-        Route::get('/guardian/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('guardian.invoices.pdf');
+        Route::middleware(['fee-module:termly'])->group(function () {
+            Route::get('/guardian/invoices', [InvoiceController::class, 'index'])->name('guardian.invoices');
+            Route::get('/guardian/invoices/{invoice}', [InvoiceController::class, 'show'])->name('guardian.invoices.show');
+            Route::get('/guardian/invoices/{invoice}/pdf', [InvoiceController::class, 'downloadPdf'])->name('guardian.invoices.pdf');
+        });
+
+        Route::middleware(['fee-module:monthly'])->group(function () {
+            Route::get('/guardian/monthly-fees', [MonthlyFeeController::class, 'guardianShow'])->name('guardian.monthly-fees');
+        });
     });
 });
 

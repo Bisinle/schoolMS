@@ -73,6 +73,7 @@ class SchoolController extends Controller
             'address' => 'nullable|string',
             'status' => 'required|in:trial,active,suspended,cancelled',
             'school_type' => 'required|in:islamic_school,madrasah',
+            'fee_module' => 'required|in:termly,monthly',
             'trial_ends_at' => 'nullable|date',
             'password_option' => 'required|in:auto,manual',
             'admin_password' => 'required_if:password_option,manual|nullable|string|min:8',
@@ -115,6 +116,7 @@ class SchoolController extends Controller
                 'address' => $validated['address'] ?? null,
                 'status' => $validated['status'],
                 'school_type' => $validated['school_type'],
+                'fee_module' => $validated['fee_module'],
                 'is_active' => true,
                 'trial_ends_at' => $validated['trial_ends_at'] ?? now()->addDays(30),
                 'current_student_count' => 0,
@@ -215,6 +217,7 @@ class SchoolController extends Controller
             'address' => 'nullable|string',
             'status' => 'required|in:trial,active,suspended,cancelled',
             'school_type' => 'required|in:islamic_school,madrasah',
+            'fee_module' => 'required|in:termly,monthly',
             'is_active' => 'required|in:0,1,true,false',
             'trial_ends_at' => 'nullable|date',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
@@ -248,7 +251,7 @@ class SchoolController extends Controller
             // Track if admin credentials changed
             $adminEmailChanged = $school->admin_email !== $validated['admin_email'];
             $adminNameChanged = $school->admin_name !== $validated['admin_name'];
-            $adminPhoneChanged = $school->admin_phone !== $validated['admin_phone'];
+            $adminPhoneChanged = $school->admin_phone !== ($validated['admin_phone'] ?? null);
 
             $oldAdminEmail = $school->admin_email;
 
@@ -402,4 +405,3 @@ class SchoolController extends Controller
             ->with('success', "Now viewing as {$admin->name} ({$school->name} admin)");
     }
 }
-

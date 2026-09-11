@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\CheckFeeModule;
 use App\Http\Middleware\CheckMadrasahSchool;
 use App\Http\Middleware\CheckSchoolActive;
 use App\Http\Middleware\CheckUserActive;
@@ -44,6 +45,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'super.admin' => SuperAdminMiddleware::class,
             'school.admin' => SchoolAdminMiddleware::class,
             'madrasah.only' => CheckMadrasahSchool::class,
+            'fee-module' => CheckFeeModule::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

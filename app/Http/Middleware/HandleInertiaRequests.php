@@ -35,8 +35,8 @@ class HandleInertiaRequests extends Middleware
         $schoolData = null;
         $isSuperAdmin = $user && $user->isSuperAdmin();
 
-        if ($user && $user->school_id && !$isSuperAdmin) {
-            $school = \App\Models\School::select('id', 'name', 'logo_path', 'is_active', 'status', 'school_type')
+        if ($user && $user->school_id && ! $isSuperAdmin) {
+            $school = \App\Models\School::select('id', 'name', 'logo_path', 'is_active', 'status', 'school_type', 'fee_module')
                 ->find($user->school_id);
 
             if ($school) {
@@ -48,6 +48,7 @@ class HandleInertiaRequests extends Middleware
                     'is_active' => $school->is_active,
                     'status' => $school->status,
                     'school_type' => $school->school_type,
+                    'fee_module' => $school->fee_module,
                 ];
             }
         }
@@ -73,6 +74,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'generated_password' => fn () => $request->session()->get('generated_password'),
                 'user_name' => fn () => $request->session()->get('user_name'),
+                'payment_receipt' => fn () => $request->session()->get('payment_receipt'),
             ],
             'impersonation' => [
                 'isImpersonating' => session()->has('impersonated_by'),
