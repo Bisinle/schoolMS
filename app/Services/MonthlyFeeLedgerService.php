@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\Guardian;
 use App\Models\MonthlyFeeEntry;
+use App\Models\MonthlyFeePayment;
 use App\Models\MonthlyFeeSetting;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class MonthlyFeeLedgerService
 {
@@ -78,6 +80,156 @@ class MonthlyFeeLedgerService
                 'expected_amount' => $settingsByGuardian->get($guardianId)?->expected_fee ?? 0,
             ]);
         }
+    }
+
+    /**
+     * Appends one row to the append-only cash-receipt log. Never called for
+     * credit auto-consumption (syncMonth's credit step, applyCreditToArrears)
+     * — only when real cash actually changes hands. The three "applied_to_*"
+     * amounts must sum to $amount.
+     */
+    private function logCashReceived(
+        int $schoolId,
+        int $guardianId,
+        float $amount,
+        float $appliedToArrears,
+        float $appliedToCurrentMonth,
+        float $appliedToCredit,
+        int $recordedBy,
+        ?string $receivedAt = null,
+        ?string $notes = null,
+        ?int $correctsEntryId = null,
+    ): MonthlyFeePayment {
+        return MonthlyFeePayment::create([
+            'school_id' => $schoolId,
+            'guardian_id' => $guardianId,
+            'amount' => $amount,
+            'applied_to_arrears' => $appliedToArrears,
+            'applied_to_current_month' => $appliedToCurrentMonth,
+            'applied_to_credit' => $appliedToCredit,
+            'received_at' => $receivedAt ?? now()->toDateString(),
+            'recorded_by' => $recordedBy,
+            'corrects_entry_id' => $correctsEntryId,
+            'notes' => $notes,
+        ]);
+    }
+
+    /**
+     * The primary way money gets collected (spec §3). Always resolves the
+     * school's currently-open month internally — never trusts a caller's
+     * idea of which month is "current" — and settles, in order: (1) this
+     * guardian's unpaid/partial months strictly before the open month,
+     * oldest first, each capped at its own remaining shortfall; (2) the open
+     * month's own entry, same remaining-shortfall logic, created first if it
+     * doesn't exist yet; (3) anything left over becomes reserve credit.
+     * Runs inside one locked transaction end to end (round-2 fix #3, round-3
+     * fix #6) so a concurrent write to the same guardian's credit_balance or
+     * a double-submit racing on the current-month entry's unique constraint
+     * can't silently clobber this.
+     *
+     * @return array{
+     *     guardian_id: int, amount_received: float,
+     *     applied_to_arrears: array<int, array{entry_id:int, year:int, month:int, applied:float, fully_cleared:bool}>,
+     *     applied_to_current_month: ?array{entry_id:int, year:int, month:int, applied:float, fully_cleared:bool},
+     *     total_arrears_cleared: float, applied_to_credit: float, new_credit_balance: float,
+     * }
+     */
+    public function recordPayment(
+        int $guardianId,
+        float $amountReceived,
+        int $recordedBy,
+        ?string $receivedAt = null,
+        ?string $notes = null,
+    ): array {
+        $guardian = Guardian::findOrFail($guardianId);
+        $schoolId = $guardian->school_id;
+
+        return DB::transaction(function () use ($guardian, $guardianId, $schoolId, $amountReceived, $recordedBy, $receivedAt, $notes) {
+            $setting = MonthlyFeeSetting::lockForUpdate()->where('guardian_id', $guardianId)->first()
+                ?? MonthlyFeeSetting::create(['school_id' => $schoolId, 'guardian_id' => $guardianId, 'expected_fee' => 0]);
+
+            $latest = $this->latestMonth($schoolId);
+            $remaining = $amountReceived;
+            $arrearsBreakdown = [];
+            $arrearsTotal = 0.0;
+
+            $arrearsEntries = MonthlyFeeEntry::where('guardian_id', $guardianId)
+                ->where(fn ($query) => $this->beforeMonth($query, $latest['year'], $latest['month']))
+                ->whereRaw('COALESCE(amount_collected, 0) < expected_amount')
+                ->orderBy('year')->orderBy('month')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($arrearsEntries as $entry) {
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                $shortfall = (float) $entry->expected_amount - (float) ($entry->amount_collected ?? 0);
+                $applied = min($remaining, $shortfall);
+
+                $entry->update([
+                    'amount_collected' => (float) ($entry->amount_collected ?? 0) + $applied,
+                    'paid_date' => $receivedAt ?? now()->toDateString(),
+                    'recorded_by' => $recordedBy,
+                ]);
+
+                $arrearsBreakdown[] = [
+                    'entry_id' => $entry->id, 'year' => $entry->year, 'month' => $entry->month,
+                    'applied' => $applied, 'fully_cleared' => $applied === $shortfall,
+                ];
+                $arrearsTotal += $applied;
+                $remaining -= $applied;
+            }
+
+            $currentEntry = MonthlyFeeEntry::lockForUpdate()->firstOrCreate(
+                ['guardian_id' => $guardianId, 'year' => $latest['year'], 'month' => $latest['month']],
+                ['school_id' => $schoolId, 'expected_amount' => $setting->expected_fee]
+            );
+
+            $appliedToCurrentMonth = 0.0;
+            $currentBreakdown = null;
+
+            if ($remaining > 0) {
+                $shortfall = (float) $currentEntry->expected_amount - (float) ($currentEntry->amount_collected ?? 0);
+                $appliedToCurrentMonth = max(0.0, min($remaining, $shortfall));
+
+                if ($appliedToCurrentMonth > 0) {
+                    $currentEntry->update([
+                        'amount_collected' => (float) ($currentEntry->amount_collected ?? 0) + $appliedToCurrentMonth,
+                        'paid_date' => $receivedAt ?? now()->toDateString(),
+                        'recorded_by' => $recordedBy,
+                    ]);
+                    $remaining -= $appliedToCurrentMonth;
+                }
+
+                $currentBreakdown = [
+                    'entry_id' => $currentEntry->id, 'year' => $currentEntry->year, 'month' => $currentEntry->month,
+                    'applied' => $appliedToCurrentMonth, 'fully_cleared' => $appliedToCurrentMonth === $shortfall,
+                ];
+            }
+
+            $appliedToCredit = max(0.0, $remaining);
+            if ($appliedToCredit > 0) {
+                $setting->increment('credit_balance', $appliedToCredit);
+            }
+
+            $this->logCashReceived(
+                $schoolId, $guardianId, $amountReceived,
+                $arrearsTotal, $appliedToCurrentMonth, $appliedToCredit,
+                $recordedBy, $receivedAt, $notes
+            );
+
+            return [
+                'guardian_id' => $guardianId,
+                'amount_received' => $amountReceived,
+                'applied_to_arrears' => $arrearsBreakdown,
+                'applied_to_current_month' => $currentBreakdown,
+                'total_arrears_cleared' => $arrearsTotal,
+                'applied_to_credit' => $appliedToCredit,
+                'new_credit_balance' => (float) $setting->fresh()->credit_balance,
+            ];
+        });
     }
 
     /**
