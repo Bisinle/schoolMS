@@ -525,7 +525,7 @@ class MonthlyFeeLedgerService
                 $query->whereRaw('COALESCE(amount_collected, 0) < expected_amount')
                     ->orWhereBetween('updated_at', [$bounds['start'], $bounds['end']]);
             })
-            ->with('guardian')
+            ->with(['guardian' => fn ($q) => $q->withTrashed()])
             ->orderBy('guardian_id')->orderBy('year')->orderBy('month')
             ->get()
             ->groupBy('guardian_id');

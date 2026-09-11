@@ -82,6 +82,17 @@ class MonthlyFeeController extends Controller
         $wouldBrowsePastOpenMonth = $isOpenMonth;
 
         $arrearsActivity = $this->ledger->arrearsActivityForSchool($schoolId, $year, $month)
+            // A soft-deleted (or otherwise missing) guardian's arrears are
+            // still real debt — the underlying MonthlyFeeEntry rows are
+            // untouched — but there's no actionable guardian record left for
+            // this drill-down (record-payment/apply-credit both look the
+            // guardian up without withTrashed() and would 404), so their
+            // group is excluded from this display only.
+            ->filter(function ($entries) {
+                $guardian = $entries->first()->guardian;
+
+                return $guardian !== null && ! $guardian->trashed();
+            })
             ->map(function ($entries, $guardianId) use ($outstandingByGuardian) {
                 $guardian = $entries->first()->guardian;
 

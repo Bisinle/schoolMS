@@ -435,6 +435,40 @@ class MonthlyFeeControllerTest extends TestCase
         $this->assertSame('16000.00', $payment->applied_to_current_month);
     }
 
+    public function test_index_survives_a_soft_deleted_guardian_with_unresolved_arrears(): void
+    {
+        // A guardian can be soft-deleted (e.g. all their children withdrew)
+        // while still owing an old month's fees. That debt is still real,
+        // but there's no guardian record left to act on from the arrears
+        // drill-down, so it must be excluded from that display rather than
+        // crashing the whole page for the school.
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 8, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+        $this->actingAs($admin)->post('/monthly-fees/open-next-month'); // opens September, past August's arrears
+
+        $guardian->delete(); // soft-delete
+
+        // Browse October — a month that was never opened for this guardian
+        // (they were deleted before it could be), so this exercises the
+        // arrears drill-down finding their old unresolved August entry
+        // without also touching the unrelated "current month row" path.
+        $response = $this->actingAs($admin)->get('/monthly-fees?year=2026&month=10');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('arrearsActivity', [])
+        );
+        $this->assertTrue(
+            MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 8)->exists()
+        );
+    }
+
     public function test_update_collected_logs_only_the_delta_to_the_cash_ledger(): void
     {
         $this->withoutVite();
