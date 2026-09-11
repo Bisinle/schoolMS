@@ -72,13 +72,30 @@ class MonthlyFeeLedgerService
             ->keyBy('guardian_id');
 
         foreach ($missingGuardianIds as $guardianId) {
-            MonthlyFeeEntry::create([
-                'school_id' => $schoolId,
-                'guardian_id' => $guardianId,
-                'year' => $year,
-                'month' => $month,
-                'expected_amount' => $settingsByGuardian->get($guardianId)?->expected_fee ?? 0,
-            ]);
+            DB::transaction(function () use ($schoolId, $guardianId, $year, $month, $settingsByGuardian) {
+                $setting = MonthlyFeeSetting::lockForUpdate()->find($settingsByGuardian->get($guardianId)?->id);
+                $expectedAmount = (float) ($setting->expected_fee ?? 0);
+                $creditBalance = (float) ($setting->credit_balance ?? 0);
+                $creditApplied = min($creditBalance, $expectedAmount);
+
+                $entry = MonthlyFeeEntry::create([
+                    'school_id' => $schoolId,
+                    'guardian_id' => $guardianId,
+                    'year' => $year,
+                    'month' => $month,
+                    'expected_amount' => $expectedAmount,
+                ]);
+
+                if ($creditApplied > 0) {
+                    $entry->update([
+                        'amount_collected' => $creditApplied,
+                        'credit_applied' => $creditApplied,
+                        'paid_date' => now()->toDateString(),
+                        'recorded_by' => null,
+                    ]);
+                    $setting->decrement('credit_balance', $creditApplied);
+                }
+            });
         }
     }
 

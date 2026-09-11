@@ -334,4 +334,56 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $payment = MonthlyFeePayment::where('guardian_id', $guardian->id)->first();
         $this->assertSame('2026-08-28', $payment->received_at->format('Y-m-d'));
     }
+
+    public function test_sync_consumes_credit_against_the_guardians_rate_at_the_moment_the_month_opens(): void
+    {
+        // The spec §1 worked example, reproduced exactly: rate changes
+        // between the payment and the month opening, and the entry must
+        // price against the NEW rate, not the one active at payment time.
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        $service->recordPayment($guardian->id, 48000, $admin->id);
+        $this->assertSame('32000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+
+        // Rate changes: a third child enrolls.
+        $guardian->monthlyFeeSetting->update(['expected_fee' => 24000]);
+
+        $service->syncMonth($school->id, 2026, 10);
+        $october = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 10)->first();
+        $this->assertSame('24000.00', $october->expected_amount);
+        $this->assertSame('24000.00', $october->amount_collected);
+        $this->assertSame('24000.00', $october->credit_applied);
+        $this->assertSame('paid', $october->status);
+        $this->assertSame('8000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+
+        $service->syncMonth($school->id, 2026, 11);
+        $november = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 11)->first();
+        $this->assertSame('24000.00', $november->expected_amount);
+        $this->assertSame('8000.00', $november->amount_collected);
+        $this->assertSame('8000.00', $november->credit_applied);
+        $this->assertSame('partial', $november->status);
+        $this->assertSame('0.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+    }
+
+    public function test_sync_credit_consumption_sets_recorded_by_null_and_never_logs_a_payment_row(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $service->recordPayment($guardian->id, 32000, $admin->id); // 16000 current + 16000 credit
+
+        $this->assertSame(1, MonthlyFeePayment::count());
+
+        $service->syncMonth($school->id, 2026, 10);
+
+        $october = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 10)->first();
+        $this->assertNull($october->recorded_by);
+        $this->assertSame(1, MonthlyFeePayment::count()); // unchanged — no new cash was received
+    }
 }
