@@ -305,6 +305,72 @@ class MonthlyFeeLedgerService
     }
 
     /**
+     * The explicit, admin-triggered action that nets an existing credit
+     * balance against reopened/still-outstanding arrears (spec round-2 fix
+     * #5) — never automatic. Walks oldest-unpaid-first, the same order
+     * recordPayment() uses, but the money's source is the guardian's stored
+     * credit rather than new cash: every entry it touches gets its
+     * credit_applied increased by exactly the amount applied — mirroring
+     * syncMonth()'s credit consumption (spec round-4 fix) — and recorded_by
+     * is set to the acting admin (unlike syncMonth's fully-automatic null),
+     * since a human deliberately triggered this. No monthly_fee_payments row
+     * is logged — no new cash changed hands.
+     *
+     * @return array{total_applied: float, entries: array<int, array{entry_id:int, year:int, month:int, applied:float}>}
+     */
+    public function applyCreditToArrears(int $guardianId, int $recordedBy): array
+    {
+        $guardian = Guardian::findOrFail($guardianId);
+
+        return DB::transaction(function () use ($guardian, $guardianId, $recordedBy) {
+            $setting = MonthlyFeeSetting::lockForUpdate()->where('guardian_id', $guardianId)->first()
+                ?? MonthlyFeeSetting::create(['school_id' => $guardian->school_id, 'guardian_id' => $guardianId, 'expected_fee' => 0]);
+
+            $latest = $this->latestMonth($guardian->school_id);
+            $remaining = (float) $setting->credit_balance;
+            $totalApplied = 0.0;
+            $touched = [];
+
+            if ($remaining <= 0) {
+                return ['total_applied' => 0.0, 'entries' => []];
+            }
+
+            $arrearsEntries = MonthlyFeeEntry::where('guardian_id', $guardianId)
+                ->where(fn ($query) => $this->beforeMonth($query, $latest['year'], $latest['month']))
+                ->whereRaw('COALESCE(amount_collected, 0) < expected_amount')
+                ->orderBy('year')->orderBy('month')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($arrearsEntries as $entry) {
+                if ($remaining <= 0) {
+                    break;
+                }
+
+                $shortfall = (float) $entry->expected_amount - (float) ($entry->amount_collected ?? 0);
+                $applied = min($remaining, $shortfall);
+
+                $entry->update([
+                    'amount_collected' => (float) ($entry->amount_collected ?? 0) + $applied,
+                    'credit_applied' => (float) $entry->credit_applied + $applied,
+                    'paid_date' => now()->toDateString(),
+                    'recorded_by' => $recordedBy,
+                ]);
+
+                $touched[] = ['entry_id' => $entry->id, 'year' => $entry->year, 'month' => $entry->month, 'applied' => $applied];
+                $totalApplied += $applied;
+                $remaining -= $applied;
+            }
+
+            if ($totalApplied > 0) {
+                $setting->decrement('credit_balance', $totalApplied);
+            }
+
+            return ['total_applied' => $totalApplied, 'entries' => $touched];
+        });
+    }
+
+    /**
      * How much a guardian owes from months strictly before (year, month) —
      * the sum of each past entry's shortfall (expected_amount minus
      * whatever was actually collected). Deliberately excludes the

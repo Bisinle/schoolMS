@@ -470,4 +470,54 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
         $this->assertSame(0, MonthlyFeePayment::count());
     }
+
+    public function test_apply_credit_to_arrears_settles_oldest_old_months_first_and_sets_credit_applied(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 3, 'expected_amount' => 8000,
+        ]);
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
+        // Set the credit balance AFTER syncMonth creates the September entry:
+        // syncMonth's own credit-auto-consumption (tested separately above)
+        // would otherwise immediately spend this 8000 against the September
+        // entry it's creating, leaving nothing for applyCreditToArrears to
+        // apply to the March arrears below — which is what this test is for.
+        $guardian->monthlyFeeSetting->update(['credit_balance' => 8000]);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        $result = (new MonthlyFeeLedgerService)->applyCreditToArrears($guardian->id, $admin->id);
+
+        $march = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 3)->first();
+        $this->assertSame('8000.00', $march->amount_collected);
+        $this->assertSame('8000.00', $march->credit_applied);
+        $this->assertSame($admin->id, $march->recorded_by); // a deliberate admin action, not fully-automatic null
+        $this->assertSame('0.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+        $this->assertSame(8000.0, $result['total_applied']);
+        $this->assertSame(0, MonthlyFeePayment::count()); // no new cash changed hands
+    }
+
+    public function test_undoing_an_arrears_month_settled_via_apply_credit_correctly_refunds_credit(): void
+    {
+        // Round-4 fix: applyCreditToArrears must do the identical
+        // credit_applied bookkeeping syncMonth does, or undoing an old
+        // credit-settled month wrongly corrects phantom cash instead of
+        // refunding the guardian's real credit.
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+        $guardian->monthlyFeeSetting->update(['credit_balance' => 8000]);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 3, 'expected_amount' => 8000,
+        ]);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        (new MonthlyFeeLedgerService)->applyCreditToArrears($guardian->id, $admin->id);
+
+        $march = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 3)->first();
+        (new MonthlyFeeLedgerService)->refundCredit($march, $admin->id);
+
+        $this->assertSame('8000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+    }
 }
