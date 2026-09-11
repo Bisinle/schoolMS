@@ -138,4 +138,80 @@ class MonthlyFeeLedgerServiceTest extends TestCase
             MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 10)->first()
         );
     }
+
+    public function test_outstanding_balance_sums_unpaid_and_partial_months_before_the_given_month(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 1, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 2, 'expected_amount' => 8000, 'amount_collected' => 3000,
+        ]);
+
+        $balance = (new MonthlyFeeLedgerService)->outstandingBalanceFor($guardian->id, 2027, 3);
+
+        $this->assertSame(13000.0, $balance);
+    }
+
+    public function test_outstanding_balance_excludes_the_month_being_viewed_and_fully_paid_months(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 1, 'expected_amount' => 8000, 'amount_collected' => 8000,
+        ]);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 2, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+
+        // Viewing February itself: January (fully paid) contributes nothing,
+        // and February's own shortfall must not count against itself.
+        $balance = (new MonthlyFeeLedgerService)->outstandingBalanceFor($guardian->id, 2027, 2);
+
+        $this->assertSame(0.0, $balance);
+    }
+
+    public function test_outstanding_balance_never_goes_negative_from_a_past_overpayment(): void
+    {
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 1, 'expected_amount' => 8000, 'amount_collected' => 12000,
+        ]);
+
+        $balance = (new MonthlyFeeLedgerService)->outstandingBalanceFor($guardian->id, 2027, 2);
+
+        $this->assertSame(0.0, $balance);
+    }
+
+    public function test_outstanding_balances_for_school_computes_every_guardian_in_one_pass(): void
+    {
+        $school = School::factory()->create();
+        $behind = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+        $current = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $behind->id,
+            'year' => 2027, 'month' => 1, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $current->id,
+            'year' => 2027, 'month' => 1, 'expected_amount' => 8000, 'amount_collected' => 8000,
+        ]);
+
+        $balances = (new MonthlyFeeLedgerService)->outstandingBalancesForSchool($school->id, 2027, 2);
+
+        $this->assertSame(8000.0, $balances[$behind->id]);
+        $this->assertSame(0.0, $balances[$current->id]);
+    }
 }

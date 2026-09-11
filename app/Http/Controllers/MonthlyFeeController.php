@@ -41,7 +41,9 @@ class MonthlyFeeController extends Controller
             ->with('guardian.user')
             ->get();
 
-        $rows = $entries->map(function (MonthlyFeeEntry $entry) {
+        $outstandingByGuardian = $this->ledger->outstandingBalancesForSchool($schoolId, $year, $month);
+
+        $rows = $entries->map(function (MonthlyFeeEntry $entry) use ($outstandingByGuardian) {
             $guardian = $entry->guardian;
 
             $children = $guardian->allStudents()
@@ -54,6 +56,8 @@ class MonthlyFeeController extends Controller
                 ])
                 ->values();
 
+            $outstandingBalance = $outstandingByGuardian[$guardian->id] ?? 0.0;
+
             return [
                 'entry_id' => $entry->id,
                 'guardian_id' => $guardian->id,
@@ -65,6 +69,8 @@ class MonthlyFeeController extends Controller
                 'amount_collected' => $entry->amount_collected !== null ? (float) $entry->amount_collected : null,
                 'paid_date' => $entry->paid_date?->format('Y-m-d'),
                 'status' => $entry->status,
+                'outstanding_balance' => $outstandingBalance,
+                'total_due' => (float) $entry->expected_amount + $outstandingBalance,
             ];
         })->sortBy('guardian_name')->values();
 
@@ -198,14 +204,16 @@ class MonthlyFeeController extends Controller
         $monthDate = Carbon::create($latest['year'], $latest['month'], 1);
         $expected = $entry ? (float) $entry->expected_amount : 0;
         $collected = $entry ? (float) ($entry->amount_collected ?? 0) : 0;
+        $outstandingBalance = $this->ledger->outstandingBalanceFor($guardian->id, $latest['year'], $latest['month']);
 
         return Inertia::render('Fees/MonthlyFees/GuardianShow', [
             'monthLabel' => $monthDate->format('F Y'),
             'guardianName' => $guardian->full_name,
             'guardianNumber' => $guardian->guardian_number,
             'phone' => $guardian->phone,
-            'amountDue' => max($expected - $collected, 0),
+            'amountDue' => max($expected - $collected, 0) + $outstandingBalance,
             'expectedAmount' => $expected,
+            'outstandingBalance' => $outstandingBalance,
             'status' => $entry->status ?? 'needs_fee',
         ]);
     }

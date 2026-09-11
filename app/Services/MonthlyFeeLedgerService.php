@@ -81,6 +81,52 @@ class MonthlyFeeLedgerService
     }
 
     /**
+     * How much a guardian owes from months strictly before (year, month) —
+     * the sum of each past entry's shortfall (expected_amount minus
+     * whatever was actually collected). Deliberately excludes the
+     * (year, month) being viewed itself; that month's own row is shown
+     * separately by the caller. Never negative: a guardian who overpaid a
+     * past month nets that credit against other arrears, but the balance
+     * itself never surfaces as a negative "credit" figure.
+     */
+    public function outstandingBalanceFor(int $guardianId, int $beforeYear, int $beforeMonth): float
+    {
+        $balance = MonthlyFeeEntry::where('guardian_id', $guardianId)
+            ->where(fn ($query) => $this->beforeMonth($query, $beforeYear, $beforeMonth))
+            ->selectRaw('SUM(expected_amount - COALESCE(amount_collected, 0)) as balance')
+            ->value('balance');
+
+        return max(0.0, (float) $balance);
+    }
+
+    /**
+     * The same balance as outstandingBalanceFor(), computed for every
+     * guardian in a school in one query — used by the admin ledger so
+     * showing a month's worth of rows doesn't cost one extra query per
+     * guardian on top of what it already runs.
+     *
+     * @return array<int, float> guardian_id => outstanding balance
+     */
+    public function outstandingBalancesForSchool(int $schoolId, int $beforeYear, int $beforeMonth): array
+    {
+        return MonthlyFeeEntry::where('school_id', $schoolId)
+            ->where(fn ($query) => $this->beforeMonth($query, $beforeYear, $beforeMonth))
+            ->selectRaw('guardian_id, SUM(expected_amount - COALESCE(amount_collected, 0)) as balance')
+            ->groupBy('guardian_id')
+            ->pluck('balance', 'guardian_id')
+            ->map(fn ($balance) => max(0.0, (float) $balance))
+            ->all();
+    }
+
+    private function beforeMonth($query, int $year, int $month): void
+    {
+        $query->where('year', '<', $year)
+            ->orWhere(function ($query) use ($year, $month) {
+                $query->where('year', $year)->where('month', '<', $month);
+            });
+    }
+
+    /**
      * Advance the ledger to the month after whatever is currently open, and
      * sync it the same way syncMonth does for the open month. Assumes the
      * open month has already been synced at least once (true in practice —

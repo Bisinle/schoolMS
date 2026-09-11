@@ -215,4 +215,55 @@ class MonthlyFeeControllerTest extends TestCase
             ->where('expectedAmount', 16000)
         );
     }
+
+    public function test_index_shows_outstanding_balance_and_total_due_from_a_past_unpaid_month(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 1, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 2, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+
+        $response = $this->actingAs($admin)->get('/monthly-fees?year=2027&month=2');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('rows.0.expected_amount', 8000)
+            ->where('rows.0.outstanding_balance', 8000)
+            ->where('rows.0.total_due', 16000)
+        );
+    }
+
+    public function test_guardian_amount_due_includes_outstanding_balance_from_a_past_unpaid_month(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 1, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2027, 'month' => 2, 'expected_amount' => 8000, 'amount_collected' => null,
+        ]);
+
+        $response = $this->actingAs($guardian->user)->get('/guardian/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('expectedAmount', 8000)
+            ->where('outstandingBalance', 8000)
+            ->where('amountDue', 16000)
+        );
+    }
 }

@@ -3,12 +3,13 @@ import { Head } from '@inertiajs/react';
 import { useState } from 'react';
 
 export default function MonthlyFeeGuardianShow({
-    auth, monthLabel, guardianName, guardianNumber, phone, amountDue, status,
+    auth, monthLabel, guardianName, guardianNumber, phone, amountDue, outstandingBalance, status,
 }) {
     const [payPhone, setPayPhone] = useState(phone || '');
     const [showNote, setShowNote] = useState(false);
 
     const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
+    const nothingDue = amountDue <= 0;
 
     return (
         <AuthenticatedLayout auth={auth} header={<h2 className="text-xl font-semibold text-gray-800">Monthly Fee</h2>}>
@@ -22,18 +23,25 @@ export default function MonthlyFeeGuardianShow({
 
                         <div className="mb-5 border-y border-dashed border-gray-200 py-4 text-center">
                             <p className="text-sm text-gray-500">Amount due for {monthLabel}</p>
-                            {status === 'needs_fee' ? (
+                            {status === 'needs_fee' && nothingDue ? (
                                 <p className="mt-1 text-sm text-gray-500">
                                     Your fee for this month hasn&apos;t been set yet — please check with the school office.
                                 </p>
-                            ) : status === 'paid' ? (
+                            ) : nothingDue ? (
                                 <p className="mt-1 text-2xl font-bold text-green-700">Fully paid</p>
                             ) : (
-                                <p className="mt-1 text-3xl font-bold text-gray-900">{fmt(amountDue)}</p>
+                                <>
+                                    <p className="mt-1 text-3xl font-bold text-gray-900">{fmt(amountDue)}</p>
+                                    {outstandingBalance > 0 && (
+                                        <p className="mt-1 text-xs text-red-600">
+                                            Includes {fmt(outstandingBalance)} owed from earlier months
+                                        </p>
+                                    )}
+                                </>
                             )}
                         </div>
 
-                        {status !== 'needs_fee' && status !== 'paid' && (
+                        {!nothingDue && (
                             <>
                                 <label className="mb-1 block text-sm font-medium text-gray-700" htmlFor="pay-phone">
                                     M-Pesa number to pay from

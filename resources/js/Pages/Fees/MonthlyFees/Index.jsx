@@ -11,6 +11,7 @@ export default function MonthlyFeesIndex({
     const [editingAmount, setEditingAmount] = useState(null);
 
     const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
+    const totalOutstanding = rows.reduce((sum, row) => sum + (row.outstanding_balance || 0), 0);
 
     const goToMonth = (target) => {
         router.get('/monthly-fees', { year: target.year, month: target.month });
@@ -128,34 +129,41 @@ export default function MonthlyFeesIndex({
                                             {row.children.length} {row.children.length === 1 ? 'child' : 'children'}
                                         </div>
 
-                                        <div className="flex items-center justify-end gap-1.5 text-sm" onClick={(e) => e.stopPropagation()}>
-                                            {isOpenMonth && editingExpected === row.guardian_id ? (
-                                                <InlineAmountEditor
-                                                    initial={row.expected_amount}
-                                                    onSave={(value) => saveExpected(row.guardian_id, value)}
-                                                />
-                                            ) : row.expected_amount ? (
-                                                <>
-                                                    <span>{fmt(row.expected_amount)}</span>
-                                                    {isOpenMonth && (
-                                                        <button
-                                                            onClick={() => setEditingExpected(row.guardian_id)}
-                                                            className="text-gray-400 hover:text-indigo-600"
-                                                            title="Edit expected fee"
-                                                        >
-                                                            <Pencil className="h-3.5 w-3.5" />
-                                                        </button>
-                                                    )}
-                                                </>
-                                            ) : isOpenMonth ? (
-                                                <button
-                                                    onClick={() => setEditingExpected(row.guardian_id)}
-                                                    className="rounded border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:border-red-400 hover:bg-red-100"
-                                                >
-                                                    Set fee
-                                                </button>
-                                            ) : (
-                                                <span>&mdash;</span>
+                                        <div className="flex flex-col items-end gap-0.5 text-sm" onClick={(e) => e.stopPropagation()}>
+                                            <div className="flex items-center gap-1.5">
+                                                {isOpenMonth && editingExpected === row.guardian_id ? (
+                                                    <InlineAmountEditor
+                                                        initial={row.expected_amount}
+                                                        onSave={(value) => saveExpected(row.guardian_id, value)}
+                                                    />
+                                                ) : row.expected_amount ? (
+                                                    <>
+                                                        <span>{fmt(row.expected_amount)}</span>
+                                                        {isOpenMonth && (
+                                                            <button
+                                                                onClick={() => setEditingExpected(row.guardian_id)}
+                                                                className="text-gray-400 hover:text-indigo-600"
+                                                                title="Edit expected fee"
+                                                            >
+                                                                <Pencil className="h-3.5 w-3.5" />
+                                                            </button>
+                                                        )}
+                                                    </>
+                                                ) : isOpenMonth ? (
+                                                    <button
+                                                        onClick={() => setEditingExpected(row.guardian_id)}
+                                                        className="rounded border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:border-red-400 hover:bg-red-100"
+                                                    >
+                                                        Set fee
+                                                    </button>
+                                                ) : (
+                                                    <span>&mdash;</span>
+                                                )}
+                                            </div>
+                                            {row.outstanding_balance > 0 && (
+                                                <div className="text-xs font-medium text-red-600" title="Owed from earlier months">
+                                                    +{fmt(row.outstanding_balance)} owed
+                                                </div>
                                             )}
                                         </div>
 
@@ -225,6 +233,22 @@ export default function MonthlyFeesIndex({
                                                 <span>Phone</span>
                                                 <span>{row.phone}</span>
                                             </div>
+                                            {row.outstanding_balance > 0 && (
+                                                <div className="mt-2 space-y-0.5 border-t border-gray-200 pt-2">
+                                                    <div className="flex justify-between text-gray-500">
+                                                        <span>This month</span>
+                                                        <span>{fmt(row.expected_amount)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-red-600">
+                                                        <span>Owed from earlier months</span>
+                                                        <span>{fmt(row.outstanding_balance)}</span>
+                                                    </div>
+                                                    <div className="flex justify-between font-semibold text-gray-900">
+                                                        <span>Total due</span>
+                                                        <span>{fmt(row.total_due)}</span>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -237,9 +261,16 @@ export default function MonthlyFeesIndex({
                             )}
                         </div>
 
-                        <div className="flex items-center justify-between border-t border-gray-200 bg-gray-50 px-4 py-3">
+                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-4 py-3">
                             <span className="text-sm font-semibold text-gray-600">Collected so far — {monthLabel}</span>
-                            <span className="text-lg font-bold text-gray-900">{fmt(totalCollected)}</span>
+                            <div className="flex items-center gap-4">
+                                {totalOutstanding > 0 && (
+                                    <span className="text-sm font-medium text-red-600">
+                                        {fmt(totalOutstanding)} owed from earlier months
+                                    </span>
+                                )}
+                                <span className="text-lg font-bold text-gray-900">{fmt(totalCollected)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
