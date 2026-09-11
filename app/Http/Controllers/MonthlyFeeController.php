@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Guardian;
 use App\Models\MonthlyFeeEntry;
 use App\Models\MonthlyFeeSetting;
+use App\Models\School;
 use App\Services\MonthlyFeeLedgerService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -171,6 +172,7 @@ class MonthlyFeeController extends Controller
             // by school_id rather than relying on SchoolScope alone.
             'creditOutstanding' => (float) (MonthlyFeeSetting::where('school_id', $schoolId)->sum('credit_balance') ?? 0),
             'arrearsActivity' => $arrearsActivity,
+            'holidayMonths' => School::find($schoolId)?->holiday_months ?? [],
         ]);
     }
 
@@ -282,6 +284,23 @@ class MonthlyFeeController extends Controller
         $this->ledger->applyCreditToArrears($guardian->id, $request->user()->id);
 
         return back()->with('success', 'Credit applied to arrears.');
+    }
+
+    public function updateHolidayMonths(Request $request)
+    {
+        $validated = $request->validate([
+            // 'present' (not 'required') so an empty array — clearing all
+            // holiday months back out — validates successfully. Laravel's
+            // 'required' rule treats an empty array as "missing" and would
+            // reject a legitimate clear-to-[] request.
+            'holiday_months' => ['present', 'array'],
+            'holiday_months.*' => ['integer', 'between:1,12'],
+        ]);
+
+        $school = School::findOrFail($request->user()->school_id);
+        $school->update(['holiday_months' => $validated['holiday_months']]);
+
+        return back()->with('success', 'Holiday months updated.');
     }
 
     /**

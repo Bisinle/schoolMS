@@ -706,6 +706,7 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
             Route::put('/monthly-fees/entries/{entry}', [MonthlyFeeController::class, 'updateCollected'])->name('monthly-fees.update-collected');
             Route::post('/monthly-fees/guardians/{guardian}/record-payment', [MonthlyFeeController::class, 'recordPayment'])->name('monthly-fees.record-payment');
             Route::post('/monthly-fees/guardians/{guardian}/apply-credit', [MonthlyFeeController::class, 'applyCredit'])->name('monthly-fees.apply-credit');
+            Route::put('/monthly-fees/holiday-months', [MonthlyFeeController::class, 'updateHolidayMonths'])->name('monthly-fees.update-holiday-months');
         });
     });
 
