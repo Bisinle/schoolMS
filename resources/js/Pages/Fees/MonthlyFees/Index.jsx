@@ -134,9 +134,9 @@ export default function MonthlyFeesIndex({
                                                     initial={row.expected_amount}
                                                     onSave={(value) => saveExpected(row.guardian_id, value)}
                                                 />
-                                            ) : (
+                                            ) : row.expected_amount ? (
                                                 <>
-                                                    <span>{row.expected_amount ? fmt(row.expected_amount) : '—'}</span>
+                                                    <span>{fmt(row.expected_amount)}</span>
                                                     {isOpenMonth && (
                                                         <button
                                                             onClick={() => setEditingExpected(row.guardian_id)}
@@ -147,6 +147,15 @@ export default function MonthlyFeesIndex({
                                                         </button>
                                                     )}
                                                 </>
+                                            ) : isOpenMonth ? (
+                                                <button
+                                                    onClick={() => setEditingExpected(row.guardian_id)}
+                                                    className="rounded border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:border-red-400 hover:bg-red-100"
+                                                >
+                                                    Set fee
+                                                </button>
+                                            ) : (
+                                                <span>&mdash;</span>
                                             )}
                                         </div>
 
@@ -164,7 +173,9 @@ export default function MonthlyFeesIndex({
                                                 <>
                                                     {row.status === 'paid' && (
                                                         <>
-                                                            <span className="text-sm font-medium text-green-700">{fmt(row.amount_collected)}</span>
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
+                                                                <Check className="h-3 w-3" /> Paid
+                                                            </span>
                                                             <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Adjust amount">
                                                                 <Pencil className="h-3.5 w-3.5" />
                                                             </button>
@@ -204,8 +215,9 @@ export default function MonthlyFeesIndex({
                                         <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 pl-10 text-sm">
                                             <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Children</div>
                                             {row.children.map((child) => (
-                                                <div key={child.name} className="flex justify-between text-gray-600">
+                                                <div key={child.name} className="flex items-baseline gap-2 text-gray-600">
                                                     <span className="font-medium text-gray-800">{child.name}</span>
+                                                    <span className="text-gray-400">&middot;</span>
                                                     <span>{child.grade}</span>
                                                 </div>
                                             ))}
