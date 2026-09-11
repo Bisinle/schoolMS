@@ -1,8 +1,12 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import RecordPaymentModal from '@/Components/MonthlyFees/RecordPaymentModal';
+import StatCard from '@/Components/UI/StatCard';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2 } from 'lucide-react';
+import {
+    ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2,
+    Wallet, AlertTriangle, PiggyBank, UserX, Clock, ClipboardList, TrendingUp, UserCheck, Settings,
+} from 'lucide-react';
 
 export default function MonthlyFeesIndex({
     auth, year, month, monthLabel, isOpenMonth, canBrowseNext, prev, next, rows, totalCollected,
@@ -16,6 +20,21 @@ export default function MonthlyFeesIndex({
     const [recordPaymentGuardian, setRecordPaymentGuardian] = useState(null);
 
     const fmt = (n) => 'KES ' + Number(n || 0).toLocaleString('en-KE');
+
+    // Derived purely from this month's own rows — distinct from the
+    // cash-basis `collectedThisPeriod`/`arrearsCollectedThisPeriod` props,
+    // which come from the append-only payments ledger and can include cash
+    // received for other months. These are simple this-month accrual totals.
+    const totalExpectedThisPeriod = rows.reduce((sum, row) => sum + Number(row.expected_amount || 0), 0);
+    const totalCollectedThisMonth = rows.reduce((sum, row) => sum + Number(row.amount_collected || 0), 0);
+    const remainingThisMonth = rows.reduce(
+        (sum, row) => sum + Math.max(0, Number(row.expected_amount || 0) - Number(row.amount_collected || 0)),
+        0,
+    );
+    const collectionRate = totalExpectedThisPeriod > 0 ? Math.round((totalCollectedThisMonth / totalExpectedThisPeriod) * 100) : 0;
+    const unpaidGuardianCount = rows.filter((row) => row.status === 'unpaid' || row.status === 'partial' || row.status === 'needs_fee').length;
+    const paidGuardianCount = rows.filter((row) => row.status === 'paid').length;
+    const needsFeeCount = rows.filter((row) => row.status === 'needs_fee').length;
 
     const goToMonth = (target) => {
         router.get('/monthly-fees', { year: target.year, month: target.month });
@@ -271,32 +290,77 @@ export default function MonthlyFeesIndex({
                     </div>
 
                     {/* Analytics cards */}
-                    <div className="mb-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-                        <div className="rounded-lg border-2 border-gray-300 bg-white p-4">
-                            <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Collected this period</div>
-                            <div className="mt-1 font-mono text-xl font-bold text-green-700">{fmt(collectedThisPeriod)}</div>
-                        </div>
+                    <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+                        <StatCard
+                            icon={Wallet}
+                            title="Collected this period"
+                            value={fmt(collectedThisPeriod)}
+                            gradient="from-green-500 to-green-600"
+                        />
 
-                        <button
+                        <StatCard
+                            icon={AlertTriangle}
+                            title="Arrears"
+                            value={fmt(arrearsActivity.reduce((sum, g) => sum + g.still_owing, 0))}
+                            gradient="from-red-500 to-red-600"
                             onClick={() => setShowArrearsDrilldown((prevState) => !prevState)}
-                            className="rounded-lg border-2 border-gray-300 bg-white p-4 text-left hover:border-indigo-300"
                         >
-                            <div className="flex items-center justify-between">
-                                <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Arrears</div>
-                                <ChevronDown className={`h-4 w-4 text-gray-400 transition-transform ${showArrearsDrilldown ? 'rotate-180' : ''}`} />
+                            <div className="mt-2 flex items-center justify-between text-xs text-gray-500">
+                                <span>{fmt(arrearsCollectedThisPeriod)} collected &middot; {arrearsActivity.length} {arrearsActivity.length === 1 ? 'guardian' : 'guardians'}</span>
+                                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-transform ${showArrearsDrilldown ? 'rotate-180' : ''}`} />
                             </div>
-                            <div className="mt-1 text-sm text-amber-700">Collected: <span className="font-mono font-bold">{fmt(arrearsCollectedThisPeriod)}</span></div>
-                            <div className="text-sm text-red-600">Still owed: <span className="font-mono font-bold">{fmt(arrearsActivity.reduce((sum, g) => sum + g.still_owing, 0))}</span></div>
-                            <div className="mt-1 text-xs text-gray-400">{arrearsActivity.length} {arrearsActivity.length === 1 ? 'guardian' : 'guardians'}</div>
-                        </button>
+                        </StatCard>
 
-                        <div className="rounded-lg border-2 border-gray-300 bg-white p-4">
-                            <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Credit outstanding</div>
-                            <div className="mt-1 font-mono text-xl font-bold text-indigo-700">{fmt(creditOutstanding)}</div>
-                            {creditRecognizedThisPeriod > 0 && (
-                                <div className="mt-1 text-xs text-gray-400">{fmt(creditRecognizedThisPeriod)} recognized from credit this period</div>
-                            )}
-                        </div>
+                        <StatCard
+                            icon={PiggyBank}
+                            title="Credit outstanding"
+                            value={fmt(creditOutstanding)}
+                            gradient="from-indigo-500 to-indigo-600"
+                            trend={creditRecognizedThisPeriod > 0 ? `${fmt(creditRecognizedThisPeriod)} recognized this period` : undefined}
+                            trendDirection="up"
+                        />
+
+                        <StatCard
+                            icon={UserX}
+                            title="Haven't paid"
+                            value={unpaidGuardianCount}
+                            gradient="from-orange-500 to-orange-600"
+                        />
+
+                        <StatCard
+                            icon={Clock}
+                            title="Remaining this month"
+                            value={fmt(remainingThisMonth)}
+                            gradient="from-amber-500 to-amber-600"
+                        />
+
+                        <StatCard
+                            icon={ClipboardList}
+                            title="Total expected"
+                            value={fmt(totalExpectedThisPeriod)}
+                            gradient="from-blue-500 to-blue-600"
+                        />
+
+                        <StatCard
+                            icon={TrendingUp}
+                            title="Collection rate"
+                            value={`${collectionRate}%`}
+                            gradient="from-emerald-500 to-emerald-600"
+                        />
+
+                        <StatCard
+                            icon={UserCheck}
+                            title="Fully paid"
+                            value={paidGuardianCount}
+                            gradient="from-teal-500 to-teal-600"
+                        />
+
+                        <StatCard
+                            icon={Settings}
+                            title="Needs fee set"
+                            value={needsFeeCount}
+                            gradient="from-gray-500 to-gray-600"
+                        />
                     </div>
 
                     {/* Arrears drill-down */}

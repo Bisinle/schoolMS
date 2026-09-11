@@ -17,8 +17,10 @@ import { TrendingUp, TrendingDown } from 'lucide-react';
  * @param {string} props.trendDirection - Trend direction: 'up' or 'down' (default: 'up')
  * @param {string} props.color - Alternative to gradient, single color name
  * @param {string} props.href - Optional link URL (makes card clickable)
+ * @param {Function} props.onClick - Optional click handler (makes card a button instead of navigating; ignored if href is set)
+ * @param {React.ReactNode} props.children - Optional extra content rendered below the value (e.g. a secondary line)
  * @param {string} props.className - Additional CSS classes
- * 
+ *
  * @example
  * <StatCard
  *   icon={Users}
@@ -40,6 +42,8 @@ export default function StatCard({
     color,
     href,
     link, // Support both 'link' and 'href' for backwards compatibility
+    onClick,
+    children,
     className = '',
 }) {
     // Use label or title (label takes precedence for backwards compatibility)
@@ -53,8 +57,10 @@ export default function StatCard({
         ? `from-${color}-500 to-${color}-600`
         : gradient;
 
+    const isInteractive = Boolean(displayHref || onClick);
+
     const CardContent = (
-        <div className={`group relative bg-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden ${displayHref ? 'active:scale-95 cursor-pointer' : ''} ${className}`}>
+        <div className={`group relative bg-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden ${isInteractive ? 'active:scale-95 cursor-pointer' : ''} ${className}`}>
             {/* Background Gradient */}
             <div className={`absolute inset-0 bg-gradient-to-br ${gradientClasses} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
 
@@ -82,6 +88,7 @@ export default function StatCard({
                             {trend}
                         </p>
                     )}
+                    {children}
                 </div>
             </div>
 
@@ -90,6 +97,18 @@ export default function StatCard({
         </div>
     );
 
-    return displayHref ? <Link href={displayHref}>{CardContent}</Link> : CardContent;
+    if (displayHref) {
+        return <Link href={displayHref}>{CardContent}</Link>;
+    }
+
+    if (onClick) {
+        return (
+            <button type="button" onClick={onClick} className="block w-full text-left">
+                {CardContent}
+            </button>
+        );
+    }
+
+    return CardContent;
 }
 
