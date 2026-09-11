@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
-import { ChevronRight, ChevronLeft, Pencil, Check, Undo2 } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2 } from 'lucide-react';
 
 export default function MonthlyFeesIndex({
     auth, year, month, monthLabel, isOpenMonth, canBrowseNext, prev, next, rows, totalCollected,
@@ -49,18 +49,155 @@ export default function MonthlyFeesIndex({
         );
     };
 
-    const statusBadge = (status) => {
-        const styles = {
-            paid: 'bg-green-100 text-green-700',
-            partial: 'bg-amber-100 text-amber-700',
-            unpaid: 'bg-gray-100 text-gray-600',
-            needs_fee: 'bg-red-100 text-red-700',
+    const statusMeta = (row) => {
+        const map = {
+            paid: { style: 'bg-green-100 text-green-700 border-green-200', label: row.outstanding_balance > 0 ? 'This month paid' : 'Paid' },
+            partial: { style: 'bg-amber-100 text-amber-700 border-amber-200', label: 'Partial' },
+            unpaid: { style: 'bg-gray-100 text-gray-600 border-gray-200', label: 'Unpaid' },
+            needs_fee: { style: 'bg-red-100 text-red-700 border-red-200', label: 'Needs fee' },
         };
-        const labels = { paid: 'Paid', partial: 'Partial', unpaid: 'Unpaid', needs_fee: 'Needs fee' };
+        return map[row.status];
+    };
+
+    const StatusBadge = ({ row }) => {
+        const meta = statusMeta(row);
         return (
-            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${styles[status]}`}>
-                {labels[status]}
+            <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold ${meta.style}`}>
+                {meta.label}
             </span>
+        );
+    };
+
+    // Shared across the desktop and mobile layouts so the two views can
+    // never drift out of sync with each other.
+    const ExpectedCell = ({ row, align = 'end' }) => (
+        <div className={`flex flex-col gap-1 ${align === 'end' ? 'items-end' : 'items-start'}`} onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-1.5">
+                {isOpenMonth && editingExpected === row.guardian_id ? (
+                    <InlineAmountEditor initial={row.expected_amount} onSave={(value) => saveExpected(row.guardian_id, value)} />
+                ) : row.expected_amount ? (
+                    <>
+                        <span className="font-mono text-sm font-semibold text-gray-900">{fmt(row.expected_amount)}</span>
+                        {isOpenMonth && (
+                            <button onClick={() => setEditingExpected(row.guardian_id)} className="text-gray-400 hover:text-indigo-600" title="Edit expected fee">
+                                <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </>
+                ) : isOpenMonth ? (
+                    <button
+                        onClick={() => setEditingExpected(row.guardian_id)}
+                        className="rounded border border-red-300 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-700 hover:border-red-400 hover:bg-red-100"
+                    >
+                        Set fee
+                    </button>
+                ) : (
+                    <span className="text-gray-400">&mdash;</span>
+                )}
+            </div>
+            {row.outstanding_balance > 0 && (
+                <span className="whitespace-nowrap text-xs font-semibold text-red-600" title="Owed from earlier months">
+                    +{fmt(row.outstanding_balance)} owed
+                </span>
+            )}
+        </div>
+    );
+
+    const CollectedControls = ({ row, align = 'end' }) => (
+        <div className={`flex flex-wrap items-center gap-1.5 ${align === 'end' ? 'justify-end' : 'justify-start'}`} onClick={(e) => e.stopPropagation()}>
+            {row.status === 'needs_fee' && <StatusBadge row={row} />}
+
+            {row.status !== 'needs_fee' && editingAmount === row.entry_id && (
+                <InlineAmountEditor initial={row.amount_collected || 0} onSave={(value) => saveAmount(row.entry_id, value)} />
+            )}
+
+            {row.status !== 'needs_fee' && editingAmount !== row.entry_id && (
+                <>
+                    {row.status === 'paid' && (
+                        <>
+                            <StatusBadge row={row} />
+                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Adjust amount">
+                                <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <button onClick={() => undoPaid(row.entry_id)} className="text-gray-400 hover:text-red-600" title="Undo — this was marked paid by mistake">
+                                <Undo2 className="h-3.5 w-3.5" />
+                            </button>
+                        </>
+                    )}
+                    {row.status === 'partial' && (
+                        <>
+                            <span className="font-mono text-sm font-semibold text-amber-700">{fmt(row.amount_collected)}</span>
+                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Adjust amount">
+                                <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <StatusBadge row={row} />
+                        </>
+                    )}
+                    {row.status === 'unpaid' && (
+                        <>
+                            <button
+                                onClick={() => markPaid(row.entry_id)}
+                                className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs font-semibold text-gray-700 hover:border-green-500 hover:bg-green-50 hover:text-green-700"
+                            >
+                                Mark paid
+                            </button>
+                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Enter a specific amount">
+                                <Pencil className="h-3.5 w-3.5" />
+                            </button>
+                            <StatusBadge row={row} />
+                        </>
+                    )}
+                </>
+            )}
+        </div>
+    );
+
+    const ExpandedDetail = ({ row }) => (
+        <div className="space-y-3 border-t border-gray-200 bg-gray-50 p-4">
+            <div>
+                <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-gray-500">Children</div>
+                <div className="space-y-1.5">
+                    {row.children.map((child) => (
+                        <div key={child.name} className="flex items-center justify-between rounded border border-gray-200 bg-white px-3 py-1.5 text-sm">
+                            <span className="font-semibold text-gray-800">{child.name}</span>
+                            <span className="text-gray-500">{child.grade}</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+                <span className="font-semibold text-gray-500">Phone</span>
+                <span className="font-mono text-gray-700">{row.phone}</span>
+            </div>
+            {row.outstanding_balance > 0 && (
+                <div className="space-y-1 rounded border border-red-200 bg-red-50 p-3 text-sm">
+                    <div className="flex justify-between text-gray-700">
+                        <span>This month</span>
+                        <span className="font-mono">{fmt(row.expected_amount)}</span>
+                    </div>
+                    <div className="flex justify-between text-red-700">
+                        <span>Owed from earlier months</span>
+                        <span className="font-mono">{fmt(row.outstanding_balance)}</span>
+                    </div>
+                    <div className="flex justify-between border-t border-red-200 pt-1 font-bold text-gray-900">
+                        <span>Total due</span>
+                        <span className="font-mono">{fmt(row.total_due)}</span>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+
+    const ExpandToggle = ({ row }) => {
+        const open = !!openRows[row.guardian_id];
+        return (
+            <button
+                onClick={() => toggleRow(row.guardian_id)}
+                className="flex items-center gap-1 rounded-full border border-gray-200 bg-white px-2.5 py-1 text-xs font-semibold text-gray-600 hover:border-indigo-300 hover:text-indigo-600"
+            >
+                {open ? 'Hide details' : `${row.children.length} ${row.children.length === 1 ? 'child' : 'children'}`}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
         );
     };
 
@@ -68,42 +205,46 @@ export default function MonthlyFeesIndex({
         <AuthenticatedLayout auth={auth} header={<h2 className="text-xl font-semibold text-gray-800">Monthly Fees</h2>}>
             <Head title="Monthly Fees" />
 
-            <div className="py-6">
-                <div className="mx-auto max-w-6xl sm:px-6 lg:px-8">
-                    <div className="overflow-hidden rounded-lg bg-white shadow">
-                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 p-4">
-                            <div className="flex items-center gap-2">
+            <div className="py-4 sm:py-6">
+                <div className="mx-auto max-w-6xl px-3 sm:px-6 lg:px-8">
+                    {/* Toolbar */}
+                    <div className="mb-4 rounded-lg border-2 border-gray-300 bg-white p-3 sm:p-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center justify-center gap-2">
                                 <button
                                     onClick={() => goToMonth(prev)}
-                                    className="rounded border border-gray-300 p-1.5 text-gray-500 hover:border-indigo-400 hover:text-indigo-600"
+                                    className="rounded border border-gray-300 p-2 text-gray-500 hover:border-indigo-400 hover:text-indigo-600"
                                     aria-label="Previous month"
                                 >
                                     <ChevronLeft className="h-4 w-4" />
                                 </button>
-                                <div className="min-w-[10rem] text-center text-lg font-semibold text-gray-900">{monthLabel}</div>
+                                <div className="min-w-[9rem] text-center text-lg font-bold text-gray-900">{monthLabel}</div>
                                 <button
                                     onClick={() => goToMonth(next)}
                                     disabled={!canBrowseNext}
-                                    className="rounded border border-gray-300 p-1.5 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
+                                    className="rounded border border-gray-300 p-2 text-gray-500 hover:border-indigo-400 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
                                     aria-label="Next month"
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </button>
                             </div>
-                            <p className="max-w-xs text-xs text-gray-500">
-                                {isOpenMonth
-                                    ? "This month is re-checked for new guardians every time it's opened."
-                                    : 'Viewing a past month — new guardians are not added here.'}
-                            </p>
                             <button
                                 onClick={openNextMonth}
-                                className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white hover:bg-indigo-500"
+                                className="rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-indigo-700"
                             >
                                 Open next month &rarr;
                             </button>
                         </div>
+                        <p className="mt-2 text-center text-xs text-gray-500 sm:text-left">
+                            {isOpenMonth
+                                ? "This month is re-checked for new guardians every time it's opened."
+                                : 'Viewing a past month — new guardians are not added here.'}
+                        </p>
+                    </div>
 
-                        <div className="hidden grid-cols-[20px_2fr_1fr_1.1fr_1fr] gap-3 border-b border-gray-200 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-gray-400 sm:grid">
+                    {/* Desktop table */}
+                    <div className="hidden overflow-hidden rounded-lg border-2 border-gray-300 bg-white lg:block">
+                        <div className="grid grid-cols-[28px_2fr_0.9fr_1.1fr_1.5fr] gap-3 border-b-2 border-gray-300 bg-gray-100 px-4 py-3 text-xs font-bold uppercase tracking-wider text-gray-600">
                             <span></span>
                             <span>Guardian</span>
                             <span>Children</span>
@@ -112,165 +253,79 @@ export default function MonthlyFeesIndex({
                         </div>
 
                         <div className="divide-y divide-gray-200">
-                            {rows.map((row) => (
-                                <div key={row.guardian_id}>
-                                    <div
-                                        className="grid cursor-pointer grid-cols-[20px_1fr] items-center gap-2 px-4 py-3 hover:bg-gray-50 sm:grid-cols-[20px_2fr_1fr_1.1fr_1fr] sm:gap-3"
-                                        onClick={() => toggleRow(row.guardian_id)}
-                                    >
-                                        <ChevronRight
-                                            className={`h-3.5 w-3.5 text-gray-400 transition-transform ${openRows[row.guardian_id] ? 'rotate-90' : ''}`}
-                                        />
+                            {rows.map((row, index) => (
+                                <div key={row.guardian_id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                                    <div className="grid grid-cols-[28px_2fr_0.9fr_1.1fr_1.5fr] items-center gap-3 px-4 py-3">
+                                        <span />
                                         <div>
-                                            <div className="font-semibold text-gray-900">{row.guardian_name}</div>
+                                            <div className="font-bold text-gray-900">{row.guardian_name}</div>
                                             <div className="text-xs text-gray-400">{row.guardian_number}</div>
                                         </div>
-                                        <div className="text-sm text-gray-600">
-                                            {row.children.length} {row.children.length === 1 ? 'child' : 'children'}
+                                        <div>
+                                            <ExpandToggle row={row} />
                                         </div>
-
-                                        <div className="flex flex-col items-end gap-0.5 text-sm" onClick={(e) => e.stopPropagation()}>
-                                            <div className="flex items-center gap-1.5">
-                                                {isOpenMonth && editingExpected === row.guardian_id ? (
-                                                    <InlineAmountEditor
-                                                        initial={row.expected_amount}
-                                                        onSave={(value) => saveExpected(row.guardian_id, value)}
-                                                    />
-                                                ) : row.expected_amount ? (
-                                                    <>
-                                                        <span>{fmt(row.expected_amount)}</span>
-                                                        {isOpenMonth && (
-                                                            <button
-                                                                onClick={() => setEditingExpected(row.guardian_id)}
-                                                                className="text-gray-400 hover:text-indigo-600"
-                                                                title="Edit expected fee"
-                                                            >
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </button>
-                                                        )}
-                                                    </>
-                                                ) : isOpenMonth ? (
-                                                    <button
-                                                        onClick={() => setEditingExpected(row.guardian_id)}
-                                                        className="rounded border border-red-300 bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:border-red-400 hover:bg-red-100"
-                                                    >
-                                                        Set fee
-                                                    </button>
-                                                ) : (
-                                                    <span>&mdash;</span>
-                                                )}
-                                            </div>
-                                            {row.outstanding_balance > 0 && (
-                                                <div className="text-xs font-medium text-red-600" title="Owed from earlier months">
-                                                    +{fmt(row.outstanding_balance)} owed
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
-                                            {row.status === 'needs_fee' && statusBadge('needs_fee')}
-
-                                            {row.status !== 'needs_fee' && editingAmount === row.entry_id && (
-                                                <InlineAmountEditor
-                                                    initial={row.amount_collected || 0}
-                                                    onSave={(value) => saveAmount(row.entry_id, value)}
-                                                />
-                                            )}
-
-                                            {row.status !== 'needs_fee' && editingAmount !== row.entry_id && (
-                                                <>
-                                                    {row.status === 'paid' && (
-                                                        <>
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                                                                <Check className="h-3 w-3" /> Paid
-                                                            </span>
-                                                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Adjust amount">
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </button>
-                                                            <button onClick={() => undoPaid(row.entry_id)} className="text-gray-400 hover:text-red-600" title="Undo — this was marked paid by mistake">
-                                                                <Undo2 className="h-3.5 w-3.5" />
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {row.status === 'partial' && (
-                                                        <>
-                                                            <span className="text-sm font-medium text-amber-700">{fmt(row.amount_collected)}</span>
-                                                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Adjust amount">
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {row.status === 'unpaid' && (
-                                                        <>
-                                                            <button
-                                                                onClick={() => markPaid(row.entry_id)}
-                                                                className="rounded border border-gray-300 px-2 py-1 text-xs font-semibold text-gray-700 hover:border-green-500 hover:text-green-700"
-                                                            >
-                                                                Mark paid
-                                                            </button>
-                                                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-400 hover:text-indigo-600" title="Enter a specific amount">
-                                                                <Pencil className="h-3.5 w-3.5" />
-                                                            </button>
-                                                        </>
-                                                    )}
-                                                    {statusBadge(row.status)}
-                                                </>
-                                            )}
-                                        </div>
+                                        <ExpectedCell row={row} />
+                                        <CollectedControls row={row} />
                                     </div>
 
-                                    {openRows[row.guardian_id] && (
-                                        <div className="border-t border-gray-100 bg-gray-50 px-4 py-3 pl-10 text-sm">
-                                            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-gray-400">Children</div>
-                                            {row.children.map((child) => (
-                                                <div key={child.name} className="flex items-baseline gap-2 text-gray-600">
-                                                    <span className="font-medium text-gray-800">{child.name}</span>
-                                                    <span className="text-gray-400">&middot;</span>
-                                                    <span>{child.grade}</span>
-                                                </div>
-                                            ))}
-                                            <div className="mt-2 flex justify-between text-gray-400">
-                                                <span>Phone</span>
-                                                <span>{row.phone}</span>
-                                            </div>
-                                            {row.outstanding_balance > 0 && (
-                                                <div className="mt-2 space-y-0.5 border-t border-gray-200 pt-2">
-                                                    <div className="flex justify-between text-gray-500">
-                                                        <span>This month</span>
-                                                        <span>{fmt(row.expected_amount)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between text-red-600">
-                                                        <span>Owed from earlier months</span>
-                                                        <span>{fmt(row.outstanding_balance)}</span>
-                                                    </div>
-                                                    <div className="flex justify-between font-semibold text-gray-900">
-                                                        <span>Total due</span>
-                                                        <span>{fmt(row.total_due)}</span>
-                                                    </div>
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
+                                    {openRows[row.guardian_id] && <ExpandedDetail row={row} />}
                                 </div>
                             ))}
 
                             {rows.length === 0 && (
-                                <div className="px-4 py-10 text-center text-sm text-gray-400">
-                                    No guardians with active students yet.
-                                </div>
+                                <div className="px-4 py-10 text-center text-sm text-gray-400">No guardians with active students yet.</div>
                             )}
                         </div>
+                    </div>
 
-                        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-4 py-3">
-                            <span className="text-sm font-semibold text-gray-600">Collected so far — {monthLabel}</span>
-                            <div className="flex items-center gap-4">
-                                {totalOutstanding > 0 && (
-                                    <span className="text-sm font-medium text-red-600">
-                                        {fmt(totalOutstanding)} owed from earlier months
-                                    </span>
-                                )}
-                                <span className="text-lg font-bold text-gray-900">{fmt(totalCollected)}</span>
+                    {/* Mobile cards */}
+                    <div className="space-y-3 lg:hidden">
+                        {rows.map((row) => (
+                            <div key={row.guardian_id} className="overflow-hidden rounded-lg border-2 border-gray-300 bg-white">
+                                <div className="p-4">
+                                    <div className="mb-3 flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <div className="truncate font-bold text-gray-900">{row.guardian_name}</div>
+                                            <div className="text-xs text-gray-400">{row.guardian_number}</div>
+                                        </div>
+                                        <StatusBadge row={row} />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                                            <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Expected</span>
+                                            <ExpectedCell row={row} />
+                                        </div>
+                                        <div className="flex items-center justify-between rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                                            <span className="text-xs font-bold uppercase tracking-wide text-gray-500">Collected</span>
+                                            <CollectedControls row={row} />
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-3">
+                                        <ExpandToggle row={row} />
+                                    </div>
+                                </div>
+
+                                {openRows[row.guardian_id] && <ExpandedDetail row={row} />}
                             </div>
+                        ))}
+
+                        {rows.length === 0 && (
+                            <div className="rounded-lg border-2 border-gray-300 bg-white px-4 py-10 text-center text-sm text-gray-400">
+                                No guardians with active students yet.
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Totals footer */}
+                    <div className="mt-4 flex flex-col gap-2 rounded-lg border-2 border-gray-300 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
+                        <span className="text-sm font-bold text-gray-700">Collected so far &mdash; {monthLabel}</span>
+                        <div className="flex flex-col items-start gap-1 sm:items-end">
+                            {totalOutstanding > 0 && (
+                                <span className="text-sm font-semibold text-red-600">{fmt(totalOutstanding)} owed from earlier months</span>
+                            )}
+                            <span className="font-mono text-xl font-bold text-gray-900">{fmt(totalCollected)}</span>
                         </div>
                     </div>
                 </div>
@@ -291,7 +346,7 @@ function InlineAmountEditor({ initial, onSave }) {
                 autoFocus
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="w-24 rounded border border-indigo-400 px-1.5 py-0.5 text-right text-sm"
+                className="w-24 rounded border border-indigo-400 px-1.5 py-1 text-right font-mono text-sm"
             />
             <button onClick={() => onSave(value)} className="text-green-600 hover:text-green-800">
                 <Check className="h-4 w-4" />
