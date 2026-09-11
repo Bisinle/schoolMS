@@ -205,9 +205,14 @@ class MonthlyFeeController extends Controller
         // its expected_amount stays the snapshot from when it was generated.
         $latest = $this->ledger->latestMonth($guardian->school_id);
 
+        // A holiday-month entry's expected_amount is deliberately, permanently
+        // 0 (spec: "never recomputed later") — never let a rate change reach
+        // it, even though its amount_collected is typically null and would
+        // otherwise match the "untouched by real cash" guard above.
         MonthlyFeeEntry::where('guardian_id', $guardian->id)
             ->where('year', $latest['year'])
             ->where('month', $latest['month'])
+            ->where('is_holiday', false)
             ->where(function ($query) {
                 $query->whereNull('amount_collected')
                     ->orWhereColumn('amount_collected', 'credit_applied');
@@ -297,8 +302,13 @@ class MonthlyFeeController extends Controller
             'holiday_months.*' => ['integer', 'between:1,12'],
         ]);
 
+        // Force real ints: a client could in principle send numeric strings,
+        // and syncMonth()'s in_array(..., true) strict check would silently
+        // never match a stored "4" against the int 4 it compares against.
+        $holidayMonths = array_map('intval', $validated['holiday_months']);
+
         $school = School::findOrFail($request->user()->school_id);
-        $school->update(['holiday_months' => $validated['holiday_months']]);
+        $school->update(['holiday_months' => $holidayMonths]);
 
         return back()->with('success', 'Holiday months updated.');
     }
@@ -323,10 +333,10 @@ class MonthlyFeeController extends Controller
                 'year' => $latest['year'],
                 'month' => $latest['month'],
             ],
-            [
-                'school_id' => $schoolId,
-                'expected_amount' => $guardian->monthlyFeeSetting?->expected_fee ?? 0,
-            ]
+            array_merge(
+                ['school_id' => $schoolId],
+                $this->ledger->entryAttributesFor($schoolId, $guardian->id, $latest['month'])
+            )
         );
 
         $monthDate = Carbon::create($latest['year'], $latest['month'], 1);

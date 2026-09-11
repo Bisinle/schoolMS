@@ -27,6 +27,8 @@ export default function MonthlyFeeGuardianShow({
                                 <p className="mt-1 text-sm text-gray-500">
                                     Your fee for this month hasn&apos;t been set yet — please check with the school office.
                                 </p>
+                            ) : status === 'holiday' ? (
+                                <p className="mt-1 text-2xl font-bold text-blue-700">No fee this month — school holiday</p>
                             ) : nothingDue ? (
                                 <p className="mt-1 text-2xl font-bold text-green-700">Fully paid</p>
                             ) : (

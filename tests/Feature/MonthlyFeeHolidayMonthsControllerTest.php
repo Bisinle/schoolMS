@@ -88,6 +88,22 @@ class MonthlyFeeHolidayMonthsControllerTest extends TestCase
         $response->assertInertia(fn ($page) => $page->where('holidayMonths', []));
     }
 
+    public function test_holiday_months_submitted_as_numeric_strings_are_coerced_to_real_ints(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
+        $admin = $this->makeAdmin($school);
+
+        // A client could in principle send numeric strings for the month
+        // values. Laravel's 'integer' validation rule accepts a numeric
+        // string without casting it, so without explicit coercion the
+        // stored array could contain "4" instead of 4 — silently breaking
+        // syncMonth()'s in_array($month, $holidayMonths, true) strict check.
+        $this->actingAs($admin)->put('/monthly-fees/holiday-months', ['holiday_months' => ['4', '8']]);
+
+        $this->assertSame([4, 8], $school->fresh()->holiday_months);
+    }
+
     public function test_termly_school_gets_404_on_the_holiday_months_route(): void
     {
         $this->withoutVite();

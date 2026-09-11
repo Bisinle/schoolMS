@@ -83,6 +83,30 @@ class MonthlyFeeControllerTest extends TestCase
         $this->assertSame('unpaid', $entry->fresh()->status);
     }
 
+    public function test_update_expected_fee_never_touches_a_holiday_months_entry(): void
+    {
+        $this->withoutVite();
+        $currentMonth = now()->month;
+        $school = School::factory()->create(['fee_module' => 'monthly', 'holiday_months' => [$currentMonth]]);
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+
+        $this->actingAs($admin)->get('/monthly-fees'); // syncs the open (holiday) month
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $this->assertTrue($entry->is_holiday);
+        $this->assertSame('0.00', $entry->expected_amount);
+
+        $this->actingAs($admin)
+            ->put("/monthly-fees/guardians/{$guardian->id}/expected-fee", ['expected_fee' => 24000])
+            ->assertRedirect();
+
+        // A rate change must never overwrite a holiday month's permanent
+        // zero-expected-amount, even though its amount_collected is null
+        // and would otherwise match the "untouched by real cash" guard.
+        $this->assertSame('0.00', $entry->fresh()->expected_amount);
+        $this->assertTrue($entry->fresh()->is_holiday);
+    }
+
     public function test_mark_paid_sets_collected_to_expected_amount(): void
     {
         $this->withoutVite();
@@ -214,6 +238,33 @@ class MonthlyFeeControllerTest extends TestCase
             // uses assertSame, so the expectation must match that int.
             ->where('expectedAmount', 16000)
         );
+    }
+
+    public function test_guardian_show_creates_its_own_holiday_aware_entry_when_none_exists_yet(): void
+    {
+        $this->withoutVite();
+        // Deliberately no admin ledger page load and no syncMonth() call
+        // first — this guardian's own portal is the very first thing to
+        // ever create their entry for the currently-open (holiday) month.
+        // This is the same gap as recordPayment()'s: guardianShow() has its
+        // own independent firstOrCreate that must be just as holiday-aware
+        // as syncMonth()'s.
+        $currentMonth = now()->month;
+        $school = School::factory()->create(['fee_module' => 'monthly', 'holiday_months' => [$currentMonth]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+
+        $response = $this->actingAs($guardian->user)->get('/guardian/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('expectedAmount', 0)
+            ->where('amountDue', 0)
+            ->where('status', 'holiday')
+        );
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $this->assertTrue($entry->is_holiday);
+        $this->assertSame('0.00', $entry->expected_amount);
     }
 
     public function test_index_shows_outstanding_balance_and_total_due_from_a_past_unpaid_month(): void

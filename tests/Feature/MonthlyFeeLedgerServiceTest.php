@@ -242,6 +242,30 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $this->assertSame('16000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
     }
 
+    public function test_record_payment_creates_its_own_holiday_aware_entry_when_none_exists_yet(): void
+    {
+        // Deliberately no syncMonth() call first — recordPayment()'s own
+        // firstOrCreate is the very first thing to ever touch this month's
+        // entry for this guardian. This is exactly the gap the final
+        // whole-branch review found: syncMonth() was made holiday-aware,
+        // but recordPayment()'s independent firstOrCreate was not, so a
+        // payment landing before any admin ledger page load would have
+        // wrongly created the entry at the guardian's full standing rate.
+        $currentMonth = now()->month;
+        $school = School::factory()->create(['holiday_months' => [$currentMonth]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        $service->recordPayment($guardian->id, 16000, $admin->id);
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $this->assertTrue($entry->is_holiday);
+        $this->assertSame('0.00', $entry->expected_amount);
+        $this->assertNull($entry->amount_collected);
+        $this->assertSame('16000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+    }
+
     public function test_latest_month_defaults_to_current_calendar_month_when_ledger_never_opened(): void
     {
         $school = School::factory()->create(['fee_module' => 'monthly']);

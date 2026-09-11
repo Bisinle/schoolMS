@@ -73,8 +73,7 @@ class MonthlyFeeLedgerService
             ->get()
             ->keyBy('guardian_id');
 
-        $holidayMonths = School::find($schoolId)?->holiday_months ?? [];
-        $isHolidayMonth = in_array($month, $holidayMonths, true);
+        $isHolidayMonth = $this->isHolidayMonth($schoolId, $month);
 
         foreach ($missingGuardianIds as $guardianId) {
             DB::transaction(function () use ($schoolId, $guardianId, $year, $month, $settingsByGuardian, $isHolidayMonth) {
@@ -120,6 +119,40 @@ class MonthlyFeeLedgerService
                 }
             });
         }
+    }
+
+    /**
+     * Whether $month is one of $schoolId's configured recurring holiday
+     * months. The single definition of "holiday" every entry-creation site
+     * (syncMonth, guardianShow, recordPayment) must agree on — never
+     * reimplement this check inline.
+     */
+    private function isHolidayMonth(int $schoolId, int $month): bool
+    {
+        return in_array($month, School::find($schoolId)?->holiday_months ?? [], true);
+    }
+
+    /**
+     * What a brand-new MonthlyFeeEntry should look like for this guardian's
+     * (year, month) — the single source of truth used by every code path
+     * that can create an entry outside syncMonth's own bulk loop
+     * (guardianShow's and recordPayment's firstOrCreate calls), so none of
+     * them can independently drift out of holiday-awareness. syncMonth
+     * keeps its own inline creation (it needs the locked MonthlyFeeSetting
+     * for credit consumption, which this helper deliberately doesn't do),
+     * but shares the same isHolidayMonth() check above.
+     *
+     * @return array{expected_amount: float, is_holiday: bool}
+     */
+    public function entryAttributesFor(int $schoolId, int $guardianId, int $month): array
+    {
+        if ($this->isHolidayMonth($schoolId, $month)) {
+            return ['expected_amount' => 0.0, 'is_holiday' => true];
+        }
+
+        $expectedFee = (float) (MonthlyFeeSetting::where('guardian_id', $guardianId)->value('expected_fee') ?? 0);
+
+        return ['expected_amount' => $expectedFee, 'is_holiday' => false];
     }
 
     /**
@@ -224,7 +257,10 @@ class MonthlyFeeLedgerService
 
             $currentEntry = MonthlyFeeEntry::lockForUpdate()->firstOrCreate(
                 ['guardian_id' => $guardianId, 'year' => $latest['year'], 'month' => $latest['month']],
-                ['school_id' => $schoolId, 'expected_amount' => $setting->expected_fee]
+                array_merge(
+                    ['school_id' => $schoolId],
+                    $this->entryAttributesFor($schoolId, $guardianId, $latest['month'])
+                )
             );
 
             $appliedToCurrentMonth = 0.0;
