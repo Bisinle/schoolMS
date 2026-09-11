@@ -7,7 +7,7 @@ import useCumulativeLoading from '@/Hooks/useCumulativeLoading';
 import { Head, router } from '@inertiajs/react';
 import { useState } from 'react';
 import {
-    ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2,
+    ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2, Plus,
     Wallet, AlertTriangle, PiggyBank, UserX, Clock, ClipboardList, UserCheck, Settings,
 } from 'lucide-react';
 
@@ -113,8 +113,8 @@ export default function MonthlyFeesIndex({
                     <>
                         <span className="font-mono text-sm font-semibold text-gray-900">{fmt(row.expected_amount)}</span>
                         {isOpenMonth && (
-                            <button onClick={() => setEditingExpected(row.guardian_id)} className="text-gray-400 hover:text-indigo-600" title="Edit expected fee">
-                                <Pencil className="h-3.5 w-3.5" />
+                            <button onClick={() => setEditingExpected(row.guardian_id)} className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600" title="Edit expected fee">
+                                <Pencil className="h-4 w-4" />
                             </button>
                         )}
                     </>
@@ -150,53 +150,64 @@ export default function MonthlyFeesIndex({
         </div>
     );
 
-    const CollectedControls = ({ row, align = 'end' }) => (
-        <div className={`flex flex-wrap items-center gap-1.5 ${align === 'end' ? 'justify-end' : 'justify-start'}`} onClick={(e) => e.stopPropagation()}>
-            {row.status !== 'paid' && (
-                <button
-                    onClick={() => setRecordPaymentGuardian(row)}
-                    className="rounded bg-green-600 px-2.5 py-1 text-xs font-bold text-white hover:bg-green-700"
-                >
-                    Record Payment
-                </button>
-            )}
+    const CollectedControls = ({ row, align = 'end' }) => {
+        // What's left to collect — expected + any arrears, minus whatever
+        // has actually been recorded so far. This is the number an admin
+        // needs on hand the moment a guardian asks "how much do I still
+        // owe", so it's shown directly rather than making anyone subtract
+        // Expected and Collected by hand.
+        const balance = Math.max(0, (row.total_due ?? row.expected_amount ?? 0) - (row.amount_collected || 0));
 
-            {row.status === 'needs_fee' && <StatusBadge row={row} />}
+        return (
+            <div className={`flex flex-wrap items-center gap-2 ${align === 'end' ? 'justify-end' : 'justify-start'}`} onClick={(e) => e.stopPropagation()}>
+                {row.status !== 'paid' && (
+                    <button
+                        onClick={() => setRecordPaymentGuardian(row)}
+                        className="shrink-0 rounded-full bg-green-600 p-1.5 text-white hover:bg-green-700"
+                        title="Record Payment"
+                    >
+                        <Plus className="h-4 w-4" />
+                    </button>
+                )}
 
-            {row.status !== 'needs_fee' && editingAmount === row.entry_id && (
-                <InlineAmountEditor initial={row.amount_collected || 0} onSave={(value) => saveAmount(row.entry_id, value)} />
-            )}
+                {row.status !== 'needs_fee' && editingAmount === row.entry_id && (
+                    <InlineAmountEditor initial={row.amount_collected || 0} onSave={(value) => saveAmount(row.entry_id, value)} />
+                )}
 
-            {row.status !== 'needs_fee' && editingAmount !== row.entry_id && (
-                <>
-                    {row.status === 'paid' && (
-                        <>
-                            <StatusBadge row={row} />
-                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-300 hover:text-indigo-600" title="Fix a mistake in this specific month">
-                                <Pencil className="h-3 w-3" />
+                {row.status !== 'needs_fee' && editingAmount !== row.entry_id && (
+                    <>
+                        {row.status === 'paid' && (
+                            <>
+                                <StatusBadge row={row} />
+                                <button onClick={() => setEditingAmount(row.entry_id)} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600" title="Fix a mistake in this specific month">
+                                    <Pencil className="h-4 w-4" />
+                                </button>
+                                <button onClick={() => undoPaid(row.entry_id)} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-red-600" title="Undo — this was marked paid by mistake">
+                                    <Undo2 className="h-4 w-4" />
+                                </button>
+                            </>
+                        )}
+                        {row.status === 'partial' && (
+                            <>
+                                <div className="flex flex-col items-end leading-tight">
+                                    <span className="font-mono text-xs text-amber-700">{fmt(row.amount_collected)} collected</span>
+                                    <span className="whitespace-nowrap font-mono text-xs font-bold text-red-600">Balance {fmt(balance)}</span>
+                                </div>
+                                <button onClick={() => setEditingAmount(row.entry_id)} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600" title="Fix a mistake in this specific month">
+                                    <Pencil className="h-4 w-4" />
+                                </button>
+                            </>
+                        )}
+                        {row.status === 'unpaid' && (
+                            <button onClick={() => setEditingAmount(row.entry_id)} className="shrink-0 rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-indigo-600" title="Fix a mistake in this specific month">
+                                <Pencil className="h-4 w-4" />
                             </button>
-                            <button onClick={() => undoPaid(row.entry_id)} className="text-gray-300 hover:text-red-600" title="Undo — this was marked paid by mistake">
-                                <Undo2 className="h-3 w-3" />
-                            </button>
-                        </>
-                    )}
-                    {row.status === 'partial' && (
-                        <>
-                            <span className="font-mono text-xs text-amber-700">{fmt(row.amount_collected)}</span>
-                            <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-300 hover:text-indigo-600" title="Fix a mistake in this specific month">
-                                <Pencil className="h-3 w-3" />
-                            </button>
-                        </>
-                    )}
-                    {row.status === 'unpaid' && (
-                        <button onClick={() => setEditingAmount(row.entry_id)} className="text-gray-300 hover:text-indigo-600" title="Fix a mistake in this specific month">
-                            <Pencil className="h-3 w-3" />
-                        </button>
-                    )}
-                </>
-            )}
-        </div>
-    );
+                        )}
+                    </>
+                )}
+            </div>
+        );
+    };
 
     const ExpandedDetail = ({ row }) => (
         <div className="space-y-3 border-t border-gray-200 bg-gray-50 p-4">
@@ -454,7 +465,8 @@ export default function MonthlyFeesIndex({
                                             <div className="truncate font-bold text-gray-900">{row.guardian_name}</div>
                                             <div className="text-xs text-gray-400">{row.guardian_number}</div>
                                         </div>
-                                        <StatusBadge row={row} />
+                                        {/* The "Set fee" button below already says this — showing both is the exact redundancy being avoided. */}
+                                        {row.status !== 'needs_fee' && <StatusBadge row={row} />}
                                     </div>
 
                                     <div className="space-y-2">
