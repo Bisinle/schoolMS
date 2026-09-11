@@ -112,4 +112,56 @@ class MonthlyFeeTenantIsolationTest extends TestCase
         $guardianIds = MonthlyFeeEntry::where('school_id', $schoolA->id)->pluck('guardian_id');
         $this->assertNotContains($guardianB->id, $guardianIds);
     }
+
+    public function test_admin_gets_404_recording_a_payment_for_another_schools_guardian(): void
+    {
+        $this->withoutVite();
+
+        $schoolA = School::factory()->create();
+        $adminA = $this->makeAdmin($schoolA);
+
+        $schoolB = School::factory()->create();
+        $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 16000);
+
+        $response = $this->actingAs($adminA)
+            ->post("/monthly-fees/guardians/{$guardianB->id}/record-payment", ['amount' => 16000]);
+
+        $response->assertNotFound();
+    }
+
+    public function test_admin_gets_404_applying_credit_for_another_schools_guardian(): void
+    {
+        $this->withoutVite();
+
+        $schoolA = School::factory()->create();
+        $adminA = $this->makeAdmin($schoolA);
+
+        $schoolB = School::factory()->create();
+        $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 16000);
+
+        $response = $this->actingAs($adminA)->post("/monthly-fees/guardians/{$guardianB->id}/apply-credit");
+
+        $response->assertNotFound();
+    }
+
+    public function test_analytics_never_sum_another_schools_payments(): void
+    {
+        $this->withoutVite();
+
+        $schoolA = School::factory()->create();
+        $adminA = $this->makeAdmin($schoolA);
+        $guardianA = $this->makeGuardianWithActiveChild($schoolA, expectedFee: 16000);
+        $this->actingAs($adminA)->get('/monthly-fees');
+        $this->actingAs($adminA)->post("/monthly-fees/guardians/{$guardianA->id}/record-payment", ['amount' => 16000]);
+
+        $schoolB = School::factory()->create();
+        $adminB = $this->makeAdmin($schoolB);
+        $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 50000);
+        $this->actingAs($adminB)->get('/monthly-fees');
+        $this->actingAs($adminB)->post("/monthly-fees/guardians/{$guardianB->id}/record-payment", ['amount' => 50000]);
+
+        $response = $this->actingAs($adminA)->get('/monthly-fees');
+
+        $response->assertInertia(fn ($page) => $page->where('collectedThisPeriod', 16000));
+    }
 }

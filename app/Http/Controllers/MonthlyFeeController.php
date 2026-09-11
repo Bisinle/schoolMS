@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Guardian;
 use App\Models\MonthlyFeeEntry;
+use App\Models\MonthlyFeePayment;
 use App\Models\MonthlyFeeSetting;
 use App\Services\MonthlyFeeLedgerService;
 use Illuminate\Http\Request;
@@ -71,6 +72,7 @@ class MonthlyFeeController extends Controller
                 'status' => $entry->status,
                 'outstanding_balance' => $outstandingBalance,
                 'total_due' => (float) $entry->expected_amount + $outstandingBalance,
+                'credit_balance' => (float) ($guardian->monthlyFeeSetting?->credit_balance ?? 0),
             ];
         })->sortBy('guardian_name')->values();
 
@@ -78,6 +80,29 @@ class MonthlyFeeController extends Controller
         $prev = $monthDate->copy()->subMonthNoOverflow();
         $next = $monthDate->copy()->addMonthNoOverflow();
         $wouldBrowsePastOpenMonth = $isOpenMonth;
+
+        $arrearsActivity = $this->ledger->arrearsActivityForSchool($schoolId, $year, $month)
+            ->map(function ($entries, $guardianId) use ($outstandingByGuardian) {
+                $guardian = $entries->first()->guardian;
+
+                return [
+                    'guardian_id' => $guardianId,
+                    'guardian_name' => $guardian->full_name,
+                    'guardian_number' => $guardian->guardian_number,
+                    'still_owing' => $outstandingByGuardian[$guardianId] ?? 0.0,
+                    'months' => $entries->map(fn (MonthlyFeeEntry $e) => [
+                        'entry_id' => $e->id,
+                        'year' => $e->year,
+                        'month' => $e->month,
+                        'label' => Carbon::create($e->year, $e->month, 1)->format('F Y'),
+                        'expected_amount' => (float) $e->expected_amount,
+                        'amount_collected' => $e->amount_collected !== null ? (float) $e->amount_collected : null,
+                        'credit_applied' => (float) $e->credit_applied,
+                        'paid_date' => $e->paid_date?->format('Y-m-d'),
+                        'status' => $e->status,
+                    ])->values(),
+                ];
+            })->values();
 
         return Inertia::render('Fees/MonthlyFees/Index', [
             'year' => $year,
@@ -91,6 +116,10 @@ class MonthlyFeeController extends Controller
             'totalCollected' => $rows->sum(
                 fn ($row) => in_array($row['status'], ['paid', 'partial'], true) ? $row['amount_collected'] : 0
             ),
+            'collectedThisPeriod' => $this->ledger->collectedThisPeriod($schoolId, $year, $month),
+            'arrearsCollectedThisPeriod' => $this->ledger->arrearsCollectedThisPeriod($schoolId, $year, $month),
+            'creditRecognizedThisPeriod' => $this->ledger->creditRecognizedThisPeriod($schoolId, $year, $month),
+            'arrearsActivity' => $arrearsActivity,
         ]);
     }
 
@@ -126,7 +155,10 @@ class MonthlyFeeController extends Controller
         MonthlyFeeEntry::where('guardian_id', $guardian->id)
             ->where('year', $latest['year'])
             ->where('month', $latest['month'])
-            ->whereNull('amount_collected')
+            ->where(function ($query) {
+                $query->whereNull('amount_collected')
+                    ->orWhereColumn('amount_collected', 'credit_applied');
+            })
             ->update(['expected_amount' => $setting->expected_fee]);
 
         return back()->with('success', 'Expected fee updated.');
@@ -137,6 +169,8 @@ class MonthlyFeeController extends Controller
         if ($entry->expected_amount <= 0) {
             return back()->withErrors(['error' => 'Set an expected fee for this guardian before marking a payment.']);
         }
+
+        $this->ledger->recordManualCashChange($entry, (float) $entry->expected_amount, $request->user()->id);
 
         $entry->update([
             'amount_collected' => $entry->expected_amount,
@@ -149,8 +183,32 @@ class MonthlyFeeController extends Controller
 
     public function undoPaid(Request $request, MonthlyFeeEntry $entry)
     {
+        $creditPortion = (float) $entry->credit_applied;
+        $cashPortion = (float) ($entry->amount_collected ?? 0) - $creditPortion;
+
+        if ($creditPortion > 0) {
+            $this->ledger->refundCredit($entry, $request->user()->id);
+        }
+
+        if ($cashPortion > 0) {
+            $latest = $this->ledger->latestMonth($entry->school_id);
+            $isCurrentMonth = $entry->year === $latest['year'] && $entry->month === $latest['month'];
+
+            MonthlyFeePayment::create([
+                'school_id' => $entry->school_id,
+                'guardian_id' => $entry->guardian_id,
+                'amount' => -$cashPortion,
+                'applied_to_arrears' => $isCurrentMonth ? 0 : -$cashPortion,
+                'applied_to_current_month' => $isCurrentMonth ? -$cashPortion : 0,
+                'received_at' => now()->toDateString(),
+                'recorded_by' => $request->user()->id,
+                'corrects_entry_id' => $entry->id,
+            ]);
+        }
+
         $entry->update([
             'amount_collected' => null,
+            'credit_applied' => 0,
             'paid_date' => null,
             'recorded_by' => $request->user()->id,
         ]);
@@ -166,6 +224,8 @@ class MonthlyFeeController extends Controller
 
         $amount = (float) $validated['amount'];
 
+        $this->ledger->recordManualCashChange($entry, $amount, $request->user()->id);
+
         $entry->update([
             'amount_collected' => $amount > 0 ? $amount : null,
             'paid_date' => $amount > 0 ? ($entry->paid_date?->toDateString() ?? now()->toDateString()) : null,
@@ -173,6 +233,32 @@ class MonthlyFeeController extends Controller
         ]);
 
         return back()->with('success', 'Amount updated.');
+    }
+
+    public function recordPayment(Request $request, Guardian $guardian)
+    {
+        $validated = $request->validate([
+            'amount' => ['required', 'numeric', 'min:0.01'],
+            'received_at' => ['nullable', 'date'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $result = $this->ledger->recordPayment(
+            $guardian->id,
+            (float) $validated['amount'],
+            $request->user()->id,
+            $validated['received_at'] ?? null,
+            $validated['notes'] ?? null,
+        );
+
+        return back()->with('success', 'Payment recorded.')->with('payment_receipt', $result);
+    }
+
+    public function applyCredit(Request $request, Guardian $guardian)
+    {
+        $this->ledger->applyCreditToArrears($guardian->id, $request->user()->id);
+
+        return back()->with('success', 'Credit applied to arrears.');
     }
 
     /**
@@ -214,6 +300,7 @@ class MonthlyFeeController extends Controller
             'amountDue' => max($expected - $collected, 0) + $outstandingBalance,
             'expectedAmount' => $expected,
             'outstandingBalance' => $outstandingBalance,
+            'creditBalance' => (float) ($guardian->monthlyFeeSetting?->credit_balance ?? 0),
             'status' => $entry->status ?? 'needs_fee',
         ]);
     }

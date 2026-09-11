@@ -683,6 +683,8 @@ Route::middleware(['auth', 'school.admin', 'school.active'])->group(function () 
         Route::post('/monthly-fees/entries/{entry}/mark-paid', [MonthlyFeeController::class, 'markPaid'])->name('monthly-fees.mark-paid');
         Route::post('/monthly-fees/entries/{entry}/undo', [MonthlyFeeController::class, 'undoPaid'])->name('monthly-fees.undo');
         Route::put('/monthly-fees/entries/{entry}', [MonthlyFeeController::class, 'updateCollected'])->name('monthly-fees.update-collected');
+        Route::post('/monthly-fees/guardians/{guardian}/record-payment', [MonthlyFeeController::class, 'recordPayment'])->name('monthly-fees.record-payment');
+        Route::post('/monthly-fees/guardians/{guardian}/apply-credit', [MonthlyFeeController::class, 'applyCredit'])->name('monthly-fees.apply-credit');
 
         // Invoice Management
         Route::get('/invoices', [InvoiceController::class, 'index'])->name('invoices.index');

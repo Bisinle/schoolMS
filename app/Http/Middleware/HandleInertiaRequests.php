@@ -73,6 +73,7 @@ class HandleInertiaRequests extends Middleware
                 'error' => fn () => $request->session()->get('error'),
                 'generated_password' => fn () => $request->session()->get('generated_password'),
                 'user_name' => fn () => $request->session()->get('user_name'),
+                'payment_receipt' => fn () => $request->session()->get('payment_receipt'),
             ],
             'impersonation' => [
                 'isImpersonating' => session()->has('impersonated_by'),

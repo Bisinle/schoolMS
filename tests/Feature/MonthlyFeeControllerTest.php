@@ -266,4 +266,189 @@ class MonthlyFeeControllerTest extends TestCase
             ->where('amountDue', 16000)
         );
     }
+
+    public function test_record_payment_settles_arrears_and_current_month_and_flashes_a_receipt(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 8, 'expected_amount' => 16000,
+        ]);
+        // Advance the ledger past August so it becomes genuine arrears,
+        // distinct from the newly-opened "current" month (September) that
+        // the rest of the payment should apply to. A bare get('/monthly-fees')
+        // would NOT do this: latestMonth() treats the just-created August
+        // entry itself as the open month (it's already the latest entry in
+        // the table), so August would be synced as "current" rather than
+        // treated as arrears before it.
+        $this->actingAs($admin)->post('/monthly-fees/open-next-month');
+
+        $response = $this->actingAs($admin)
+            ->post("/monthly-fees/guardians/{$guardian->id}/record-payment", ['amount' => 32000]);
+
+        $response->assertRedirect();
+        $this->assertSame(1, \App\Models\MonthlyFeePayment::count());
+        $payment = \App\Models\MonthlyFeePayment::first();
+        $this->assertSame('16000.00', $payment->applied_to_arrears);
+        $this->assertSame('16000.00', $payment->applied_to_current_month);
+    }
+
+    public function test_record_payment_honors_a_submitted_received_at_date(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees');
+
+        $this->actingAs($admin)->post("/monthly-fees/guardians/{$guardian->id}/record-payment", [
+            'amount' => 16000, 'received_at' => '2026-08-28',
+        ]);
+
+        $payment = \App\Models\MonthlyFeePayment::first();
+        $this->assertSame('2026-08-28', $payment->received_at->format('Y-m-d'));
+    }
+
+    public function test_apply_credit_to_arrears_only_acts_when_explicitly_triggered(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 8, 'expected_amount' => 8000,
+        ]);
+        // Advance past August (making it genuine arrears, distinct from the
+        // new "current" month) *before* granting the credit balance — doing
+        // it after would let September's own sync auto-consume the credit
+        // via syncMonth()'s own credit-consumption step, defeating the point
+        // of this test (crediting must only ever happen when explicitly
+        // triggered via apply-credit).
+        $this->actingAs($admin)->post('/monthly-fees/open-next-month');
+        $guardian->monthlyFeeSetting->update(['credit_balance' => 8000]);
+
+        $response = $this->actingAs($admin)->post("/monthly-fees/guardians/{$guardian->id}/apply-credit");
+
+        $response->assertRedirect();
+        $august = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 8)->first();
+        $this->assertSame('8000.00', $august->amount_collected);
+        $this->assertSame('0.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+    }
+
+    public function test_undo_on_a_mixed_funded_entry_splits_the_refund_and_correction(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees');
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $entry->update(['amount_collected' => 8000, 'credit_applied' => 8000]); // simulate a prior credit settlement
+        $this->actingAs($admin)->put("/monthly-fees/entries/{$entry->id}", ['amount' => 16000]); // top up with real cash via the pencil
+
+        $this->actingAs($admin)->post("/monthly-fees/entries/{$entry->id}/undo")->assertRedirect();
+
+        $entry->refresh();
+        $this->assertNull($entry->amount_collected);
+        $this->assertSame('0.00', $entry->credit_applied);
+        $this->assertSame('8000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance); // the credit portion refunded
+        $correction = \App\Models\MonthlyFeePayment::where('corrects_entry_id', $entry->id)->first();
+        $this->assertNotNull($correction);
+        $this->assertSame('-8000.00', $correction->amount); // only the cash portion corrected, not the full 16000
+    }
+
+    public function test_index_exposes_the_new_analytics_and_arrears_activity(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees');
+        $this->actingAs($admin)->post("/monthly-fees/guardians/{$guardian->id}/record-payment", ['amount' => 16000]);
+
+        $response = $this->actingAs($admin)->get('/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('collectedThisPeriod', 16000)
+            ->has('arrearsActivity')
+            ->where('rows.0.credit_balance', 0)
+        );
+    }
+
+    public function test_guardian_show_exposes_credit_balance(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $guardian->monthlyFeeSetting->update(['credit_balance' => 5000]);
+
+        $response = $this->actingAs($guardian->user)->get('/guardian/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page->where('creditBalance', 5000));
+    }
+
+    public function test_update_expected_fee_still_reaches_an_entry_settled_only_by_credit(): void
+    {
+        // Spec round-3 fix #3: an entry that's only ever been credit-settled
+        // was never confirmed by any real payment, so a rate change must
+        // still reach it — only real cash locks a month's price in.
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees');
+        $this->actingAs($admin)->post("/monthly-fees/guardians/{$guardian->id}/record-payment", ['amount' => 32000]); // 16000 current + 16000 credit
+        $this->actingAs($admin)->post('/monthly-fees/open-next-month'); // next month fully credit-settles from the 16000
+
+        $nextEntry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->orderByDesc('month')->first();
+        $this->assertSame('16000.00', $nextEntry->credit_applied);
+        $this->assertSame('paid', $nextEntry->status);
+
+        $this->actingAs($admin)
+            ->put("/monthly-fees/guardians/{$guardian->id}/expected-fee", ['expected_fee' => 24000])
+            ->assertRedirect();
+
+        $this->assertSame('24000.00', $nextEntry->fresh()->expected_amount);
+        $this->assertSame('partial', $nextEntry->fresh()->status); // 16000 collected against a new 24000 price
+    }
+
+    public function test_mark_paid_logs_the_full_amount_to_the_cash_ledger(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees');
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+
+        $this->actingAs($admin)->post("/monthly-fees/entries/{$entry->id}/mark-paid");
+
+        $payment = \App\Models\MonthlyFeePayment::first();
+        $this->assertNotNull($payment);
+        $this->assertSame('16000.00', $payment->amount);
+        $this->assertSame('16000.00', $payment->applied_to_current_month);
+    }
+
+    public function test_update_collected_logs_only_the_delta_to_the_cash_ledger(): void
+    {
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees');
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
+        $this->actingAs($admin)->put("/monthly-fees/entries/{$entry->id}", ['amount' => 5000]);
+
+        $this->actingAs($admin)->put("/monthly-fees/entries/{$entry->id}", ['amount' => 12000]); // top up by 7000 more
+
+        $this->assertSame(2, \App\Models\MonthlyFeePayment::count());
+        $second = \App\Models\MonthlyFeePayment::orderBy('id')->skip(1)->first();
+        $this->assertSame('7000.00', $second->amount); // only the delta, not the full 12000
+    }
 }
