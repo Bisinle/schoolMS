@@ -251,10 +251,20 @@ class MonthlyFeeLedgerService
 
     /**
      * Returns however much of $entry's amount_collected was credit-funded
-     * back to the guardian's credit_balance — used by undoPaid() (Task 3),
-     * which separately handles the cash portion (if any) via a negative
-     * monthly_fee_payments correction. Locked the same way every other
+     * back to the guardian's credit_balance. Locked the same way every other
      * credit_balance write is.
+     *
+     * NOT used by undoEntry() (the controller's actual undo path) — undoing
+     * an entry needs the credit refund, the cash correction, and the
+     * entry reset to all happen inside ONE locked transaction, and composing
+     * this method's own separate transaction with a second one for the cash
+     * side was exactly the double-refund race undoEntry() was written to
+     * close. undoEntry() does its own inline locked refund instead. This
+     * method is kept only because it has standalone test coverage exercising
+     * "give back just the credit portion" in isolation; it has no production
+     * call site. Do not wire this into any new caller that also needs to do
+     * something else to the same entry/guardian in the same operation —
+     * follow undoEntry()'s single-transaction pattern instead.
      */
     public function refundCredit(MonthlyFeeEntry $entry, int $recordedBy): void
     {
@@ -495,6 +505,18 @@ class MonthlyFeeLedgerService
      * with in a meaningful sense — a row created in the same second as that
      * snapshot is still legitimately part of this still-open period, so the
      * comparison there stays inclusive).
+     *
+     * Known edge case, accepted as-is: if a period's own first entry and the
+     * NEXT period's first entry land in the same whole-second `created_at`
+     * (only possible via a scripted/automated month rollover with no real
+     * elapsed time, not ordinary sequential admin actions), `start == end`
+     * for this period, so its half-open window is empty and it reports 0 —
+     * the money isn't lost, it's attributed to the next period instead
+     * (whose window starts at that same instant, inclusive on its own
+     * `end_is_boundary` side). This is strictly better than the double-
+     * counting bug this method was written to fix, just not a fully closed
+     * edge case; revisit only if a real school ever produces a genuinely
+     * automated, sub-second rollover.
      *
      * @return array{start: string, end: string, end_is_boundary: bool}
      */

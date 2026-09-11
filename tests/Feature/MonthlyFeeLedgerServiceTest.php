@@ -612,12 +612,18 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
         // In real use, "record payment" and "open next month" are separate
         // admin actions taken at least a moment apart, so travel forward to
-        // reflect that realistic gap. This is no longer load-bearing for
-        // correctness: periodBounds()'s boundary tie (a row landing at
-        // exactly the instant a new period opens) is itself now handled
-        // correctly by Fix 4's half-open `>= start AND < end` intervals —
-        // see test_credit_consumption_at_exactly_a_period_boundary_is_attributed_to_only_one_period()
-        // below for the dedicated regression covering that exact tie.
+        // reflect that realistic gap. This IS still load-bearing: without
+        // it, the payment and October's entry can land in the same second,
+        // making September's window zero-width (start == end) and causing
+        // September's own collectedThisPeriod to read 0 instead of 32000 —
+        // Fix 4's half-open intervals stop a boundary tie from being
+        // double-counted, but a same-second start/end still produces an
+        // empty window for the closing period (see periodBounds()'s doc
+        // comment). See
+        // test_credit_consumption_at_exactly_a_period_boundary_is_attributed_to_only_one_period()
+        // below for the dedicated regression covering the boundary-tie case
+        // specifically (October correctly getting sole credit, not both
+        // months getting it).
         $this->travel(1)->second();
         $service->openNextMonth($school->id); // October opens, consumes the 16000 credit
 
