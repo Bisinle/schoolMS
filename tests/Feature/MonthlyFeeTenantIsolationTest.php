@@ -57,10 +57,10 @@ class MonthlyFeeTenantIsolationTest extends TestCase
     {
         $this->withoutVite();
 
-        $schoolA = School::factory()->create();
+        $schoolA = School::factory()->create(['fee_module' => 'monthly']);
         $adminA = $this->makeAdmin($schoolA);
 
-        $schoolB = School::factory()->create();
+        $schoolB = School::factory()->create(['fee_module' => 'monthly']);
         $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 20000);
         $this->actingAs($this->makeAdmin($schoolB))->get('/monthly-fees');
         $entryB = MonthlyFeeEntry::where('guardian_id', $guardianB->id)->first();
@@ -74,10 +74,10 @@ class MonthlyFeeTenantIsolationTest extends TestCase
     {
         $this->withoutVite();
 
-        $schoolA = School::factory()->create();
+        $schoolA = School::factory()->create(['fee_module' => 'monthly']);
         $adminA = $this->makeAdmin($schoolA);
 
-        $schoolB = School::factory()->create();
+        $schoolB = School::factory()->create(['fee_module' => 'monthly']);
         $guardianB = $this->makeGuardianWithActiveChild($schoolB);
 
         $response = $this->actingAs($adminA)
@@ -90,11 +90,11 @@ class MonthlyFeeTenantIsolationTest extends TestCase
     {
         $this->withoutVite();
 
-        $schoolA = School::factory()->create();
+        $schoolA = School::factory()->create(['fee_module' => 'monthly']);
         $adminA = $this->makeAdmin($schoolA);
         $guardianA = $this->makeGuardianWithActiveChild($schoolA, expectedFee: 32000);
 
-        $schoolB = School::factory()->create();
+        $schoolB = School::factory()->create(['fee_module' => 'monthly']);
         $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 32000);
 
         // Sync school B's own open month for the same (year, month) so both
@@ -117,10 +117,10 @@ class MonthlyFeeTenantIsolationTest extends TestCase
     {
         $this->withoutVite();
 
-        $schoolA = School::factory()->create();
+        $schoolA = School::factory()->create(['fee_module' => 'monthly']);
         $adminA = $this->makeAdmin($schoolA);
 
-        $schoolB = School::factory()->create();
+        $schoolB = School::factory()->create(['fee_module' => 'monthly']);
         $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 16000);
 
         $response = $this->actingAs($adminA)
@@ -133,10 +133,10 @@ class MonthlyFeeTenantIsolationTest extends TestCase
     {
         $this->withoutVite();
 
-        $schoolA = School::factory()->create();
+        $schoolA = School::factory()->create(['fee_module' => 'monthly']);
         $adminA = $this->makeAdmin($schoolA);
 
-        $schoolB = School::factory()->create();
+        $schoolB = School::factory()->create(['fee_module' => 'monthly']);
         $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 16000);
 
         $response = $this->actingAs($adminA)->post("/monthly-fees/guardians/{$guardianB->id}/apply-credit");
@@ -148,13 +148,13 @@ class MonthlyFeeTenantIsolationTest extends TestCase
     {
         $this->withoutVite();
 
-        $schoolA = School::factory()->create();
+        $schoolA = School::factory()->create(['fee_module' => 'monthly']);
         $adminA = $this->makeAdmin($schoolA);
         $guardianA = $this->makeGuardianWithActiveChild($schoolA, expectedFee: 16000);
         $this->actingAs($adminA)->get('/monthly-fees');
         $this->actingAs($adminA)->post("/monthly-fees/guardians/{$guardianA->id}/record-payment", ['amount' => 16000]);
 
-        $schoolB = School::factory()->create();
+        $schoolB = School::factory()->create(['fee_module' => 'monthly']);
         $adminB = $this->makeAdmin($schoolB);
         $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 50000);
         $this->actingAs($adminB)->get('/monthly-fees');
@@ -172,13 +172,13 @@ class MonthlyFeeTenantIsolationTest extends TestCase
         // implicitly — it must explicitly filter by school_id itself.
         $this->withoutVite();
 
-        $schoolA = School::factory()->create();
+        $schoolA = School::factory()->create(['fee_module' => 'monthly']);
         $adminA = $this->makeAdmin($schoolA);
         $guardianA = $this->makeGuardianWithActiveChild($schoolA, expectedFee: 16000);
         $this->actingAs($adminA)->get('/monthly-fees');
         $guardianA->monthlyFeeSetting->update(['credit_balance' => 3000]);
 
-        $schoolB = School::factory()->create();
+        $schoolB = School::factory()->create(['fee_module' => 'monthly']);
         $adminB = $this->makeAdmin($schoolB);
         $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 50000);
         $this->actingAs($adminB)->get('/monthly-fees');

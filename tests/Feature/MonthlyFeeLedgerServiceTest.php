@@ -46,7 +46,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_sync_creates_one_entry_per_active_guardian_using_their_standing_rate(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
         (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
@@ -61,7 +61,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_sync_is_idempotent_and_never_overwrites_a_collected_amount(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
         $service = new MonthlyFeeLedgerService;
@@ -80,7 +80,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_sync_picks_up_a_guardian_who_joins_after_the_month_was_first_generated(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $existing = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
 
         $service = new MonthlyFeeLedgerService;
@@ -102,7 +102,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_sync_skips_a_guardian_with_no_active_students(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $user = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian']);
         Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $user->id, 'status' => 'active']);
         // No students attached at all.
@@ -114,7 +114,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_latest_month_defaults_to_current_calendar_month_when_ledger_never_opened(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $now = Carbon::now();
 
         $latest = (new MonthlyFeeLedgerService)->latestMonth($school->id);
@@ -125,7 +125,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_open_next_month_advances_and_syncs_the_new_month(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
         $service = new MonthlyFeeLedgerService;
@@ -142,7 +142,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_outstanding_balance_sums_unpaid_and_partial_months_before_the_given_month(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
 
         MonthlyFeeEntry::create([
@@ -161,7 +161,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_outstanding_balance_excludes_the_month_being_viewed_and_fully_paid_months(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
 
         MonthlyFeeEntry::create([
@@ -182,7 +182,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_outstanding_balance_never_goes_negative_from_a_past_overpayment(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
 
         MonthlyFeeEntry::create([
@@ -197,7 +197,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_outstanding_balances_for_school_computes_every_guardian_in_one_pass(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $behind = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
         $current = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
 
@@ -218,7 +218,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_record_payment_settles_multiple_old_months_oldest_first_then_current_month_then_credit(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
 
         MonthlyFeeEntry::create([
@@ -252,7 +252,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_record_payment_puts_leftover_beyond_the_current_month_into_credit_balance(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
         $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
@@ -269,7 +269,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
     {
         // Round-2 fix #1's exact regression: 5,000 already paid on a 16,000
         // bill must only be able to absorb 11,000 more, not another 16,000.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
         $current = MonthlyFeeEntry::where('guardian_id', $guardian->id)->first();
@@ -286,7 +286,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
     {
         // Round-2 fix #2: recordPayment must not assume the caller already
         // synced the open month.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
 
@@ -303,7 +303,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
     {
         // Round-3 fix #1: a guardian who's never had a fee set has no
         // MonthlyFeeSetting row — crediting them must not silently lose money.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $user = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian']);
         $guardian = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $user->id, 'status' => 'active']);
         Student::factory()->create(['school_id' => $school->id, 'guardian_id' => $guardian->id, 'status' => 'active']);
@@ -324,7 +324,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
     {
         // Round-2 fix #6: the cash-received date must be editable, not
         // silently forced to today.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
         $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
@@ -340,7 +340,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // The spec §1 worked example, reproduced exactly: rate changes
         // between the payment and the month opening, and the entry must
         // price against the NEW rate, not the one active at payment time.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -371,7 +371,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_sync_credit_consumption_sets_recorded_by_null_and_never_logs_a_payment_row(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -389,7 +389,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_refund_credit_returns_the_entrys_credit_applied_amount_to_the_guardians_balance(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -411,7 +411,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // The exact scenario round 3 found: an entry partially credit-settled,
         // then topped up with real cash, must split correctly on undo instead
         // of treating the whole amount as one or the other.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -440,7 +440,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // undo — refunding only the credit portion to credit_balance and
         // logging only the cash portion as a negative correction, through
         // the service's own logCashReceived() (not a raw controller write).
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -471,7 +471,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // credit twice or log two negative corrections. undoEntry() re-locks
         // and re-fetches the entry from inside its own transaction, so the
         // second call sees the already-reset row and is a genuine no-op.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -494,7 +494,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_record_manual_cash_change_logs_the_delta_classified_by_whether_the_entry_is_the_open_month(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -519,7 +519,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_record_manual_cash_change_logs_nothing_when_the_amount_is_unchanged(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -533,7 +533,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_apply_credit_to_arrears_settles_oldest_old_months_first_and_sets_credit_applied(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
         MonthlyFeeEntry::create([
             'school_id' => $school->id, 'guardian_id' => $guardian->id,
@@ -565,7 +565,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // credit_applied bookkeeping syncMonth does, or undoing an old
         // credit-settled month wrongly corrects phantom cash instead of
         // refunding the guardian's real credit.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
         $guardian->monthlyFeeSetting->update(['credit_balance' => 8000]);
         MonthlyFeeEntry::create([
@@ -585,7 +585,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
     {
         // Round-3 fix #4: bounded by the ledger's own open period, not
         // calendar-month boundaries.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -603,7 +603,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // The core regression for the cash-basis fix: a big payment made
         // while September is open must NOT inflate October's own
         // "collected this period" figure once credit auto-settles it.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -645,7 +645,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         // not as a rare race. Before the fix, the inclusive whereBetween used
         // by creditRecognizedThisPeriod() double-counted that instant into
         // BOTH the closing and the opening period.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $service = new MonthlyFeeLedgerService;
         $service->syncMonth($school->id, 2026, 9);
@@ -671,7 +671,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_arrears_collected_this_period_sums_only_the_arrears_portion(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         MonthlyFeeEntry::create([
             'school_id' => $school->id, 'guardian_id' => $guardian->id,
@@ -691,7 +691,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
     {
         // Round-4 fix: must key off credit_applied, not recorded_by IS NULL,
         // or it would miss everything applyCreditToArrears settles.
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardianA = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $guardianB = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
         MonthlyFeeEntry::create([
@@ -724,7 +724,7 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
     public function test_arrears_activity_for_school_lists_still_owing_and_resolved_this_period(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $stillOwing = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
         MonthlyFeeEntry::create([
             'school_id' => $school->id, 'guardian_id' => $stillOwing->id,

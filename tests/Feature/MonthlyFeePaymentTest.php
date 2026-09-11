@@ -24,7 +24,7 @@ class MonthlyFeePaymentTest extends TestCase
 
     public function test_a_payment_row_can_be_created_with_the_full_breakdown(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardian($school);
 
         $payment = MonthlyFeePayment::create([
@@ -44,7 +44,7 @@ class MonthlyFeePaymentTest extends TestCase
 
     public function test_a_correction_row_references_the_entry_it_corrects(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardian($school);
         $entry = MonthlyFeeEntry::create([
             'school_id' => $school->id, 'guardian_id' => $guardian->id,
@@ -65,7 +65,7 @@ class MonthlyFeePaymentTest extends TestCase
 
     public function test_monthly_fee_setting_defaults_credit_balance_to_zero(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardian($school);
 
         $setting = MonthlyFeeSetting::create([
@@ -79,7 +79,7 @@ class MonthlyFeePaymentTest extends TestCase
 
     public function test_monthly_fee_entry_defaults_credit_applied_to_zero(): void
     {
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardian($school);
 
         $entry = MonthlyFeeEntry::create([

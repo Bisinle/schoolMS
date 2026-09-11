@@ -49,7 +49,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_index_syncs_the_open_month_and_renders_the_guardian(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
@@ -66,7 +66,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_update_expected_fee_also_fixes_the_currently_open_unpaid_entry(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school); // no fee set yet
 
@@ -86,7 +86,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_mark_paid_sets_collected_to_expected_amount(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -103,7 +103,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_undo_reverses_a_paid_entry_back_to_unpaid(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -121,7 +121,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_update_collected_records_a_partial_amount(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -139,7 +139,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_update_collected_to_zero_behaves_like_undo(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -156,7 +156,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_open_next_month_advances_the_ledger(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -170,7 +170,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_browsing_a_closed_month_does_not_inject_a_newly_joined_guardian(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $this->makeGuardianWithActiveChild($school, expectedFee: 32000);
 
@@ -200,7 +200,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_guardian_can_view_their_own_current_month(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
 
         $response = $this->actingAs($guardian->user)->get('/guardian/monthly-fees');
@@ -219,7 +219,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_index_shows_outstanding_balance_and_total_due_from_a_past_unpaid_month(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
 
@@ -245,7 +245,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_guardian_amount_due_includes_outstanding_balance_from_a_past_unpaid_month(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
 
         MonthlyFeeEntry::create([
@@ -270,7 +270,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_record_payment_settles_arrears_and_current_month_and_flashes_a_receipt(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         MonthlyFeeEntry::create([
@@ -299,7 +299,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_record_payment_honors_a_submitted_received_at_date(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -315,7 +315,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_apply_credit_to_arrears_only_acts_when_explicitly_triggered(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
         MonthlyFeeEntry::create([
@@ -342,7 +342,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_undo_on_a_mixed_funded_entry_splits_the_refund_and_correction(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -364,7 +364,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_index_exposes_the_new_analytics_and_arrears_activity(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -388,7 +388,7 @@ class MonthlyFeeControllerTest extends TestCase
         // withdrew after the credit was earned) — a client-side sum over
         // `rows` would silently drop that guardian's stranded credit.
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $visibleGuardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -413,7 +413,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_guardian_show_exposes_credit_balance(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $guardian->monthlyFeeSetting->update(['credit_balance' => 5000]);
 
@@ -429,7 +429,7 @@ class MonthlyFeeControllerTest extends TestCase
         // was never confirmed by any real payment, so a rate change must
         // still reach it — only real cash locks a month's price in.
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -451,7 +451,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_mark_paid_logs_the_full_amount_to_the_cash_ledger(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -473,7 +473,7 @@ class MonthlyFeeControllerTest extends TestCase
         // drill-down, so it must be excluded from that display rather than
         // crashing the whole page for the school.
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 8000);
         MonthlyFeeEntry::create([
@@ -502,7 +502,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_update_collected_logs_only_the_delta_to_the_cash_ledger(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees');
@@ -521,7 +521,7 @@ class MonthlyFeeControllerTest extends TestCase
         // Deactivating a login (users.is_active) is a distinct action from
         // guardian.status, which this fix must not touch or duplicate.
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $guardian->user->update(['is_active' => false]);
@@ -536,7 +536,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_index_hides_an_already_existing_entry_once_the_guardians_user_account_is_deactivated(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees'); // creates the open-month entry while still active
@@ -558,7 +558,7 @@ class MonthlyFeeControllerTest extends TestCase
         // that entry even after they all later become inactive. Nothing
         // left to bill them for, so stop showing them on this page too.
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->actingAs($admin)->get('/monthly-fees'); // creates the entry while the child is still active
@@ -578,7 +578,7 @@ class MonthlyFeeControllerTest extends TestCase
         // never interact with guardians.status, which is a separate,
         // pre-existing system this change must not touch.
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
         $this->assertSame('active', $guardian->status);
@@ -593,7 +593,7 @@ class MonthlyFeeControllerTest extends TestCase
     public function test_index_paginates_rows_ten_per_page_matching_the_rest_of_the_app(): void
     {
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         for ($i = 0; $i < 15; $i++) {
             $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
@@ -625,7 +625,7 @@ class MonthlyFeeControllerTest extends TestCase
         // be showing — otherwise paginating would silently make these
         // numbers wrong.
         $this->withoutVite();
-        $school = School::factory()->create();
+        $school = School::factory()->create(['fee_module' => 'monthly']);
         $admin = $this->makeAdmin($school);
         for ($i = 0; $i < 12; $i++) {
             $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
