@@ -10,6 +10,10 @@ class MonthlyFeeEntry extends Model
 {
     use BelongsToSchool, HasFactory;
 
+    protected $attributes = [
+        'credit_applied' => 0,
+    ];
+
     protected $fillable = [
         'school_id',
         'guardian_id',
@@ -17,6 +21,7 @@ class MonthlyFeeEntry extends Model
         'month',
         'expected_amount',
         'amount_collected',
+        'credit_applied',
         'paid_date',
         'recorded_by',
         'notes',
@@ -31,6 +36,7 @@ class MonthlyFeeEntry extends Model
             'month' => 'integer',
             'expected_amount' => 'decimal:2',
             'amount_collected' => 'decimal:2',
+            'credit_applied' => 'decimal:2',
             'paid_date' => 'date',
         ];
     }
