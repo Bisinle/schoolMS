@@ -1,7 +1,7 @@
-const CACHE_NAME = 'schoolms-57080c5';
-const STATIC_CACHE = 'schoolms-static-57080c5';
-const DYNAMIC_CACHE = 'schoolms-dynamic-57080c5';
-const IMAGE_CACHE = 'schoolms-images-57080c5';
+const CACHE_NAME = 'schoolms-b63342e';
+const STATIC_CACHE = 'schoolms-static-b63342e';
+const DYNAMIC_CACHE = 'schoolms-dynamic-b63342e';
+const IMAGE_CACHE = 'schoolms-images-b63342e';
 const OFFLINE_URL = '/offline.html';
 
 // Core files to cache immediately, including the minimal, fully
