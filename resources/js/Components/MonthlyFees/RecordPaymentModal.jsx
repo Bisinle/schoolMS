@@ -3,7 +3,13 @@ import { router } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
 
 export default function RecordPaymentModal({ show, onClose, guardian }) {
-    const [amount, setAmount] = useState(guardian?.total_due || 0);
+    // Deliberately empty, never pre-filled with the guardian's total due —
+    // an admin who clicks "Record Payment" and immediately clicks the
+    // submit button again (e.g. a fast double-click, or just not noticing
+    // the field) must not silently record the full amount as if it had
+    // actually been typed in. The submit button itself stays disabled
+    // until a real amount is entered (see the disabled check below).
+    const [amount, setAmount] = useState('');
     const [receivedAt, setReceivedAt] = useState(new Date().toISOString().slice(0, 10));
     const [notes, setNotes] = useState('');
     const [processing, setProcessing] = useState(false);
@@ -14,12 +20,11 @@ export default function RecordPaymentModal({ show, onClose, guardian }) {
     // this app's established modal convention — see StudentImportModal /
     // GenerateReportModal), so `guardian` is still null on the very first
     // render and the useState initializers above never fire again for it.
-    // Without this, the amount field would always start at 0 instead of the
-    // selected guardian's total due, and the date/notes fields would carry
-    // over from whichever guardian was open previously.
+    // Without this, the date/notes fields would carry over from whichever
+    // guardian was open previously.
     useEffect(() => {
         if (guardian) {
-            setAmount(guardian.total_due || 0);
+            setAmount('');
             setReceivedAt(new Date().toISOString().slice(0, 10));
             setNotes('');
         }
@@ -79,9 +84,11 @@ export default function RecordPaymentModal({ show, onClose, guardian }) {
                     step="0.01"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
+                    placeholder={`e.g. ${Number(guardian.total_due || 0).toLocaleString('en-KE')}`}
+                    autoFocus
                     className="mt-1 w-full rounded border border-gray-300 px-3 py-2 font-mono"
                 />
-                {Number(amount) > guardian.total_due && (
+                {amount !== '' && Number(amount) > guardian.total_due && (
                     <p className="mt-1 text-xs text-indigo-600">
                         This covers everything owed, with {fmt(Number(amount) - guardian.total_due)} left over as credit for future months.
                     </p>
