@@ -18,6 +18,7 @@ export default function Edit({ school }) {
         address: school.address || '',
         status: school.status || 'trial',
         school_type: school.school_type || 'islamic_school',
+        fee_module: school.fee_module || 'termly',
         is_active: school.is_active || false,
         trial_ends_at: school.trial_ends_at ? school.trial_ends_at.split('T')[0] : '',
         logo: null,
@@ -289,6 +290,25 @@ export default function Edit({ school }) {
                                             <InputError message={errors.school_type} className="mt-2" />
                                             <p className="mt-2 text-sm text-gray-600">
                                                 Madrasah mode hides academic subjects in reports and forms
+                                            </p>
+                                        </div>
+
+                                        {/* Fee Module */}
+                                        <div>
+                                            <InputLabel htmlFor="fee_module" value="Fee Module *" className="font-bold" />
+                                            <select
+                                                id="fee_module"
+                                                value={data.fee_module}
+                                                onChange={(e) => setData('fee_module', e.target.value)}
+                                                className="block w-full mt-2 border-gray-300 rounded-xl shadow-sm focus:border-purple-500 focus:ring-purple-500 font-semibold"
+                                                required
+                                            >
+                                                <option value="termly">Termly (Invoices, Tuition Fees, Universal Fees, Fee Preferences)</option>
+                                                <option value="monthly">Monthly Fees</option>
+                                            </select>
+                                            <InputError message={errors.fee_module} className="mt-2" />
+                                            <p className="mt-2 text-sm text-gray-600">
+                                                Every school uses exactly one fee system — this can be changed later from the Edit screen.
                                             </p>
                                         </div>
 
