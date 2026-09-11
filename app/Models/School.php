@@ -33,6 +33,7 @@ class School extends Model
         'is_active',
         'status',
         'school_type',
+        'fee_module',
         'trial_ends_at',
         'current_student_count',
         'address',
