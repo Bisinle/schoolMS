@@ -6,6 +6,7 @@ use App\Models\Guardian;
 use App\Models\MonthlyFeeEntry;
 use App\Models\MonthlyFeePayment;
 use App\Models\MonthlyFeeSetting;
+use App\Models\School;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -72,9 +73,30 @@ class MonthlyFeeLedgerService
             ->get()
             ->keyBy('guardian_id');
 
+        $holidayMonths = School::find($schoolId)?->holiday_months ?? [];
+        $isHolidayMonth = in_array($month, $holidayMonths, true);
+
         foreach ($missingGuardianIds as $guardianId) {
-            DB::transaction(function () use ($schoolId, $guardianId, $year, $month, $settingsByGuardian) {
+            DB::transaction(function () use ($schoolId, $guardianId, $year, $month, $settingsByGuardian, $isHolidayMonth) {
                 $setting = MonthlyFeeSetting::lockForUpdate()->find($settingsByGuardian->get($guardianId)?->id);
+
+                if ($isHolidayMonth) {
+                    // A holiday month's expected amount is a deliberate,
+                    // correct zero — never the guardian's standing rate, and
+                    // never anything that consumes their prepaid credit
+                    // (there's nothing real to consume it against).
+                    MonthlyFeeEntry::create([
+                        'school_id' => $schoolId,
+                        'guardian_id' => $guardianId,
+                        'year' => $year,
+                        'month' => $month,
+                        'expected_amount' => 0,
+                        'is_holiday' => true,
+                    ]);
+
+                    return;
+                }
+
                 $expectedAmount = (float) ($setting->expected_fee ?? 0);
                 $creditBalance = (float) ($setting->credit_balance ?? 0);
                 $creditApplied = min($creditBalance, $expectedAmount);

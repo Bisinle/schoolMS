@@ -112,6 +112,136 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $this->assertSame(0, MonthlyFeeEntry::where('year', 2026)->where('month', 9)->count());
     }
 
+    public function test_sync_marks_a_designated_holiday_month_with_zero_expected_amount(): void
+    {
+        $school = School::factory()->create(['holiday_months' => [7, 8]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 7);
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)
+            ->where('year', 2026)->where('month', 7)->first();
+
+        $this->assertNotNull($entry);
+        $this->assertSame('0.00', $entry->expected_amount);
+        $this->assertTrue($entry->is_holiday);
+        $this->assertSame('holiday', $entry->status);
+    }
+
+    public function test_sync_does_not_touch_credit_balance_when_opening_a_holiday_month(): void
+    {
+        $school = School::factory()->create(['holiday_months' => [7, 8]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $guardian->monthlyFeeSetting->update(['credit_balance' => 32000]);
+
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 7);
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)
+            ->where('year', 2026)->where('month', 7)->first();
+
+        $this->assertNull($entry->amount_collected);
+        $this->assertSame('0.00', $entry->credit_applied);
+        $this->assertSame('32000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+    }
+
+    public function test_sync_on_a_non_holiday_month_is_completely_unaffected(): void
+    {
+        // Regression guard: a school with holiday_months configured must
+        // still bill every ordinary month exactly as before.
+        $school = School::factory()->create(['holiday_months' => [7, 8]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)
+            ->where('year', 2026)->where('month', 9)->first();
+
+        $this->assertSame('16000.00', $entry->expected_amount);
+        $this->assertFalse($entry->is_holiday);
+        $this->assertSame('unpaid', $entry->status);
+    }
+
+    public function test_sync_with_no_holiday_months_configured_bills_every_month_normally(): void
+    {
+        // Regression guard: a school that never configured holiday_months
+        // at all (null) must behave exactly as it does today.
+        $school = School::factory()->create(); // holiday_months left null
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 7);
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)
+            ->where('year', 2026)->where('month', 7)->first();
+
+        $this->assertSame('16000.00', $entry->expected_amount);
+        $this->assertFalse($entry->is_holiday);
+    }
+
+    public function test_sync_supports_a_non_contiguous_holiday_month_set(): void
+    {
+        $school = School::factory()->create(['holiday_months' => [4, 8, 11, 12]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 8);
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 9);
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 11);
+
+        $august = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 8)->first();
+        $september = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 9)->first();
+        $november = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 11)->first();
+
+        $this->assertTrue($august->is_holiday);
+        $this->assertFalse($september->is_holiday);
+        $this->assertTrue($november->is_holiday);
+    }
+
+    public function test_a_guardians_standing_rate_is_overridden_by_a_holiday_month_not_required_to_already_be_zero(): void
+    {
+        $school = School::factory()->create(['holiday_months' => [7]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 24000);
+
+        (new MonthlyFeeLedgerService)->syncMonth($school->id, 2026, 7);
+
+        $entry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 7)->first();
+
+        $this->assertSame('0.00', $entry->expected_amount);
+        $this->assertTrue($entry->is_holiday);
+    }
+
+    public function test_outstanding_balance_excludes_a_past_holiday_month(): void
+    {
+        $school = School::factory()->create(['holiday_months' => [7]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+
+        MonthlyFeeEntry::create([
+            'school_id' => $school->id, 'guardian_id' => $guardian->id,
+            'year' => 2026, 'month' => 6, 'expected_amount' => 16000, 'amount_collected' => null,
+        ]);
+        $service->syncMonth($school->id, 2026, 7); // the holiday month itself
+
+        $balance = $service->outstandingBalanceFor($guardian->id, 2026, 8);
+
+        // Only June's real 16000 shortfall counts — July's holiday entry
+        // (expected_amount 0) contributes nothing, with or without special-casing.
+        $this->assertSame(16000.0, $balance);
+    }
+
+    public function test_record_payment_during_a_holiday_month_becomes_pure_credit_not_a_collected_amount(): void
+    {
+        $school = School::factory()->create(['holiday_months' => [7]]);
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 7); // opens the holiday month as "current"
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+
+        $service->recordPayment($guardian->id, 16000, $admin->id);
+
+        $holidayEntry = MonthlyFeeEntry::where('guardian_id', $guardian->id)->where('year', 2026)->where('month', 7)->first();
+        $this->assertNull($holidayEntry->amount_collected);
+        $this->assertSame('16000.00', $guardian->monthlyFeeSetting->fresh()->credit_balance);
+    }
+
     public function test_latest_month_defaults_to_current_calendar_month_when_ledger_never_opened(): void
     {
         $school = School::factory()->create(['fee_module' => 'monthly']);
