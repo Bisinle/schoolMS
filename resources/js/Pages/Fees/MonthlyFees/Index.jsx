@@ -6,7 +6,7 @@ import { ChevronDown, ChevronLeft, ChevronRight, Pencil, Check, Undo2 } from 'lu
 
 export default function MonthlyFeesIndex({
     auth, year, month, monthLabel, isOpenMonth, canBrowseNext, prev, next, rows, totalCollected,
-    collectedThisPeriod, arrearsCollectedThisPeriod, creditRecognizedThisPeriod, arrearsActivity,
+    collectedThisPeriod, arrearsCollectedThisPeriod, creditRecognizedThisPeriod, creditOutstanding, arrearsActivity,
 }) {
     const [openRows, setOpenRows] = useState({});
     const [editingExpected, setEditingExpected] = useState(null);
@@ -368,7 +368,7 @@ export default function MonthlyFeesIndex({
 
                         <div className="rounded-lg border-2 border-gray-300 bg-white p-4">
                             <div className="text-xs font-bold uppercase tracking-wider text-gray-500">Credit outstanding</div>
-                            <div className="mt-1 font-mono text-xl font-bold text-indigo-700">{fmt(rows.reduce((sum, row) => sum + (row.credit_balance || 0), 0))}</div>
+                            <div className="mt-1 font-mono text-xl font-bold text-indigo-700">{fmt(creditOutstanding)}</div>
                             {creditRecognizedThisPeriod > 0 && (
                                 <div className="mt-1 text-xs text-gray-400">{fmt(creditRecognizedThisPeriod)} recognized from credit this period</div>
                             )}

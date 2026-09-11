@@ -164,4 +164,28 @@ class MonthlyFeeTenantIsolationTest extends TestCase
 
         $response->assertInertia(fn ($page) => $page->where('collectedThisPeriod', 16000));
     }
+
+    public function test_credit_outstanding_never_sums_another_schools_credit_balances(): void
+    {
+        // Fix 3's new creditOutstanding query sums MonthlyFeeSetting.credit_balance
+        // school-wide, outside the row set SchoolScope would otherwise filter
+        // implicitly — it must explicitly filter by school_id itself.
+        $this->withoutVite();
+
+        $schoolA = School::factory()->create();
+        $adminA = $this->makeAdmin($schoolA);
+        $guardianA = $this->makeGuardianWithActiveChild($schoolA, expectedFee: 16000);
+        $this->actingAs($adminA)->get('/monthly-fees');
+        $guardianA->monthlyFeeSetting->update(['credit_balance' => 3000]);
+
+        $schoolB = School::factory()->create();
+        $adminB = $this->makeAdmin($schoolB);
+        $guardianB = $this->makeGuardianWithActiveChild($schoolB, expectedFee: 50000);
+        $this->actingAs($adminB)->get('/monthly-fees');
+        $guardianB->monthlyFeeSetting->update(['credit_balance' => 9000]);
+
+        $response = $this->actingAs($adminA)->get('/monthly-fees');
+
+        $response->assertInertia(fn ($page) => $page->where('creditOutstanding', 3000));
+    }
 }

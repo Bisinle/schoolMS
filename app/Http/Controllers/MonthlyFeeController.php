@@ -129,6 +129,12 @@ class MonthlyFeeController extends Controller
             'collectedThisPeriod' => $this->ledger->collectedThisPeriod($schoolId, $year, $month),
             'arrearsCollectedThisPeriod' => $this->ledger->arrearsCollectedThisPeriod($schoolId, $year, $month),
             'creditRecognizedThisPeriod' => $this->ledger->creditRecognizedThisPeriod($schoolId, $year, $month),
+            // Spec round-3 fix #8: a live, school-wide "right now" figure —
+            // not scoped to the viewed month's guardian set — so credit
+            // stranded on a guardian with no row in this month (e.g. their
+            // last child withdrew) is never invisible. explicitly filtered
+            // by school_id rather than relying on SchoolScope alone.
+            'creditOutstanding' => (float) (MonthlyFeeSetting::where('school_id', $schoolId)->sum('credit_balance') ?? 0),
             'arrearsActivity' => $arrearsActivity,
         ]);
     }

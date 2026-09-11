@@ -380,6 +380,36 @@ class MonthlyFeeControllerTest extends TestCase
         );
     }
 
+    public function test_credit_outstanding_is_school_wide_and_includes_a_guardian_with_no_row_in_the_viewed_month(): void
+    {
+        // Spec round-3 fix #8: creditOutstanding must sum credit_balance
+        // across every guardian at the school, including one with no entry
+        // at all in the currently-viewed month (e.g. their last child
+        // withdrew after the credit was earned) — a client-side sum over
+        // `rows` would silently drop that guardian's stranded credit.
+        $this->withoutVite();
+        $school = School::factory()->create();
+        $admin = $this->makeAdmin($school);
+        $visibleGuardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $this->actingAs($admin)->get('/monthly-fees');
+        $visibleGuardian->monthlyFeeSetting->update(['credit_balance' => 3000]);
+
+        // A guardian with stranded credit but no active student (so
+        // syncMonth never creates a row for them this month, and they never
+        // appear in `rows`).
+        $strandedUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian']);
+        $strandedGuardian = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $strandedUser->id, 'status' => 'active']);
+        MonthlyFeeSetting::create(['school_id' => $school->id, 'guardian_id' => $strandedGuardian->id, 'expected_fee' => 0, 'credit_balance' => 5000]);
+
+        $response = $this->actingAs($admin)->get('/monthly-fees');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->has('rows', 1) // the stranded guardian never appears here
+            ->where('creditOutstanding', 8000) // but their credit is still counted
+        );
+    }
+
     public function test_guardian_show_exposes_credit_balance(): void
     {
         $this->withoutVite();
