@@ -82,7 +82,7 @@ Used in routes as `fee-module:termly` / `fee-module:monthly`.
 Verified against the actual current route block (lines 640-706, admin; 708-712, guardian). The full, exact route-name inventory per bucket:
 
 **Termly bucket** (`fee-module:termly`):
-`fees.index`; `tuition-fees.index/store/bulk-store/update/destroy/toggle-status`; `universal-fees.index/store/bulk-store/update/destroy/toggle-status`; `fee-preferences.index/edit/update/destroy/bulk-apply-defaults/history`; `invoices.index/create/preview/store/clearAll/show/updateLineItems/pdf/destroy`; `payments.create/store/show/destroy` (a `PaymentController`, found during this scan — was missing from the spec's original route list); guardian-facing: `guardian.invoices`, `guardian.invoices.show`, `guardian.invoices.pdf`.
+`fees.index/bulk-generate/process-bulk-generate` (caught only on a second, full literal read of the route file — a first grep-based pass missed the `/fees/bulk-generate` sub-routes entirely); `tuition-fees.index/store/bulk-store/update/destroy/toggle-status`; `universal-fees.index/store/bulk-store/update/destroy/toggle-status`; `fee-preferences.index/edit/update/destroy/bulk-apply-defaults/history`; `invoices.index/create/preview/store/clearAll/show/updateLineItems/pdf/destroy`; `payments.create/store/show/destroy` (a `PaymentController`, also found only on this scan); guardian-facing: `guardian.invoices`, `guardian.invoices.show`, `guardian.invoices.pdf`.
 
 **Monthly bucket** (`fee-module:monthly`):
 `monthly-fees.index/open-next-month/update-expected/mark-paid/undo/update-collected/record-payment/apply-credit`; guardian-facing: `guardian.monthly-fees`.
