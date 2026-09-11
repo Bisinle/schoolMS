@@ -611,12 +611,13 @@ class MonthlyFeeLedgerServiceTest extends TestCase
         $service->recordPayment($guardian->id, 32000, $admin->id); // 16000 current + 16000 credit
 
         // In real use, "record payment" and "open next month" are separate
-        // admin actions taken at least a moment apart — travel forward so
-        // the payment and the October entry don't land in the exact same
-        // whole-second created_at tick, which the period-bounds analytics
-        // (correctly) rely on to tell "before October opened" apart from
-        // "after". Without this, this test's zero-elapsed-time execution
-        // would produce a false tie that can never happen in production.
+        // admin actions taken at least a moment apart, so travel forward to
+        // reflect that realistic gap. This is no longer load-bearing for
+        // correctness: periodBounds()'s boundary tie (a row landing at
+        // exactly the instant a new period opens) is itself now handled
+        // correctly by Fix 4's half-open `>= start AND < end` intervals —
+        // see test_credit_consumption_at_exactly_a_period_boundary_is_attributed_to_only_one_period()
+        // below for the dedicated regression covering that exact tie.
         $this->travel(1)->second();
         $service->openNextMonth($school->id); // October opens, consumes the 16000 credit
 
@@ -625,6 +626,41 @@ class MonthlyFeeLedgerServiceTest extends TestCase
 
         $this->assertSame(32000.0, $septemberCollected); // all the real cash landed while September was open
         $this->assertSame(0.0, $octoberCollected); // nothing NEW was received in October
+    }
+
+    public function test_credit_consumption_at_exactly_a_period_boundary_is_attributed_to_only_one_period(): void
+    {
+        // Fix 4 regression: periodBounds()'s `end` for a closing period is
+        // defined as exactly the next period's `start` (both come from the
+        // same MIN(created_at) of the next month's first entry). syncMonth's
+        // credit auto-consumption creates that entry and immediately updates
+        // it with the consumed credit, so the new entry's created_at and
+        // updated_at land at exactly that boundary instant — deterministically,
+        // not as a rare race. Before the fix, the inclusive whereBetween used
+        // by creditRecognizedThisPeriod() double-counted that instant into
+        // BOTH the closing and the opening period.
+        $school = School::factory()->create();
+        $guardian = $this->makeGuardianWithActiveChild($school, expectedFee: 16000);
+        $service = new MonthlyFeeLedgerService;
+        $service->syncMonth($school->id, 2026, 9);
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $service->recordPayment($guardian->id, 32000, $admin->id); // 16000 current + 16000 credit
+
+        $boundary = Carbon::now()->addMinute();
+        $this->travelTo($boundary);
+        $service->openNextMonth($school->id); // October opens at exactly $boundary, consuming the 16000 credit
+
+        // Move forward before reading the analytics, so October's own
+        // periodBounds() (which has no "next" month yet, so its `end` is
+        // `now()`) has a real, non-degenerate window after $boundary to
+        // capture the entry's updated_at in.
+        $this->travel(1)->minute();
+
+        $septemberRecognized = $service->creditRecognizedThisPeriod($school->id, 2026, 9);
+        $octoberRecognized = $service->creditRecognizedThisPeriod($school->id, 2026, 10);
+
+        $this->assertSame(0.0, $septemberRecognized); // the boundary instant belongs to October, not September
+        $this->assertSame(16000.0, $octoberRecognized); // counted exactly once
     }
 
     public function test_arrears_collected_this_period_sums_only_the_arrears_portion(): void

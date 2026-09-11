@@ -486,7 +486,17 @@ class MonthlyFeeLedgerService
      * below match what's actually on screen, regardless of how far behind
      * the real calendar a school's "Open next month" habits are.
      *
-     * @return array{start: string, end: string}
+     * `end_is_boundary` tells callers whether `end` is a real, concrete
+     * boundary shared with a next period that has actually opened (in which
+     * case a row landing at exactly that instant belongs to the next period,
+     * not this one — Fix 4's half-open interval) or just a live "now"
+     * snapshot for a period with no next month yet (in which case `end` is
+     * simply "as of when this query ran", not a boundary anything could tie
+     * with in a meaningful sense — a row created in the same second as that
+     * snapshot is still legitimately part of this still-open period, so the
+     * comparison there stays inclusive).
+     *
+     * @return array{start: string, end: string, end_is_boundary: bool}
      */
     private function periodBounds(int $schoolId, int $year, int $month): array
     {
@@ -508,7 +518,21 @@ class MonthlyFeeLedgerService
             ? MonthlyFeeEntry::where('school_id', $schoolId)->where('year', $next->year)->where('month', $next->month)->min('created_at')
             : now()->toDateTimeString();
 
-        return ['start' => $start ?? now()->toDateTimeString(), 'end' => $end];
+        return ['start' => $start ?? now()->toDateTimeString(), 'end' => $end, 'end_is_boundary' => (bool) $next];
+    }
+
+    /**
+     * Applies periodBounds()'s window to a query builder as a half-open
+     * interval when `end` is a real period boundary (`>= start AND < end`,
+     * so a row at exactly the boundary instant belongs to the next period
+     * only — Fix 4), or as an inclusive-end window when `end` is just a live
+     * "now" snapshot with no concrete next period to hand the tie to
+     * (`>= start AND <= end`).
+     */
+    private function applyPeriodBounds($query, string $column, array $bounds): void
+    {
+        $query->where($column, '>=', $bounds['start'])
+            ->where($column, $bounds['end_is_boundary'] ? '<' : '<=', $bounds['end']);
     }
 
     /**
@@ -526,24 +550,44 @@ class MonthlyFeeLedgerService
      * matches periodBounds()'s own precision and reflects when the cash was
      * actually recorded into this open period, which is what "this period"
      * is meant to mean here.
+     *
+     * When `end` is a real period boundary (a next period has actually
+     * opened), the interval is half-open (`>= start AND < end`), not the
+     * inclusive `whereBetween` it used to be — `end` is exactly the next
+     * period's `start` (both come from the same MIN(created_at) of the next
+     * month's first entry), so an inclusive-both-ends comparison
+     * double-counted any row landing at precisely that boundary instant in
+     * BOTH the closing and opening period. syncMonth()'s credit
+     * auto-consumption stamps a new entry's `updated_at` at exactly that
+     * moment, so this wasn't a rare race — it happened deterministically
+     * whenever credit auto-consumption occurred. When there's no next
+     * period yet, `end` is just a live "now" snapshot with nothing to tie
+     * with, so the comparison there stays inclusive — see
+     * applyPeriodBounds()/periodBounds()'s `end_is_boundary`.
      */
     public function collectedThisPeriod(int $schoolId, int $year, int $month): float
     {
         $bounds = $this->periodBounds($schoolId, $year, $month);
 
-        return (float) (MonthlyFeePayment::where('school_id', $schoolId)
-            ->whereBetween('created_at', [$bounds['start'], $bounds['end']])
-            ->sum('amount') ?? 0);
+        $query = MonthlyFeePayment::where('school_id', $schoolId);
+        $this->applyPeriodBounds($query, 'created_at', $bounds);
+
+        return (float) ($query->sum('amount') ?? 0);
     }
 
-    /** How much of this period's real cash went toward old debt. See collectedThisPeriod()'s note on why this binds to created_at, not received_at. */
+    /**
+     * How much of this period's real cash went toward old debt. See
+     * collectedThisPeriod()'s notes on why this binds to created_at (not
+     * received_at) and on the half-open-vs-inclusive boundary handling.
+     */
     public function arrearsCollectedThisPeriod(int $schoolId, int $year, int $month): float
     {
         $bounds = $this->periodBounds($schoolId, $year, $month);
 
-        return (float) (MonthlyFeePayment::where('school_id', $schoolId)
-            ->whereBetween('created_at', [$bounds['start'], $bounds['end']])
-            ->sum('applied_to_arrears') ?? 0);
+        $query = MonthlyFeePayment::where('school_id', $schoolId);
+        $this->applyPeriodBounds($query, 'created_at', $bounds);
+
+        return (float) ($query->sum('applied_to_arrears') ?? 0);
     }
 
     /**
@@ -560,15 +604,23 @@ class MonthlyFeeLedgerService
      * precision. Both syncMonth's auto-consumption and applyCreditToArrears
      * touch `updated_at` via their own ->update() calls, so it tracks
      * exactly when the credit was recognized, at matching precision.
+     *
+     * Half-open interval when `end` is a real period boundary, inclusive
+     * when it's just a live "now" snapshot — see collectedThisPeriod()'s
+     * note on why an inclusive-both-ends comparison double-counts a row
+     * landing exactly on a real boundary, which syncMonth()'s credit
+     * auto-consumption does deterministically (it stamps the new entry's
+     * `updated_at` at exactly that instant).
      */
     public function creditRecognizedThisPeriod(int $schoolId, int $year, int $month): float
     {
         $bounds = $this->periodBounds($schoolId, $year, $month);
 
-        return (float) (MonthlyFeeEntry::where('school_id', $schoolId)
-            ->where('credit_applied', '>', 0)
-            ->whereBetween('updated_at', [$bounds['start'], $bounds['end']])
-            ->sum('credit_applied') ?? 0);
+        $query = MonthlyFeeEntry::where('school_id', $schoolId)
+            ->where('credit_applied', '>', 0);
+        $this->applyPeriodBounds($query, 'updated_at', $bounds);
+
+        return (float) ($query->sum('credit_applied') ?? 0);
     }
 
     /**
@@ -580,7 +632,10 @@ class MonthlyFeeLedgerService
      * The "resolved during this period" leg binds to `updated_at`, not
      * `paid_date`, for the same date-vs-datetime precision reason documented
      * on collectedThisPeriod()/creditRecognizedThisPeriod(): `paid_date` is
-     * a bare DATE column and periodBounds() is datetime-precision.
+     * a bare DATE column and periodBounds() is datetime-precision. That leg
+     * uses the same half-open-vs-inclusive boundary handling as
+     * collectedThisPeriod() (via applyPeriodBounds()), for the same
+     * period-boundary double-counting reason.
      *
      * @return \Illuminate\Support\Collection<int, \Illuminate\Support\Collection<int, MonthlyFeeEntry>>
      */
@@ -593,7 +648,9 @@ class MonthlyFeeLedgerService
             ->where(fn ($query) => $this->beforeMonth($query, $year, $month))
             ->where(function ($query) use ($bounds) {
                 $query->whereRaw('COALESCE(amount_collected, 0) < expected_amount')
-                    ->orWhereBetween('updated_at', [$bounds['start'], $bounds['end']]);
+                    ->orWhere(function ($query) use ($bounds) {
+                        $this->applyPeriodBounds($query, 'updated_at', $bounds);
+                    });
             })
             ->with(['guardian' => fn ($q) => $q->withTrashed()])
             ->orderBy('guardian_id')->orderBy('year')->orderBy('month')
