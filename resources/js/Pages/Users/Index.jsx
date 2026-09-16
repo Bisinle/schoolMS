@@ -5,6 +5,7 @@ import UserPasswordModal from "@/Components/Users/UserPasswordModal";
 import ConfirmationModal from "@/Components/ConfirmationModal";
 import ImpersonateButton from "@/Components/ImpersonateButton";
 import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
     UserPlus,
     MoreVertical,
@@ -350,8 +351,28 @@ export default function Index({
     const [generatedPassword, setGeneratedPassword] = useState("");
     const [passwordUserName, setPasswordUserName] = useState("");
     const [openMenuId, setOpenMenuId] = useState(null);
-    const [dropdownPosition, setDropdownPosition] = useState({});
+    const [menuCoords, setMenuCoords] = useState(null);
     const buttonRefs = useRef({});
+
+    // The action menu is rendered via a portal at fixed viewport coordinates
+    // (see the desktop Actions column below) to escape the table's
+    // overflow-hidden/overflow-x-auto ancestors, which otherwise clip it
+    // whenever the table is short (e.g. a filtered result with one row).
+    // Fixed coordinates don't track the button on scroll, so close on scroll.
+    useEffect(() => {
+        if (openMenuId === null) {
+            return;
+        }
+
+        const closeOnScroll = () => setOpenMenuId(null);
+        window.addEventListener("scroll", closeOnScroll, true);
+        window.addEventListener("resize", closeOnScroll);
+
+        return () => {
+            window.removeEventListener("scroll", closeOnScroll, true);
+            window.removeEventListener("resize", closeOnScroll);
+        };
+    }, [openMenuId]);
 
     // Confirmation modal state
     const [confirmAction, setConfirmAction] = useState({
@@ -774,15 +795,38 @@ export default function Index({
                                                                     const spaceAbove =
                                                                         rect.top;
                                                                     // If less than 300px below, show above
-                                                                    setDropdownPosition(
+                                                                    const placement =
+                                                                        spaceBelow <
+                                                                            300 &&
+                                                                        spaceAbove >
+                                                                            300
+                                                                            ? "top"
+                                                                            : "bottom";
+                                                                    // Fixed viewport coordinates for the
+                                                                    // portaled menu below -- see the
+                                                                    // effect above for why fixed/portal
+                                                                    // is needed instead of absolute.
+                                                                    const menuWidth = 224; // w-56
+                                                                    setMenuCoords(
                                                                         {
-                                                                            [user.id]:
-                                                                                spaceBelow <
-                                                                                    300 &&
-                                                                                spaceAbove >
-                                                                                    300
-                                                                                    ? "top"
-                                                                                    : "bottom",
+                                                                            left: Math.max(
+                                                                                8,
+                                                                                rect.right -
+                                                                                    menuWidth
+                                                                            ),
+                                                                            top:
+                                                                                placement ===
+                                                                                "bottom"
+                                                                                    ? rect.bottom +
+                                                                                      8
+                                                                                    : null,
+                                                                            bottom:
+                                                                                placement ===
+                                                                                "top"
+                                                                                    ? window.innerHeight -
+                                                                                      rect.top +
+                                                                                      8
+                                                                                    : null,
                                                                         }
                                                                     );
                                                                 }
@@ -799,10 +843,12 @@ export default function Index({
 
                                                     {openMenuId === user.id &&
                                                         user.id !==
-                                                            auth.user.id && (
+                                                            auth.user.id &&
+                                                        menuCoords &&
+                                                        createPortal(
                                                             <>
                                                                 <div
-                                                                    className="fixed inset-0 z-10"
+                                                                    className="fixed inset-0 z-[55]"
                                                                     onClick={() =>
                                                                         setOpenMenuId(
                                                                             null
@@ -811,16 +857,21 @@ export default function Index({
                                                                 ></div>
 
                                                                 <div
-                                                                    className={`absolute right-0 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-20 ${
-                                                                        dropdownPosition[
-                                                                            user
-                                                                                .id
-                                                                        ] ===
-                                                                        "top"
-                                                                            ? "bottom-full mb-2"
-                                                                            : "mt-2"
-                                                                    }`}
+                                                                    className="fixed w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-[60]"
                                                                     style={{
+                                                                        left: menuCoords.left,
+                                                                        ...(menuCoords.top !==
+                                                                        null
+                                                                            ? {
+                                                                                  top: menuCoords.top,
+                                                                              }
+                                                                            : {}),
+                                                                        ...(menuCoords.bottom !==
+                                                                        null
+                                                                            ? {
+                                                                                  bottom: menuCoords.bottom,
+                                                                              }
+                                                                            : {}),
                                                                         maxHeight:
                                                                             "400px",
                                                                         overflowY:
@@ -920,7 +971,8 @@ export default function Index({
                                                                         </button>
                                                                     </div>
                                                                 </div>
-                                                            </>
+                                                            </>,
+                                                            document.body
                                                         )}
                                                 </div>
                                             </td>
