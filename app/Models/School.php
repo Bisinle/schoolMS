@@ -25,6 +25,7 @@ class School extends Model
         'phone_primary',
         'phone_secondary',
         'physical_address',
+        'website',
         'slug',
         'domain',
         'admin_name',
@@ -48,7 +49,7 @@ class School extends Model
     protected function logoUrl(): Attribute
     {
         return Attribute::get(function () {
-            if (!$this->logo_path) {
+            if (! $this->logo_path) {
                 return null;
             }
 
@@ -128,7 +129,7 @@ class School extends Model
 
     public function trialDaysRemaining(): ?int
     {
-        if (!$this->isOnTrial()) {
+        if (! $this->isOnTrial()) {
             return null;
         }
 
@@ -155,4 +156,3 @@ class School extends Model
             ->where('trial_ends_at', '>', now());
     }
 }
-

@@ -30,6 +30,15 @@ class SchoolProfileController extends Controller
     {
         $school = School::find(auth()->user()->school_id);
 
+        $website = trim((string) $request->input('website'));
+        if ($website === '') {
+            $request->merge(['website' => null]);
+        } elseif (! str_contains($website, '://')) {
+            $request->merge(['website' => 'https://'.$website]);
+        } else {
+            $request->merge(['website' => $website]);
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'tagline' => 'nullable|string|max:500',
@@ -39,6 +48,7 @@ class SchoolProfileController extends Controller
             'phone_primary' => 'nullable|string|max:20',
             'phone_secondary' => 'nullable|string|max:20',
             'physical_address' => 'nullable|string|max:500',
+            'website' => 'nullable|url:http,https|max:255',
             'logo' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -84,4 +94,3 @@ class SchoolProfileController extends Controller
         return redirect()->back()->with('success', 'School logo deleted successfully!');
     }
 }
-

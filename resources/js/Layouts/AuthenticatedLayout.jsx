@@ -28,6 +28,7 @@ export default function AuthenticatedLayout({ header, children }) {
         !isSuperAdmin && school?.logo_path
             ? school.logo_url
             : null;
+    const websiteUrl = !isSuperAdmin ? school?.website || null : null;
 
     // Get navigation items based on role and school type, filtered by the
     // user's real permissions (role still picks which curated screen to
@@ -65,6 +66,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 navigation={navigation}
                 brandName={brandName}
                 brandLogo={brandLogo}
+                websiteUrl={websiteUrl}
                 sidebarOpen={sidebarOpen}
                 setSidebarOpen={setSidebarOpen}
                 impersonating={impersonation?.isImpersonating}

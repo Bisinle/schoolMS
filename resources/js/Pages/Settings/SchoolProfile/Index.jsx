@@ -17,6 +17,7 @@ export default function SchoolProfileIndex({ school }) {
         phone_primary: school.phone_primary || "",
         phone_secondary: school.phone_secondary || "",
         physical_address: school.physical_address || "",
+        website: school.website || "",
         logo: null,
         _method: "PUT",
     });
@@ -206,6 +207,29 @@ export default function SchoolProfileIndex({ school }) {
                                     }
                                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
                                 />
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    School Website
+                                </label>
+                                <input
+                                    type="url"
+                                    value={data.website}
+                                    onChange={(e) =>
+                                        setData("website", e.target.value)
+                                    }
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange focus:border-transparent"
+                                    placeholder="https://example.com"
+                                />
+                                <p className="text-sm text-gray-500 mt-1">
+                                    Shown as the Website link in the sidebar. Leave blank to hide it.
+                                </p>
+                                {errors.website && (
+                                    <p className="text-sm text-red-600 mt-1">
+                                        {errors.website}
+                                    </p>
+                                )}
                             </div>
 
                             <div className="md:col-span-2">

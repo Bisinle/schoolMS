@@ -9,6 +9,7 @@ import Avatar from "@/Components/Avatar";
  * @param {Array} props.navigation - Navigation items array
  * @param {string} props.brandName - Brand/school name
  * @param {string|null} props.brandLogo - Brand/school logo path
+ * @param {string|null} props.websiteUrl - Current school's public website URL
  * @param {boolean} props.sidebarOpen - Mobile sidebar open state
  * @param {Function} props.setSidebarOpen - Function to toggle mobile sidebar
  * @param {boolean} props.impersonating - Whether user is impersonating
@@ -19,6 +20,7 @@ export default function Sidebar({
     navigation,
     brandName,
     brandLogo,
+    websiteUrl,
     sidebarOpen,
     setSidebarOpen,
     impersonating,
@@ -51,6 +53,27 @@ export default function Sidebar({
                     brandName
                 )}
             </h1>
+        );
+    };
+
+    const renderWebsiteLink = (onClick) => {
+        if (!websiteUrl) {
+            return null;
+        }
+
+        return (
+            <a
+                href={websiteUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={onClick}
+                className="group flex items-center justify-between px-3 py-2.5 md:py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-300 hover:bg-orange hover:text-white"
+            >
+                <div className="flex items-center">
+                    <ExternalLink className="w-5 h-5 mr-3" />
+                    Website
+                </div>
+            </a>
         );
     };
 
@@ -186,18 +209,7 @@ export default function Sidebar({
 
                     {/* Mobile navigation */}
                     <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto scrollbar-navy min-h-0">
-                        {/* Website Link */}
-                        <a
-                            href="https://al-elmischool.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex items-center justify-between px-3 py-2.5 md:py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-300 hover:bg-orange hover:text-white"
-                        >
-                            <div className="flex items-center">
-                                <ExternalLink className="w-5 h-5 mr-3" />
-                                Website
-                            </div>
-                        </a>
+                        {renderWebsiteLink(() => setSidebarOpen(false))}
 
                         {renderNavigationItems(() => setSidebarOpen(false))}
                     </nav>
@@ -225,18 +237,7 @@ export default function Sidebar({
 
                     {/* Navigation */}
                     <nav className="flex-1 px-3 py-6 space-y-1 overflow-y-auto scrollbar-navy">
-                        {/* Website Link */}
-                        <a
-                            href="https://al-elmischool.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="group flex items-center justify-between px-3 py-2.5 md:py-3 text-sm font-medium rounded-lg transition-all duration-200 text-gray-300 hover:bg-orange hover:text-white"
-                        >
-                            <div className="flex items-center">
-                                <ExternalLink className="w-5 h-5 mr-3" />
-                                Website
-                            </div>
-                        </a>
+                        {renderWebsiteLink()}
 
                         {renderNavigationItems()}
                     </nav>
