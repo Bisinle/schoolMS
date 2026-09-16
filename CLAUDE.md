@@ -2,6 +2,13 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+# Git Push Policy
+
+Claude Code must never run `git push` in this repository. Pushes are always
+done by the user, from their own machine/session, unless the user
+explicitly changes this rule. Commits, branches, and other local git
+operations are unaffected — only `push` (and force-push) is off-limits.
+
 # Tech Stack
 
 This project is built with:
