@@ -138,6 +138,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <TeacherMoreMenu
                         isMadrasah={isMadrasah}
+                        websiteUrl={websiteUrl}
                         can={can}
                         badges={
                             {
@@ -158,6 +159,7 @@ export default function AuthenticatedLayout({ header, children }) {
                     <AdminMoreMenu
                         isMadrasah={isMadrasah}
                         feeModule={feeModule}
+                        websiteUrl={websiteUrl}
                         can={can}
                         badges={
                             {
@@ -177,6 +179,7 @@ export default function AuthenticatedLayout({ header, children }) {
                 >
                     <GuardianMoreMenu
                         isMadrasah={isMadrasah}
+                        websiteUrl={websiteUrl}
                         can={can}
                         badges={
                             {

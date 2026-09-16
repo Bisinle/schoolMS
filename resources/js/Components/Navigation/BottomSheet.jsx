@@ -98,7 +98,7 @@ export default function BottomSheet({
  * Bottom Sheet Menu Item Component
  * Pre-styled menu item for use inside BottomSheet
  */
-export function BottomSheetMenuItem({ icon: Icon, label, href, onClick, badge, className = '' }) {
+export function BottomSheetMenuItem({ icon: Icon, label, href, external = false, onClick, badge, className = '' }) {
     const content = (
         <div className={`flex items-center gap-4 px-4 py-4 rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors ${className}`}>
             <div className="flex-shrink-0">
@@ -112,6 +112,14 @@ export function BottomSheetMenuItem({ icon: Icon, label, href, onClick, badge, c
             )}
         </div>
     );
+
+    if (external && href) {
+        return (
+            <a href={href} target="_blank" rel="noopener noreferrer" className="block" onClick={onClick}>
+                {content}
+            </a>
+        );
+    }
 
     if (href) {
         return (

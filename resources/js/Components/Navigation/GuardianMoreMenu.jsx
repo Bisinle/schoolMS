@@ -5,6 +5,7 @@ import {
     FolderOpen,
     Shield,
     LayoutDashboard,
+    ExternalLink,
 } from 'lucide-react';
 
 /**
@@ -13,10 +14,11 @@ import {
  *
  * @param {Object} props
  * @param {boolean} props.isMadrasah - Whether school is madrasah type
+ * @param {string|null} [props.websiteUrl]
  * @param {(permission: string) => boolean} [props.can]
  * @param {Object} props.badges - Badge counts for menu items
  */
-export default function GuardianMoreMenu({ isMadrasah = false, can = () => true, badges = {} }) {
+export default function GuardianMoreMenu({ isMadrasah = false, websiteUrl = null, can = () => true, badges = {} }) {
     return (
         <div className="pb-6">
             {/* Quran Section (Madrasah Only) */}
@@ -66,6 +68,17 @@ export default function GuardianMoreMenu({ isMadrasah = false, can = () => true,
                     />
                 )}
             </BottomSheetSection>
+
+            {websiteUrl && (
+                <BottomSheetSection>
+                    <BottomSheetMenuItem
+                        icon={ExternalLink}
+                        label="Website"
+                        href={websiteUrl}
+                        external
+                    />
+                </BottomSheetSection>
+            )}
         </div>
     );
 }

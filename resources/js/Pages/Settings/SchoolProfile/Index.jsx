@@ -214,7 +214,7 @@ export default function SchoolProfileIndex({ school }) {
                                     School Website
                                 </label>
                                 <input
-                                    type="url"
+                                    type="text"
                                     value={data.website}
                                     onChange={(e) =>
                                         setData("website", e.target.value)

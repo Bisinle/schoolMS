@@ -21,6 +21,7 @@ import {
     AlertOctagon,
     ChevronDown,
     ChevronUp,
+    ExternalLink,
 } from 'lucide-react';
 import { BottomSheetMenuItem, BottomSheetSection } from './BottomSheet';
 
@@ -31,10 +32,11 @@ import { BottomSheetMenuItem, BottomSheetSection } from './BottomSheet';
  * @param {Object} props
  * @param {boolean} [props.isMadrasah]
  * @param {string} [props.feeModule]
+ * @param {string|null} [props.websiteUrl]
  * @param {(permission: string) => boolean} [props.can]
  * @param {Object} [props.badges]
  */
-export default function AdminMoreMenu({ isMadrasah = false, feeModule = 'termly', can = () => true, badges = {} }) {
+export default function AdminMoreMenu({ isMadrasah = false, feeModule = 'termly', websiteUrl = null, can = () => true, badges = {} }) {
     const [expandedSections, setExpandedSections] = useState({
         timetables: false,
         fees: false,
@@ -359,6 +361,17 @@ export default function AdminMoreMenu({ isMadrasah = false, feeModule = 'termly'
                             href="/streams"
                         />
                     )}
+                </BottomSheetSection>
+            )}
+
+            {websiteUrl && (
+                <BottomSheetSection>
+                    <BottomSheetMenuItem
+                        icon={ExternalLink}
+                        label="Website"
+                        href={websiteUrl}
+                        external
+                    />
                 </BottomSheetSection>
             )}
         </div>
