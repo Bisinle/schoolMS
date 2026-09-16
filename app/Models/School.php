@@ -34,6 +34,8 @@ class School extends Model
         'is_active',
         'status',
         'school_type',
+        'fee_module',
+        'holiday_months',
         'trial_ends_at',
         'current_student_count',
         'address',
@@ -44,6 +46,7 @@ class School extends Model
         'is_active' => 'boolean',
         'trial_ends_at' => 'datetime',
         'current_student_count' => 'integer',
+        'holiday_months' => 'array',
     ];
 
     protected function logoUrl(): Attribute

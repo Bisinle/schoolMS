@@ -23,12 +23,13 @@ import {
  *   security boundary. Each item's actual visibility is now gated by
  *   `can`/`canAny` against the user's real permissions.
  * @param {boolean} props.isMadrasah - Whether school is madrasah type
+ * @param {string} [props.feeModule]
  * @param {(permission: string) => boolean} props.can
  * @param {(permissions: string[]) => boolean} [props.canAny]
  * @param {Function} props.onMoreClick - Callback when "More" is clicked
  * @param {Object} props.badges - Badge counts for navigation items
  */
-export default function BottomNavigation({ role, isMadrasah = false, can = () => true, canAny = () => true, onMoreClick, badges = {} }) {
+export default function BottomNavigation({ role, isMadrasah = false, feeModule = 'termly', can = () => true, canAny = () => true, onMoreClick, badges = {} }) {
     const filterItems = (items) => items.filter((item) => {
         if (item.isMore) return true;
         if (item.permission && !can(item.permission)) return false;
@@ -161,14 +162,23 @@ export default function BottomNavigation({ role, isMadrasah = false, can = () =>
                 badge: badges.attendance,
                 permission: 'attendance.view-own-children',
             },
-            {
-                name: 'Invoices',
-                href: '/guardian/invoices',
-                icon: DollarSign,
-                label: 'Invoices',
-                badge: badges.invoices,
-                permission: 'fees.view-own-invoices',
-            },
+            feeModule === 'monthly'
+                ? {
+                    name: 'Monthly Fees',
+                    href: '/guardian/monthly-fees',
+                    icon: DollarSign,
+                    label: 'Monthly Fees',
+                    badge: badges.invoices,
+                    permission: 'fees.view-own-invoices',
+                }
+                : {
+                    name: 'Invoices',
+                    href: '/guardian/invoices',
+                    icon: DollarSign,
+                    label: 'Invoices',
+                    badge: badges.invoices,
+                    permission: 'fees.view-own-invoices',
+                },
         ];
 
         // Add Quran or Reports based on school type
