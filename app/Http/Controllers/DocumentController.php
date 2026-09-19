@@ -27,7 +27,18 @@ class DocumentController extends Controller
 
         // Base query with relationships
         $query = $user->accessibleDocuments()
-            ->with(['category', 'documentable', 'uploader', 'verifier']);
+            ->with([
+                'category',
+                'uploader',
+                'verifier',
+                'documentable' => function ($morphTo) {
+                    $morphTo->morphWith([
+                        Teacher::class => ['user'],
+                        Guardian::class => ['user'],
+                        Student::class => ['guardians.user'],
+                    ]);
+                },
+            ]);
 
         // Search
         if ($request->filled('owner_search')) {
@@ -195,7 +206,18 @@ class DocumentController extends Controller
     {
         $this->authorize('view', $document);
 
-        $document->load(['category', 'documentable', 'uploader', 'verifier']);
+        $document->load([
+            'category',
+            'uploader',
+            'verifier',
+            'documentable' => function ($morphTo) {
+                $morphTo->morphWith([
+                    Teacher::class => ['user'],
+                    Guardian::class => ['user'],
+                    Student::class => ['guardians.user'],
+                ]);
+            },
+        ]);
 
         return Inertia::render('Documents/Show', [
             'document' => $document,

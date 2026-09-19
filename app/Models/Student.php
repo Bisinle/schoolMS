@@ -92,6 +92,7 @@ class Student extends Model
     public function guardians()
     {
         return $this->belongsToMany(Guardian::class, 'guardian_student')
+            ->using(GuardianStudentPivot::class)
             ->withPivot(['relationship', 'is_primary', 'can_receive_invoices', 'can_pickup', 'emergency_contact'])
             ->withTimestamps();
     }
