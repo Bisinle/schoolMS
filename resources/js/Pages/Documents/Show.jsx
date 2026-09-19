@@ -199,8 +199,9 @@ export default function Show({ document, auth }) {
                             </div>
                             <div>
                                 <Badge
-                                    variant={getStatusVariant(document.status)}
-                                    value={
+                                    variant="documentStatus"
+                                    value={document.status}
+                                    label={
                                         <span className="inline-flex items-center gap-1.5">
                                             {(() => {
                                                 const Icon = getStatusIcon(document.status);

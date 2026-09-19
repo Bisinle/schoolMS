@@ -80,8 +80,9 @@ function MobileDocumentItem({
                 </p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <Badge
-                        variant={statusConfig.variant}
-                        value={
+                        variant="documentStatus"
+                        value={doc.status}
+                        label={
                             <span className="inline-flex items-center gap-1">
                                 <StatusIcon className="w-3 h-3" />
                                 {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
@@ -258,8 +259,9 @@ export default function Index({
 
         return (
             <Badge
-                variant={statusConfig.variant}
-                value={
+                variant="documentStatus"
+                value={doc.status}
+                label={
                     <span className="inline-flex items-center gap-1">
                         <StatusIcon className="w-3 h-3" />
                         {doc.status.charAt(0).toUpperCase() + doc.status.slice(1)}
