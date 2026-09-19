@@ -274,7 +274,10 @@ export default function Index({
         if (doc.documentable_type.includes("Teacher")) {
             return doc.documentable.user?.name || "Unknown Teacher";
         } else if (doc.documentable_type.includes("Student")) {
-            return `${doc.documentable.first_name} ${doc.documentable.last_name}`;
+            const guardians = doc.documentable.guardians || [];
+            const primary = guardians.find((g) => g.pivot?.is_primary) || guardians[0];
+            const childName = `${doc.documentable.first_name} ${doc.documentable.last_name}`;
+            return primary?.user?.name ? `${primary.user.name} – ${childName}` : childName;
         } else if (doc.documentable_type.includes("Guardian")) {
             return doc.documentable.user?.name || "Unknown Guardian";
         } else if (doc.documentable_type.includes("User")) {
