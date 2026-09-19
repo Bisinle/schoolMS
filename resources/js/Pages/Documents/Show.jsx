@@ -128,7 +128,10 @@ export default function Show({ document, auth }) {
         if (document.documentable_type.includes("Teacher")) {
             return document.documentable.user?.name || "Unknown Teacher";
         } else if (document.documentable_type.includes("Student")) {
-            return `${document.documentable.first_name} ${document.documentable.last_name}`;
+            const guardians = document.documentable.guardians || [];
+            const primary = guardians.find((g) => g.pivot?.is_primary) || guardians[0];
+            const childName = `${document.documentable.first_name} ${document.documentable.last_name}`;
+            return primary?.user?.name ? `${primary.user.name} – ${childName}` : childName;
         } else if (document.documentable_type.includes("Guardian")) {
             return document.documentable.user?.name || "Unknown Guardian";
         } else if (document.documentable_type.includes("User")) {
