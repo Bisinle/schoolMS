@@ -35,7 +35,7 @@ class DocumentController extends Controller
                     $morphTo->morphWith([
                         Teacher::class => ['user'],
                         Guardian::class => ['user'],
-                        Student::class => ['guardians.user'],
+                        Student::class => ['guardians:id,user_id,school_id', 'guardians.user:id,name'],
                     ]);
                 },
             ]);
@@ -55,7 +55,10 @@ class DocumentController extends Controller
                         $q2->where(function ($q3) use ($ownerSearch) {
                             $q3->where('first_name', 'like', "%{$ownerSearch}%")
                                 ->orWhere('last_name', 'like', "%{$ownerSearch}%")
-                                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$ownerSearch}%"]);
+                                ->orWhereRaw("CONCAT(first_name, ' ', last_name) LIKE ?", ["%{$ownerSearch}%"])
+                                ->orWhereHas('guardians.user', function ($q4) use ($ownerSearch) {
+                                    $q4->where('name', 'like', "%{$ownerSearch}%");
+                                });
                         });
                     })
                 // Search in guardians
@@ -214,7 +217,7 @@ class DocumentController extends Controller
                 $morphTo->morphWith([
                     Teacher::class => ['user'],
                     Guardian::class => ['user'],
-                    Student::class => ['guardians.user'],
+                    Student::class => ['guardians:id,user_id,school_id', 'guardians.user:id,name'],
                 ]);
             },
         ]);

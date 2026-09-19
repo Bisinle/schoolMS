@@ -100,15 +100,21 @@ class DocumentDisplayNameDataTest extends TestCase
         $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
         $category = $this->makeCategory();
 
-        $motherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian', 'name' => 'Amina Hassan']);
-        $mother = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $motherUser->id]);
-
+        // Guardians (with no explicit orderBy on Student::guardians()) come back
+        // ordered by guardian id, which follows creation order here - not pivot
+        // attach order. The father is created (and thus attached) first so he
+        // lands at guardians.0 with is_primary=false, letting the assertions
+        // below actually exercise the is_primary boolean cast for both values
+        // instead of only ever observing "true" at index 0.
         $fatherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian', 'name' => 'Ali Mohamed']);
         $father = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $fatherUser->id]);
 
+        $motherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian', 'name' => 'Amina Hassan']);
+        $mother = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $motherUser->id]);
+
         $child = Student::factory()->create(['school_id' => $school->id, 'guardian_id' => $mother->id, 'first_name' => 'Yusuf', 'last_name' => 'Hassan']);
-        $child->guardians()->attach($mother->id, ['is_primary' => true, 'relationship' => 'mother']);
         $child->guardians()->attach($father->id, ['is_primary' => false, 'relationship' => 'father']);
+        $child->guardians()->attach($mother->id, ['is_primary' => true, 'relationship' => 'mother']);
 
         $document = $this->makeDocument($school, $category, Student::class, $child->id, $motherUser);
 
@@ -118,8 +124,9 @@ class DocumentDisplayNameDataTest extends TestCase
         $response->assertInertia(fn ($page) => $page
             ->where('documents.data.0.id', $document->id)
             ->has('documents.data.0.documentable.guardians', 2)
-            ->where('documents.data.0.documentable.guardians.0.pivot.is_primary', true)
-            ->where('documents.data.0.documentable.guardians.0.user.name', 'Amina Hassan')
+            ->where('documents.data.0.documentable.guardians.0.pivot.is_primary', false)
+            ->where('documents.data.0.documentable.guardians.1.pivot.is_primary', true)
+            ->where('documents.data.0.documentable.guardians.1.user.name', 'Amina Hassan')
         );
     }
 
