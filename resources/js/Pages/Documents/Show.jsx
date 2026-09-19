@@ -59,7 +59,7 @@ export default function Show({ document, auth }) {
         setConfirmAction({
             show: true,
             title: "Verify Document",
-            message: `Are you sure you want to verify "${document.original_filename}"? This will mark the document as approved and verified.`,
+            message: `Are you sure you want to verify "${getDisplayName()}"? This will mark the document as approved and verified.`,
             confirmText: "Verify Document",
             type: "info",
             onConfirm: () => {
@@ -82,7 +82,7 @@ export default function Show({ document, auth }) {
         setConfirmAction({
             show: true,
             title: "Delete Document",
-            message: `Are you sure you want to delete "${document.original_filename}"? This action cannot be undone and will permanently remove the document from the system.`,
+            message: `Are you sure you want to delete "${getDisplayName()}"? This action cannot be undone and will permanently remove the document from the system.`,
             confirmText: "Delete Document",
             type: "danger",
             onConfirm: () => {
@@ -141,6 +141,12 @@ export default function Show({ document, auth }) {
         return document.documentable_type.split("\\").pop();
     };
 
+    const getDisplayName = () => {
+        const category = document.category?.name || "Document";
+        const owner = document.documentable ? getEntityName() : "Unknown";
+        return `${category} – ${owner}`;
+    };
+
     const isExpiringSoon = () => {
         if (!document.expiry_date) return false;
         const daysUntilExpiry = Math.floor(document.days_until_expiry);
@@ -154,7 +160,7 @@ export default function Show({ document, auth }) {
 
     return (
         <AuthenticatedLayout header="Document Details">
-            <Head title={`Document: ${document.original_filename}`} />
+            <Head title={`Document: ${getDisplayName()}`} />
 
             <div className="max-w-5xl mx-auto space-y-6">
                 {/* Back Button */}
@@ -177,9 +183,12 @@ export default function Show({ document, auth }) {
                                 </div>
                                 <div>
                                     <h1 className="text-2xl font-bold text-navy">
-                                        {document.original_filename}
+                                        {getDisplayName()}
                                     </h1>
                                     <p className="text-gray-500 mt-1">
+                                        {document.original_filename}
+                                    </p>
+                                    <p className="text-sm text-gray-400 mt-0.5">
                                         {document.file_size_human} •{" "}
                                         {document.mime_type}
                                     </p>

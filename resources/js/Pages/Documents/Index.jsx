@@ -60,6 +60,10 @@ function MobileDocumentItem({
     const statusConfig = getStatusBadgeConfig(doc.status);
     const StatusIcon = statusConfig.icon;
 
+    const displayName = `${doc.category?.name || 'Document'} – ${
+        doc.documentable ? getEntityName(doc) : 'Unknown'
+    }`;
+
     // Header content with Badge component
     const header = (
         <div className="flex items-start gap-4 flex-1 min-w-0">
@@ -69,10 +73,10 @@ function MobileDocumentItem({
 
             <div className="flex-1 min-w-0">
                 <h3 className="text-base font-black text-gray-900 truncate leading-tight">
-                    {doc.original_filename}
+                    {displayName}
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                    {doc.category?.name}
+                <p className="text-sm text-gray-600 mt-1 truncate">
+                    {doc.original_filename}
                 </p>
                 <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <Badge
@@ -226,11 +230,17 @@ export default function Index({
         });
     };
 
+    const getDisplayName = (doc) => {
+        const category = doc.category?.name || 'Document';
+        const owner = doc.documentable ? getEntityName(doc) : 'Unknown';
+        return `${category} – ${owner}`;
+    };
+
     const handleDeleteClick = (doc) => {
         setConfirmAction({
             show: true,
             title: "Delete Document",
-            message: `Are you sure you want to delete "${doc.original_filename}"? This action cannot be undone and will permanently remove the document from the system.`,
+            message: `Are you sure you want to delete "${getDisplayName(doc)}"? This action cannot be undone and will permanently remove the document from the system.`,
             confirmText: "Delete Document",
             type: "danger",
             onConfirm: () => {
@@ -512,11 +522,12 @@ export default function Index({
                                                     <FileText className="w-5 h-5 text-gray-400 mr-3 flex-shrink-0" />
                                                     <div>
                                                         <div className="font-medium text-navy">
-                                                            {
-                                                                doc.original_filename
-                                                            }
+                                                            {getDisplayName(doc)}
                                                         </div>
                                                         <div className="text-sm text-gray-500">
+                                                            {doc.original_filename}
+                                                        </div>
+                                                        <div className="text-xs text-gray-400">
                                                             {
                                                                 doc.file_size_human
                                                             }
