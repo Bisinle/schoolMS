@@ -125,6 +125,13 @@ export default function Show({ document, auth }) {
     };
 
     const getEntityName = () => {
+        // The linked Teacher/Guardian/Student/User row can be soft-deleted (or,
+        // in edge cases the backend eager-load doesn't cover, missing outright)
+        // while the Document row itself remains - guard every branch so this
+        // degrades to an "Unknown" label instead of crashing the page.
+        if (!document.documentable) {
+            return "Unknown";
+        }
         if (document.documentable_type.includes("Teacher")) {
             return document.documentable.user?.name || "Unknown Teacher";
         } else if (document.documentable_type.includes("Student")) {

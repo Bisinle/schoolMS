@@ -179,6 +179,111 @@ class DocumentDisplayNameDataTest extends TestCase
         );
     }
 
+    public function test_index_shows_owner_name_for_soft_deleted_teacher(): void
+    {
+        $this->withoutVite();
+
+        $school = School::factory()->create();
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $category = $this->makeCategory();
+
+        $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher', 'name' => 'Khadija Ahmed']);
+        $teacher = Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $document = $this->makeDocument($school, $category, Teacher::class, $teacher->id, $teacherUser);
+
+        // Mirrors TeacherController::destroy(), which soft-deletes both the
+        // Teacher row and its linked User in the same transaction - this is
+        // the exact shape of the 16 real documents found broken in dev data.
+        $teacher->delete();
+        $teacherUser->delete();
+
+        $response = $this->actingAs($admin)->get('/documents');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('documents.data.0.id', $document->id)
+            ->where('documents.data.0.documentable.user.name', 'Khadija Ahmed')
+        );
+    }
+
+    public function test_index_shows_owner_name_for_soft_deleted_guardian(): void
+    {
+        $this->withoutVite();
+
+        $school = School::factory()->create();
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $category = $this->makeCategory();
+
+        $guardianUser = User::factory()->create(['school_id' => $school->id, 'role' => 'guardian', 'name' => 'Maryam Osman']);
+        $guardian = Guardian::factory()->create(['school_id' => $school->id, 'user_id' => $guardianUser->id]);
+        $document = $this->makeDocument($school, $category, Guardian::class, $guardian->id, $guardianUser);
+
+        // Mirrors GuardianController::destroy(), which soft-deletes both the
+        // Guardian row and its linked User in the same transaction.
+        $guardian->delete();
+        $guardianUser->delete();
+
+        $response = $this->actingAs($admin)->get('/documents');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('documents.data.0.id', $document->id)
+            ->where('documents.data.0.documentable.user.name', 'Maryam Osman')
+        );
+    }
+
+    public function test_show_owner_name_survives_soft_deleted_teacher(): void
+    {
+        $this->withoutVite();
+
+        $school = School::factory()->create();
+        $admin = User::factory()->create(['school_id' => $school->id, 'role' => 'admin']);
+        $category = $this->makeCategory();
+
+        $teacherUser = User::factory()->create(['school_id' => $school->id, 'role' => 'teacher', 'name' => 'Abdi Rahman']);
+        $teacher = Teacher::factory()->create(['school_id' => $school->id, 'user_id' => $teacherUser->id]);
+        $document = $this->makeDocument($school, $category, Teacher::class, $teacher->id, $teacherUser);
+
+        $teacher->delete();
+        $teacherUser->delete();
+
+        $response = $this->actingAs($admin)->get("/documents/{$document->id}");
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->where('document.documentable.user.name', 'Abdi Rahman')
+        );
+    }
+
+    public function test_index_never_leaks_soft_deleted_teacher_document_across_schools(): void
+    {
+        $this->withoutVite();
+
+        $schoolA = School::factory()->create();
+        $schoolB = School::factory()->create();
+        $adminB = User::factory()->create(['school_id' => $schoolB->id, 'role' => 'admin']);
+        $category = $this->makeCategory();
+
+        $teacherUserA = User::factory()->create(['school_id' => $schoolA->id, 'role' => 'teacher', 'name' => 'Halima Yusuf']);
+        $teacherA = Teacher::factory()->create(['school_id' => $schoolA->id, 'user_id' => $teacherUserA->id]);
+        $this->makeDocument($schoolA, $category, Teacher::class, $teacherA->id, $teacherUserA);
+
+        // Soft-delete the School A teacher (and their user) - constrain()'s
+        // withTrashed() lifts SoftDeletingScope on the Teacher query, and this
+        // test proves it does NOT also lift the independent SchoolScope that
+        // BelongsToSchool registers, i.e. an admin in School B must never see
+        // School A's (even soft-deleted-owner) documents.
+        $teacherA->delete();
+        $teacherUserA->delete();
+
+        $response = $this->actingAs($adminB)->get('/documents');
+
+        $response->assertOk();
+        $response->assertInertia(fn ($page) => $page
+            ->has('documents.data', 0)
+        );
+    }
+
     public function test_show_loads_students_primary_guardian_and_user_name(): void
     {
         $this->withoutVite();

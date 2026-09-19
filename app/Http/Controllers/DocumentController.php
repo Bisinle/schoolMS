@@ -32,10 +32,23 @@ class DocumentController extends Controller
                 'uploader',
                 'verifier',
                 'documentable' => function ($morphTo) {
+                    // Teacher/Guardian destroy() soft-deletes both the Teacher/Guardian
+                    // row and its linked User (see TeacherController::destroy(),
+                    // GuardianController::destroy()). Without withTrashed(), the
+                    // morphTo can't resolve the owner row at all (documentable
+                    // becomes null and crashes the frontend), and even once the
+                    // owner row resolves, its nested `user` relation would still be
+                    // hidden by SoftDeletingScope. constrain() lifts the scope on
+                    // the documentable row itself; the closure inside morphWith()
+                    // lifts it on the nested `user` eager-load. Student has no
+                    // SoftDeletes, so its leg is untouched.
                     $morphTo->morphWith([
-                        Teacher::class => ['user'],
-                        Guardian::class => ['user'],
+                        Teacher::class => ['user' => fn ($q) => $q->withTrashed()],
+                        Guardian::class => ['user' => fn ($q) => $q->withTrashed()],
                         Student::class => ['guardians:id,user_id,school_id', 'guardians.user:id,name'],
+                    ])->constrain([
+                        Teacher::class => fn ($q) => $q->withTrashed(),
+                        Guardian::class => fn ($q) => $q->withTrashed(),
                     ]);
                 },
             ]);
@@ -214,10 +227,14 @@ class DocumentController extends Controller
             'uploader',
             'verifier',
             'documentable' => function ($morphTo) {
+                // See index() for why constrain()+morphWith() are both needed here.
                 $morphTo->morphWith([
-                    Teacher::class => ['user'],
-                    Guardian::class => ['user'],
+                    Teacher::class => ['user' => fn ($q) => $q->withTrashed()],
+                    Guardian::class => ['user' => fn ($q) => $q->withTrashed()],
                     Student::class => ['guardians:id,user_id,school_id', 'guardians.user:id,name'],
+                ])->constrain([
+                    Teacher::class => fn ($q) => $q->withTrashed(),
+                    Guardian::class => fn ($q) => $q->withTrashed(),
                 ]);
             },
         ]);
